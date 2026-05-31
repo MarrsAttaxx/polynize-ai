@@ -87,10 +87,51 @@ async function repoExists(slug: string): Promise<boolean> {
   }
 }
 
+/**
+ * Detect whether the configured owner is a personal User account or an
+ * Organization. GET /users/{owner} returns `type: "User" | "Organization"`
+ * (owner-agnostic, works with the installation token). Detection (rather
+ * than a hardcoded flag) means a future org migration needs no code change.
+ */
+async function getAccountType(owner: string): Promise<'User' | 'Organization'> {
+  const octokit = await getInstallationOctokit();
+  const { data } = await octokit.rest.users.getByUsername({ username: owner });
+  return data.type === 'Organization' ? 'Organization' : 'User';
+}
+
+/**
+ * Create the engagement repo under the configured owner, private + auto-init.
+ *
+ * `polynize-agentic` is a personal USER account, not an org, so the
+ * org-repos endpoint (POST /orgs/{org}/repos) 404s against it. We branch on
+ * the detected account type:
+ *   - User  → POST /user/repos  (repos.createForAuthenticatedUser)
+ *   - Org   → POST /orgs/{org}/repos (repos.createInOrg)
+ *
+ * Auth: both calls use the GitHub App INSTALLATION token (the same token
+ * that already reads/writes file contents). Repo creation requires the App
+ * to hold the "Administration" repository permission at WRITE — "Contents:
+ * read/write" alone is not sufficient for creation. If creation 403s with
+ * "Resource not accessible by integration", that permission is missing (or,
+ * for a user account, the installation cannot create user repos) — the
+ * caller surfaces that precisely rather than failing opaquely.
+ */
 async function createRepo(slug: string, description: string): Promise<void> {
   const octokit = await getInstallationOctokit();
-  await octokit.rest.repos.createInOrg({
-    org: ORG,
+  const accountType = await getAccountType(ORG);
+  if (accountType === 'Organization') {
+    await octokit.rest.repos.createInOrg({
+      org: ORG,
+      name: slug,
+      private: true,
+      auto_init: true,
+      description,
+    });
+    return;
+  }
+  // Personal user account. The repo is created under the account the App
+  // installation is bound to (polynize-agentic).
+  await octokit.rest.repos.createForAuthenticatedUser({
     name: slug,
     private: true,
     auto_init: true,
@@ -226,17 +267,31 @@ export async function POST(
       try {
         await createRepo(
           slug,
-          `${body.displayName} — Polynize Lead Blueprint`
+          `${body.displayName}: Polynize Lead Blueprint`
         );
         repoCreated = true;
       } catch (err) {
+        const ghStatus =
+          err && typeof err === 'object' && 'status' in err
+            ? (err as { status: number }).status
+            : undefined;
+        const ghMessage = err instanceof Error ? err.message : 'unknown';
+        // 403 = the App installation lacks "Administration: write" (repo
+        // creation needs it; "Contents: read/write" alone is insufficient),
+        // or an installation token cannot create repos on this user account.
+        // Either way, the manual fallback creates the repo and seed is
+        // idempotent on an existing repo, so a retry then succeeds.
+        const remediation =
+          ghStatus === 403
+            ? 'The GitHub App lacks "Administration: write" (repo creation needs it beyond "Contents: read/write"). Grant it on the App and re-approve the installation, OR create the repo manually below, then retry seed.'
+            : 'Create the repo manually, then retry seed (seed is idempotent on an existing repo).';
         return NextResponse.json(
           {
-            error:
-              'Repo does not exist and the GitHub App could not create it. Create it manually: `gh repo create polynize-agentic/' +
-              slug +
-              ' --private --add-readme` then retry seed.',
-            detail: err instanceof Error ? err.message : 'unknown',
+            error: 'Repo does not exist and the GitHub App could not create it.',
+            githubStatus: ghStatus,
+            githubMessage: ghMessage,
+            remediation,
+            manualCommand: `gh repo create polynize-agentic/${slug} --private --add-readme`,
           },
           { status: 422 }
         );
