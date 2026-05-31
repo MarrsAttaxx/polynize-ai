@@ -688,6 +688,50 @@
   margin-top: 4px;
 }
 
+/* ---------- Engagement-status strip (holds the lock control, L14) ---------- */
+.engagementBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin: 8px 0 28px;
+  padding: 14px 18px;
+  background: var(--bp-surface);
+  border-radius: 12px;
+  box-shadow: var(--tac-shadow-raised);
+}
+
+.engagementBarMeta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.engagementBarEyebrow {
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--bp-text-3);
+}
+
+.engagementBarState {
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--bp-mint);
+  background: rgba(105, 252, 203, 0.1);
+  padding: 4px 10px;
+  border-radius: 999px;
+}
+
+.engagementBarStateLocked {
+  color: var(--bp-amber);
+  background: rgba(255, 196, 107, 0.12);
+}
+
 /* ---------- Lock control (L14) ---------- */
 .lockControlWrap {
   display: inline-flex;

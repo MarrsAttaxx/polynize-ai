@@ -125,18 +125,34 @@ export async function V2BlueprintView({
             <span style={{ display: 'inline-flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
               {/* Export is a read op — available to client-scope too. */}
               <ExportButton slug={slug} />
-              {isTeamUser && (
-                <LockControl
-                  slug={slug}
-                  locked={locked}
-                  lockVersion={config?.lock?.lock_version ?? 0}
-                  actorEmail={actorEmail}
-                />
-              )}
               {isTeamUser && <RefreshButton slug={slug} />}
             </span>
           </div>
         </header>
+
+        {/* Engagement-status strip — team only. The lock/unlock control
+            lives here in its own full-width row so it is always clearly
+            visible, rather than buried in the wrapping header pill row. */}
+        {isTeamUser && (
+          <div className={v2s.engagementBar}>
+            <div className={v2s.engagementBarMeta}>
+              <span className={v2s.engagementBarEyebrow}>Engagement section</span>
+              <span
+                className={`${v2s.engagementBarState} ${
+                  locked ? v2s.engagementBarStateLocked : ''
+                }`}
+              >
+                {locked ? `Locked · v${config?.lock?.lock_version ?? 1}` : 'Unlocked'}
+              </span>
+            </div>
+            <LockControl
+              slug={slug}
+              locked={locked}
+              lockVersion={config?.lock?.lock_version ?? 0}
+              actorEmail={actorEmail}
+            />
+          </div>
+        )}
 
         {capabilityMap.interpretation && (
           <div className={s.intro}>{capabilityMap.interpretation}</div>
