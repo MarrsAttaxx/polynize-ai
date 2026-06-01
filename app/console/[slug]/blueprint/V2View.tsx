@@ -1,25 +1,41 @@
 /**
  * Stage 2 (schema_version: 2.0) Blueprint renderer.
  *
- * Renders the two-layer Blueprint as a single page, sections top to
- * bottom (spec §9.2):
- *   1. Engagement summary       (blueprint.md, future)
- *   2. Team                     (future)
- *   3. Infrastructure           (future)
- *   4. Capability Map           (L6 — this landmark)
- *   5. Benchmarking Analysis    (L7)
- *   6. Uplift Plan              (L7)
- *   7. Next Steps               (L7)
- *   8. Gap Register             (L9)
- *   9. Work Plan(s)             (L10)
- *  10. Project Timeline         (L11)
+ * "Best of both" converged shape — JSON-sourced 2.0 sections (capability
+ * map, benchmarking, uplift, next steps, work plans, timeline) plus the
+ * markdown-sourced 1.x sections restored from blueprint.md (infrastructure,
+ * integration, throughput, gap register, sign-off) and the 1.x readiness
+ * calculation. Target section order:
  *
- * This component only renders when blueprint_schema_version === '2.0'.
- * Legacy engagements use LegacyBlueprintView.
+ *   1. Readiness score          (1.x computeReadiness, restored)
+ *   2. Engagement summary       (interpretation)
+ *   3. Infrastructure           (1.x, side-by-side Polynize | Client)
+ *   4. Integration              (1.x, markdown)
+ *   5. Throughput               (1.x, markdown)
+ *   6. Capability map           (2.0)
+ *   7. Benchmarking analysis    (2.0)
+ *   8. Uplift plan              (2.0)
+ *   9. Next steps               (2.0)
+ *  10. Team org-chart           (2.0, unified CWU org-chart)
+ *  11. Gap register             (1.x, add-note + status)
+ *  12. Work plan                (2.0)
+ *  13. Project timeline         (2.0)
+ *  14. Sign-off                 (1.x, + readiness)
+ *
+ * Only renders when blueprint_schema_version === '2.0'. Legacy engagements
+ * use LegacyBlueprintView (unchanged).
  */
 
 import Link from 'next/link';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { loadBlueprintV2 } from '@/lib/blueprint/load-v2';
+import {
+  parseInfrastructure,
+  parseGapRegister,
+} from '@/app/console/_lib/parse-blueprint';
+import { ReadinessStrip } from '@/app/console/_components/blueprint/ReadinessStrip';
+import { Infrastructure } from '@/app/console/_components/blueprint/Infrastructure';
 import { RefreshButton } from './RefreshButton';
 import { CapabilityMapInteractive } from './_components/v2/CapabilityMapInteractive';
 import { BenchmarkingAnalysis } from './_components/v2/BenchmarkingAnalysis';
@@ -30,6 +46,13 @@ import { WorkPlanSection } from './_components/v2/WorkPlanSection';
 import { ProjectTimeline } from './_components/v2/ProjectTimeline';
 import { ExportButton } from './_components/v2/ExportButton';
 import { LockControl } from './_components/v2/LockControl';
+import {
+  loadParsedMarkdown,
+  findSection,
+  isPopulated,
+  mapPhaseForReadiness,
+  syntheticReadinessBlueprint,
+} from './v2-markdown';
 import s from './blueprint.module.css';
 import v2s from './_components/v2/v2-sections.module.css';
 
@@ -52,6 +75,14 @@ function SectionShell({
       </div>
       <div className={s.sectionBody}>{children}</div>
     </section>
+  );
+}
+
+function MarkdownPanel({ content }: { content: string }) {
+  return (
+    <div className={s.markdownPanel}>
+      <ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>
+    </div>
   );
 }
 
@@ -100,9 +131,26 @@ export async function V2BlueprintView({
   const phase = config?.engagement_phase ?? null;
   const showWorkPlans = phase === 'building' || phase === 'operate';
   const locked = config?.lock?.locked === true;
-  // Editing is enabled for team users only. Engagement-section edits are
-  // additionally lock-gated at the API layer (423) and in the UI.
   const canEdit = isTeamUser;
+
+  // Restored 1.x sections come from modelling/blueprint.md.
+  const parsedMd = await loadParsedMarkdown(slug);
+  const infraSection = findSection(parsedMd, 'infrastructure');
+  const infra = infraSection
+    ? parseInfrastructure(infraSection.content)
+    : null;
+  const integrationSection = findSection(parsedMd, 'integrations');
+  const throughputSection = findSection(parsedMd, 'throughput');
+  const gapMdSection = findSection(parsedMd, 'gap-register');
+  const gapMdParsed = gapMdSection
+    ? parseGapRegister(gapMdSection.content)
+    : null;
+
+  // Readiness (1.x computeReadiness, exact formula; inputs adapted for 2.0).
+  const readinessBlueprint = syntheticReadinessBlueprint(blueprint);
+  const phaseLabel = phase
+    ? phase.charAt(0).toUpperCase() + phase.slice(1)
+    : '—';
 
   return (
     <>
@@ -154,11 +202,48 @@ export async function V2BlueprintView({
           </div>
         )}
 
+        {/* 1. Readiness score (top) */}
+        <ReadinessStrip
+          blueprint={readinessBlueprint}
+          gapsOpen={gapMdParsed?.openCount ?? 0}
+          gapsBlocking={gapMdParsed?.blockingCount ?? 0}
+          phase={mapPhaseForReadiness(phase)}
+          subPhase={config?.engagement?.sub_phase ?? ''}
+          gateNext={config?.engagement?.gate_next ?? ''}
+          agentCount={capabilityMap.team.agents.length}
+          unitCount={1}
+          blueprintVersion="2.0"
+          phaseLabel={phaseLabel}
+        />
+
+        {/* 2. Engagement summary */}
         {capabilityMap.interpretation && (
           <div className={s.intro}>{capabilityMap.interpretation}</div>
         )}
 
-        <SectionShell number="04" title="Capability map" id="capability-map">
+        {/* 3. Infrastructure (restored 1.x, side-by-side) */}
+        {infra && (infra.polynize || infra.client) && (
+          <SectionShell number="03" title="Infrastructure" id="infrastructure">
+            <Infrastructure data={infra} />
+          </SectionShell>
+        )}
+
+        {/* 4. Integration (restored 1.x) */}
+        {integrationSection && isPopulated(integrationSection.content) && (
+          <SectionShell number="04" title="Integration" id="integration">
+            <MarkdownPanel content={integrationSection.content} />
+          </SectionShell>
+        )}
+
+        {/* 5. Throughput (restored 1.x) */}
+        {throughputSection && isPopulated(throughputSection.content) && (
+          <SectionShell number="05" title="Throughput" id="throughput">
+            <MarkdownPanel content={throughputSection.content} />
+          </SectionShell>
+        )}
+
+        {/* 6. Capability map (2.0) */}
+        <SectionShell number="06" title="Capability map" id="capability-map">
           <CapabilityMapInteractive
             map={capabilityMap}
             engagementModel={engagementModel}
@@ -166,11 +251,8 @@ export async function V2BlueprintView({
           />
         </SectionShell>
 
-        <SectionShell
-          number="05"
-          title="Benchmarking analysis"
-          id="benchmarking"
-        >
+        {/* 7. Benchmarking analysis (2.0) */}
+        <SectionShell number="07" title="Benchmarking analysis" id="benchmarking">
           {engagementModel ? (
             <BenchmarkingAnalysis
               map={capabilityMap}
@@ -188,7 +270,8 @@ export async function V2BlueprintView({
           )}
         </SectionShell>
 
-        <SectionShell number="06" title="Uplift plan" id="uplift">
+        {/* 8. Uplift plan (2.0) */}
+        <SectionShell number="08" title="Uplift plan" id="uplift">
           {engagementModel ? (
             <UpliftPlan
               map={capabilityMap}
@@ -205,7 +288,8 @@ export async function V2BlueprintView({
           )}
         </SectionShell>
 
-        <SectionShell number="07" title="Next steps" id="next-steps">
+        {/* 9. Next steps (2.0) */}
+        <SectionShell number="09" title="Next steps" id="next-steps">
           {engagementModel ? (
             <NextSteps
               model={engagementModel}
@@ -221,7 +305,8 @@ export async function V2BlueprintView({
           )}
         </SectionShell>
 
-        <SectionShell number="08" title="Gap register" id="gap-register">
+        {/* 11. Gap register (2.0 derived — reverts to 1.x in a later commit) */}
+        <SectionShell number="11" title="Gap register" id="gap-register">
           <GapRegisterV2
             map={capabilityMap}
             slug={slug}
@@ -230,8 +315,9 @@ export async function V2BlueprintView({
           />
         </SectionShell>
 
+        {/* 12. Work plan (2.0) */}
         {showWorkPlans && (
-          <SectionShell number="09" title="Work plans" id="work-plans">
+          <SectionShell number="12" title="Work plans" id="work-plans">
             <WorkPlanSection
               workPlans={workPlans}
               slug={slug}
@@ -240,8 +326,9 @@ export async function V2BlueprintView({
           </SectionShell>
         )}
 
+        {/* 13. Project timeline (2.0) */}
         {timeline && (
-          <SectionShell number="10" title="Project timeline" id="timeline">
+          <SectionShell number="13" title="Project timeline" id="timeline">
             <ProjectTimeline
               slug={slug}
               timeline={timeline}

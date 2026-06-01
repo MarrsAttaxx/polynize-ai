@@ -11,6 +11,16 @@ type Props = {
   agentCount: number;
   unitCount: number;
   blueprintVersion: string;
+  /**
+   * Optional display label for the Phase cell. The `phase` prop always
+   * drives the readiness CALCULATION (it must be a token computeReadiness
+   * understands: marketing/mapping/modelling/build/operate). When the
+   * caller's real phase vocabulary differs (e.g. the 2.0 "building"),
+   * pass the human label here for display while `phase` carries the
+   * mapped calculation token. Legacy callers omit this and the label is
+   * derived from `phase` exactly as before.
+   */
+  phaseLabel?: string;
 };
 
 export function ReadinessStrip(props: Props) {
@@ -28,9 +38,11 @@ export function ReadinessStrip(props: Props) {
   const circumference = 2 * Math.PI * radius;
   const dashOffset = circumference * (1 - completionPercent / 100);
 
-  const phaseLabel = props.phase
-    ? props.phase.charAt(0).toUpperCase() + props.phase.slice(1)
-    : '—';
+  const phaseLabel =
+    props.phaseLabel ??
+    (props.phase
+      ? props.phase.charAt(0).toUpperCase() + props.phase.slice(1)
+      : '—');
 
   return (
     <div className={s.readinessStrip}>
