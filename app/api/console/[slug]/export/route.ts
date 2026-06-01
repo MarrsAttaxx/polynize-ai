@@ -15,7 +15,7 @@
 
 import { type NextRequest, NextResponse } from 'next/server';
 import YAML from 'yaml';
-import { CONSOLE_CLIENTS } from '@/app/console/_config/clients';
+import { isValidConsoleSlug } from '@/app/console/_config/clients';
 import { readClientFile } from '@/lib/github-client';
 import {
   authorizeClientAccess,
@@ -78,7 +78,7 @@ export async function GET(
     return NextResponse.json({ error: auth.error }, { status: auth.status });
   }
   const { slug } = await params;
-  if (!(CONSOLE_CLIENTS as readonly string[]).includes(slug)) {
+  if (!isValidConsoleSlug(slug)) {
     return NextResponse.json({ error: 'Client not found' }, { status: 404 });
   }
   // Read operation — client-scope users can export their own engagement.

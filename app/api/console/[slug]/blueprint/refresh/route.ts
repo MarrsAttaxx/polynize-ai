@@ -1,7 +1,7 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
-import { CONSOLE_CLIENTS } from '@/app/console/_config/clients';
+import { isValidConsoleSlug } from '@/app/console/_config/clients';
 import {
   authorizeClientAccess,
   requireConsoleAuth,
@@ -33,7 +33,7 @@ export async function POST(
   }
 
   const { slug } = await params;
-  if (!(CONSOLE_CLIENTS as readonly string[]).includes(slug)) {
+  if (!isValidConsoleSlug(slug)) {
     return NextResponse.json({ error: 'Client not found' }, { status: 404 });
   }
   if (!authorizeClientAccess(auth.scope, slug)) {

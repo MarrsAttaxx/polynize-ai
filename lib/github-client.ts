@@ -34,6 +34,35 @@ export async function getInstallationOctokit(): Promise<Octokit> {
   return cached;
 }
 
+/**
+ * Repos the GitHub App can see but that are NOT engagements (so they are
+ * excluded from discovery). The app/website repo itself lives here.
+ */
+const NON_ENGAGEMENT_REPOS = new Set<string>(['polynize-ai']);
+
+/**
+ * Dynamically discover the repo slugs the installation can access, under the
+ * configured owner, excluding known non-engagement repos. This is the source
+ * of truth for "which engagements exist" — a freshly-seeded repo appears
+ * automatically with no code change.
+ *
+ * Uses GET /installation/repositories (the installation-token endpoint), so
+ * it returns exactly the repos this App installation is granted. The caller
+ * still confirms each candidate is an engagement by checking for the
+ * `.polynize/client-config.yaml` marker (a repo without it is filtered out).
+ */
+export async function listAccessibleRepoSlugs(): Promise<string[]> {
+  const octokit = await getInstallationOctokit();
+  const repos = (await octokit.paginate(
+    octokit.rest.apps.listReposAccessibleToInstallation,
+    { per_page: 100 }
+  )) as Array<{ name: string; owner?: { login?: string } }>;
+  return repos
+    .filter((r) => !r.owner || !r.owner.login || r.owner.login === ORG)
+    .map((r) => r.name)
+    .filter((name) => !NON_ENGAGEMENT_REPOS.has(name));
+}
+
 export async function readClientFile(slug: string, path: string): Promise<string> {
   const octokit = await getInstallationOctokit();
 

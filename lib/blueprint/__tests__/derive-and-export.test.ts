@@ -18,6 +18,7 @@ import {
 } from '../load-v2';
 import { recomputeDerived } from '../work-plan-io';
 import { assembleContextMarkdown } from '../export-context';
+import { isValidConsoleSlug } from '../../../app/console/_config/clients';
 import type {
   CapabilityMapV05,
   WorkPlan,
@@ -34,6 +35,14 @@ function check(name: string, cond: boolean) {
 }
 function eq<T>(name: string, a: T, b: T) {
   check(`${name} (${JSON.stringify(a)} === ${JSON.stringify(b)})`, a === b);
+}
+
+// ----- isValidConsoleSlug (route slug guard; replaced the fixed allowlist) -----
+for (const s of ['tailor-co', 'newkind', 'remynd', 'everstock', 'roxburys']) {
+  check(`slug guard accepts ${s}`, isValidConsoleSlug(s));
+}
+for (const s of ['../etc', 'a/b', '.polynize', 'Tailor-Co', '', 'a b', 'foo.bar']) {
+  check(`slug guard rejects ${JSON.stringify(s)}`, !isValidConsoleSlug(s));
 }
 
 // ----- displayAllocation -----

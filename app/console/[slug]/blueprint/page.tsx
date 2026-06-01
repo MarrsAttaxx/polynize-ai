@@ -12,7 +12,7 @@
 
 import { notFound } from 'next/navigation';
 import YAML from 'yaml';
-import { CONSOLE_CLIENTS } from '@/app/console/_config/clients';
+import { isValidConsoleSlug } from '@/app/console/_config/clients';
 import { readClientFile } from '@/lib/github-client';
 import { getCurrentUser, userHasClientAccess } from '@/lib/console-auth';
 import type { BlueprintSchemaVersion } from '@/lib/blueprint/schema-v2';
@@ -51,7 +51,10 @@ export default async function BlueprintPage({
 }) {
   const { slug } = await params;
 
-  if (!(CONSOLE_CLIENTS as readonly string[]).includes(slug)) {
+  // Slug format guard (rejects path-traversal / malformed input). Existence
+  // is enforced below by whether the engagement's config actually loads —
+  // engagements are discovered dynamically, not from a fixed allowlist.
+  if (!isValidConsoleSlug(slug)) {
     notFound();
   }
 
@@ -63,6 +66,10 @@ export default async function BlueprintPage({
   }
 
   const config = await loadClientConfig(slug);
+  // No config = no engagement repo at this slug (or no marker file) → 404.
+  if (!config) {
+    notFound();
+  }
   const isTeamUser = user?.scope.type === 'team';
 
   const version = parseSchemaVersion(config?.blueprint_schema_version);

@@ -1,5 +1,9 @@
 import YAML from 'yaml';
-import { readClientFile, readClientFileLastCommit } from '@/lib/github-client';
+import {
+  readClientFile,
+  readClientFileLastCommit,
+  listAccessibleRepoSlugs,
+} from '@/lib/github-client';
 import { CONSOLE_CLIENTS } from '../_config/clients';
 import type {
   BlueprintSchemaVersion,
@@ -121,12 +125,35 @@ function parseSchemaVersion(raw: unknown): BlueprintSchemaVersion {
   return '1.0';
 }
 
-async function loadOneClient(slug: string): Promise<ClientCardData> {
+function isNotFound(err: unknown): boolean {
+  if (err && typeof err === 'object' && 'status' in err) {
+    return (err as { status: number }).status === 404;
+  }
+  const msg = err instanceof Error ? err.message : String(err);
+  return /Not Found|404/i.test(msg);
+}
+
+/**
+ * Load one engagement card. Returns null when the repo has no
+ * `.polynize/client-config.yaml` (it is not an engagement — e.g. an
+ * unrelated repo the App can see), so it is excluded from the dashboard.
+ * A config that reads but is malformed yields an error card (genuine
+ * engagement with a broken config), not exclusion.
+ */
+async function loadOneClient(slug: string): Promise<ClientCardData | null> {
+  let yamlText: string;
   try {
-    const [yamlText, lastUpdated] = await Promise.all([
-      readClientFile(slug, '.polynize/client-config.yaml'),
-      readClientFileLastCommit(slug, 'modelling/blueprint.md'),
-    ]);
+    yamlText = await readClientFile(slug, '.polynize/client-config.yaml');
+  } catch (err) {
+    if (isNotFound(err)) return null; // not an engagement repo
+    return errorCard(slug, err);
+  }
+
+  try {
+    const lastUpdated = await readClientFileLastCommit(
+      slug,
+      'modelling/blueprint.md'
+    );
 
     const parsed = (YAML.parse(yamlText) ?? {}) as ParsedConfig;
 
@@ -165,27 +192,56 @@ async function loadOneClient(slug: string): Promise<ClientCardData> {
       prospect,
     };
   } catch (err) {
-    return {
-      slug,
-      name: slug,
-      leadHuman: '',
-      leadEmail: '',
-      phase: '',
-      subPhase: '',
-      gateNext: '',
-      lastUpdated: null,
-      status: DEFAULT_STATUS,
-      engagementStatus: 'client',
-      engagementPhase: null,
-      blueprintSchemaVersion: '1.0',
-      workPlanRegistry: [],
-      lock: null,
-      prospect: null,
-      error: err instanceof Error ? err.message : String(err),
-    };
+    return errorCard(slug, err);
   }
 }
 
+function errorCard(slug: string, err: unknown): ClientCardData {
+  return {
+    slug,
+    name: slug,
+    leadHuman: '',
+    leadEmail: '',
+    phase: '',
+    subPhase: '',
+    gateNext: '',
+    lastUpdated: null,
+    status: DEFAULT_STATUS,
+    engagementStatus: 'client',
+    engagementPhase: null,
+    blueprintSchemaVersion: '1.0',
+    workPlanRegistry: [],
+    lock: null,
+    prospect: null,
+    error: err instanceof Error ? err.message : String(err),
+  };
+}
+
+/**
+ * Load every engagement's card. Engagements are discovered dynamically from
+ * the repos the GitHub App installation can access (any repo carrying a
+ * `.polynize/client-config.yaml`), so a freshly-seeded Lead appears with no
+ * code change.
+ *
+ * Resilience: if dynamic discovery fails (GitHub outage / auth blip), fall
+ * back to the known CONSOLE_CLIENTS list so the dashboard is never blank.
+ *
+ * [PERF] This reads client-config.yaml for each accessible repo (one call
+ * per repo, run in parallel). For the current handful of repos that is fine.
+ * If the installation grows to many unrelated repos, cache the discovery
+ * result or back it with a seed-maintained registry. Flagged, not yet
+ * optimised.
+ */
 export async function loadClientCardData(): Promise<ClientCardData[]> {
-  return Promise.all(CONSOLE_CLIENTS.map(loadOneClient));
+  let slugs: string[];
+  try {
+    const discovered = await listAccessibleRepoSlugs();
+    // Fall back if discovery returns nothing unexpectedly (e.g. scope blip).
+    slugs = discovered.length > 0 ? discovered : [...CONSOLE_CLIENTS];
+  } catch {
+    slugs = [...CONSOLE_CLIENTS];
+  }
+
+  const cards = await Promise.all(slugs.map(loadOneClient));
+  return cards.filter((c): c is ClientCardData => c !== null);
 }

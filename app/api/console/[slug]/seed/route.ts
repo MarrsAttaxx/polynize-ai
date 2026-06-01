@@ -23,12 +23,13 @@
  *        envelope.interpretation)
  *
  * Notes:
- * - The static CONSOLE_CLIENTS allowlist is NOT enforced for this endpoint.
- *   The endpoint can seed any slug under the polynize-agentic org. The
- *   slug appears in the dashboard once L12 ships discovery; until then,
- *   the slug must be added to CONSOLE_CLIENTS for the dashboard to see it.
- *   This is intentional — seeding new repos is the only Console operation
- *   that touches slugs outside the static allowlist.
+ * - No fixed-slug allowlist is enforced here (only a slug-format guard).
+ *   The endpoint can seed any slug under the polynize-agentic account. The
+ *   seeded engagement appears on the dashboard automatically: engagements
+ *   are DISCOVERED dynamically from the repos the App installation can see
+ *   that carry a `.polynize/client-config.yaml` marker (see
+ *   `_lib/load-clients.ts` + `github-client.ts#listAccessibleRepoSlugs`).
+ *   No code change is needed per new engagement.
  *
  * [ASSUMPTION] GitHub App may or may not have repo-creation permission.
  *   If it doesn't, the human will see a 422 and can create the repo via
@@ -157,8 +158,8 @@ export async function POST(
   }
   // No authorizeClientAccess check here: the team gate above already
   // guarantees scope.type === 'team', and team users can seed any slug
-  // (seeding is the one operation that touches slugs outside the static
-  // CONSOLE_CLIENTS allowlist).
+  // (seeding creates new engagement repos, which are then discovered
+  // dynamically by the dashboard).
 
   const { slug } = await params;
   // Sanitise slug: lowercase, alphanumeric + hyphens only.
