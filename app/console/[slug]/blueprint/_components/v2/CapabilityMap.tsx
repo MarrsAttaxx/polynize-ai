@@ -113,92 +113,6 @@ function RiskTag({ cap }: { cap: Cap }) {
   return <span className={cls}>risk: {cap.failure_cost.toLowerCase()}</span>;
 }
 
-function CapabilityDetail({ cap }: { cap: Cap }) {
-  return (
-    <div className={s.detail}>
-      <div className={s.detailRow}>
-        <span className={s.detailKey}>Work shape</span>
-        <span className={s.detailVal}>
-          <code>{cap.work_shape.type}</code> · in: {cap.work_shape.inputs.join(', ')} ·
-          out: {cap.work_shape.output} · trigger: {cap.work_shape.trigger}
-        </span>
-      </div>
-      {cap.reason && (
-        <div className={s.detailRow}>
-          <span className={s.detailKey}>Reason</span>
-          <span className={s.detailVal}>{cap.reason}</span>
-        </div>
-      )}
-      {cap.allocation_detail && (
-        <div className={s.detailRow}>
-          <span className={s.detailKey}>Allocation</span>
-          <span className={s.detailVal}>{cap.allocation_detail}</span>
-        </div>
-      )}
-      {cap.edge_cases.length > 0 && (
-        <div className={s.detailRow}>
-          <span className={s.detailKey}>Edge cases</span>
-          <span className={s.detailVal}>
-            <span className={s.chipList}>
-              {cap.edge_cases.map((ec, i) => (
-                <span key={i} className={s.chip}>
-                  {ec}
-                </span>
-              ))}
-            </span>
-          </span>
-        </div>
-      )}
-      {cap.evidence.length > 0 && (
-        <div className={s.detailRow}>
-          <span className={s.detailKey}>Evidence</span>
-          <span className={s.detailVal}>
-            {cap.evidence.map((e, i) => (
-              <span key={i} className={s.evidenceQuote} style={{ display: 'block', marginBottom: 4 }}>
-                &ldquo;{e.quote}&rdquo;{' '}
-                <span className={s.evidenceSource}>[{e.source_id}]</span>
-              </span>
-            ))}
-          </span>
-        </div>
-      )}
-      {cap.human_handoff ? (
-        <div className={s.detailRow}>
-          <span className={s.detailKey}>Human handoff</span>
-          <span className={s.detailVal}>
-            emit: {cap.human_handoff.emit_artifact} · on complete:{' '}
-            {cap.human_handoff.completion_action}
-            {cap.human_handoff.feedback_signals.length > 0 &&
-              ` · signals: ${cap.human_handoff.feedback_signals.join(', ')}`}
-          </span>
-        </div>
-      ) : (
-        <div className={s.detailRow}>
-          <span className={s.detailKey}>Human handoff</span>
-          <span className={s.detailVal}>Agent, no handoff</span>
-        </div>
-      )}
-      {cap.gaps_to_close.length > 0 && (
-        <div className={s.detailRow}>
-          <span className={s.detailKey}>Gaps to close</span>
-          <span className={s.detailVal}>
-            {cap.gaps_to_close.map((g, i) => (
-              <span
-                key={i}
-                style={{ display: 'block', marginBottom: 2 }}
-                className={g.blocking ? s.gapBlocking : undefined}
-              >
-                {g.blocking ? '● ' : '○ '}
-                <code>{g.gap_type}</code> {g.question}
-              </span>
-            ))}
-          </span>
-        </div>
-      )}
-    </div>
-  );
-}
-
 export function CapabilityRowView({
   cap,
   onSelect,
@@ -234,13 +148,15 @@ export function CapabilityRowView({
             <CompletenessTag cap={cap} />
             <RiskTag cap={cap} />
           </span>
-          <span className={s.capDetail}>{cap.description}</span>
         </div>
         <div className={cellClass('Human', cap)} aria-hidden />
         <div className={cellClass('Hybrid', cap)} aria-hidden />
         <div className={cellClass('Agent', cap)} aria-hidden />
       </div>
-      <CapabilityDetail cap={cap} />
+      {/* R2: the always-open inline detail block was removed. All capability
+          detail (work shape, reason, edge cases, evidence, handoff, gaps)
+          lives in the click-to-open CapabilityModal. Rows stay clean:
+          id, name, completeness + risk tags, allocation cells. */}
     </div>
   );
 }
