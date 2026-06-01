@@ -12,6 +12,21 @@ import {
   deleteGapInBlueprint,
 } from '@/app/console/_lib/mutate-blueprint';
 import type { GapRegisterRow } from '@/app/console/_lib/parse-blueprint';
+import { getLockState } from '@/lib/blueprint/lock-io';
+
+/** 423 if the engagement section is locked. Gaps live in it (1.x + 2.0).
+ *  Legacy configs have no lock block, so getLockState returns unlocked and
+ *  legacy gap editing is unaffected. */
+async function lockGate(slug: string) {
+  const lock = await getLockState(slug);
+  if (lock.locked) {
+    return NextResponse.json(
+      { error: 'Engagement section is locked', locked: true },
+      { status: 423 }
+    );
+  }
+  return null;
+}
 
 export const dynamic = 'force-dynamic';
 
@@ -64,6 +79,8 @@ export async function POST(
   if (!authorizeClientAccess(auth.scope, slug)) {
     return NextResponse.json({ error: 'Client not found' }, { status: 404 });
   }
+  const locked = await lockGate(slug);
+  if (locked) return locked;
 
   let raw: unknown;
   try {
@@ -161,6 +178,8 @@ export async function DELETE(
   if (!authorizeClientAccess(auth.scope, slug)) {
     return NextResponse.json({ error: 'Client not found' }, { status: 404 });
   }
+  const locked = await lockGate(slug);
+  if (locked) return locked;
 
   // Body is optional for DELETE
   let reason: string | undefined;

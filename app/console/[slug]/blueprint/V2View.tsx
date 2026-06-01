@@ -36,12 +36,12 @@ import {
 } from '@/app/console/_lib/parse-blueprint';
 import { ReadinessStrip } from '@/app/console/_components/blueprint/ReadinessStrip';
 import { Infrastructure } from '@/app/console/_components/blueprint/Infrastructure';
+import { GapRegister } from '@/app/console/_components/blueprint/GapRegister';
 import { RefreshButton } from './RefreshButton';
 import { CapabilityMapInteractive } from './_components/v2/CapabilityMapInteractive';
 import { BenchmarkingAnalysis } from './_components/v2/BenchmarkingAnalysis';
 import { UpliftPlan } from './_components/v2/UpliftPlan';
 import { NextSteps } from './_components/v2/NextSteps';
-import { GapRegisterV2 } from './_components/v2/GapRegisterV2';
 import { WorkPlanSection } from './_components/v2/WorkPlanSection';
 import { ProjectTimeline } from './_components/v2/ProjectTimeline';
 import { ExportButton } from './_components/v2/ExportButton';
@@ -305,14 +305,22 @@ export async function V2BlueprintView({
           )}
         </SectionShell>
 
-        {/* 11. Gap register (2.0 derived — reverts to 1.x in a later commit) */}
+        {/* 11. Gap register (1.x: add-note + status, from blueprint.md).
+            canEdit is gated on team scope AND unlock — when locked the
+            table renders read-only (the endpoint also returns 423). */}
         <SectionShell number="11" title="Gap register" id="gap-register">
-          <GapRegisterV2
-            map={capabilityMap}
-            slug={slug}
-            canEdit={canEdit}
-            locked={locked}
-          />
+          {gapMdParsed ? (
+            <GapRegister
+              data={gapMdParsed}
+              slug={slug}
+              canEdit={canEdit && !locked}
+            />
+          ) : (
+            <p className={v2s.placeholder}>
+              Gap register pending. Outstanding questions are logged here
+              during Modelling.
+            </p>
+          )}
         </SectionShell>
 
         {/* 12. Work plan (2.0) */}

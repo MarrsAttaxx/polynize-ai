@@ -8,6 +8,7 @@ import {
   requireTeamScope,
 } from '@/lib/console-api-auth';
 import { createGapInBlueprint } from '@/app/console/_lib/mutate-blueprint';
+import { getLockState } from '@/lib/blueprint/lock-io';
 
 export const dynamic = 'force-dynamic';
 
@@ -43,6 +44,15 @@ export async function POST(
   }
   if (!authorizeClientAccess(auth.scope, slug)) {
     return NextResponse.json({ error: 'Client not found' }, { status: 404 });
+  }
+  // Lock gate — gaps live in the engagement section (legacy configs have no
+  // lock block, so getLockState returns unlocked and 1.x is unaffected).
+  const lock = await getLockState(slug);
+  if (lock.locked) {
+    return NextResponse.json(
+      { error: 'Engagement section is locked', locked: true },
+      { status: 423 }
+    );
   }
 
   let raw: unknown;
