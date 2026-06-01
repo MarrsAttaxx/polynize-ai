@@ -142,6 +142,7 @@ export async function V2BlueprintView({
     : null;
   const integrationSection = findSection(parsedMd, 'integrations');
   const throughputSection = findSection(parsedMd, 'throughput');
+  const signOffSection = findSection(parsedMd, 'sign-off');
   const gapMdSection = findSection(parsedMd, 'gap-register');
   const gapMdParsed = gapMdSection
     ? parseGapRegister(gapMdSection.content)
@@ -165,6 +166,20 @@ export async function V2BlueprintView({
   const workerAgents = leaderAgent
     ? team.agents.filter((a) => a.name !== leaderAgent.name)
     : team.agents;
+
+  // Readiness props, reused at the top (R1) and in the sign-off (R5).
+  const readinessProps = {
+    blueprint: readinessBlueprint,
+    gapsOpen: gapMdParsed?.openCount ?? 0,
+    gapsBlocking: gapMdParsed?.blockingCount ?? 0,
+    phase: mapPhaseForReadiness(phase),
+    subPhase: config?.engagement?.sub_phase ?? '',
+    gateNext: config?.engagement?.gate_next ?? '',
+    agentCount: capabilityMap.team.agents.length,
+    unitCount: 1,
+    blueprintVersion: '2.0',
+    phaseLabel,
+  };
 
   return (
     <>
@@ -217,18 +232,7 @@ export async function V2BlueprintView({
         )}
 
         {/* 1. Readiness score (top) */}
-        <ReadinessStrip
-          blueprint={readinessBlueprint}
-          gapsOpen={gapMdParsed?.openCount ?? 0}
-          gapsBlocking={gapMdParsed?.blockingCount ?? 0}
-          phase={mapPhaseForReadiness(phase)}
-          subPhase={config?.engagement?.sub_phase ?? ''}
-          gateNext={config?.engagement?.gate_next ?? ''}
-          agentCount={capabilityMap.team.agents.length}
-          unitCount={1}
-          blueprintVersion="2.0"
-          phaseLabel={phaseLabel}
-        />
+        <ReadinessStrip {...readinessProps} />
 
         {/* 2. Engagement summary */}
         {capabilityMap.interpretation && (
@@ -369,6 +373,24 @@ export async function V2BlueprintView({
             />
           </SectionShell>
         )}
+
+        {/* 14. Sign-off (restored 1.x) + readiness score. The full SoW
+            client-sign-off flow (readiness 100% → sign-off → SoW acceptance
+            → phase transition) is a separate piece; this restores the 1.x
+            sign-off section and shows the readiness score here too. */}
+        <SectionShell number="14" title="Sign-off" id="sign-off">
+          <ReadinessStrip {...readinessProps} />
+          {signOffSection && isPopulated(signOffSection.content) ? (
+            <div style={{ marginTop: 18 }}>
+              <MarkdownPanel content={signOffSection.content} />
+            </div>
+          ) : (
+            <p className={v2s.placeholder} style={{ marginTop: 18 }}>
+              Sign-off pending. The blueprint must reach readiness before
+              client sign-off.
+            </p>
+          )}
+        </SectionShell>
       </div>
     </>
   );
