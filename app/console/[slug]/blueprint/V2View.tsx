@@ -42,6 +42,7 @@ import { CapabilityMapInteractive } from './_components/v2/CapabilityMapInteract
 import { BenchmarkingAnalysis } from './_components/v2/BenchmarkingAnalysis';
 import { UpliftPlan } from './_components/v2/UpliftPlan';
 import { NextSteps } from './_components/v2/NextSteps';
+import { TeamOrgChart } from './_components/v2/TeamOrgChart';
 import { WorkPlanSection } from './_components/v2/WorkPlanSection';
 import { ProjectTimeline } from './_components/v2/ProjectTimeline';
 import { ExportButton } from './_components/v2/ExportButton';
@@ -151,6 +152,19 @@ export async function V2BlueprintView({
   const phaseLabel = phase
     ? phase.charAt(0).toUpperCase() + phase.slice(1)
     : '—';
+
+  // Team org-chart (R3). The team-leader-agent designation is a parallel
+  // v0.5 schema workstream; until it lands we read an optional `team_leader`
+  // hint (agent name) defensively. None present for Roxbury → leaderAgent
+  // null → the two-tier grandfathered exception (human → workers).
+  const team = capabilityMap.team;
+  const leaderName = (team as { team_leader?: string }).team_leader;
+  const leaderAgent = leaderName
+    ? team.agents.find((a) => a.name === leaderName) ?? null
+    : null;
+  const workerAgents = leaderAgent
+    ? team.agents.filter((a) => a.name !== leaderAgent.name)
+    : team.agents;
 
   return (
     <>
@@ -303,6 +317,17 @@ export async function V2BlueprintView({
               during Modelling.
             </p>
           )}
+        </SectionShell>
+
+        {/* 10. Team org-chart (proposed CWU; sits after the analysis it
+            follows from, not pinned at the top — it can change through
+            Modelling). Three-tier canonical; Roxbury renders two tiers. */}
+        <SectionShell number="10" title="Team org-chart" id="team">
+          <TeamOrgChart
+            humanOwner={team.human_owner}
+            leaderAgent={leaderAgent}
+            workerAgents={workerAgents}
+          />
         </SectionShell>
 
         {/* 11. Gap register (1.x: add-note + status, from blueprint.md).
