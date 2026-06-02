@@ -67,6 +67,156 @@ export function normalizeToV05Envelope(
 }
 
 // ============================================================
+// Lenient read schema (Console loader) — "strict on generate, liberal
+// on read" (Postel's law).
+//
+// The website's generation quality-gate (`validateCapabilityMapV05`,
+// used only by /api/capability-map/generate) stays STRICT. The Console
+// LOADER (loadBlueprintV2) instead parses with this lenient schema so it
+// accepts the broader real-world vocabulary that Shourov's capability
+// blueprints — and, later, Cognitive Studio and Ben — produce.
+//
+// It validates STRUCTURE and the two enums the renderer is load-bearing
+// on (allocation drives the heatmap lane; completeness drives the cell
+// treatment). Everything else is liberal: work_shape.type, delta_status,
+// shape_internal, leverage_estimate, failure_cost, confidence, gap_type,
+// cluster_type, resolution, etc. are free strings, and pricing_indicative
+// / hiring_comparison (unused by the Console) are optional.
+// ============================================================
+
+const LenientWorkShapeSchema = z.object({
+  type: z.string(),
+  inputs: z.array(z.string()).default([]),
+  output: z.string().default(''),
+  trigger: z.string().default(''),
+});
+
+const LenientCapabilityRowSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  cluster_id: z.string(),
+  description: z.string().default(''),
+  allocation: z.enum(['Agent', 'Hybrid', 'Human']), // load-bearing (heatmap)
+  allocation_detail: z.string().nullable().optional(),
+  reason: z.string().default(''),
+  failure_cost: z.string().default('N/A'),
+  failure_cost_note: z.string().default(''),
+  work_shape: LenientWorkShapeSchema,
+  edge_cases: z.array(z.string()).default([]),
+  evidence: z
+    .array(z.object({ source_id: z.string(), quote: z.string() }))
+    .default([]),
+  human_handoff: z
+    .object({
+      emit_artifact: z.string(),
+      completion_action: z.string(),
+      feedback_signals: z.array(z.string()).default([]),
+    })
+    .nullable()
+    .default(null),
+  confidence: z.string().default('Medium'),
+  completeness: z.enum(['COMPLETE', 'PARTIAL', 'STUB', 'GHOST']), // load-bearing
+  gaps_to_close: z
+    .array(
+      z.object({
+        gap_type: z.string(),
+        question: z.string(),
+        blocking: z.boolean().default(false),
+      })
+    )
+    .default([]),
+  delta_status: z.string().default('added'),
+});
+
+const LenientCapabilityMapSchema = z.object({
+  stage: z.string(),
+  scope_brief: z.object({
+    name: z.string(),
+    statement: z.string().default(''),
+    scope_inclusions: z.array(z.string()).default([]),
+    scope_exclusions: z.array(z.string()).default([]),
+    resolution: z.string().default('team_unit'),
+  }),
+  interpretation: z.string().default(''),
+  clusters: z.array(
+    z.object({
+      id: z.string(),
+      name: z.string(),
+      order: z.number(),
+      cluster_type: z.string(),
+      trigger_clusters: z.array(z.string()).optional(),
+    })
+  ),
+  capabilities: z.array(LenientCapabilityRowSchema).min(1),
+  allocation_summary: z.object({
+    by_row_count: z.object({
+      agent: z.number(),
+      hybrid: z.number(),
+      human: z.number(),
+    }),
+    row_count_total: z.number(),
+    ghost_count: z.number(),
+    percentages: z.object({
+      agent: z.number(),
+      hybrid: z.number(),
+      human: z.number(),
+    }),
+    notes: z.string().default(''),
+  }),
+  map_reflection: z.object({
+    scope_uncertainty: z
+      .array(z.object({ topic: z.string(), question: z.string() }))
+      .default([]),
+    cross_cutting_candidates: z
+      .array(
+        z.object({
+          item: z.string(),
+          reading: z.string(),
+          question: z.string(),
+        })
+      )
+      .default([]),
+    decisions_deferred: z
+      .array(z.object({ topic: z.string(), reason: z.string() }))
+      .default([]),
+  }),
+  excluded_capabilities: z
+    .array(z.object({ name: z.string(), reason: z.string() }))
+    .default([]),
+  delta_summary: z.object({
+    mode: z.string(),
+    narrative: z.string().default(''),
+    rows_added: z.array(z.string()).default([]),
+    rows_removed: z.array(z.unknown()).default([]),
+    rows_modified: z.array(z.unknown()).default([]),
+    rows_promoted: z.array(z.unknown()).default([]),
+  }),
+  team: z.object({
+    human_owner: z.object({ name: z.string(), role: z.string() }),
+    agents: z
+      .array(
+        z.object({
+          name: z.string(),
+          role: z.string(),
+          short_desc: z.string().default(''),
+        })
+      )
+      .min(1),
+    team_leader: z.string().optional(),
+  }),
+  leverage_estimate: z.string().default(''),
+  leverage_rationale: z.string().default(''),
+  pricing_indicative: z.unknown().optional(),
+  hiring_comparison: z.unknown().optional(),
+  shape_internal: z.string().default(''),
+  shape_id: z.number().optional(),
+});
+
+export const LenientCapabilityMapV05EnvelopeSchema = z.object({
+  capability_map: LenientCapabilityMapSchema,
+});
+
+// ============================================================
 // Schema version (legacy vs Stage 2)
 // ============================================================
 

@@ -10,7 +10,7 @@ import {
   authorizeClientAccess,
   requireConsoleAuth,
 } from '@/lib/console-api-auth';
-import { CapabilityMapV05EnvelopeSchema } from '@/lib/blueprint/schema-v2';
+import { LenientCapabilityMapV05EnvelopeSchema } from '@/lib/blueprint/schema-v2';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -31,7 +31,9 @@ export async function GET(
   try {
     const raw = await readClientFile(slug, 'modelling/capability-map.json');
     const json = JSON.parse(raw);
-    const parsed = CapabilityMapV05EnvelopeSchema.safeParse(json);
+    // Liberal on read (same as the loader): accept the broader real-world
+    // vocabulary. The website's strict generation gate is unaffected.
+    const parsed = LenientCapabilityMapV05EnvelopeSchema.safeParse(json);
     if (!parsed.success)
       return NextResponse.json(
         { error: 'capability-map.json failed validation' },

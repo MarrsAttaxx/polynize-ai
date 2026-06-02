@@ -24,7 +24,7 @@ import {
   readClientFileLastCommit,
 } from '../github-client';
 import {
-  CapabilityMapV05EnvelopeSchema,
+  LenientCapabilityMapV05EnvelopeSchema,
   EngagementModelSchema,
   WorkPlanSchema,
   ProjectTimelineSchema,
@@ -135,7 +135,16 @@ async function loadCapabilityMap(
     console.error(`[load-v2] capability-map.json JSON.parse failed for ${slug}`, err);
     return null;
   }
-  const parsed = CapabilityMapV05EnvelopeSchema.safeParse(json);
+  // Liberal on read: parse with the lenient schema so real-world maps in
+  // Shourov's broader vocabulary load. The website's strict generation gate
+  // (validateCapabilityMapV05) is unaffected. The lenient parse validates
+  // structure + the render-load-bearing enums (allocation, completeness);
+  // the cast reconciles the liberally-typed fields (work_shape.type,
+  // delta_status, optional pricing/hiring, etc.) with the strict
+  // CapabilityMapV05 type the renderer is written against. Those fields are
+  // either displayed as plain strings or unused by the Console, so the cast
+  // is safe.
+  const parsed = LenientCapabilityMapV05EnvelopeSchema.safeParse(json);
   if (!parsed.success) {
     // eslint-disable-next-line no-console
     console.error(
@@ -144,7 +153,7 @@ async function loadCapabilityMap(
     );
     return null;
   }
-  return parsed.data.capability_map;
+  return parsed.data.capability_map as unknown as CapabilityMapV05;
 }
 
 async function loadEngagementModel(
