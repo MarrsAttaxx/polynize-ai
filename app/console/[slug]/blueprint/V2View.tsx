@@ -154,12 +154,13 @@ export async function V2BlueprintView({
     ? phase.charAt(0).toUpperCase() + phase.slice(1)
     : '—';
 
-  // Team org-chart (R3). The team-leader-agent designation is a parallel
-  // v0.5 schema workstream; until it lands we read an optional `team_leader`
-  // hint (agent name) defensively. None present for Roxbury → leaderAgent
-  // null → the two-tier grandfathered exception (human → workers).
+  // Team org-chart (R3). `team.team_leader` (optional, v0.5 schema) names
+  // the agent that leads the team. When present and it matches an agent,
+  // that agent becomes tier 2 and the canonical 3-tier CWU renders; when
+  // absent (Roxbury, grandfathered) leaderAgent is null → two tiers
+  // (human owner → workers).
   const team = capabilityMap.team;
-  const leaderName = (team as { team_leader?: string }).team_leader;
+  const leaderName = team.team_leader;
   const leaderAgent = leaderName
     ? team.agents.find((a) => a.name === leaderName) ?? null
     : null;

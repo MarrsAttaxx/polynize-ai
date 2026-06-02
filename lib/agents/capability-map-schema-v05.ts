@@ -152,6 +152,12 @@ const TeamSchema = z.object({
     )
     .min(2)
     .max(5),
+  // Optional: names the agent that leads the team (must match an entry in
+  // `agents` by `name`). Drives the org-chart's tier-2 (team leader agent)
+  // in the canonical 3-tier CWU. Omitted for grandfathered units like
+  // Roxbury, which render two tiers (human owner → workers). Optional, so
+  // existing maps without it validate unchanged.
+  team_leader: z.string().optional(),
 });
 
 const PricingIndicativeSchema = z.object({
