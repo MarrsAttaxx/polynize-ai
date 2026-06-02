@@ -29,7 +29,11 @@
 import Link from 'next/link';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { loadBlueprintV2 } from '@/lib/blueprint/load-v2';
+import {
+  loadBlueprintV2,
+  deriveProgressPct,
+  SPRINT_STAGE_LABELS,
+} from '@/lib/blueprint/load-v2';
 import {
   parseInfrastructure,
   parseGapRegister,
@@ -168,6 +172,31 @@ export async function V2BlueprintView({
     ? team.agents.filter((a) => a.name !== leaderAgent.name)
     : team.agents;
 
+  // Readiness MEANS "how complete is the work of the CURRENT phase," and it
+  // re-scopes per phase:
+  //  - Build / Operate (a work plan is in flight) → the active work plan's
+  //    sprint-stage completion (deriveProgressPct over the 8-stage stepper).
+  //  - Modelling / earlier → how complete the Modelling blueprint is
+  //    (the 1.x computeReadiness, via ReadinessStrip's default path).
+  const inBuildPhase = phase === 'building' || phase === 'operate';
+  const activeWorkPlan =
+    workPlans.find(
+      (w) => w.plan.status === 'in_progress' || w.plan.status === 'operate'
+    )?.plan ?? null;
+
+  let completionPercentOverride: number | undefined;
+  let subtextOverride: string | undefined;
+  if (inBuildPhase && activeWorkPlan) {
+    completionPercentOverride = Math.round(deriveProgressPct(activeWorkPlan));
+    const completeStages = activeWorkPlan.sprint_stages.filter(
+      (st) => st.status === 'complete' || (st.id === 'operate' && st.status === 'active')
+    ).length;
+    const stageLabel = activeWorkPlan.current_stage
+      ? SPRINT_STAGE_LABELS[activeWorkPlan.current_stage]
+      : 'complete';
+    subtextOverride = `${activeWorkPlan.title} · ${stageLabel} (${completeStages}/8 stages)`;
+  }
+
   // Readiness props, reused at the top (R1) and in the sign-off (R5).
   const readinessProps = {
     blueprint: readinessBlueprint,
@@ -180,6 +209,8 @@ export async function V2BlueprintView({
     unitCount: 1,
     blueprintVersion: '2.0',
     phaseLabel,
+    completionPercentOverride,
+    subtextOverride,
   };
 
   return (
@@ -240,29 +271,8 @@ export async function V2BlueprintView({
           <div className={s.intro}>{capabilityMap.interpretation}</div>
         )}
 
-        {/* 3. Infrastructure (restored 1.x, side-by-side) */}
-        {infra && (infra.polynize || infra.client) && (
-          <SectionShell number="03" title="Infrastructure" id="infrastructure">
-            <Infrastructure data={infra} />
-          </SectionShell>
-        )}
-
-        {/* 4. Integration (restored 1.x) */}
-        {integrationSection && isPopulated(integrationSection.content) && (
-          <SectionShell number="04" title="Integration" id="integration">
-            <MarkdownPanel content={integrationSection.content} />
-          </SectionShell>
-        )}
-
-        {/* 5. Throughput (restored 1.x) */}
-        {throughputSection && isPopulated(throughputSection.content) && (
-          <SectionShell number="05" title="Throughput" id="throughput">
-            <MarkdownPanel content={throughputSection.content} />
-          </SectionShell>
-        )}
-
-        {/* 6. Capability map (2.0) */}
-        <SectionShell number="06" title="Capability map" id="capability-map">
+        {/* 3. Capability map (2.0) */}
+        <SectionShell number="03" title="Capability map" id="capability-map">
           <CapabilityMapInteractive
             map={capabilityMap}
             engagementModel={engagementModel}
@@ -270,8 +280,8 @@ export async function V2BlueprintView({
           />
         </SectionShell>
 
-        {/* 7. Benchmarking analysis (2.0) */}
-        <SectionShell number="07" title="Benchmarking analysis" id="benchmarking">
+        {/* 4. Benchmarking analysis (2.0) */}
+        <SectionShell number="04" title="Benchmarking analysis" id="benchmarking">
           {engagementModel ? (
             <BenchmarkingAnalysis
               map={capabilityMap}
@@ -289,8 +299,8 @@ export async function V2BlueprintView({
           )}
         </SectionShell>
 
-        {/* 8. Uplift plan (2.0) */}
-        <SectionShell number="08" title="Uplift plan" id="uplift">
+        {/* 5. Uplift plan (2.0) */}
+        <SectionShell number="05" title="Uplift plan" id="uplift">
           {engagementModel ? (
             <UpliftPlan
               map={capabilityMap}
@@ -307,8 +317,8 @@ export async function V2BlueprintView({
           )}
         </SectionShell>
 
-        {/* 9. Next steps (2.0) */}
-        <SectionShell number="09" title="Next steps" id="next-steps">
+        {/* 6. Next steps (2.0) */}
+        <SectionShell number="06" title="Next steps" id="next-steps">
           {engagementModel ? (
             <NextSteps
               model={engagementModel}
@@ -324,16 +334,37 @@ export async function V2BlueprintView({
           )}
         </SectionShell>
 
-        {/* 10. Team org-chart (proposed CWU; sits after the analysis it
+        {/* 7. Team org-chart (proposed CWU; sits after the analysis it
             follows from, not pinned at the top — it can change through
             Modelling). Three-tier canonical; Roxbury renders two tiers. */}
-        <SectionShell number="10" title="Team org-chart" id="team">
+        <SectionShell number="07" title="Team org-chart" id="team">
           <TeamOrgChart
             humanOwner={team.human_owner}
             leaderAgent={leaderAgent}
             workerAgents={workerAgents}
           />
         </SectionShell>
+
+        {/* 8. Infrastructure (restored 1.x, side-by-side) */}
+        {infra && (infra.polynize || infra.client) && (
+          <SectionShell number="08" title="Infrastructure" id="infrastructure">
+            <Infrastructure data={infra} />
+          </SectionShell>
+        )}
+
+        {/* 9. Integration (restored 1.x) */}
+        {integrationSection && isPopulated(integrationSection.content) && (
+          <SectionShell number="09" title="Integration" id="integration">
+            <MarkdownPanel content={integrationSection.content} />
+          </SectionShell>
+        )}
+
+        {/* 10. Throughput (restored 1.x) */}
+        {throughputSection && isPopulated(throughputSection.content) && (
+          <SectionShell number="10" title="Throughput" id="throughput">
+            <MarkdownPanel content={throughputSection.content} />
+          </SectionShell>
+        )}
 
         {/* 11. Gap register (1.x: add-note + status, from blueprint.md).
             canEdit is gated on team scope AND unlock — when locked the

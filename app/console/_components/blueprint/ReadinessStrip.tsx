@@ -21,15 +21,30 @@ type Props = {
    * derived from `phase` exactly as before.
    */
   phaseLabel?: string;
+  /**
+   * Optional override for the readiness percentage. When provided, the ring
+   * shows this value directly and `computeReadiness` is NOT called. Used in
+   * a build / work-plan phase where readiness means "how complete is the
+   * current work plan" (its sprint-stage progress) rather than how complete
+   * the Modelling blueprint is. Legacy callers omit it → computeReadiness.
+   */
+  completionPercentOverride?: number;
+  /**
+   * Optional override for the subtext under the ring. Defaults to the
+   * gaps summary. In a build phase we show the work plan + current stage.
+   */
+  subtextOverride?: string;
 };
 
 export function ReadinessStrip(props: Props) {
-  const completionPercent = computeReadiness({
-    blueprint: props.blueprint,
-    phase: props.phase,
-    subPhase: props.subPhase,
-    blockingGapsCount: props.gapsBlocking,
-  });
+  const completionPercent =
+    props.completionPercentOverride ??
+    computeReadiness({
+      blueprint: props.blueprint,
+      phase: props.phase,
+      subPhase: props.subPhase,
+      blockingGapsCount: props.gapsBlocking,
+    });
 
   // Ring geometry
   const size = 80;
@@ -81,7 +96,8 @@ export function ReadinessStrip(props: Props) {
             <div className={s.readinessPercent}>{completionPercent}%</div>
           </div>
           <div className={s.readinessSubtext}>
-            {props.gapsOpen} gap{props.gapsOpen === 1 ? '' : 's'} open · {props.gapsBlocking} blocking sign-off
+            {props.subtextOverride ??
+              `${props.gapsOpen} gap${props.gapsOpen === 1 ? '' : 's'} open · ${props.gapsBlocking} blocking sign-off`}
           </div>
         </div>
       </div>

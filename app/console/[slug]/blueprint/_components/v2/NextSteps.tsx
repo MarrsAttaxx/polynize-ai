@@ -38,9 +38,22 @@ export function NextSteps({
     );
   }
 
+  // Display order: Training, Transform, Agent Deploy — left-to-right mirror
+  // of the capability map's Human → Hybrid → Agentic logic (Training =
+  // People/Human, Transform = Process/Hybrid, Agent Deploy = AI/Agentic).
+  // Display only — the underlying motion data and row references are unchanged.
+  const DISPLAY_ORDER: Record<string, number> = {
+    training: 0,
+    transform: 1,
+    agent_deploy: 2,
+  };
+  const motions = [...model.motions].sort(
+    (a, b) => (DISPLAY_ORDER[a.id] ?? 99) - (DISPLAY_ORDER[b.id] ?? 99)
+  );
+
   return (
     <div className={s.motionGrid}>
-      {model.motions.map((motion) => (
+      {motions.map((motion) => (
         <div
           key={motion.id}
           className={s.motionCard}
