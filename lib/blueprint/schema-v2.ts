@@ -377,6 +377,24 @@ export const SPRINT_STAGE_LABELS: Record<SprintStageId, string> = {
   operate: 'Operate',
 };
 
+/**
+ * Per-stage weights for work-plan progress (Judgment Call 5, revisited).
+ * The stages are NOT equal-weight: the build stages are heavy, the tail
+ * (refine / handoff / operate) is light. Weights sum to 100, so a weighted
+ * sum is already a percentage. Universal across all work plans (the
+ * tail-is-lighter shape is universal, not Roxbury-specific).
+ */
+export const STAGE_WEIGHTS: Record<SprintStageId, number> = {
+  sprint_map: 10,
+  cognition_design: 20,
+  cognition_install: 20,
+  internal_testing: 15,
+  external_testing: 20,
+  refine: 8,
+  handoff: 5,
+  operate: 2,
+};
+
 export interface SprintStage {
   id: SprintStageId;
   label: string;
@@ -384,6 +402,14 @@ export interface SprintStage {
   note: string | null;
   started_at: string | null;
   completed_at: string | null;
+  /**
+   * Optional sub-progress within an ACTIVE stage, 0-100. When the active
+   * stage is partway through, this credits a proportion of its weight. If
+   * omitted, an active stage earns half its weight by default. Ignored for
+   * pending (0) and complete (full weight) stages. Lets a near-finished
+   * stage read high without faking a 'complete' status.
+   */
+  progress_pct?: number;
 }
 
 export const SprintStageSchema = z.object({
@@ -402,6 +428,7 @@ export const SprintStageSchema = z.object({
   note: z.string().nullable(),
   started_at: z.string().nullable(),
   completed_at: z.string().nullable(),
+  progress_pct: z.number().min(0).max(100).optional(),
 });
 
 export interface WorkPlan {

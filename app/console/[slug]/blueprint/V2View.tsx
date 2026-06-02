@@ -187,14 +187,14 @@ export async function V2BlueprintView({
   let completionPercentOverride: number | undefined;
   let subtextOverride: string | undefined;
   if (inBuildPhase && activeWorkPlan) {
+    // Weighted stage progress (deriveProgressPct), so the subtext names the
+    // current stage rather than a raw stage count, which would imply equal
+    // weighting and contradict the number.
     completionPercentOverride = Math.round(deriveProgressPct(activeWorkPlan));
-    const completeStages = activeWorkPlan.sprint_stages.filter(
-      (st) => st.status === 'complete' || (st.id === 'operate' && st.status === 'active')
-    ).length;
     const stageLabel = activeWorkPlan.current_stage
       ? SPRINT_STAGE_LABELS[activeWorkPlan.current_stage]
       : 'complete';
-    subtextOverride = `${activeWorkPlan.title} · ${stageLabel} (${completeStages}/8 stages)`;
+    subtextOverride = `${activeWorkPlan.title} · ${stageLabel}`;
   }
 
   // Readiness props, reused at the top (R1) and in the sign-off (R5).

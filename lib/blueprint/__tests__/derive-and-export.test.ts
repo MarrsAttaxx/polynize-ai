@@ -192,19 +192,33 @@ function wp(stagesComplete: number, operateActive = false): WorkPlan {
     last_updated: 'x',
   };
 }
-eq('progress 0/8', deriveProgressPct(wp(0)), 0);
-eq('progress 4/8', deriveProgressPct(wp(4)), 50);
-eq('progress 8/8', deriveProgressPct(wp(8)), 100);
-// operate active counts as complete: 7 complete + operate active = 8 → 100
+// WEIGHTED: sprint_map 10 / cognition_design 20 / cognition_install 20 /
+// internal_testing 15 / external_testing 20 / refine 8 / handoff 5 /
+// operate 2 (sum 100). Complete stages earn full weight.
+eq('progress 0 complete', deriveProgressPct(wp(0)), 0);
+// first 4 complete = 10+20+20+15 = 65
+eq('progress 4 complete (weighted)', deriveProgressPct(wp(4)), 65);
+eq('progress 8 complete', deriveProgressPct(wp(8)), 100);
+// 7 complete (10+20+20+15+20+8+5 = 98) + operate active (full 2) = 100
 eq('progress operate-active', deriveProgressPct(wp(7, true)), 100);
-eq('progress 3/8 rounds', deriveProgressPct(wp(3)), 37.5);
+// first 3 complete = 10+20+20 = 50
+eq('progress 3 complete (weighted)', deriveProgressPct(wp(3)), 50);
+
+// Active stage with no sub-progress earns HALF its weight.
+{
+  const plan = wp(4); // 65 complete
+  plan.sprint_stages[4].status = 'active'; // external_testing (weight 20)
+  eq('active half-credit (no sub-progress)', deriveProgressPct(plan), 75); // 65 + 0.5*20
+  plan.sprint_stages[4].progress_pct = 100; // nearly done → full credit
+  eq('active full-credit (sub-progress 100)', deriveProgressPct(plan), 85); // 65 + 20
+}
 
 // ----- recomputeDerived (work-plan-io) -----
 {
-  const plan = wp(2);
-  plan.sprint_stages[2].status = 'active';
+  const plan = wp(2); // sprint_map + cognition_design complete = 30
+  plan.sprint_stages[2].status = 'active'; // cognition_install (weight 20) active
   recomputeDerived(plan);
-  eq('recompute progress 2/8', plan.progress_pct, 25);
+  eq('recompute weighted', plan.progress_pct, 40); // 30 + 0.5*20
   eq('recompute current_stage', plan.current_stage, 'cognition_install');
 }
 

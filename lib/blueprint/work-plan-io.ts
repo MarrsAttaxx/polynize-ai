@@ -6,10 +6,10 @@
  */
 
 import { readClientFile, writeClientFile } from '../github-client';
+import { deriveProgressPct } from './load-v2';
 import {
   WorkPlanSchema,
   type WorkPlan,
-  SPRINT_STAGE_ORDER,
 } from './schema-v2';
 
 function planPath(id: string): string {
@@ -57,15 +57,10 @@ export async function loadWorkPlanForWrite(
   return { ok: true, plan: parsed.data };
 }
 
-/** Recompute progress_pct and current_stage from sprint stage states. */
+/** Recompute progress_pct (WEIGHTED, via deriveProgressPct) and
+ *  current_stage from sprint stage states. */
 export function recomputeDerived(plan: WorkPlan): void {
-  const total = SPRINT_STAGE_ORDER.length;
-  let completeCount = 0;
-  for (const st of plan.sprint_stages) {
-    if (st.status === 'complete') completeCount += 1;
-    else if (st.id === 'operate' && st.status === 'active') completeCount += 1;
-  }
-  plan.progress_pct = Math.round((completeCount / total) * 1000) / 10;
+  plan.progress_pct = deriveProgressPct(plan);
   const active = plan.sprint_stages.find((s) => s.status === 'active');
   plan.current_stage = active ? active.id : null;
 }

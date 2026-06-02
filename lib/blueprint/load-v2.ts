@@ -49,6 +49,7 @@ import {
   type MotionId,
   SPRINT_STAGE_ORDER,
   SPRINT_STAGE_LABELS,
+  STAGE_WEIGHTS,
   UNLOCKED_INITIAL,
 } from './schema-v2';
 
@@ -450,25 +451,42 @@ export function deriveGapRegister(
 // ============================================================
 
 /**
- * Derive progress_pct from sprint stage completion.
+ * Derive progress_pct from sprint stage completion, WEIGHTED.
  *
- * Spec §5.1 / Judgment Call 5: (complete stages / 8) * 100. `operate`
- * counts as complete once entered (active or complete), since it's an
- * ongoing maintained state rather than a closing milestone.
+ * Spec §5.1 / Judgment Call 5 (revisited): stages are not equal-weight, so
+ * this is a weighted sum (STAGE_WEIGHTS, summing to 100) rather than
+ * complete/8. The build stages are heavy; the refine/handoff/operate tail
+ * is light. Universal across all work plans.
  *
- * Returns a number rounded to one decimal (e.g. 37.5).
+ *   complete stage   → full weight
+ *   active stage     → a proportion of its weight: the stage's own
+ *                      progress_pct if set, else 50% (half) by default
+ *   operate active   → full weight (an ongoing maintained state counts as
+ *                      done once entered, not a closing milestone)
+ *   pending stage    → 0
+ *
+ * Returns a number rounded to one decimal.
  */
 export function deriveProgressPct(plan: WorkPlan): number {
-  const total = SPRINT_STAGE_ORDER.length;
-  let completeCount = 0;
+  let earned = 0;
   for (const stage of plan.sprint_stages) {
+    const weight = STAGE_WEIGHTS[stage.id] ?? 0;
     if (stage.status === 'complete') {
-      completeCount += 1;
-    } else if (stage.id === 'operate' && stage.status === 'active') {
-      completeCount += 1;
+      earned += weight;
+    } else if (stage.status === 'active') {
+      if (stage.id === 'operate') {
+        earned += weight;
+      } else {
+        const frac =
+          typeof stage.progress_pct === 'number'
+            ? Math.max(0, Math.min(100, stage.progress_pct)) / 100
+            : 0.5;
+        earned += weight * frac;
+      }
     }
+    // pending → 0
   }
-  return Math.round((completeCount / total) * 1000) / 10;
+  return Math.round(earned * 10) / 10;
 }
 
 // ============================================================
@@ -536,4 +554,9 @@ export type {
   ClientConfigV2Additions,
 };
 
-export { UNLOCKED_INITIAL, SPRINT_STAGE_ORDER, SPRINT_STAGE_LABELS };
+export {
+  UNLOCKED_INITIAL,
+  SPRINT_STAGE_ORDER,
+  SPRINT_STAGE_LABELS,
+  STAGE_WEIGHTS,
+};
