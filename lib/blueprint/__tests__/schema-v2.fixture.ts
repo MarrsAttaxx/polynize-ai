@@ -224,6 +224,32 @@ if (!carlResult.ok) {
 // eslint-disable-next-line no-console
 console.log('OK: Carl-shaped CapabilityMapV05 envelope validates.');
 
+// ----- 1b. Team agents cap: min 2, max 6 (raised from 5) -----
+function carlWithAgentCount(n: number) {
+  const agents = Array.from({ length: n }, (_, i) => ({
+    name: `Agent${i + 1}`,
+    role: 'role',
+    short_desc: 'desc',
+  }));
+  return {
+    capability_map: {
+      ...carlEnvelope.capability_map,
+      team: { ...carlEnvelope.capability_map.team, agents },
+    },
+  };
+}
+if (!validateCapabilityMapV05(carlWithAgentCount(6)).ok) {
+  throw new Error('6-agent team should validate (TeamSchema max raised to 6).');
+}
+if (validateCapabilityMapV05(carlWithAgentCount(7)).ok) {
+  throw new Error('7-agent team should NOT validate (TeamSchema max is 6).');
+}
+if (validateCapabilityMapV05(carlWithAgentCount(1)).ok) {
+  throw new Error('1-agent team should NOT validate (TeamSchema min is 2).');
+}
+// eslint-disable-next-line no-console
+console.log('OK: team agents cap is min 2, max 6 (6 valid, 7 invalid, 1 invalid).');
+
 // ----- 2. EngagementModel fixture -----
 const engagementModel: EngagementModel = {
   schema_version: '1.0',
