@@ -108,6 +108,12 @@ export type GapRegisterRow = {
   question: string;
   owner: string;
   blocks: string;
+  /**
+   * Whether this gap gates Modelling sign-off. The source of truth is the
+   * per-row "Blocking" column when present; legacy tables without that
+   * column read every row as non-blocking (false).
+   */
+  blocking: boolean;
   status: string;
   notes?: string;
 };
@@ -116,6 +122,13 @@ export type GapRegisterParsed = {
   rows: GapRegisterRow[];
   openCount: number;
   blockingCount: number;
+  /** Critical blockers (blocking: true) that are resolved (answered/closed). */
+  blockingResolved: number;
+  /**
+   * True when the table carries an explicit "Blocking" column. Drives the
+   * two-group split rendering; legacy tables (no column) render flat.
+   */
+  hasBlockingColumn: boolean;
 };
 
 export type AgentDescription = {
@@ -226,17 +239,55 @@ export function parseCapabilityMapAgent(content: string): AgentCapabilityCard[] 
   return cards;
 }
 
+/** Find a column index by header substring (case-insensitive). -1 if absent. */
+function findCol(headers: string[], ...needles: string[]): number {
+  for (let i = 0; i < headers.length; i++) {
+    const h = headers[i].toLowerCase();
+    if (needles.some((n) => h.includes(n))) return i;
+  }
+  return -1;
+}
+
+const RESOLVED_STATUSES = new Set(['answered', 'closed', 'resolved', 'done']);
+const BLOCKING_TRUE = /^\s*(y|yes|true|✓|✔|blocking|critical)/i;
+
+/**
+ * Parse the gap register markdown table. Column mapping is HEADER-AWARE (by
+ * name, not fixed position) so adding a "Blocking" column does not shift the
+ * others; it falls back to the legacy fixed positions when a header is not
+ * recognised, so older tables still parse identically.
+ *
+ * The per-row `blocking` flag comes from the "Blocking" column when present.
+ * `blockingCount` is the per-row count when that column exists, else the
+ * footer's "N blocking" number (preserving legacy readiness behaviour, which
+ * reads the footer count via computeReadiness).
+ */
 export function parseGapRegister(content: string): GapRegisterParsed | null {
   const table = parseMarkdownTable(content);
   if (!table || table.rows.length === 0) return null;
 
+  const H = table.headers;
+  const idIdx = findCol(H, '#', 'id');
+  const qIdx = findCol(H, 'question', 'outstanding');
+  const ownerIdx = findCol(H, 'owner');
+  const blocksIdx = findCol(H, 'blocks');
+  const blockingIdx = findCol(H, 'blocking');
+  const statusIdx = findCol(H, 'status');
+  const notesIdx = findCol(H, 'note');
+  const hasBlockingColumn = blockingIdx >= 0;
+
+  // Read a cell by resolved header index, falling back to a legacy position.
+  const at = (cells: string[], idx: number, fallback: number): string =>
+    (idx >= 0 ? cells[idx] : cells[fallback]) ?? '';
+
   const rows: GapRegisterRow[] = table.rows.map((cells) => ({
-    id: cells[0] ?? '',
-    question: cells[1] ?? '',
-    owner: cells[2] ?? '',
-    blocks: cells[3] ?? '',
-    status: (cells[4] ?? '').toLowerCase(),
-    notes: cells[5] ?? '',
+    id: at(cells, idIdx, 0),
+    question: at(cells, qIdx, 1),
+    owner: at(cells, ownerIdx, 2),
+    blocks: at(cells, blocksIdx, 3),
+    blocking: blockingIdx >= 0 ? BLOCKING_TRUE.test(cells[blockingIdx] ?? '') : false,
+    status: at(cells, statusIdx, 4).toLowerCase(),
+    notes: at(cells, notesIdx, 5),
   }));
 
   // Footer line: "**Status:** 11 gaps open · 5 blocking sign-off."
@@ -246,9 +297,18 @@ export function parseGapRegister(content: string): GapRegisterParsed | null {
   const openCount = footerMatch
     ? Number(footerMatch[1])
     : rows.filter((r) => r.status === 'open').length;
-  const blockingCount = footerMatch ? Number(footerMatch[2]) : 0;
+  // Per-row count is authoritative once the Blocking column exists; the footer
+  // is the legacy fallback for older tables (keeps computeReadiness stable).
+  const blockingCount = hasBlockingColumn
+    ? rows.filter((r) => r.blocking).length
+    : footerMatch
+      ? Number(footerMatch[2])
+      : 0;
+  const blockingResolved = rows.filter(
+    (r) => r.blocking && RESOLVED_STATUSES.has(r.status)
+  ).length;
 
-  return { rows, openCount, blockingCount };
+  return { rows, openCount, blockingCount, blockingResolved, hasBlockingColumn };
 }
 
 // ============================================================

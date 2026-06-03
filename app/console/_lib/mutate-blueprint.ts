@@ -47,20 +47,35 @@ function capitalize(s: string): string {
   return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
-function emitGapTable(rows: GapRegisterRow[]): string {
-  const lines = [
-    '| # | Outstanding question | Owner | Blocks | Status | Notes |',
-    '|---|---|---|---|---|---|',
-  ];
+/**
+ * Re-emit the gap table. Preserves the "Blocking" column only when the source
+ * table had one (hasBlockingColumn) so editing a gap in a split table keeps
+ * the classification, and editing a legacy table does not grow a new column.
+ */
+function emitGapTable(rows: GapRegisterRow[], hasBlockingColumn: boolean): string {
+  const lines = hasBlockingColumn
+    ? [
+        '| # | Outstanding question | Owner | Blocks | Blocking | Status | Notes |',
+        '|---|---|---|---|---|---|---|',
+      ]
+    : [
+        '| # | Outstanding question | Owner | Blocks | Status | Notes |',
+        '|---|---|---|---|---|---|',
+      ];
   for (const row of rows) {
-    const cells = [
+    const head = [
       escapeCell(row.id),
       escapeCell(row.question),
       escapeCell(row.owner),
       escapeCell(row.blocks),
+    ];
+    const tail = [
       escapeCell(capitalize(row.status || 'open')),
       escapeCell(row.notes ?? ''),
     ];
+    const cells = hasBlockingColumn
+      ? [...head, row.blocking ? 'Yes' : 'No', ...tail]
+      : [...head, ...tail];
     lines.push(`| ${cells.join(' | ')} |`);
   }
   return lines.join('\n');
@@ -71,6 +86,7 @@ type SplitGapSection = {
   rows: GapRegisterRow[];
   blockingCount: number;
   trailing: string;
+  hasBlockingColumn: boolean;
 };
 
 function splitGapSection(content: string): SplitGapSection {
@@ -105,13 +121,38 @@ function splitGapSection(content: string): SplitGapSection {
 
   const tableText = lines.slice(tableStart, tableEnd + 1).join('\n');
   const table = parseMarkdownTable(tableText);
+  // Header-aware column mapping (mirrors parseGapRegister) so adding a
+  // "Blocking" column does not shift the others; falls back to legacy
+  // positions when a header is not recognised.
+  const H = table?.headers ?? [];
+  const find = (...needles: string[]): number => {
+    for (let i = 0; i < H.length; i++) {
+      const h = H[i].toLowerCase();
+      if (needles.some((n) => h.includes(n))) return i;
+    }
+    return -1;
+  };
+  const idIdx = find('#', 'id');
+  const qIdx = find('question', 'outstanding');
+  const ownerIdx = find('owner');
+  const blocksIdx = find('blocks');
+  const blockingIdx = find('blocking');
+  const statusIdx = find('status');
+  const notesIdx = find('note');
+  const hasBlockingColumn = blockingIdx >= 0;
+  const at = (cells: string[], idx: number, fb: number): string =>
+    (idx >= 0 ? cells[idx] : cells[fb]) ?? '';
   const rows: GapRegisterRow[] = (table?.rows ?? []).map((cells) => ({
-    id: cells[0] ?? '',
-    question: cells[1] ?? '',
-    owner: cells[2] ?? '',
-    blocks: cells[3] ?? '',
-    status: (cells[4] ?? '').toLowerCase(),
-    notes: cells[5] ?? '',
+    id: at(cells, idIdx, 0),
+    question: at(cells, qIdx, 1),
+    owner: at(cells, ownerIdx, 2),
+    blocks: at(cells, blocksIdx, 3),
+    blocking:
+      blockingIdx >= 0
+        ? /^\s*(y|yes|true|✓|✔|blocking|critical)/i.test(cells[blockingIdx] ?? '')
+        : false,
+    status: at(cells, statusIdx, 4).toLowerCase(),
+    notes: at(cells, notesIdx, 5),
   }));
 
   let blockingCount = 0;
@@ -127,7 +168,7 @@ function splitGapSection(content: string): SplitGapSection {
     footerLineIdx !== -1 ? footerLineIdx + 1 : tableEnd + 1;
   const trailing = lines.slice(trailingStart).join('\n').trim();
 
-  return { lede, rows, blockingCount, trailing };
+  return { lede, rows, blockingCount, trailing, hasBlockingColumn };
 }
 
 function rebuildGapSectionBody(
@@ -138,12 +179,16 @@ function rebuildGapSectionBody(
   const openCount = newRows.filter(
     (r) => r.status.toLowerCase() === 'open'
   ).length;
-  const blockingCount = blockingCountOverride ?? split.blockingCount;
+  const blockingCount =
+    blockingCountOverride ??
+    (split.hasBlockingColumn
+      ? newRows.filter((r) => r.blocking).length
+      : split.blockingCount);
   const newFooter = `**Status:** ${openCount} gap${
     openCount === 1 ? '' : 's'
   } open · ${blockingCount} blocking sign-off.`;
 
-  const table = emitGapTable(newRows);
+  const table = emitGapTable(newRows, split.hasBlockingColumn);
 
   const parts: string[] = [];
   if (split.lede) parts.push(split.lede, '');
@@ -228,6 +273,7 @@ export function createGapInBlueprint(
     question: newGap.question ?? '',
     owner: newGap.owner ?? '',
     blocks: newGap.blocks ?? '',
+    blocking: newGap.blocking ?? false,
     status: (newGap.status ?? 'open').toLowerCase(),
     notes: newGap.notes ?? '',
   };

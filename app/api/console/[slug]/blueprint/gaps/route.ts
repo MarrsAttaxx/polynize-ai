@@ -88,6 +88,7 @@ export async function POST(
       question: parsed.data.question,
       owner: parsed.data.owner,
       blocks: parsed.data.blocks,
+      blocking: false,
       status: parsed.data.status,
       notes: parsed.data.notes ?? '',
     });

@@ -53,8 +53,16 @@ export function GapRegister({ data, slug, canEdit }: Props) {
     setRows(data.rows);
   }, [data.rows]);
 
+  // Two-group split (C1): when the table carries an explicit Blocking column,
+  // separate the critical sign-off blockers from the in-build work. Legacy
+  // tables (no column) render as one flat list, unchanged.
+  const hasSplit = data.hasBlockingColumn;
+  const blockerRows = rows.filter((r) => r.blocking);
+  const inBuildRows = rows.filter((r) => !r.blocking);
   const openCount = rows.filter((r) => r.status.toLowerCase() === 'open').length;
-  const blockingCount = data.blockingCount;
+  const blockersOpen = blockerRows.filter(
+    (r) => r.status.toLowerCase() === 'open'
+  ).length;
 
   async function updateGap(
     gapId: string,
@@ -114,8 +122,132 @@ export function GapRegister({ data, slug, canEdit }: Props) {
     }
   }
 
-  return (
-    <div className={s.gapRegister}>
+  function renderRow(row: GapRegisterRow) {
+    return (
+      <div key={row.id} className={s.gapRowGroup}>
+        <div className={s.gapRow}>
+          <div className={s.gapId}>{row.id}</div>
+          <div className={s.gapQuestion}>{row.question}</div>
+          <div className={s.gapOwner}>{row.owner}</div>
+          <div className={s.gapBlocks}>{row.blocks}</div>
+          <div className={s.gapStatus}>
+            {canEdit ? (
+              <>
+                <button
+                  type="button"
+                  className={`${s.statusPill} ${statusClass(row.status)} ${s.statusPillButton}`}
+                  onClick={() =>
+                    setStatusOpenFor((prev) => (prev === row.id ? null : row.id))
+                  }
+                  disabled={savingId === row.id}
+                  aria-haspopup="menu"
+                  aria-expanded={statusOpenFor === row.id}
+                >
+                  {row.status || 'open'}
+                </button>
+                {statusOpenFor === row.id && (
+                  <div className={s.statusDropdown} role="menu">
+                    {STATUS_OPTIONS.map((opt) => (
+                      <button
+                        key={opt}
+                        type="button"
+                        role="menuitem"
+                        className={`${s.statusOption} ${statusClass(opt)} ${
+                          opt === row.status ? s.statusOptionCurrent : ''
+                        }`}
+                        onClick={() => {
+                          setStatusOpenFor(null);
+                          if (opt !== row.status)
+                            updateGap(row.id, { status: opt });
+                        }}
+                      >
+                        {opt}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </>
+            ) : (
+              // Read-only: plain text, not a pill. Different enough from
+              // the editable variant that there's no implicit affordance
+              // suggesting click.
+              <span className={`${s.statusStatic} ${statusClass(row.status)}`}>
+                {row.status || 'open'}
+              </span>
+            )}
+          </div>
+        </div>
+
+        <div className={s.gapNotesRow}>
+          {canEdit ? (
+            notesEditingFor === row.id ? (
+              <div className={s.notesEditor}>
+                <textarea
+                  className={s.notesTextarea}
+                  value={notesDraft}
+                  onChange={(e) => setNotesDraft(e.target.value)}
+                  rows={2}
+                  placeholder="e.g., Confirmed on call 20 May."
+                  autoFocus
+                />
+                <div className={s.notesActions}>
+                  <button
+                    type="button"
+                    className={s.notesSaveBtn}
+                    onClick={() => commitNotes(row)}
+                  >
+                    Save
+                  </button>
+                  <button
+                    type="button"
+                    className={s.notesCancelBtn}
+                    onClick={() => setNotesEditingFor(null)}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            ) : row.notes ? (
+              <button
+                type="button"
+                className={s.notesDisplay}
+                onClick={() => openNotesEditor(row)}
+              >
+                <span className={s.notesLabel}>Note</span>
+                <span className={s.notesText}>{row.notes}</span>
+              </button>
+            ) : (
+              <button
+                type="button"
+                className={s.notesAddLink}
+                onClick={() => openNotesEditor(row)}
+              >
+                + Add note
+              </button>
+            )
+          ) : (
+            // Read-only: show existing notes as static text, omit
+            // the "+ Add note" affordance entirely. No errors to
+            // display either — no writes happen on this path.
+            row.notes && (
+              <div className={s.notesStatic}>
+                <span className={s.notesLabel}>Note</span>
+                <span className={s.notesText}>{row.notes}</span>
+              </div>
+            )
+          )}
+          {canEdit && errorByGap[row.id] && (
+            <div className={s.notesError} role="alert">
+              {errorByGap[row.id]}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  function GapTable({ groupRows }: { groupRows: GapRegisterRow[] }) {
+    return (
       <div className={s.gapTable}>
         <div className={`${s.gapRow} ${s.gapRowHead}`}>
           <div className={s.gapId}>#</div>
@@ -124,138 +256,60 @@ export function GapRegister({ data, slug, canEdit }: Props) {
           <div className={s.gapBlocks}>Blocks</div>
           <div className={s.gapStatus}>Status</div>
         </div>
+        {groupRows.map(renderRow)}
+      </div>
+    );
+  }
 
-        {rows.map((row) => (
-          <div key={row.id} className={s.gapRowGroup}>
-            <div className={s.gapRow}>
-              <div className={s.gapId}>{row.id}</div>
-              <div className={s.gapQuestion}>{row.question}</div>
-              <div className={s.gapOwner}>{row.owner}</div>
-              <div className={s.gapBlocks}>{row.blocks}</div>
-              <div className={s.gapStatus}>
-                {canEdit ? (
-                  <>
-                    <button
-                      type="button"
-                      className={`${s.statusPill} ${statusClass(row.status)} ${s.statusPillButton}`}
-                      onClick={() =>
-                        setStatusOpenFor((prev) =>
-                          prev === row.id ? null : row.id
-                        )
-                      }
-                      disabled={savingId === row.id}
-                      aria-haspopup="menu"
-                      aria-expanded={statusOpenFor === row.id}
-                    >
-                      {row.status || 'open'}
-                    </button>
-                    {statusOpenFor === row.id && (
-                      <div className={s.statusDropdown} role="menu">
-                        {STATUS_OPTIONS.map((opt) => (
-                          <button
-                            key={opt}
-                            type="button"
-                            role="menuitem"
-                            className={`${s.statusOption} ${statusClass(opt)} ${
-                              opt === row.status ? s.statusOptionCurrent : ''
-                            }`}
-                            onClick={() => {
-                              setStatusOpenFor(null);
-                              if (opt !== row.status)
-                                updateGap(row.id, { status: opt });
-                            }}
-                          >
-                            {opt}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </>
-                ) : (
-                  // Read-only: plain text, not a pill. Different enough from
-                  // the editable variant that there's no implicit affordance
-                  // suggesting click.
-                  <span
-                    className={`${s.statusStatic} ${statusClass(row.status)}`}
-                  >
-                    {row.status || 'open'}
-                  </span>
-                )}
-              </div>
-            </div>
+  // Legacy / no-blocking-column tables: one flat list, exactly as before.
+  if (!hasSplit) {
+    return (
+      <div className={s.gapRegister}>
+        <GapTable groupRows={rows} />
+        <div className={s.gapFooter}>
+          <strong>{openCount}</strong> gap{openCount === 1 ? '' : 's'} open
+          {' · '}
+          <strong>{data.blockingCount}</strong> blocking sign-off
+        </div>
+      </div>
+    );
+  }
 
-            <div className={s.gapNotesRow}>
-              {canEdit ? (
-                notesEditingFor === row.id ? (
-                  <div className={s.notesEditor}>
-                    <textarea
-                      className={s.notesTextarea}
-                      value={notesDraft}
-                      onChange={(e) => setNotesDraft(e.target.value)}
-                      rows={2}
-                      placeholder="e.g., Confirmed on call 20 May."
-                      autoFocus
-                    />
-                    <div className={s.notesActions}>
-                      <button
-                        type="button"
-                        className={s.notesSaveBtn}
-                        onClick={() => commitNotes(row)}
-                      >
-                        Save
-                      </button>
-                      <button
-                        type="button"
-                        className={s.notesCancelBtn}
-                        onClick={() => setNotesEditingFor(null)}
-                      >
-                        Cancel
-                      </button>
-                    </div>
-                  </div>
-                ) : row.notes ? (
-                  <button
-                    type="button"
-                    className={s.notesDisplay}
-                    onClick={() => openNotesEditor(row)}
-                  >
-                    <span className={s.notesLabel}>Note</span>
-                    <span className={s.notesText}>{row.notes}</span>
-                  </button>
-                ) : (
-                  <button
-                    type="button"
-                    className={s.notesAddLink}
-                    onClick={() => openNotesEditor(row)}
-                  >
-                    + Add note
-                  </button>
-                )
-              ) : (
-                // Read-only: show existing notes as static text, omit
-                // the "+ Add note" affordance entirely. No errors to
-                // display either — no writes happen on this path.
-                row.notes && (
-                  <div className={s.notesStatic}>
-                    <span className={s.notesLabel}>Note</span>
-                    <span className={s.notesText}>{row.notes}</span>
-                  </div>
-                )
-              )}
-              {canEdit && errorByGap[row.id] && (
-                <div className={s.notesError} role="alert">
-                  {errorByGap[row.id]}
-                </div>
-              )}
-            </div>
-          </div>
-        ))}
+  // Split view: critical blockers (gate sign-off) above, in-build work below.
+  return (
+    <div className={s.gapRegister}>
+      <div className={s.gapGroup}>
+        <div className={s.gapGroupHead}>
+          <span className={s.gapGroupTitle}>Critical blockers</span>
+          <span className={s.gapGroupHint}>gate Modelling sign-off</span>
+        </div>
+        {blockerRows.length > 0 ? (
+          <GapTable groupRows={blockerRows} />
+        ) : (
+          <p className={s.gapGroupEmpty}>No critical blockers. Nothing gates sign-off.</p>
+        )}
+      </div>
+
+      <div className={s.gapGroup}>
+        <div className={s.gapGroupHead}>
+          <span className={s.gapGroupTitle}>Gaps to resolve in build</span>
+          <span className={s.gapGroupHint}>real work, not sign-off blockers</span>
+        </div>
+        {inBuildRows.length > 0 ? (
+          <GapTable groupRows={inBuildRows} />
+        ) : (
+          <p className={s.gapGroupEmpty}>None.</p>
+        )}
       </div>
 
       <div className={s.gapFooter}>
-        <strong>{openCount}</strong> gap{openCount === 1 ? '' : 's'} open
+        <strong>{blockerRows.length}</strong> critical blocker
+        {blockerRows.length === 1 ? '' : 's'}
+        {blockerRows.length > 0 && ` (${blockersOpen} open)`}
         {' · '}
-        <strong>{blockingCount}</strong> blocking sign-off
+        <strong>{inBuildRows.length}</strong> to resolve in build
+        {' · '}
+        {openCount} gap{openCount === 1 ? '' : 's'} open total
       </div>
     </div>
   );
