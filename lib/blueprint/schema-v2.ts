@@ -84,6 +84,53 @@ export function normalizeToV05Envelope(
 // / hiring_comparison (unused by the Console) are optional.
 // ============================================================
 
+// Lenient list-item schemas. Real maps in Shourov's vocabulary often give
+// these as bare strings (or, for evidence, a {source, speaker, quote} shape)
+// rather than the canonical objects. Each accepts BOTH forms and NORMALIZES
+// to the canonical shape via .transform(), so downstream consumers
+// (deriveGapRegister, the context export, the renderers, the regression
+// tests) stay unchanged. The string branch is tried first; for object input
+// it fails fast and the object branch runs.
+const LenientEvidenceSchema = z.union([
+  z.string().transform((quote) => ({ source_id: '', quote })),
+  z
+    .object({
+      source_id: z.string().optional(),
+      source: z.string().optional(),
+      speaker: z.string().optional(),
+      quote: z.string().default(''),
+    })
+    .transform((e) => ({ source_id: e.source_id ?? e.source ?? '', quote: e.quote })),
+]);
+
+const LenientGapSchema = z.union([
+  z.string().transform((question) => ({ gap_type: 'OPEN', question, blocking: false })),
+  z.object({
+    gap_type: z.string().default('OPEN'),
+    question: z.string().default(''),
+    blocking: z.boolean().default(false),
+  }),
+]);
+
+const LenientScopeUncertaintySchema = z.union([
+  z.string().transform((question) => ({ topic: '', question })),
+  z.object({ topic: z.string().default(''), question: z.string().default('') }),
+]);
+
+const LenientCrossCuttingSchema = z.union([
+  z.string().transform((item) => ({ item, reading: '', question: '' })),
+  z.object({
+    item: z.string().default(''),
+    reading: z.string().default(''),
+    question: z.string().default(''),
+  }),
+]);
+
+const LenientDecisionDeferredSchema = z.union([
+  z.string().transform((topic) => ({ topic, reason: '' })),
+  z.object({ topic: z.string().default(''), reason: z.string().default('') }),
+]);
+
 const LenientWorkShapeSchema = z.object({
   type: z.string(),
   inputs: z.array(z.string()).default([]),
@@ -103,9 +150,7 @@ const LenientCapabilityRowSchema = z.object({
   failure_cost_note: z.string().default(''),
   work_shape: LenientWorkShapeSchema,
   edge_cases: z.array(z.string()).default([]),
-  evidence: z
-    .array(z.object({ source_id: z.string(), quote: z.string() }))
-    .default([]),
+  evidence: z.array(LenientEvidenceSchema).default([]),
   human_handoff: z
     .object({
       emit_artifact: z.string(),
@@ -116,15 +161,7 @@ const LenientCapabilityRowSchema = z.object({
     .default(null),
   confidence: z.string().default('Medium'),
   completeness: z.enum(['COMPLETE', 'PARTIAL', 'STUB', 'GHOST']), // load-bearing
-  gaps_to_close: z
-    .array(
-      z.object({
-        gap_type: z.string(),
-        question: z.string(),
-        blocking: z.boolean().default(false),
-      })
-    )
-    .default([]),
+  gaps_to_close: z.array(LenientGapSchema).default([]),
   delta_status: z.string().default('added'),
 });
 
@@ -164,21 +201,9 @@ const LenientCapabilityMapSchema = z.object({
     notes: z.string().default(''),
   }),
   map_reflection: z.object({
-    scope_uncertainty: z
-      .array(z.object({ topic: z.string(), question: z.string() }))
-      .default([]),
-    cross_cutting_candidates: z
-      .array(
-        z.object({
-          item: z.string(),
-          reading: z.string(),
-          question: z.string(),
-        })
-      )
-      .default([]),
-    decisions_deferred: z
-      .array(z.object({ topic: z.string(), reason: z.string() }))
-      .default([]),
+    scope_uncertainty: z.array(LenientScopeUncertaintySchema).default([]),
+    cross_cutting_candidates: z.array(LenientCrossCuttingSchema).default([]),
+    decisions_deferred: z.array(LenientDecisionDeferredSchema).default([]),
   }),
   excluded_capabilities: z
     .array(z.object({ name: z.string(), reason: z.string() }))
