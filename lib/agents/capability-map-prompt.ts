@@ -54,7 +54,7 @@ Before emitting JSON, work through the following internally. Do not narrate this
 
 6. Populate every schema field you can. Where the answers don't give you enough to populate a field with row-specific content, mark the row as PARTIAL or STUB and add a gap question that would close it during the modeling call. Where the bottleneck implies a capability you'd expect to exist but the prospect didn't mention, add it as a GHOST row.
 
-7. Compose the prospect-facing layer. Interpretation paragraph referencing the specific bottleneck. Team of 2-5 agents with short memorable names and role titles. Leverage estimate with rationale including a hiring comparison. Pricing per the indicative bands.
+7. Compose the prospect-facing layer. Interpretation paragraph referencing the specific bottleneck. Team of 2-6 agents with short memorable names and role titles. Leverage estimate with rationale including a hiring comparison. Pricing per the indicative bands.
 
 ---
 
@@ -175,7 +175,7 @@ In addition to the row schema above, the website map carries these prospect-faci
 Two sentences referencing the prospect's specific bottleneck. Confident and specific. Frames what the map is showing them.
 
 ### team
-A small agent team designed to handle the Agent and Hybrid capabilities. 2-5 agents. Single-word names. The team emerges from the map, not the other way around.
+A small agent team designed to handle the Agent and Hybrid capabilities. 2-6 agents. Single-word names. The team emerges from the map, not the other way around.
 
 { "human_owner": { "name": "You", "role": "<one sentence>" }, "agents": [{ "name": "<single word>", "role": "<role title>", "short_desc": "<one sentence>" }] }
 
