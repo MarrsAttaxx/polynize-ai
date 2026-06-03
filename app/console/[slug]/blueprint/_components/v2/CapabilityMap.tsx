@@ -4,10 +4,11 @@
  * Lifted from the polynize.ai visual spec, rendered in the Console
  * Tactile palette. Per cluster (stacked sections):
  *   - cluster header (name + type)
- *   - 4-column grid: 2fr label + 1fr x 3 lanes (HUMAN / HYBRID / AGENTIC)
+ *   - 5-column grid: 2fr label + 1fr x 3 lanes (HUMAN / HYBRID / AGENTIC) +
+ *     a completeness meter column (low / mid / full fill + label)
  *   - filled cell = the allocated lane, with the §9.1 glow recipe
- *   - completeness treatments per §9.4
- *   - all capability detail inline by default (transparency, §9.3)
+ *   - completeness treatments per §9.4 on the lit cell; the meter column
+ *     states it explicitly. Risk (failure_cost) lives in the modal only.
  *
  * The column header for the data value 'Agent' reads "AGENTIC".
  *
@@ -91,26 +92,46 @@ function cellClass(
   return `${s.cell} ${toneClass}${completeness}`;
 }
 
-function CompletenessTag({ cap }: { cap: Cap }) {
-  if (cap.completeness === 'COMPLETE') return null;
-  const cls =
-    cap.completeness === 'PARTIAL'
-      ? `${s.tag} ${s.tagPartial}`
-      : cap.completeness === 'STUB'
-        ? `${s.tag} ${s.tagStub}`
-        : `${s.tag} ${s.tagGhost}`;
-  return <span className={cls}>{cap.completeness}</span>;
-}
+/**
+ * Completeness meter (its own column). Communicates "how complete is the
+ * data we have on this capability" at a glance: a low / mid / full meter plus
+ * a label. The underlying STUB / PARTIAL / COMPLETE values are unchanged;
+ * this is a display mapping only. GHOST (a placeholder row not yet mapped)
+ * reads as an empty meter.
+ */
+const COMPLETENESS_DISPLAY: Record<
+  Cap['completeness'],
+  { level: number; label: string }
+> = {
+  COMPLETE: { level: 3, label: 'Fully mapped' },
+  PARTIAL: { level: 2, label: 'Partly mapped' },
+  STUB: { level: 1, label: 'Needs detail' },
+  GHOST: { level: 0, label: 'Ghost' },
+};
 
-function RiskTag({ cap }: { cap: Cap }) {
-  if (cap.failure_cost === 'N/A') return null;
-  const cls =
-    cap.failure_cost === 'High'
-      ? `${s.riskTag} ${s.riskHigh}`
-      : cap.failure_cost === 'Medium'
-        ? `${s.riskTag} ${s.riskMedium}`
-        : `${s.riskTag} ${s.riskLow}`;
-  return <span className={cls}>risk: {cap.failure_cost.toLowerCase()}</span>;
+function CompletenessMeter({ cap }: { cap: Cap }) {
+  const d = COMPLETENESS_DISPLAY[cap.completeness] ?? {
+    level: 0,
+    label: cap.completeness,
+  };
+  return (
+    <div
+      className={`${s.meterCell} ${
+        cap.completeness === 'GHOST' ? s.meterCellGhost : ''
+      }`}
+      title={`Completeness: ${cap.completeness}`}
+    >
+      <div className={s.meterTrack} aria-hidden>
+        {[0, 1, 2].map((i) => (
+          <span
+            key={i}
+            className={`${s.meterPip} ${i < d.level ? s.meterPipOn : ''}`}
+          />
+        ))}
+      </div>
+      <span className={s.meterLabel}>{d.label}</span>
+    </div>
+  );
 }
 
 export function CapabilityRowView({
@@ -145,18 +166,17 @@ export function CapabilityRowView({
             <span className={cap.completeness === 'GHOST' ? s.capNameGhost : ''}>
               {cap.name}
             </span>
-            <CompletenessTag cap={cap} />
-            <RiskTag cap={cap} />
           </span>
         </div>
         <div className={cellClass('Human', cap)} aria-hidden />
         <div className={cellClass('Hybrid', cap)} aria-hidden />
         <div className={cellClass('Agent', cap)} aria-hidden />
+        <CompletenessMeter cap={cap} />
       </div>
       {/* R2: the always-open inline detail block was removed. All capability
-          detail (work shape, reason, edge cases, evidence, handoff, gaps)
-          lives in the click-to-open CapabilityModal. Rows stay clean:
-          id, name, completeness + risk tags, allocation cells. */}
+          detail (work shape, reason, edge cases, evidence, handoff, gaps) and
+          risk (failure_cost) lives in the click-to-open CapabilityModal. Rows
+          stay clean: id, name, allocation cells, and the completeness meter. */}
     </div>
   );
 }
@@ -198,6 +218,7 @@ export function CapabilityMap({
                 <div className={s.gridH} style={{ color: ALLOC_BRAND.Agent }}>
                   AGENTIC
                 </div>
+                <div className={s.gridHFn}>completeness</div>
               </div>
               {rows.map((cap) => (
                 <CapabilityRowView key={cap.id} cap={cap} onSelect={onSelect} />
