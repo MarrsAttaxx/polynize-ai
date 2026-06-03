@@ -172,10 +172,9 @@ function capMap(): CapabilityMapV05 {
 }
 
 // ----- deriveProgressPct -----
-function wp(stagesComplete: number, operateActive = false): WorkPlan {
+function wp(stagesComplete: number): WorkPlan {
   const stages = defaultSprintStages();
   for (let i = 0; i < stagesComplete; i++) stages[i].status = 'complete';
-  if (operateActive) stages[7].status = 'active';
   return {
     id: 'w',
     title: 'W',
@@ -192,34 +191,41 @@ function wp(stagesComplete: number, operateActive = false): WorkPlan {
     last_updated: 'x',
   };
 }
-// WEIGHTED: sprint_map 10 / cognition_design 20 / cognition_install 20 /
-// internal_testing 15 / external_testing 20 / refine 8 / handoff 5 /
-// operate 2 (sum 100). Complete stages earn full weight.
+// WEIGHTED: sprint_map 10 / cognition_design 18 / skills_design 12 /
+// cognition_install 15 / skills_install 12 / sandbox_testing 13 /
+// live_testing 12 / handoff 8 (sum 100). Complete stages earn full weight.
+// The sprint ends at handoff; there is no operate stage.
 eq('progress 0 complete', deriveProgressPct(wp(0)), 0);
-// first 4 complete = 10+20+20+15 = 65
-eq('progress 4 complete (weighted)', deriveProgressPct(wp(4)), 65);
+// first 4 complete = 10+18+12+15 = 55
+eq('progress 4 complete (weighted)', deriveProgressPct(wp(4)), 55);
 eq('progress 8 complete', deriveProgressPct(wp(8)), 100);
-// 7 complete (10+20+20+15+20+8+5 = 98) + operate active (full 2) = 100
-eq('progress operate-active', deriveProgressPct(wp(7, true)), 100);
-// first 3 complete = 10+20+20 = 50
-eq('progress 3 complete (weighted)', deriveProgressPct(wp(3)), 50);
+// first 3 complete = 10+18+12 = 40
+eq('progress 3 complete (weighted)', deriveProgressPct(wp(3)), 40);
 
 // Active stage with no sub-progress earns HALF its weight.
 {
-  const plan = wp(4); // 65 complete
-  plan.sprint_stages[4].status = 'active'; // external_testing (weight 20)
-  eq('active half-credit (no sub-progress)', deriveProgressPct(plan), 75); // 65 + 0.5*20
+  const plan = wp(4); // 55 complete
+  plan.sprint_stages[4].status = 'active'; // skills_install (weight 12)
+  eq('active half-credit (no sub-progress)', deriveProgressPct(plan), 61); // 55 + 0.5*12
   plan.sprint_stages[4].progress_pct = 100; // nearly done → full credit
-  eq('active full-credit (sub-progress 100)', deriveProgressPct(plan), 85); // 65 + 20
+  eq('active full-credit (sub-progress 100)', deriveProgressPct(plan), 67); // 55 + 12
+}
+
+// Handoff (the final stage) active earns half its weight by default. There
+// is no longer an operate stage that auto-completes when entered.
+{
+  const plan = wp(7); // 92 complete
+  plan.sprint_stages[7].status = 'active'; // handoff (weight 8)
+  eq('handoff active half-credit', deriveProgressPct(plan), 96); // 92 + 0.5*8
 }
 
 // ----- recomputeDerived (work-plan-io) -----
 {
-  const plan = wp(2); // sprint_map + cognition_design complete = 30
-  plan.sprint_stages[2].status = 'active'; // cognition_install (weight 20) active
+  const plan = wp(2); // sprint_map + cognition_design complete = 28
+  plan.sprint_stages[2].status = 'active'; // skills_design (weight 12) active
   recomputeDerived(plan);
-  eq('recompute weighted', plan.progress_pct, 40); // 30 + 0.5*20
-  eq('recompute current_stage', plan.current_stage, 'cognition_install');
+  eq('recompute weighted', plan.progress_pct, 34); // 28 + 0.5*12
+  eq('recompute current_stage', plan.current_stage, 'skills_design');
 }
 
 // ----- export assembler: full vs Lead -----

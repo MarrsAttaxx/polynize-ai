@@ -348,51 +348,52 @@ export const EngagementModelSchema = z.object({
 export type SprintStageId =
   | 'sprint_map'
   | 'cognition_design'
+  | 'skills_design'
   | 'cognition_install'
-  | 'internal_testing'
-  | 'external_testing'
-  | 'refine'
-  | 'handoff'
-  | 'operate';
+  | 'skills_install'
+  | 'sandbox_testing'
+  | 'live_testing'
+  | 'handoff';
 
 export const SPRINT_STAGE_ORDER: SprintStageId[] = [
   'sprint_map',
   'cognition_design',
+  'skills_design',
   'cognition_install',
-  'internal_testing',
-  'external_testing',
-  'refine',
+  'skills_install',
+  'sandbox_testing',
+  'live_testing',
   'handoff',
-  'operate',
 ];
 
 export const SPRINT_STAGE_LABELS: Record<SprintStageId, string> = {
   sprint_map: 'Sprint Map',
   cognition_design: 'Cognition Design',
+  skills_design: 'Skills Design',
   cognition_install: 'Cognition Install',
-  internal_testing: 'Internal Testing',
-  external_testing: 'External Testing',
-  refine: 'Refine',
+  skills_install: 'Skills Install',
+  sandbox_testing: 'Sandbox Testing',
+  live_testing: 'Live Testing',
   handoff: 'Handoff',
-  operate: 'Operate',
 };
 
 /**
  * Per-stage weights for work-plan progress (Judgment Call 5, revisited).
- * The stages are NOT equal-weight: the build stages are heavy, the tail
- * (refine / handoff / operate) is light. Weights sum to 100, so a weighted
- * sum is already a percentage. Universal across all work plans (the
- * tail-is-lighter shape is universal, not Roxbury-specific).
+ * The stages are NOT equal-weight: the cognition and skills build stages
+ * carry the most weight, the testing and handoff tail is lighter. Weights
+ * sum to 100, so a weighted sum is already a percentage. The sprint ENDS at
+ * handoff; refinement happens post-handoff in the operate phase, which is no
+ * longer a tracked sprint stage. Universal across all work plans.
  */
 export const STAGE_WEIGHTS: Record<SprintStageId, number> = {
   sprint_map: 10,
-  cognition_design: 20,
-  cognition_install: 20,
-  internal_testing: 15,
-  external_testing: 20,
-  refine: 8,
-  handoff: 5,
-  operate: 2,
+  cognition_design: 18,
+  skills_design: 12,
+  cognition_install: 15,
+  skills_install: 12,
+  sandbox_testing: 13,
+  live_testing: 12,
+  handoff: 8,
 };
 
 export interface SprintStage {
@@ -416,12 +417,12 @@ export const SprintStageSchema = z.object({
   id: z.enum([
     'sprint_map',
     'cognition_design',
+    'skills_design',
     'cognition_install',
-    'internal_testing',
-    'external_testing',
-    'refine',
+    'skills_install',
+    'sandbox_testing',
+    'live_testing',
     'handoff',
-    'operate',
   ]),
   label: z.string(),
   status: z.enum(['pending', 'active', 'complete']),
@@ -462,12 +463,12 @@ export const WorkPlanSchema = z.object({
     .enum([
       'sprint_map',
       'cognition_design',
+      'skills_design',
       'cognition_install',
-      'internal_testing',
-      'external_testing',
-      'refine',
+      'skills_install',
+      'sandbox_testing',
+      'live_testing',
       'handoff',
-      'operate',
     ])
     .nullable(),
   sprint_stages: z.array(SprintStageSchema),
@@ -482,12 +483,12 @@ export const WorkPlanSchema = z.object({
     .enum([
       'sprint_map',
       'cognition_design',
+      'skills_design',
       'cognition_install',
-      'internal_testing',
-      'external_testing',
-      'refine',
+      'skills_install',
+      'sandbox_testing',
+      'live_testing',
       'handoff',
-      'operate',
     ])
     .nullable(),
   progress_pct: z.number().min(0).max(100),

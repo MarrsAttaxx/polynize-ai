@@ -455,14 +455,14 @@ export function deriveGapRegister(
  *
  * Spec §5.1 / Judgment Call 5 (revisited): stages are not equal-weight, so
  * this is a weighted sum (STAGE_WEIGHTS, summing to 100) rather than
- * complete/8. The build stages are heavy; the refine/handoff/operate tail
- * is light. Universal across all work plans.
+ * complete/8. The cognition and skills build stages are heavy; the testing
+ * and handoff tail is lighter. The sprint ends at handoff; refinement
+ * happens post-handoff in the operate phase, which is not a tracked sprint
+ * stage. Universal across all work plans.
  *
  *   complete stage   → full weight
  *   active stage     → a proportion of its weight: the stage's own
  *                      progress_pct if set, else 50% (half) by default
- *   operate active   → full weight (an ongoing maintained state counts as
- *                      done once entered, not a closing milestone)
  *   pending stage    → 0
  *
  * Returns a number rounded to one decimal.
@@ -474,15 +474,11 @@ export function deriveProgressPct(plan: WorkPlan): number {
     if (stage.status === 'complete') {
       earned += weight;
     } else if (stage.status === 'active') {
-      if (stage.id === 'operate') {
-        earned += weight;
-      } else {
-        const frac =
-          typeof stage.progress_pct === 'number'
-            ? Math.max(0, Math.min(100, stage.progress_pct)) / 100
-            : 0.5;
-        earned += weight * frac;
-      }
+      const frac =
+        typeof stage.progress_pct === 'number'
+          ? Math.max(0, Math.min(100, stage.progress_pct)) / 100
+          : 0.5;
+      earned += weight * frac;
     }
     // pending → 0
   }
@@ -500,33 +496,12 @@ export function deriveProgressPct(plan: WorkPlan): number {
 export function defaultSprintStages(): SprintStage[] {
   return SPRINT_STAGE_ORDER.map((id) => ({
     id,
-    label: defaultStageLabel(id),
+    label: SPRINT_STAGE_LABELS[id],
     status: 'pending' as const,
     note: null,
     started_at: null,
     completed_at: null,
   }));
-}
-
-function defaultStageLabel(id: SprintStageId): string {
-  switch (id) {
-    case 'sprint_map':
-      return 'Sprint Map';
-    case 'cognition_design':
-      return 'Cognition Design';
-    case 'cognition_install':
-      return 'Cognition Install';
-    case 'internal_testing':
-      return 'Internal Testing';
-    case 'external_testing':
-      return 'External Testing';
-    case 'refine':
-      return 'Refine';
-    case 'handoff':
-      return 'Handoff';
-    case 'operate':
-      return 'Operate';
-  }
 }
 
 // ============================================================

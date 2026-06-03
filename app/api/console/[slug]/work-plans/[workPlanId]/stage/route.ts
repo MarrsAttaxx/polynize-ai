@@ -27,12 +27,12 @@ export const runtime = 'nodejs';
 const STAGE_IDS = [
   'sprint_map',
   'cognition_design',
+  'skills_design',
   'cognition_install',
-  'internal_testing',
-  'external_testing',
-  'refine',
+  'skills_install',
+  'sandbox_testing',
+  'live_testing',
   'handoff',
-  'operate',
 ] as const;
 
 const BodySchema = z.object({
