@@ -35,6 +35,10 @@ import {
   SPRINT_STAGE_LABELS,
 } from '@/lib/blueprint/load-v2';
 import {
+  computeModellingReadiness,
+  analysisCompleteness,
+} from '@/lib/blueprint/readiness';
+import {
   parseInfrastructure,
   parseGapRegister,
 } from '@/app/console/_lib/parse-blueprint';
@@ -195,6 +199,28 @@ export async function V2BlueprintView({
       ? SPRINT_STAGE_LABELS[activeWorkPlan.current_stage]
       : 'complete';
     subtextOverride = `${activeWorkPlan.title} · ${stageLabel}`;
+  } else if (phase === 'modelling') {
+    // Modelling readiness = total modelling work done (C3): ~80% analysis
+    // completeness (avg of the capability completeness meters) + ~20% last
+    // mile (critical blockers resolved). Same shared calc the dashboard uses,
+    // so the two surfaces never diverge.
+    const completenessValues = capabilityMap.capabilities.map(
+      (c) => c.completeness
+    );
+    const blockersTotal = gapMdParsed?.blockingCount ?? 0;
+    const blockersResolved = gapMdParsed?.blockingResolved ?? 0;
+    completionPercentOverride = computeModellingReadiness({
+      completenessValues,
+      blockersTotal,
+      blockersResolved,
+    });
+    const analysisPct = Math.round(
+      analysisCompleteness(completenessValues) * 100
+    );
+    const blockersOpen = Math.max(0, blockersTotal - blockersResolved);
+    subtextOverride = `${analysisPct}% analysis mapped · ${blockersOpen} critical blocker${
+      blockersOpen === 1 ? '' : 's'
+    } open`;
   }
 
   // Readiness props, reused at the top (R1) and in the sign-off (R5).

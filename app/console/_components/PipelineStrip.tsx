@@ -6,10 +6,11 @@
  * glance" view. Reads from work_plan_registry + work plan statuses
  * (already on ClientCardData). Avik refines the exact format later.
  *
- * v1 % derivation: from the active work plan's registry status, since
- * the dashboard reads the registry (not every work-plan.json) to stay
- * fast. Coarse mapping — refined when Avik's input lands or when the
- * birds-eye loads live progress.
+ * % derivation: the engagement's readiness, computed by the SAME shared calc
+ * the Blueprint page uses (data.readiness, loaded live per engagement). This
+ * is what keeps the dashboard number and the Blueprint number identical. The
+ * coarse registry/phase mapping below is only a fallback when readiness could
+ * not be computed (data.readiness == null).
  */
 
 import type { ClientCardData } from '../_lib/load-clients';
@@ -64,7 +65,7 @@ export function PipelineStrip({ engagements }: { engagements: ClientCardData[] }
       </div>
       <div className={s.pipelineRows}>
         {engagements.map((e) => {
-          const pct = coarseProgress(e);
+          const pct = e.readiness ?? coarseProgress(e);
           const active = e.workPlanRegistry.find(
             (w) => w.status === 'in_progress' || w.status === 'operate'
           );

@@ -5,6 +5,7 @@ import {
   listAccessibleRepoSlugs,
 } from '@/lib/github-client';
 import { CONSOLE_CLIENTS } from '../_config/clients';
+import { loadEngagementReadiness } from './load-readiness';
 import type {
   BlueprintSchemaVersion,
   EngagementPhase,
@@ -38,6 +39,12 @@ export type ClientCardData = {
   blueprintSchemaVersion: BlueprintSchemaVersion;
   workPlanRegistry: WorkPlanRegistryEntry[];
   lock: LockState | null;
+  /**
+   * Engagement readiness (0-100), computed by the SAME shared calc the
+   * Blueprint page uses, so the dashboard and the Blueprint never show
+   * different numbers. null only if it could not be computed at all.
+   */
+  readiness: number | null;
   prospect: {
     blueprintId?: string;
     email?: string;
@@ -174,6 +181,13 @@ async function loadOneClient(slug: string): Promise<ClientCardData | null> {
           }
         : null;
 
+    // Readiness from the shared calc (same source as the Blueprint page).
+    // Best-effort: degrades to a coarse floor / null, never throws.
+    const readiness = await loadEngagementReadiness(slug, {
+      phase: engagementPhase,
+      workPlanRegistry: parsed.work_plan_registry ?? [],
+    });
+
     return {
       slug,
       name: parsed.client?.name ?? slug,
@@ -189,6 +203,7 @@ async function loadOneClient(slug: string): Promise<ClientCardData | null> {
       blueprintSchemaVersion,
       workPlanRegistry: parsed.work_plan_registry ?? [],
       lock: parsed.lock ?? null,
+      readiness,
       prospect,
     };
   } catch (err) {
@@ -212,6 +227,7 @@ function errorCard(slug: string, err: unknown): ClientCardData {
     blueprintSchemaVersion: '1.0',
     workPlanRegistry: [],
     lock: null,
+    readiness: null,
     prospect: null,
     error: err instanceof Error ? err.message : String(err),
   };
