@@ -179,7 +179,16 @@ const carlEnvelope = {
           role: 'Funnel',
           short_desc: 'Proposes stage updates.',
         },
+        {
+          name: 'Loom',
+          role: 'Team lead, coordination and escalation',
+          short_desc:
+            'Coordinates the agent team and keeps it on plan; the connection point between Polynize, Carl, and the agents; the reporting and escalation channel and the team security layer.',
+        },
       ],
+      // The leader is the extra agent (Loom) on top of the workers; team_leader
+      // names it, driving the canonical 3-tier org-chart.
+      team_leader: 'Loom',
     },
     leverage_estimate: '2-4x' as const,
     leverage_rationale: 'Frees Carl for the craft.',
@@ -234,7 +243,9 @@ function carlWithAgentCount(n: number) {
   return {
     capability_map: {
       ...carlEnvelope.capability_map,
-      team: { ...carlEnvelope.capability_map.team, agents },
+      // team_leader names a generated agent so these bound tests fail (or pass)
+      // on the agent-count rule, not on the team_leader match rule.
+      team: { ...carlEnvelope.capability_map.team, agents, team_leader: 'Agent1' },
     },
   };
 }
@@ -247,6 +258,30 @@ if (validateCapabilityMapV05(carlWithAgentCount(7)).ok) {
 if (validateCapabilityMapV05(carlWithAgentCount(1)).ok) {
   throw new Error('1-agent team should NOT validate (TeamSchema min is 2).');
 }
+
+// ----- 1c. team_leader: required + must match an agent (3-tier generation) -----
+function carlWithTeam(team: Record<string, unknown>) {
+  return {
+    capability_map: { ...carlEnvelope.capability_map, team },
+  };
+}
+const baseTeam = carlEnvelope.capability_map.team;
+// (a) Missing team_leader → generation FAILS (strict schema now requires it).
+const teamNoLeader: Record<string, unknown> = { ...baseTeam };
+delete teamNoLeader.team_leader;
+if (validateCapabilityMapV05(carlWithTeam(teamNoLeader)).ok) {
+  throw new Error('team WITHOUT team_leader should NOT validate (generation requires a leader).');
+}
+// (b) team_leader naming no agent → FAILS (cross-field match check 6).
+if (validateCapabilityMapV05(carlWithTeam({ ...baseTeam, team_leader: 'Nobody' })).ok) {
+  throw new Error('team_leader that matches no agent should NOT validate.');
+}
+// (c) Valid team_leader matching an agent → passes.
+if (!validateCapabilityMapV05(carlWithTeam({ ...baseTeam, team_leader: 'Triage Agent' })).ok) {
+  throw new Error('team_leader matching an agent should validate.');
+}
+// eslint-disable-next-line no-console
+console.log('OK: team_leader required and must match an agent (3-tier generation).');
 // eslint-disable-next-line no-console
 console.log('OK: team agents cap is min 2, max 6 (6 valid, 7 invalid, 1 invalid).');
 

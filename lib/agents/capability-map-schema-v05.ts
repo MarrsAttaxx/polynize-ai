@@ -152,12 +152,18 @@ const TeamSchema = z.object({
     )
     .min(2)
     .max(6),
-  // Optional: names the agent that leads the team (must match an entry in
-  // `agents` by `name`). Drives the org-chart's tier-2 (team leader agent)
-  // in the canonical 3-tier CWU. Omitted for grandfathered units like
-  // Roxbury, which render two tiers (human owner → workers). Optional, so
-  // existing maps without it validate unchanged.
-  team_leader: z.string().optional(),
+  // Required (generation path): names the team-leader agent, which MUST match
+  // an entry in `agents` by `name` (the link is enforced as cross-field check
+  // 6 in validateCapabilityMapV05). The leader is an ADDITIONAL agent on top of
+  // the worker agents (workers + 1 leader, all within the 2-6 `agents` bound),
+  // generator-named per engagement, with a standard coordinating / liaison /
+  // escalation / security role. Drives the org-chart tier-2 (team leader) in
+  // the canonical 3-tier CWU.
+  //
+  // NOTE: this requirement is on the STRICT GENERATION schema only. The lenient
+  // READ schema (lib/blueprint/schema-v2.ts) keeps team_leader optional, so
+  // existing engagements and the Console read path are unaffected.
+  team_leader: z.string().min(1),
 });
 
 const PricingIndicativeSchema = z.object({
@@ -293,6 +299,18 @@ export function validateCapabilityMapV05(
     return {
       ok: false,
       error: `row ids not unique-and-sequential (got ${ids.join(',')})`,
+    };
+  }
+
+  // 6. team_leader must name one of the agents (the leader is the extra agent
+  //    on top of the workers). The schema already requires team_leader to be a
+  //    non-empty string; this cross-field check enforces the link so the
+  //    generator produces a real 3-tier structure (human owner -> leader ->
+  //    workers) rather than a flat worker team that falls back to two tiers.
+  if (!map.team.agents.some((agent) => agent.name === map.team.team_leader)) {
+    return {
+      ok: false,
+      error: `team_leader "${map.team.team_leader}" does not match any agent name in team.agents`,
     };
   }
 

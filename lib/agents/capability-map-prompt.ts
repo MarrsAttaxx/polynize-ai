@@ -54,7 +54,7 @@ Before emitting JSON, work through the following internally. Do not narrate this
 
 6. Populate every schema field you can. Where the answers don't give you enough to populate a field with row-specific content, mark the row as PARTIAL or STUB and add a gap question that would close it during the modeling call. Where the bottleneck implies a capability you'd expect to exist but the prospect didn't mention, add it as a GHOST row.
 
-7. Compose the prospect-facing layer. Interpretation paragraph referencing the specific bottleneck. Team of 2-6 agents with short memorable names and role titles. Leverage estimate with rationale including a hiring comparison. Pricing per the indicative bands.
+7. Compose the prospect-facing layer. Interpretation paragraph referencing the specific bottleneck. Team of 2-6 agents with short memorable names and role titles: the worker agents plus one standard team-leader agent (the extra agent that coordinates the team and is the Polynize, client, and agent-team connection point), with team_leader set to the leader's exact name. Leverage estimate with rationale including a hiring comparison. Pricing per the indicative bands.
 
 ---
 
@@ -175,9 +175,15 @@ In addition to the row schema above, the website map carries these prospect-faci
 Two sentences referencing the prospect's specific bottleneck. Confident and specific. Frames what the map is showing them.
 
 ### team
-A small agent team designed to handle the Agent and Hybrid capabilities. 2-6 agents. Single-word names. The team emerges from the map, not the other way around.
+A small agent team designed to handle the Agent and Hybrid capabilities. The team emerges from the map, not the other way around.
 
-{ "human_owner": { "name": "You", "role": "<one sentence>" }, "agents": [{ "name": "<single word>", "role": "<role title>", "short_desc": "<one sentence>" }] }
+Worker agents: cover the Agent and Hybrid capabilities, with short memorable single-word names and role titles.
+
+PLUS one team-leader agent, always. The leader is an ADDITIONAL agent on top of the workers, not a promotion of a worker. Invent a fitting single-word name for it each time, but give it the standard team-lead function, near-identical across every team: it coordinates the agent team and keeps it healthy and on plan; it is the connection point between three parties (Polynize, the client's human team, and the agent team); it is the reporting and escalation channel back to Polynize; and it is the team's security layer (the ACTA team-lead role). Set "team_leader" to this agent's exact name.
+
+The total number of agents, workers plus the one leader, must be 2 to 6 (so up to 5 workers plus the leader). "team_leader" is required and must exactly match one agent's "name".
+
+{ "human_owner": { "name": "You", "role": "<one sentence>" }, "agents": [{ "name": "<single word>", "role": "<role title>", "short_desc": "<one sentence>" }, { "name": "<invented leader name>", "role": "Team lead, coordination and escalation", "short_desc": "Coordinates the agent team and keeps it on plan; the connection point between Polynize, your team, and the agents; the reporting and escalation channel and the team security layer." }], "team_leader": "<the leader agent's exact name>" }
 
 ### leverage_estimate
 One of: "1.5-2x", "2-4x", "3-5x", "5x+".
@@ -263,8 +269,10 @@ Return valid JSON only, no markdown, no preamble. The renderer parses the respon
     "team": {
       "human_owner": { "name": "<prospect's first name or 'You'>", "role": "<one sentence>" },
       "agents": [
-        { "name": "<single word>", "role": "<role title>", "short_desc": "<one sentence>" }
-      ]
+        { "name": "<worker agent, single word>", "role": "<role title>", "short_desc": "<one sentence>" },
+        { "name": "<invented leader name>", "role": "Team lead, coordination and escalation", "short_desc": "Coordinates the agent team and keeps it on plan; the connection point between Polynize, your team, and the agents; the reporting and escalation channel and the team security layer." }
+      ],
+      "team_leader": "<the leader agent's exact name, matching one agent above>"
     },
     "leverage_estimate": "2-4x",
     "leverage_rationale": "<one paragraph including a hiring comparison>",

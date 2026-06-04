@@ -139,6 +139,7 @@ function capMap(): CapabilityMapV05 {
         { name: 'A1', role: 'r', short_desc: 'd' },
         { name: 'A2', role: 'r', short_desc: 'd' },
       ],
+      team_leader: 'A1',
     },
     leverage_estimate: '2-4x',
     leverage_rationale: 'lr',
