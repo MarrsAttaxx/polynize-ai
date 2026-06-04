@@ -2,9 +2,15 @@
  * Pipeline birds-eye (Level 1) — spec §11.3 / §10.2.
  *
  * [JUDGMENT CALL — v1] One horizontal status row per engagement showing
- * phase, active work plan, % complete, and RAG. The "who's where at a
+ * phase, current state, % complete, and RAG. The "who's where at a
  * glance" view. Reads from work_plan_registry + work plan statuses
  * (already on ClientCardData). Avik refines the exact format later.
+ *
+ * Current-state column: the RAG reason (status.reason), the one-line
+ * "where this project is right now" that the team sets in the status menu.
+ * Present for every engagement, unlike a work plan (which only exists once
+ * an engagement reaches Build). Falls back to the active work plan title,
+ * then a placeholder.
  *
  * % derivation: the engagement's readiness, computed by the SAME shared calc
  * the Blueprint page uses (data.readiness, loaded live per engagement). This
@@ -70,6 +76,7 @@ export function PipelineStrip({ engagements }: { engagements: ClientCardData[] }
             (w) => w.status === 'in_progress' || w.status === 'operate'
           );
           const phase = (e.engagementPhase ?? e.phase ?? 'unknown').toUpperCase();
+          const stateLine = e.status.reason ?? (active ? active.title : null);
           return (
             <a
               key={e.slug}
@@ -82,8 +89,8 @@ export function PipelineStrip({ engagements }: { engagements: ClientCardData[] }
               />
               <span className={s.pipelineName}>{e.name}</span>
               <span className={s.pipelinePhase}>{phase}</span>
-              <span className={s.pipelineWp}>
-                {active ? active.title : '—'}
+              <span className={s.pipelineWp} title={stateLine ?? undefined}>
+                {stateLine ?? '—'}
               </span>
               <span className={s.pipelineBarTrack}>
                 <span

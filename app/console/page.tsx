@@ -44,7 +44,7 @@ export default async function ConsolePage() {
       <div className={s.dashboard}>
         <div className={s.header}>
           <div className={s.eyebrow}>polynize agentic management console</div>
-          <h1 className={s.title}>Client Blueprints</h1>
+          <h1 className={s.title}>PAM Control Centre</h1>
           <p className={s.lede}>
             Active engagements across all phases. Click through to view each
             client&apos;s Blueprint.
@@ -63,7 +63,7 @@ export default async function ConsolePage() {
             )}
 
             <Section
-              title="Clients"
+              title="Client Blueprints"
               count={clientEngagements.length}
               cards={clientEngagements}
               actorEmail={actorEmail}
