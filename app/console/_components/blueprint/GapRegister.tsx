@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useTransition } from 'react';
+import { useEffect, useState, useTransition, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import type {
   GapRegisterParsed,
@@ -29,6 +29,38 @@ function statusClass(status: string): string {
   if (norm === 'answered') return s.statusAnswered;
   if (norm === 'closed') return s.statusClosed;
   return s.statusOpen;
+}
+
+/**
+ * Hoisted to module scope on purpose. If GapTable were defined inside
+ * GapRegister, every keystroke (which calls setNotesDraft → re-render) would
+ * create a NEW component function. React keys components by reference, so a
+ * new reference reads as a different component type and the whole table —
+ * including the notes <textarea> — gets unmounted and remounted. A remounted,
+ * autoFocused textarea drops the caret to index 0, so each character is
+ * inserted before the last and the note appears to type backwards. A stable
+ * module-level identity keeps the caret put. renderRow is passed in because it
+ * closes over GapRegister's editing state.
+ */
+function GapTable({
+  groupRows,
+  renderRow,
+}: {
+  groupRows: GapRegisterRow[];
+  renderRow: (row: GapRegisterRow) => ReactNode;
+}) {
+  return (
+    <div className={s.gapTable}>
+      <div className={`${s.gapRow} ${s.gapRowHead}`}>
+        <div className={s.gapId}>#</div>
+        <div className={s.gapQuestion}>Outstanding question</div>
+        <div className={s.gapOwner}>Owner</div>
+        <div className={s.gapBlocks}>Blocks</div>
+        <div className={s.gapStatus}>Status</div>
+      </div>
+      {groupRows.map(renderRow)}
+    </div>
+  );
 }
 
 export function GapRegister({ data, slug, canEdit }: Props) {
@@ -246,26 +278,11 @@ export function GapRegister({ data, slug, canEdit }: Props) {
     );
   }
 
-  function GapTable({ groupRows }: { groupRows: GapRegisterRow[] }) {
-    return (
-      <div className={s.gapTable}>
-        <div className={`${s.gapRow} ${s.gapRowHead}`}>
-          <div className={s.gapId}>#</div>
-          <div className={s.gapQuestion}>Outstanding question</div>
-          <div className={s.gapOwner}>Owner</div>
-          <div className={s.gapBlocks}>Blocks</div>
-          <div className={s.gapStatus}>Status</div>
-        </div>
-        {groupRows.map(renderRow)}
-      </div>
-    );
-  }
-
   // Legacy / no-blocking-column tables: one flat list, exactly as before.
   if (!hasSplit) {
     return (
       <div className={s.gapRegister}>
-        <GapTable groupRows={rows} />
+        <GapTable groupRows={rows} renderRow={renderRow} />
         <div className={s.gapFooter}>
           <strong>{openCount}</strong> gap{openCount === 1 ? '' : 's'} open
           {' · '}
@@ -284,7 +301,7 @@ export function GapRegister({ data, slug, canEdit }: Props) {
           <span className={s.gapGroupHint}>gate Modelling sign-off</span>
         </div>
         {blockerRows.length > 0 ? (
-          <GapTable groupRows={blockerRows} />
+          <GapTable groupRows={blockerRows} renderRow={renderRow} />
         ) : (
           <p className={s.gapGroupEmpty}>No critical blockers. Nothing gates sign-off.</p>
         )}
@@ -296,7 +313,7 @@ export function GapRegister({ data, slug, canEdit }: Props) {
           <span className={s.gapGroupHint}>real work, not sign-off blockers</span>
         </div>
         {inBuildRows.length > 0 ? (
-          <GapTable groupRows={inBuildRows} />
+          <GapTable groupRows={inBuildRows} renderRow={renderRow} />
         ) : (
           <p className={s.gapGroupEmpty}>None.</p>
         )}
