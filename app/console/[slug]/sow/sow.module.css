@@ -1,0 +1,325 @@
+/* ============================================================
+   Statement of Works page. Reuses the blueprint's --bp-* token
+   palette (redeclared here so this subtree is self-contained).
+   ============================================================ */
+.page {
+  --bp-bg: #161620;
+  --bp-surface: #1c1c2a;
+  --bp-surface-emphasised: #232342;
+  --bp-inset: #0f0f17;
+  --bp-mint: #69fccb;
+  --bp-coral: #ff8fa3;
+  --bp-amber: #ffc46b;
+  --bp-electric: #a5c1ec;
+  --bp-text: rgba(245, 245, 247, 1);
+  --bp-text-2: #9090a8;
+  --bp-text-3: #5a5a72;
+
+  max-width: 900px;
+  margin: 0 auto;
+  padding-bottom: 96px;
+  color: var(--bp-text);
+  position: relative;
+  z-index: 1;
+}
+
+.bgPattern {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-image:
+    repeating-linear-gradient(0deg, transparent 0, transparent 79px, rgba(105, 252, 203, 0.045) 79px, rgba(105, 252, 203, 0.045) 80px),
+    repeating-linear-gradient(90deg, transparent 0, transparent 79px, rgba(105, 252, 203, 0.045) 79px, rgba(105, 252, 203, 0.045) 80px);
+}
+
+/* ---- Page header ---- */
+.pageHeader {
+  margin-bottom: 28px;
+}
+.eyebrow {
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.22em;
+  color: var(--bp-text-3);
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+.pageTitle {
+  font-size: clamp(28px, 4vw, 40px);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin: 0 0 16px;
+}
+.headerActions {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.backLink {
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: var(--bp-text-2);
+  text-decoration: none;
+}
+.backLink:hover { color: var(--bp-text); }
+
+/* ---- Generate / regenerate ---- */
+.genWrap { display: inline-flex; gap: 10px; align-items: center; }
+.genPrimary, .genSecondary {
+  font-size: 13px;
+  font-weight: 600;
+  padding: 8px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  border: 1px solid transparent;
+}
+.genPrimary {
+  background: var(--bp-mint);
+  color: #0c1f18;
+  box-shadow: 0 0 14px rgba(105, 252, 203, 0.25);
+}
+.genSecondary {
+  background: transparent;
+  color: var(--bp-text-2);
+  border-color: rgba(255, 255, 255, 0.14);
+}
+.genPrimary:disabled, .genSecondary:disabled { opacity: 0.55; cursor: default; }
+.genError { color: var(--bp-coral); font-size: 12px; }
+
+/* ---- Empty state ---- */
+.empty {
+  background: var(--bp-surface);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 12px;
+  padding: 28px;
+}
+.emptyLead { font-size: 16px; margin: 0 0 8px; }
+.muted { color: var(--bp-text-2); }
+
+/* ---- Document ---- */
+.doc {
+  background: var(--bp-surface);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 12px;
+  padding: 40px 44px;
+  line-height: 1.6;
+  font-size: 14.5px;
+}
+.coverEyebrow {
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 10.5px;
+  letter-spacing: 0.2em;
+  color: var(--bp-text-3);
+  margin-bottom: 6px;
+}
+.coverTitle {
+  font-size: 30px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin: 0 0 6px;
+}
+.coverSub { color: var(--bp-text-2); margin: 0 0 20px; }
+.govern {
+  color: var(--bp-text-3);
+  font-size: 12.5px;
+  font-style: italic;
+  margin: 6px 0 0;
+}
+
+/* ---- Key-value tables (cover, Part A) ---- */
+.kv {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 8px 0 4px;
+}
+.kv th {
+  text-align: left;
+  vertical-align: top;
+  width: 180px;
+  padding: 8px 14px 8px 0;
+  color: var(--bp-text-2);
+  font-weight: 600;
+  font-size: 13px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+.kv td {
+  padding: 8px 0;
+  vertical-align: top;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+.mono { font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace; font-size: 12.5px; }
+
+/* ---- Sections ---- */
+.section { margin-top: 30px; }
+.sectionTitle {
+  font-size: 18px;
+  font-weight: 700;
+  margin: 0 0 12px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+.sectionNum {
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  color: var(--bp-mint);
+  margin-right: 10px;
+}
+.sub { font-size: 15px; font-weight: 700; margin: 20px 0 8px; color: var(--bp-text); }
+
+/* ---- Grid tables (agent team, capability schedule, targets, fees, phases) ---- */
+.grid {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 8px 0 4px;
+  font-size: 13.5px;
+}
+.grid th {
+  text-align: left;
+  padding: 8px 12px;
+  background: var(--bp-inset);
+  color: var(--bp-text-2);
+  font-weight: 600;
+  font-size: 11.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+.grid td {
+  padding: 8px 12px;
+  vertical-align: top;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* ---- Lists ---- */
+.lettered { list-style: lower-alpha; padding-left: 24px; }
+.lettered li { margin: 4px 0; }
+.glance { list-style: none; padding: 0; margin: 8px 0; }
+.glance li { margin: 8px 0; padding-left: 0; }
+.motions { list-style: none; padding: 0; }
+.motions li { margin: 10px 0; }
+
+/* ---- Signature block ---- */
+.sign { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 16px; }
+.signCol {
+  background: var(--bp-inset);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 10px;
+  padding: 16px;
+}
+.signHead { font-weight: 600; font-size: 13px; margin-bottom: 8px; color: var(--bp-text-2); }
+.signFields { margin: 12px 0 0; }
+.signFields > div { display: flex; gap: 10px; padding: 7px 0; border-top: 1px solid rgba(255,255,255,0.05); }
+.signFields dt { width: 110px; color: var(--bp-text-3); font-size: 12px; margin: 0; }
+.signFields dd { margin: 0; flex: 1; }
+.signBlank { border-bottom: 1px dashed rgba(255,255,255,0.18); min-height: 18px; }
+
+/* ---- Annexure A / clauses ---- */
+.annexBreak {
+  margin-top: 44px;
+  padding-top: 28px;
+  border-top: 2px solid rgba(255, 255, 255, 0.12);
+}
+.partHead {
+  font-size: 17px;
+  font-weight: 700;
+  margin: 26px 0 4px;
+  color: var(--bp-electric);
+}
+.clause { margin: 16px 0; }
+.clauseTitle { font-size: 14.5px; font-weight: 700; margin: 0 0 6px; }
+.clauseBody { margin: 5px 0; color: var(--bp-text); }
+.draftNote {
+  font-style: italic;
+  color: var(--bp-text-3);
+  font-size: 12.5px;
+  border-left: 2px solid rgba(255, 255, 255, 0.12);
+  padding-left: 10px;
+  margin: 8px 0;
+}
+.footer {
+  margin-top: 32px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  color: var(--bp-text-3);
+  font-size: 12px;
+  font-style: italic;
+}
+
+/* ============================================================
+   SowField — editable value / NEEDS INPUT badge
+   ============================================================ */
+.fieldValue { color: var(--bp-text); }
+.fieldTodo { color: var(--bp-text-3); font-style: italic; }
+
+.fieldFilled {
+  background: transparent;
+  border: 1px dashed transparent;
+  border-radius: 5px;
+  color: var(--bp-text);
+  font: inherit;
+  cursor: text;
+  padding: 0 2px;
+  text-align: left;
+}
+.fieldFilled:hover {
+  border-color: rgba(105, 252, 203, 0.4);
+  background: rgba(105, 252, 203, 0.06);
+}
+
+.needsInput {
+  display: inline-block;
+  background: rgba(255, 196, 107, 0.14);
+  color: var(--bp-amber);
+  border: 1px solid rgba(255, 196, 107, 0.5);
+  border-radius: 6px;
+  padding: 1px 9px;
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  cursor: pointer;
+  white-space: normal;
+}
+.needsInput:hover { background: rgba(255, 196, 107, 0.24); }
+
+.fieldEditor { display: inline-flex; flex-direction: column; gap: 6px; vertical-align: top; min-width: 240px; }
+.fieldInput, .fieldTextarea {
+  background: var(--bp-inset);
+  border: 1px solid var(--bp-mint);
+  border-radius: 6px;
+  color: var(--bp-text);
+  font: inherit;
+  padding: 6px 8px;
+  width: 100%;
+  box-sizing: border-box;
+}
+.fieldTextarea { resize: vertical; }
+.fieldActions { display: inline-flex; gap: 8px; align-items: center; }
+.fieldSave {
+  background: var(--bp-mint);
+  color: #0c1f18;
+  border: none;
+  border-radius: 6px;
+  padding: 4px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.fieldSave:disabled { opacity: 0.6; cursor: default; }
+.fieldCancel {
+  background: transparent;
+  color: var(--bp-text-2);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 6px;
+  padding: 4px 12px;
+  font-size: 12px;
+  cursor: pointer;
+}
+.fieldError { color: var(--bp-coral); font-size: 11.5px; }
+
+@media (max-width: 720px) {
+  .doc { padding: 24px 18px; }
+  .sign { grid-template-columns: 1fr; }
+  .kv th { width: 120px; }
+}

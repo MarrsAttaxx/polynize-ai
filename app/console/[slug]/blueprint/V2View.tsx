@@ -261,6 +261,11 @@ export async function V2BlueprintView({
               {/* Export is a read op — available to client-scope too. */}
               <ExportButton slug={slug} />
               {isTeamUser && <RefreshButton slug={slug} />}
+              {isTeamUser && (
+                <Link href={`/console/${slug}/sow`} className={s.backLink}>
+                  Statement of Works →
+                </Link>
+              )}
             </span>
           </div>
         </header>
