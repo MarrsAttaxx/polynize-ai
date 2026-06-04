@@ -261,11 +261,6 @@ export async function V2BlueprintView({
               {/* Export is a read op — available to client-scope too. */}
               <ExportButton slug={slug} />
               {isTeamUser && <RefreshButton slug={slug} />}
-              {isTeamUser && (
-                <Link href={`/console/${slug}/sow`} className={s.backLink}>
-                  Statement of Works →
-                </Link>
-              )}
             </span>
           </div>
         </header>
@@ -452,6 +447,20 @@ export async function V2BlueprintView({
               Sign-off pending. The blueprint must reach readiness before
               client sign-off.
             </p>
+          )}
+          {isTeamUser && (
+            <div className={v2s.sowCta}>
+              <div className={v2s.sowCtaText}>
+                <div className={v2s.sowCtaTitle}>Statement of Works</div>
+                <div className={v2s.sowCtaHint}>
+                  Merge this Blueprint into the SoW and Service Agreement
+                  (Annexure A), ready to complete and send.
+                </div>
+              </div>
+              <Link href={`/console/${slug}/sow`} className={v2s.sowCtaBtn}>
+                Generate Statement of Works →
+              </Link>
+            </div>
           )}
         </SectionShell>
       </div>

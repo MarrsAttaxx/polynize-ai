@@ -19,6 +19,7 @@ import { getCurrentUser, userHasClientAccess } from '@/lib/console-auth';
 import { readSowDoc } from '@/lib/sow/sow-io';
 import { SowDocument } from './_components/SowDocument';
 import { SowGenerateButton } from './_components/SowGenerateButton';
+import { SowPrintButton } from './_components/SowPrintButton';
 import s from './sow.module.css';
 
 export const dynamic = 'force-dynamic';
@@ -63,6 +64,7 @@ export default async function SowPage({
             <Link href={`/console/${slug}/blueprint`} className={s.backLink}>
               ← Blueprint
             </Link>
+            {doc && <SowPrintButton />}
             {isTeamUser && <SowGenerateButton slug={slug} exists={!!doc} />}
           </div>
         </header>

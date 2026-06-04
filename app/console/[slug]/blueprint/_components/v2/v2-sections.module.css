@@ -1467,3 +1467,45 @@
     gap: 2px;
   }
 }
+
+/* ============================================================
+   Statement of Works call-to-action (sign-off section)
+   ============================================================ */
+.sowCta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  flex-wrap: wrap;
+  margin-top: 22px;
+  padding: 18px 20px;
+  border-radius: 12px;
+  background: var(--bp-surface-emphasised, #232342);
+  border: 1px solid rgba(105, 252, 203, 0.22);
+}
+.sowCtaText { flex: 1 1 320px; }
+.sowCtaTitle {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--bp-text);
+  margin-bottom: 4px;
+}
+.sowCtaHint {
+  font-size: 13px;
+  color: var(--bp-text-2);
+  line-height: 1.5;
+}
+.sowCtaBtn {
+  flex: 0 0 auto;
+  display: inline-block;
+  background: var(--bp-mint);
+  color: #0c1f18;
+  font-size: 14px;
+  font-weight: 700;
+  padding: 11px 20px;
+  border-radius: 9px;
+  text-decoration: none;
+  box-shadow: 0 0 16px rgba(105, 252, 203, 0.28);
+  white-space: nowrap;
+}
+.sowCtaBtn:hover { filter: brightness(1.06); }

@@ -167,3 +167,27 @@ export function generateSowDoc(
     human,
   };
 }
+
+/**
+ * Overlay a prior SoW's user-completed HUMAN fields onto a freshly generated
+ * doc. Used by regenerate: AUTO content is fully refreshed from the current
+ * Blueprint, but any HUMAN field the user actually filled (non-empty AND
+ * different from its registry default) is preserved. Fields still at their
+ * default or left blank take the fresh default. The SoW reference and
+ * timestamp come from the fresh doc.
+ */
+export function preserveUserHumanValues(
+  fresh: SowDoc,
+  existing: SowDoc | null
+): SowDoc {
+  if (!existing) return fresh;
+  const human: Record<string, string | null> = { ...fresh.human };
+  for (const f of HUMAN_FIELDS) {
+    const prior = existing.human[f.key];
+    const priorTrim = typeof prior === 'string' ? prior.trim() : '';
+    const defaultTrim = (f.default ?? '').trim();
+    const userSet = priorTrim !== '' && priorTrim !== defaultTrim;
+    if (userSet) human[f.key] = prior as string;
+  }
+  return { ...fresh, human };
+}

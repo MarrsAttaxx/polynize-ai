@@ -232,3 +232,11 @@
   line-height: 1.55;
   margin: 0 0 24px;
 }
+
+/* Print: strip the Console shell so only the page document prints
+   (used by the Statement of Works Print / Save as PDF). */
+@media print {
+  .topNav { display: none !important; }
+  .main { padding: 0 !important; }
+  .shell { background: none !important; }
+}

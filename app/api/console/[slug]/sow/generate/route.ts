@@ -19,8 +19,8 @@ import {
   requireTeamScope,
 } from '@/lib/console-api-auth';
 import { loadBlueprintV2 } from '@/lib/blueprint/load-v2';
-import { generateSowDoc } from '@/lib/sow/generate';
-import { writeSowDoc } from '@/lib/sow/sow-io';
+import { generateSowDoc, preserveUserHumanValues } from '@/lib/sow/generate';
+import { readSowDoc, writeSowDoc } from '@/lib/sow/sow-io';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -60,11 +60,17 @@ export async function POST(
     ? `v${blueprint.config.blueprint_schema_version}`
     : 'v2.0';
 
-  const doc = generateSowDoc(blueprint, {
+  const fresh = generateSowDoc(blueprint, {
     timestampIso: iso,
     dateStamp,
     blueprintVersion: version,
   });
+
+  // Regenerate refreshes all AUTO content from the current Blueprint but
+  // preserves any HUMAN field the user has actually completed (non-empty and
+  // different from its registry default). First generation has no existing doc.
+  const existing = await readSowDoc(slug);
+  const doc = preserveUserHumanValues(fresh, existing);
 
   const message =
     `Generate SoW for ${slug}\n\n` +

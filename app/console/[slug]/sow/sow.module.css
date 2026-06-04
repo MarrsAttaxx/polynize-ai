@@ -323,3 +323,94 @@
   .sign { grid-template-columns: 1fr; }
   .kv th { width: 120px; }
 }
+
+/* ---- Print button (screen) ---- */
+.printBtn {
+  font-size: 13px;
+  font-weight: 600;
+  padding: 8px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  background: transparent;
+  color: var(--bp-text-2);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+}
+.printBtn:hover { color: var(--bp-text); border-color: rgba(255,255,255,0.32); }
+
+/* ============================================================
+   Print / Save as PDF. Strips Console chrome and this page's
+   header (which holds the action buttons), prints the document
+   only, paginates sensibly, and renders unfilled HUMAN fields
+   as blank underscore lines (not NEEDS INPUT badges).
+   ============================================================ */
+@media print {
+  @page { margin: 18mm 16mm; }
+
+  .bgPattern,
+  .pageHeader { display: none !important; }
+
+  .page {
+    max-width: none;
+    margin: 0;
+    padding: 0;
+    color: #111;
+  }
+
+  .doc {
+    background: #fff;
+    border: none;
+    border-radius: 0;
+    padding: 0;
+    color: #111;
+    font-size: 11.5pt;
+    line-height: 1.5;
+  }
+
+  /* Print typography: dark text, no screen-only accents. */
+  .coverTitle, .pageTitle { color: #000; }
+  .coverEyebrow, .eyebrow { color: #555; }
+  .sectionNum { color: #000; }
+  .partHead { color: #000; }
+  .muted, .govern, .draftNote, .footer, .signHead { color: #444; }
+  .sectionTitle { border-bottom: 1px solid #999; }
+  .kv th, .kv td { border-bottom: 1px solid #ddd; color: #111; }
+  .grid th { background: #f0f0f0; color: #222; border: 1px solid #bbb; }
+  .grid td { border: 1px solid #bbb; color: #111; }
+  .signCol { background: #fafafa; border: 1px solid #ccc; }
+  .signBlank { border-bottom: 1px solid #333; }
+
+  /* Page-break discipline. */
+  .annexBreak { break-before: page; }
+  .section, .clause, .signCol, .kv { break-inside: avoid; }
+  .grid tr, .kv tr { break-inside: avoid; }
+  .grid thead { display: table-header-group; }
+  .sectionTitle, .sub, .clauseTitle, .partHead { break-after: avoid; }
+
+  /* Editable affordances → plain text. */
+  .fieldFilled, .fieldValue {
+    color: #111 !important;
+    background: none !important;
+    border: none !important;
+    padding: 0 !important;
+    font: inherit;
+  }
+  .fieldEditor, .fieldActions, .fieldSave, .fieldCancel, .printBtn, .genWrap {
+    display: none !important;
+  }
+
+  /* Unfilled HUMAN fields → blank underscore line, not a badge. */
+  .needsInput, .fieldTodo {
+    background: none !important;
+    border: none !important;
+    color: transparent !important;
+    font-size: 0 !important;
+    padding: 0 !important;
+  }
+  .needsInput::after, .fieldTodo::after {
+    content: "_______________";
+    color: #000;
+    font-size: 11.5pt;
+    letter-spacing: 0;
+    font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  }
+}

@@ -27,7 +27,7 @@ export function SowGenerateButton({
     if (
       exists &&
       !window.confirm(
-        'Regenerate this SoW from the Blueprint? This overwrites the auto-filled content and resets completed fields to their defaults.'
+        'Regenerate this SoW from the Blueprint? This refreshes the Blueprint-derived content and keeps the commercial fields you have already completed.'
       )
     ) {
       return;
