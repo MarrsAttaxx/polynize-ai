@@ -45,10 +45,6 @@ export default async function ConsolePage() {
         <div className={s.header}>
           <div className={s.eyebrow}>polynize agentic management console</div>
           <h1 className={s.title}>PAM Control Centre</h1>
-          <p className={s.lede}>
-            Active engagements across all phases. Click through to view each
-            client&apos;s Blueprint.
-          </p>
         </div>
 
         {empty ? (
