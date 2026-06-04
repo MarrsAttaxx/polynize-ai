@@ -353,7 +353,17 @@
     max-width: none;
     margin: 0;
     padding: 0;
-    color: #111;
+    color: #000;
+    /* The --bp-* palette is tuned for the dark-mode screen (near-white body
+       text on dark surfaces). Redefine the text tokens for print so any
+       token-coloured text (clause bodies, sub-headers, captions) prints
+       near-black, not the screen greys. */
+    --bp-text: #000;
+    --bp-text-2: #333;
+    --bp-text-3: #555;
+    --bp-mint: #000;
+    --bp-electric: #000;
+    --bp-coral: #000;
   }
 
   .doc {
@@ -361,9 +371,26 @@
     border: none;
     border-radius: 0;
     padding: 0;
-    color: #111;
+    color: #000;
     font-size: 11.5pt;
     line-height: 1.5;
+  }
+
+  /* Force near-black on body text, headings, sub-headers and table cells,
+     overriding any inherited bp token (belt-and-suspenders with the token
+     redefinition above). */
+  .doc,
+  .sectionTitle,
+  .sub,
+  .clauseTitle,
+  .clauseBody,
+  .lettered li,
+  .glance li,
+  .motions li,
+  .kv td,
+  .grid td,
+  .signFields dd {
+    color: #000;
   }
 
   /* Print typography: dark text, no screen-only accents. */
