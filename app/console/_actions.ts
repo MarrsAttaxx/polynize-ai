@@ -1,7 +1,6 @@
 'use server';
 
 import { cookies } from 'next/headers';
-import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { z } from 'zod';
 import {
@@ -12,112 +11,69 @@ import {
 import { sendEmail } from '@/lib/resend-client';
 
 const emailSchema = z.string().email();
-const FLASH_TTL_SECONDS = 60;
-
-const FLASH_OPTS = {
-  httpOnly: true,
-  sameSite: 'lax' as const,
-  path: '/console',
-  maxAge: FLASH_TTL_SECONDS,
-};
 
 /**
- * Three flash cookies drive the sign-in card's state:
- *  - console_signin_submitted=1  + console_signin_email=<email>  → "Check
- *    your inbox" confirmation card replaces the form.
- *  - console_signin_error=invalid_email | send_failed | invalid_link →
- *    inline error on the form.
- * Set with TTL 60s; the user will have moved on by then.
+ * Send a magic-link email. PURE side effect: no cookies, no redirect, no
+ * revalidate.
+ *
+ * The sign-in confirmation ("Check your inbox") is owned by client state in
+ * SignInForm, NOT by a flash cookie read back after a redirect. That cookie
+ * round-trip was the root cause of the recurring "confirmation only shows
+ * after a hard refresh" bug: the cookie was set in the action and the browser
+ * stored it (hence hard refresh worked), but the post-action redirect render
+ * read the pre-submit cookie snapshot and re-rendered the form (the "flash").
+ * Keeping this action free of cookies/redirect means the confirmation can show
+ * synchronously on the client with no fragile server round-trip.
+ *
+ * Non-disclosure preserved: a well-formed but non-allowlisted email returns
+ * { ok: true } with no send attempt, so the UI's confirmation never reveals
+ * allowlist membership. { ok: false } is only a genuine delivery failure for
+ * an allowed email, so the UI can show a soft note.
  */
-export async function requestMagicLinkAction(formData: FormData): Promise<void> {
-  const raw = String(formData.get('email') ?? '')
+export async function sendMagicLinkAction(
+  email: string
+): Promise<{ ok: boolean }> {
+  const raw = String(email ?? '')
     .trim()
     .toLowerCase();
-  const parsed = emailSchema.safeParse(raw);
 
-  const jar = await cookies();
-  const setFlash = (name: string, value: string) => {
-    jar.set({
-      name,
-      value,
-      ...FLASH_OPTS,
-      secure: process.env.NODE_ENV === 'production',
-    });
-  };
-
-  // Clear stale flash from any prior attempt so the new state wins cleanly.
-  jar.delete('console_signin_submitted');
-  jar.delete('console_signin_email');
-  jar.delete('console_signin_error');
-
-  if (!parsed.success) {
-    setFlash('console_signin_error', 'invalid_email');
-    // Bust the router cache for both the page AND the layout. The 'layout'
-    // scope is critical: when the user is unauthenticated, the layout
-    // short-circuits to <SignInGate /> without rendering the page at all,
-    // so a page-scope revalidate (the default) leaves the cached layout
-    // RSC intact and the post-redirect render shows stale state. Verified
-    // empirically: hard-refresh worked, normal redirect-follow didn't —
-    // exactly the symptom of router-cached layout RSC.
-    revalidatePath('/console', 'layout');
-    redirect('/console');
+  if (!emailSchema.safeParse(raw).success) {
+    // Malformed: nothing to send (the client validates format too). Treat as
+    // a no-op success so it is not a disclosure vector.
+    return { ok: true };
   }
 
-  let sendFailed = false;
-  if (isEmailAllowed(raw)) {
-    try {
-      const token = await createMagicLinkToken(raw);
-      const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? 'https://pam.polynize.ai';
-      const link = `${baseUrl}/console/auth/verify?token=${encodeURIComponent(token)}`;
+  if (!isEmailAllowed(raw)) {
+    return { ok: true }; // non-disclosure: do not reveal allowlist membership
+  }
 
-      await sendEmail({
-        to: raw,
-        subject: 'Sign in to Polynize Agentic Management Console',
-        html: `<p>Click the link below to sign in to the Polynize Agentic Management Console (PAM):</p>
+  try {
+    const token = await createMagicLinkToken(raw);
+    const baseUrl =
+      process.env.NEXT_PUBLIC_BASE_URL ?? 'https://pam.polynize.ai';
+    const link = `${baseUrl}/console/auth/verify?token=${encodeURIComponent(token)}`;
+
+    await sendEmail({
+      to: raw,
+      subject: 'Sign in to Polynize Agentic Management Console',
+      html: `<p>Click the link below to sign in to the Polynize Agentic Management Console (PAM):</p>
 <p><a href="${link}">Sign in to Polynize Agentic Management Console</a></p>
 <p>This link expires in 15 minutes.</p>
 <p>If you did not request this, you can safely ignore this email.</p>`,
-        text: `Sign in to the Polynize Agentic Management Console (PAM):
+      text: `Sign in to the Polynize Agentic Management Console (PAM):
 
 ${link}
 
 This link expires in 15 minutes.
 
 If you did not request this, you can safely ignore this email.`,
-      });
-    } catch (err) {
-      console.error('[console-auth] failed to send magic link', err);
-      sendFailed = true;
-    }
+    });
+    return { ok: true };
+  } catch (err) {
+    // eslint-disable-next-line no-console
+    console.error('[console-auth] failed to send magic link', err);
+    return { ok: false };
   }
-
-  if (sendFailed) {
-    setFlash('console_signin_error', 'send_failed');
-  } else {
-    // Set confirmation cookies regardless of allowlist membership. The
-    // confirmation card just echoes the submitted email back; it does not
-    // reveal whether the email is authorized (the link would simply fail
-    // verification if not). Non-disclosure preserved.
-    setFlash('console_signin_submitted', '1');
-    setFlash('console_signin_email', raw);
-  }
-
-  // Bust the layout-level cache (see same call above for full reasoning).
-  revalidatePath('/console', 'layout');
-  redirect('/console');
-}
-
-/**
- * Clears the sign-in flash cookies so the form re-appears. Wired up to the
- * "Use a different email" button in the confirmation card.
- */
-export async function resetSignInAction(): Promise<void> {
-  const jar = await cookies();
-  jar.delete('console_signin_submitted');
-  jar.delete('console_signin_email');
-  jar.delete('console_signin_error');
-  revalidatePath('/console', 'layout');
-  redirect('/console');
 }
 
 export async function signOutAction(): Promise<void> {
