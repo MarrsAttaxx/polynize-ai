@@ -1,37 +1,45 @@
 'use client';
 
 /**
- * One editable SoW field. Click to edit (team scope); saves POST to the SoW
- * field endpoint with { path, value }, then router.refresh().
+ * One editable SoW field, two-colour by ownership and role-aware.
  *
- * Empty (null / blank) + editable → a coral "NEEDS INPUT" badge naming the
- * field. Filled → the value, with a subtle edit affordance. Read-only viewers
- * (client scope) see the value or a muted "to be completed" placeholder, never
- * a badge or an input.
+ * Colour: POLYNIZE-owned unfilled fields show a MINT "NEEDS INPUT" badge;
+ * CLIENT-owned unfilled fields show an ORANGE one.
  *
- * Defined at module scope (not nested in a parent render) so its identity is
- * stable across keystrokes and the caret never resets.
+ * Who can edit: team edits any field; a client edits only client-owned fields.
+ *
+ * What a client sees:
+ *   - their own (orange) unfilled fields  → orange NEEDS INPUT badge (editable)
+ *   - filled fields (any owner)           → the value
+ *   - UNFILLED Polynize fields            → a plain blank underline, NOT a mint
+ *                                           badge (clients never see our
+ *                                           internal to-do markers)
+ *
+ * Module scope (not nested in a parent render) so the caret never resets.
  */
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import s from '../sow.module.css';
 
+export type SowViewerScope = 'team' | 'client' | 'anon';
+
 export function SowField({
   slug,
   path,
   value,
   label,
-  canEdit,
+  owner,
+  scope,
   multiline = false,
   placeholder,
 }: {
   slug: string;
   path: string;
   value: string | null;
-  /** Human-readable field name, shown in the NEEDS INPUT badge. */
   label: string;
-  canEdit: boolean;
+  owner: 'polynize' | 'client';
+  scope: SowViewerScope;
   multiline?: boolean;
   placeholder?: string;
 }) {
@@ -42,12 +50,19 @@ export function SowField({
   const [error, setError] = useState<string | null>(null);
 
   const filled = !!(value && value.trim());
+  // Team edits everything; a client edits only their own (client-owned) fields.
+  const canEdit = scope === 'team' || (scope === 'client' && owner === 'client');
 
   if (!canEdit) {
-    return filled ? (
-      <span className={s.fieldValue}>{value}</span>
-    ) : (
-      <span className={s.fieldTodo}>to be completed</span>
+    if (filled) return <span className={s.fieldValue}>{value}</span>;
+    // Unfilled + not editable by this viewer: a plain blank underline. For a
+    // client this is an unfilled Polynize field — they must NOT see our mint
+    // to-do badge, just a blank where our value will go.
+    return (
+      <span
+        className={s.fieldBlank}
+        aria-label={`${label}: to be completed by Polynize`}
+      />
     );
   }
 
@@ -135,10 +150,12 @@ export function SowField({
     );
   }
 
+  // Unfilled + editable: NEEDS INPUT badge, coloured by owner.
+  const badgeClass = owner === 'polynize' ? s.needsInputMint : s.needsInput;
   return (
     <button
       type="button"
-      className={s.needsInput}
+      className={badgeClass}
       onClick={() => {
         setDraft('');
         setEditing(true);

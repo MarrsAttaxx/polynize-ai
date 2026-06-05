@@ -36,6 +36,12 @@ export interface HumanFieldDef {
   label: string;
   /** null → renders as NEEDS INPUT until completed. A string → editable default. */
   default: string | null;
+  /**
+   * Who completes this field. Drives the fill colour (polynize = mint,
+   * client = orange) and who may edit it: a client-scope user may edit only
+   * 'client'-owned fields; 'polynize' fields are team-only.
+   */
+  owner: 'polynize' | 'client';
 }
 
 /**
@@ -45,39 +51,43 @@ export interface HumanFieldDef {
  * surface as NEEDS INPUT.
  */
 export const HUMAN_FIELDS: HumanFieldDef[] = [
-  // Parties / identity
-  { key: 'client_legal_name', label: 'Client legal name', default: null },
-  { key: 'client_acn_abn', label: 'Client ACN/ABN', default: null },
-  { key: 'client_address', label: 'Client registered address', default: null },
-  { key: 'client_contact', label: 'Client contact (name, title, email)', default: null },
-  { key: 'polynize_acn', label: 'Polynize ACN', default: null },
-  { key: 'polynize_address', label: 'Polynize registered address', default: null },
-  { key: 'polynize_contact', label: 'Polynize contact (name, title, email)', default: null },
-  // Commercial
-  { key: 'total_fee', label: 'Total fee (ex GST)', default: null },
-  { key: 'milestone_build_amount', label: 'Build commencement amount (ex GST)', default: null },
-  { key: 'milestone_handoff_amount', label: 'Handoff amount (ex GST)', default: null },
-  { key: 'support_fee', label: 'Support fee (ex GST)', default: null },
-  { key: 'support_period', label: 'Support period', default: 'month' },
-  { key: 'billing_email', label: 'Billing email', default: null },
-  { key: 'payment_days', label: 'Payment days', default: '14' },
-  { key: 'payment_terms', label: 'Payment terms', default: '50% on Gate 03, 50% on Handoff' },
-  { key: 'third_party_costs', label: 'Third-party pass-through costs', default: "the Client's responsibility" },
+  // Parties / identity — the things only the client knows about their entity
+  // are CLIENT-owned; the Polynize-entity fields are POLYNIZE-owned.
+  { key: 'client_legal_name', label: 'Client legal name', default: null, owner: 'client' },
+  { key: 'client_acn_abn', label: 'Client ACN/ABN', default: null, owner: 'client' },
+  { key: 'client_address', label: 'Client registered address', default: null, owner: 'client' },
+  { key: 'client_contact', label: 'Client contact (name, title, email)', default: null, owner: 'client' },
+  { key: 'polynize_acn', label: 'Polynize ACN', default: null, owner: 'polynize' },
+  { key: 'polynize_address', label: 'Polynize registered address', default: null, owner: 'polynize' },
+  { key: 'polynize_contact', label: 'Polynize contact (name, title, email)', default: null, owner: 'polynize' },
+  // Commercial — Polynize sets the terms; billing_email is the client's.
+  { key: 'total_fee', label: 'Total fee (ex GST)', default: null, owner: 'polynize' },
+  { key: 'milestone_build_amount', label: 'Build commencement amount (ex GST)', default: null, owner: 'polynize' },
+  { key: 'milestone_handoff_amount', label: 'Handoff amount (ex GST)', default: null, owner: 'polynize' },
+  { key: 'support_fee', label: 'Support fee (ex GST)', default: null, owner: 'polynize' },
+  // support_period: ambiguous, defaulted to polynize (it pairs with support_fee).
+  { key: 'support_period', label: 'Support period', default: 'month', owner: 'polynize' },
+  { key: 'billing_email', label: 'Billing email', default: null, owner: 'client' },
+  { key: 'payment_days', label: 'Payment days', default: '14', owner: 'polynize' },
+  { key: 'payment_terms', label: 'Payment terms', default: '50% on Gate 03, 50% on Handoff', owner: 'polynize' },
+  // third_party_costs: ambiguous, defaulted to polynize (a commercial term Polynize sets).
+  { key: 'third_party_costs', label: 'Third-party pass-through costs', default: "the Client's responsibility", owner: 'polynize' },
   // Legal / risk
   {
     key: 'liability_cap',
     label: 'Liability cap',
     default:
       'the total Fees paid by the Client under this Agreement in the 12 months before the event giving rise to the liability',
+    owner: 'polynize',
   },
-  { key: 'term_end', label: 'Term end', default: 'Handoff' },
-  { key: 'acceptance_window_days', label: 'Acceptance window (business days)', default: '10' },
-  // Timeline
-  { key: 'estimated_build', label: 'Estimated build window', default: '4 to 6 weeks' },
+  { key: 'term_end', label: 'Term end', default: 'Handoff', owner: 'polynize' },
+  { key: 'acceptance_window_days', label: 'Acceptance window (business days)', default: '10', owner: 'polynize' },
+  // Timeline — estimated_build: ambiguous, defaulted to polynize (the build window Polynize commits to).
+  { key: 'estimated_build', label: 'Estimated build window', default: '4 to 6 weeks', owner: 'polynize' },
   // Execution
-  { key: 'signatory_name', label: 'Polynize signatory name', default: null },
-  { key: 'signatory_title', label: 'Polynize signatory title', default: null },
-  { key: 'date_sent', label: 'Date sent', default: null },
+  { key: 'signatory_name', label: 'Polynize signatory name', default: null, owner: 'polynize' },
+  { key: 'signatory_title', label: 'Polynize signatory title', default: null, owner: 'polynize' },
+  { key: 'date_sent', label: 'Date sent', default: null, owner: 'polynize' },
 ];
 
 export const HUMAN_FIELD_KEYS: ReadonlySet<string> = new Set(
@@ -86,6 +96,11 @@ export const HUMAN_FIELD_KEYS: ReadonlySet<string> = new Set(
 
 export function humanFieldDef(key: string): HumanFieldDef | undefined {
   return HUMAN_FIELDS.find((f) => f.key === key);
+}
+
+/** Owner of a HUMAN field. Unknown keys default to 'polynize' (team-only). */
+export function humanFieldOwner(key: string): 'polynize' | 'client' {
+  return humanFieldDef(key)?.owner ?? 'polynize';
 }
 
 /** A Service Agreement Part B clause: number, title, and verbatim body parts. */

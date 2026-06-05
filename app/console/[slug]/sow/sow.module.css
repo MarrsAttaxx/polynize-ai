@@ -283,6 +283,33 @@
 }
 .needsInput:hover { background: rgba(255, 196, 107, 0.24); }
 
+/* Polynize-owned unfilled field → MINT badge (#4de8a0). Client-owned uses the
+   orange .needsInput above. */
+.needsInputMint {
+  display: inline-block;
+  background: rgba(77, 232, 160, 0.14);
+  color: #4de8a0;
+  border: 1px solid rgba(77, 232, 160, 0.55);
+  border-radius: 6px;
+  padding: 1px 9px;
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  cursor: pointer;
+  white-space: normal;
+}
+.needsInputMint:hover { background: rgba(77, 232, 160, 0.24); }
+
+/* Client's view of an unfilled Polynize field, and the read-only/anon empty
+   rendering: a plain blank underline, never a to-do badge. */
+.fieldBlank {
+  display: inline-block;
+  min-width: 120px;
+  border-bottom: 1px solid var(--bp-text-3);
+  vertical-align: baseline;
+}
+
 .fieldEditor { display: inline-flex; flex-direction: column; gap: 6px; vertical-align: top; min-width: 240px; }
 .fieldInput, .fieldTextarea {
   background: var(--bp-inset);
@@ -347,7 +374,8 @@
   @page { margin: 18mm 16mm; }
 
   .bgPattern,
-  .pageHeader { display: none !important; }
+  .pageHeader,
+  .toolbar { display: none !important; }
 
   .page {
     max-width: none;
@@ -440,4 +468,68 @@
     letter-spacing: 0;
     font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
   }
+}
+
+/* ============================================================
+   SoW toolbar: colour key + remaining counters + send-to-client.
+   Screen-only chrome (hidden in @media print).
+   ============================================================ */
+.toolbar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 14px 24px;
+  margin-bottom: 18px;
+  padding: 12px 16px;
+  border-radius: 10px;
+  background: var(--bp-surface);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+.legend {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  flex-wrap: wrap;
+  font-size: 12.5px;
+  color: var(--bp-text-2);
+}
+.legendItem { display: inline-flex; align-items: center; gap: 7px; }
+.swatch {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  display: inline-block;
+}
+.swatchMint { background: #4de8a0; }
+.swatchOrange { background: var(--bp-amber); }
+
+.counters {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-left: auto;
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 11.5px;
+}
+.counterMint { color: #4de8a0; }
+.counterOrange { color: var(--bp-amber); }
+
+.sendBtn {
+  display: inline-block;
+  background: #4de8a0;
+  color: #0c1f18;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 8px 16px;
+  border-radius: 8px;
+  text-decoration: none;
+  white-space: nowrap;
+  box-shadow: 0 0 14px rgba(77, 232, 160, 0.28);
+}
+.sendBtn:hover { filter: brightness(1.06); }
+.sendHint {
+  font-size: 11.5px;
+  color: var(--bp-text-3);
+  font-style: italic;
 }

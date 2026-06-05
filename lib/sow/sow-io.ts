@@ -15,7 +15,7 @@ import {
   SOW_SCHEMA_VERSION,
   type SowDoc,
 } from './schema';
-import { HUMAN_FIELDS } from './template';
+import { HUMAN_FIELDS, humanFieldOwner } from './template';
 
 export const SOW_PATH = 'sow/sow.json';
 
@@ -184,4 +184,31 @@ export function applySowFieldEdit(
   }
 
   return { ok: false, error: `unsupported path: ${path}` };
+}
+
+/**
+ * Authorize a field edit by scope + path. The team may edit any field. A
+ * client may edit ONLY a client-owned HUMAN field (path `human.<key>` where the
+ * registry marks owner: 'client'); polynize-owned HUMAN fields and all `auto.*`
+ * content are team-only. Pure + unit-tested: this is the second client-write
+ * path (after questions), so the gate is explicit and isolated.
+ */
+export function authorizeSowFieldEdit(
+  path: string,
+  isTeam: boolean
+): { ok: true } | { ok: false; status: number; error: string } {
+  if (isTeam) return { ok: true };
+  const segs = path.split('.');
+  if (
+    segs.length === 2 &&
+    segs[0] === 'human' &&
+    humanFieldOwner(segs[1]) === 'client'
+  ) {
+    return { ok: true };
+  }
+  return {
+    ok: false,
+    status: 403,
+    error: 'Forbidden: clients may only edit their own (orange) fields',
+  };
 }

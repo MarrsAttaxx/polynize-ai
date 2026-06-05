@@ -17,45 +17,50 @@ import {
   SA_CLAUSES,
   SA_SCHEDULES,
   humanFieldDef,
+  humanFieldOwner,
 } from '@/lib/sow/template';
-import { SowField } from './SowField';
+import { SowField, type SowViewerScope } from './SowField';
 import s from '../sow.module.css';
 
-function H({ value, slug, path, canEdit, multiline }: {
+// HUMAN field: owner (colour + edit permission) comes from the registry,
+// keyed off the path.
+function H({ value, slug, path, scope, multiline }: {
   value: string | null;
   slug: string;
   path: string; // human.<key>
-  canEdit: boolean;
+  scope: SowViewerScope;
   multiline?: boolean;
 }) {
   const key = path.split('.')[1];
   const label = humanFieldDef(key)?.label ?? key;
   return (
-    <SowField slug={slug} path={path} value={value} label={label} canEdit={canEdit} multiline={multiline} />
+    <SowField slug={slug} path={path} value={value} label={label} owner={humanFieldOwner(key)} scope={scope} multiline={multiline} />
   );
 }
 
-function A({ value, slug, path, label, canEdit, multiline }: {
+// AUTO content: Blueprint-derived, Polynize-owned (team-editable). Filled by
+// the merge, so it renders as a value, not a badge.
+function A({ value, slug, path, label, scope, multiline }: {
   value: string | null;
   slug: string;
   path: string; // auto.<...>
   label: string;
-  canEdit: boolean;
+  scope: SowViewerScope;
   multiline?: boolean;
 }) {
   return (
-    <SowField slug={slug} path={path} value={value} label={label} canEdit={canEdit} multiline={multiline} />
+    <SowField slug={slug} path={path} value={value} label={label} owner="polynize" scope={scope} multiline={multiline} />
   );
 }
 
 export function SowDocument({
   doc,
   slug,
-  canEdit,
+  scope,
 }: {
   doc: SowDoc;
   slug: string;
-  canEdit: boolean;
+  scope: SowViewerScope;
 }) {
   const a = doc.auto;
   const h = doc.human;
@@ -75,14 +80,14 @@ export function SowDocument({
 
       <table className={s.kv}>
         <tbody>
-          <tr><th>Provider</th><td>Polynize Pty Ltd (ACN <H slug={slug} path="human.polynize_acn" value={hv('polynize_acn')} canEdit={canEdit} />)</td></tr>
-          <tr><th>Client</th><td><H slug={slug} path="human.client_legal_name" value={hv('client_legal_name')} canEdit={canEdit} /> (ACN/ABN <H slug={slug} path="human.client_acn_abn" value={hv('client_acn_abn')} canEdit={canEdit} />)</td></tr>
-          <tr><th>Engagement</th><td><A slug={slug} path="auto.engagement_name" value={a.engagement_name} label="Engagement name" canEdit={canEdit} /></td></tr>
+          <tr><th>Provider</th><td>Polynize Pty Ltd (ACN <H slug={slug} path="human.polynize_acn" value={hv('polynize_acn')} scope={scope} />)</td></tr>
+          <tr><th>Client</th><td><H slug={slug} path="human.client_legal_name" value={hv('client_legal_name')} scope={scope} /> (ACN/ABN <H slug={slug} path="human.client_acn_abn" value={hv('client_acn_abn')} scope={scope} />)</td></tr>
+          <tr><th>Engagement</th><td><A slug={slug} path="auto.engagement_name" value={a.engagement_name} label="Engagement name" scope={scope} /></td></tr>
           <tr><th>SoW reference</th><td className={s.mono}>{doc.sow_reference}</td></tr>
           <tr><th>Agent Team</th><td>The agents listed in section 3</td></tr>
           <tr><th>Derived from</th><td>{doc.generated_from}</td></tr>
-          <tr><th>Estimated build</th><td><H slug={slug} path="human.estimated_build" value={hv('estimated_build')} canEdit={canEdit} /> for the first build cycle</td></tr>
-          <tr><th>Total fee</th><td>{'$'}<H slug={slug} path="human.total_fee" value={hv('total_fee')} canEdit={canEdit} /> + GST (see section 9)</td></tr>
+          <tr><th>Estimated build</th><td><H slug={slug} path="human.estimated_build" value={hv('estimated_build')} scope={scope} /> for the first build cycle</td></tr>
+          <tr><th>Total fee</th><td>{'$'}<H slug={slug} path="human.total_fee" value={hv('total_fee')} scope={scope} /> + GST (see section 9)</td></tr>
           <tr><th>Status</th><td>DRAFT. Complete the NEEDS INPUT fields and have it reviewed before use.</td></tr>
         </tbody>
       </table>
@@ -92,11 +97,11 @@ export function SowDocument({
       <Section n="1" title="Parties and engagement">
         <p>
           {'This Statement of Works is made between Polynize Pty Ltd (ACN '}
-          <H slug={slug} path="human.polynize_acn" value={hv('polynize_acn')} canEdit={canEdit} />
+          <H slug={slug} path="human.polynize_acn" value={hv('polynize_acn')} scope={scope} />
           {') (“Polynize”) and '}
-          <H slug={slug} path="human.client_legal_name" value={hv('client_legal_name')} canEdit={canEdit} />
+          <H slug={slug} path="human.client_legal_name" value={hv('client_legal_name')} scope={scope} />
           {' (ACN/ABN '}
-          <H slug={slug} path="human.client_acn_abn" value={hv('client_acn_abn')} canEdit={canEdit} />
+          <H slug={slug} path="human.client_acn_abn" value={hv('client_acn_abn')} scope={scope} />
           {') (the “Client”), with effect from the date it is signed by the Client (the “Effective Date”).'}
         </p>
         <p>
@@ -114,7 +119,7 @@ export function SowDocument({
           <li>
             <strong>What we will do.</strong>{' '}
             {'Design, build, test and hand over the agents and capabilities listed in section 3, over an estimated '}
-            <H slug={slug} path="human.estimated_build" value={hv('estimated_build')} canEdit={canEdit} />
+            <H slug={slug} path="human.estimated_build" value={hv('estimated_build')} scope={scope} />
             {' first build cycle (section 5).'}
           </li>
           <li><strong>What you will do.</strong> {`Give us timely access and accurate data; train your people on the operating procedures (SOPs) we provide; and keep a human reviewing or approving the items we have marked as human-checked (for example, ${humanHeldExample}).`}</li>
@@ -123,9 +128,9 @@ export function SowDocument({
           <li><strong>After handoff.</strong> {'We support the agents doing what this SoW says they do; anything outside that is separate (the Service Agreement).'}</li>
           <li>
             <strong>Fees.</strong>{' $'}
-            <H slug={slug} path="human.total_fee" value={hv('total_fee')} canEdit={canEdit} />
+            <H slug={slug} path="human.total_fee" value={hv('total_fee')} scope={scope} />
             {' + GST, payable at the milestones in section 9. Invoices are due in '}
-            <H slug={slug} path="human.payment_days" value={hv('payment_days')} canEdit={canEdit} />
+            <H slug={slug} path="human.payment_days" value={hv('payment_days')} scope={scope} />
             {' days.'}
           </li>
           <li><strong>Liability and law.</strong> {'Liability is capped and some losses are excluded (Service Agreement, clauses 16 to 17). Governed by the laws of Victoria, Australia.'}</li>
@@ -136,7 +141,7 @@ export function SowDocument({
       <Section n="3" title="Scope of works">
         <p>
           <strong>Background.</strong>{' '}
-          <A slug={slug} path="auto.background" value={a.background} label="Background" canEdit={canEdit} multiline />
+          <A slug={slug} path="auto.background" value={a.background} label="Background" scope={scope} multiline />
         </p>
 
         <h3 className={s.sub}>3.1 The Agent Team</h3>
@@ -146,8 +151,8 @@ export function SowDocument({
           <tbody>
             {a.agent_team.map((ag, i) => (
               <tr key={i}>
-                <td><A slug={slug} path={`auto.agent_team.${i}.name`} value={ag.name} label="Agent name" canEdit={canEdit} /></td>
-                <td><A slug={slug} path={`auto.agent_team.${i}.role`} value={ag.role} label="Agent role" canEdit={canEdit} /></td>
+                <td><A slug={slug} path={`auto.agent_team.${i}.name`} value={ag.name} label="Agent name" scope={scope} /></td>
+                <td><A slug={slug} path={`auto.agent_team.${i}.role`} value={ag.role} label="Agent role" scope={scope} /></td>
               </tr>
             ))}
           </tbody>
@@ -156,7 +161,7 @@ export function SowDocument({
         <h3 className={s.sub}>3.2 In scope</h3>
         <ol className={s.lettered}>
           {a.in_scope.map((item, i) => (
-            <li key={i}><A slug={slug} path={`auto.in_scope.${i}`} value={item} label="In-scope item" canEdit={canEdit} multiline /></li>
+            <li key={i}><A slug={slug} path={`auto.in_scope.${i}`} value={item} label="In-scope item" scope={scope} multiline /></li>
           ))}
         </ol>
 
@@ -166,7 +171,7 @@ export function SowDocument({
         </p>
         <ol className={s.lettered}>
           {a.out_of_scope.map((item, i) => (
-            <li key={i}><A slug={slug} path={`auto.out_of_scope.${i}`} value={item} label="Out-of-scope item" canEdit={canEdit} multiline /></li>
+            <li key={i}><A slug={slug} path={`auto.out_of_scope.${i}`} value={item} label="Out-of-scope item" scope={scope} multiline /></li>
           ))}
           <li>{'anything not expressly listed in this section 3.'}</li>
         </ol>
@@ -181,9 +186,9 @@ export function SowDocument({
             {a.capability_schedule.map((row, i) => (
               <tr key={row.id}>
                 <td className={s.mono}>{row.id}</td>
-                <td><A slug={slug} path={`auto.capability_schedule.${i}.name`} value={row.name} label="Capability" canEdit={canEdit} /></td>
-                <td><A slug={slug} path={`auto.capability_schedule.${i}.how`} value={row.how} label="How it is done" canEdit={canEdit} /></td>
-                <td><A slug={slug} path={`auto.capability_schedule.${i}.human_check`} value={row.human_check} label="Human check" canEdit={canEdit} /></td>
+                <td><A slug={slug} path={`auto.capability_schedule.${i}.name`} value={row.name} label="Capability" scope={scope} /></td>
+                <td><A slug={slug} path={`auto.capability_schedule.${i}.how`} value={row.how} label="How it is done" scope={scope} /></td>
+                <td><A slug={slug} path={`auto.capability_schedule.${i}.human_check`} value={row.human_check} label="Human check" scope={scope} /></td>
               </tr>
             ))}
           </tbody>
@@ -200,8 +205,8 @@ export function SowDocument({
           <tbody>
             {a.targets.map((t, i) => (
               <tr key={i}>
-                <td><A slug={slug} path={`auto.targets.${i}.capability`} value={t.capability} label="Capability" canEdit={canEdit} /></td>
-                <td><A slug={slug} path={`auto.targets.${i}.target`} value={t.target} label="Target" canEdit={canEdit} multiline /></td>
+                <td><A slug={slug} path={`auto.targets.${i}.capability`} value={t.capability} label="Capability" scope={scope} /></td>
+                <td><A slug={slug} path={`auto.targets.${i}.target`} value={t.target} label="Target" scope={scope} multiline /></td>
               </tr>
             ))}
           </tbody>
@@ -214,8 +219,8 @@ export function SowDocument({
         <ul className={s.motions}>
           {a.motions.map((m, i) => (
             <li key={i}>
-              <strong><A slug={slug} path={`auto.motions.${i}.label`} value={m.label} label="Motion" canEdit={canEdit} />.</strong>{' '}
-              <A slug={slug} path={`auto.motions.${i}.description`} value={m.description} label="Motion description" canEdit={canEdit} multiline />
+              <strong><A slug={slug} path={`auto.motions.${i}.label`} value={m.label} label="Motion" scope={scope} />.</strong>{' '}
+              <A slug={slug} path={`auto.motions.${i}.description`} value={m.description} label="Motion description" scope={scope} multiline />
             </li>
           ))}
         </ul>
@@ -229,13 +234,13 @@ export function SowDocument({
         <h3 className={s.sub}>5.3 Phases and timeline</h3>
         <p className={s.muted}>
           {'The first build cycle is estimated at '}
-          <H slug={slug} path="human.estimated_build" value={hv('estimated_build')} canEdit={canEdit} />
+          <H slug={slug} path="human.estimated_build" value={hv('estimated_build')} scope={scope} />
           {' from Gate 03 (this SoW).'}
         </p>
         <table className={s.grid}>
           <thead><tr><th>Phase</th><th>What happens</th><th>Indicative timing</th></tr></thead>
           <tbody>
-            <tr><td>First build wave</td><td>{'Build the first-wave capabilities'}</td><td><H slug={slug} path="human.estimated_build" value={hv('estimated_build')} canEdit={canEdit} /></td></tr>
+            <tr><td>First build wave</td><td>{'Build the first-wave capabilities'}</td><td><H slug={slug} path="human.estimated_build" value={hv('estimated_build')} scope={scope} /></td></tr>
             <tr><td>Training</td><td>{'People uplift on review craft, alongside the build'}</td><td>Concurrent</td></tr>
             <tr><td>Transform</td><td>{'Process redesign, after the first agents are stable'}</td><td>After first build</td></tr>
             <tr><td>Handoff (Gate 04)</td><td>{'Operational ownership passes to the Client on acceptance (section 6)'}</td><td>End of build cycle</td></tr>
@@ -250,7 +255,7 @@ export function SowDocument({
           <li>{'the configured Agent Team in section 3, with installed Cognition, Skills and Connectors for each capability;'}</li>
           <li>
             {'the integrations identified in the Blueprint ('}
-            <A slug={slug} path="auto.integrations.0" value={a.integrations.join(', ') || null} label="Integrations" canEdit={false} />
+            <A slug={slug} path="auto.integrations.0" value={a.integrations.join(', ') || null} label="Integrations" scope="anon" />
             {a.integrations.length ? '' : 'ticketing, email, messaging and data tools'}
             {');'}
           </li>
@@ -260,7 +265,7 @@ export function SowDocument({
         <p>
           <strong>6.2 Acceptance.</strong>{' '}
           {'Polynize will notify the Client when each deliverable is ready. The Client has '}
-          <H slug={slug} path="human.acceptance_window_days" value={hv('acceptance_window_days')} canEdit={canEdit} />
+          <H slug={slug} path="human.acceptance_window_days" value={hv('acceptance_window_days')} scope={scope} />
           {' business days to accept or to reject (only for a material failure against this SoW, in writing with detail). A deliverable is accepted on the earlier of written acceptance, live use, or the end of the testing period without valid rejection. Acceptance and handoff follow clause 6 of the Service Agreement.'}
         </p>
         <p>
@@ -291,27 +296,27 @@ export function SowDocument({
         <p>
           <strong>9.1 Fees.</strong>{' '}
           {'The fees for the works are set out below and are exclusive of GST. Third-party costs such as cloud hosting and model usage are '}
-          <H slug={slug} path="human.third_party_costs" value={hv('third_party_costs')} canEdit={canEdit} />
+          <H slug={slug} path="human.third_party_costs" value={hv('third_party_costs')} scope={scope} />
           {'.'}
         </p>
         <table className={s.grid}>
           <thead><tr><th>Milestone</th><th>Trigger</th><th>Amount (ex GST)</th></tr></thead>
           <tbody>
-            <tr><td>Build commencement</td><td>On signing this SoW (Gate 03)</td><td>{'$'}<H slug={slug} path="human.milestone_build_amount" value={hv('milestone_build_amount')} canEdit={canEdit} /></td></tr>
-            <tr><td>Handoff</td><td>On acceptance (Gate 04)</td><td>{'$'}<H slug={slug} path="human.milestone_handoff_amount" value={hv('milestone_handoff_amount')} canEdit={canEdit} /></td></tr>
-            <tr><td>Support (if taken)</td><td>Per <H slug={slug} path="human.support_period" value={hv('support_period')} canEdit={canEdit} /></td><td>{'$'}<H slug={slug} path="human.support_fee" value={hv('support_fee')} canEdit={canEdit} /></td></tr>
+            <tr><td>Build commencement</td><td>On signing this SoW (Gate 03)</td><td>{'$'}<H slug={slug} path="human.milestone_build_amount" value={hv('milestone_build_amount')} scope={scope} /></td></tr>
+            <tr><td>Handoff</td><td>On acceptance (Gate 04)</td><td>{'$'}<H slug={slug} path="human.milestone_handoff_amount" value={hv('milestone_handoff_amount')} scope={scope} /></td></tr>
+            <tr><td>Support (if taken)</td><td>Per <H slug={slug} path="human.support_period" value={hv('support_period')} scope={scope} /></td><td>{'$'}<H slug={slug} path="human.support_fee" value={hv('support_fee')} scope={scope} /></td></tr>
           </tbody>
         </table>
         <p>
           <strong>9.2 Payment.</strong>{' '}
           {'Invoices are payable within '}
-          <H slug={slug} path="human.payment_days" value={hv('payment_days')} canEdit={canEdit} />
+          <H slug={slug} path="human.payment_days" value={hv('payment_days')} scope={scope} />
           {' days, in AUD, without set-off. Late and suspension terms are in clause 7 of the Service Agreement.'}
         </p>
         <p>
           <strong>9.3 Invoicing on signing.</strong>{' '}
           {'On the Client signing this SoW, Polynize will issue a tax invoice for the build-commencement milestone to the Client’s nominated billing email ('}
-          <H slug={slug} path="human.billing_email" value={hv('billing_email')} canEdit={canEdit} />
+          <H slug={slug} path="human.billing_email" value={hv('billing_email')} scope={scope} />
           {') automatically. Signing authorises that invoice to be raised.'}
         </p>
       </Section>
@@ -324,16 +329,16 @@ export function SowDocument({
         <div className={s.sign}>
           <div className={s.signCol}>
             <div className={s.signHead}>Signed for and on behalf of Polynize (Provider)</div>
-            <div>Polynize Pty Ltd (ACN <H slug={slug} path="human.polynize_acn" value={hv('polynize_acn')} canEdit={canEdit} />)</div>
+            <div>Polynize Pty Ltd (ACN <H slug={slug} path="human.polynize_acn" value={hv('polynize_acn')} scope={scope} />)</div>
             <dl className={s.signFields}>
-              <div><dt>Name</dt><dd><H slug={slug} path="human.signatory_name" value={hv('signatory_name')} canEdit={canEdit} /></dd></div>
-              <div><dt>Title / position</dt><dd><H slug={slug} path="human.signatory_title" value={hv('signatory_title')} canEdit={canEdit} /></dd></div>
-              <div><dt>Date</dt><dd><H slug={slug} path="human.date_sent" value={hv('date_sent')} canEdit={canEdit} /></dd></div>
+              <div><dt>Name</dt><dd><H slug={slug} path="human.signatory_name" value={hv('signatory_name')} scope={scope} /></dd></div>
+              <div><dt>Title / position</dt><dd><H slug={slug} path="human.signatory_title" value={hv('signatory_title')} scope={scope} /></dd></div>
+              <div><dt>Date</dt><dd><H slug={slug} path="human.date_sent" value={hv('date_sent')} scope={scope} /></dd></div>
             </dl>
           </div>
           <div className={s.signCol}>
             <div className={s.signHead}>Signed for and on behalf of the Client</div>
-            <div><H slug={slug} path="human.client_legal_name" value={hv('client_legal_name')} canEdit={canEdit} /> (ACN/ABN <H slug={slug} path="human.client_acn_abn" value={hv('client_acn_abn')} canEdit={canEdit} />)</div>
+            <div><H slug={slug} path="human.client_legal_name" value={hv('client_legal_name')} scope={scope} /> (ACN/ABN <H slug={slug} path="human.client_acn_abn" value={hv('client_acn_abn')} scope={scope} />)</div>
             <dl className={s.signFields}>
               <div><dt>Name</dt><dd className={s.signBlank}>&nbsp;</dd></div>
               <div><dt>Title / position</dt><dd className={s.signBlank}>&nbsp;</dd></div>
@@ -359,19 +364,19 @@ export function SowDocument({
       <Section n="" title="Part A — Key Details">
         <table className={s.kv}>
           <tbody>
-            <tr><th>Provider</th><td>Polynize Pty Ltd (ACN <H slug={slug} path="human.polynize_acn" value={hv('polynize_acn')} canEdit={canEdit} />), of <H slug={slug} path="human.polynize_address" value={hv('polynize_address')} canEdit={canEdit} />, Victoria</td></tr>
-            <tr><th>Client</th><td><H slug={slug} path="human.client_legal_name" value={hv('client_legal_name')} canEdit={canEdit} /> (ACN/ABN <H slug={slug} path="human.client_acn_abn" value={hv('client_acn_abn')} canEdit={canEdit} />), of <H slug={slug} path="human.client_address" value={hv('client_address')} canEdit={canEdit} /></td></tr>
-            <tr><th>Client contact</th><td><H slug={slug} path="human.client_contact" value={hv('client_contact')} canEdit={canEdit} /></td></tr>
-            <tr><th>Provider contact</th><td><H slug={slug} path="human.polynize_contact" value={hv('polynize_contact')} canEdit={canEdit} /></td></tr>
+            <tr><th>Provider</th><td>Polynize Pty Ltd (ACN <H slug={slug} path="human.polynize_acn" value={hv('polynize_acn')} scope={scope} />), of <H slug={slug} path="human.polynize_address" value={hv('polynize_address')} scope={scope} />, Victoria</td></tr>
+            <tr><th>Client</th><td><H slug={slug} path="human.client_legal_name" value={hv('client_legal_name')} scope={scope} /> (ACN/ABN <H slug={slug} path="human.client_acn_abn" value={hv('client_acn_abn')} scope={scope} />), of <H slug={slug} path="human.client_address" value={hv('client_address')} scope={scope} /></td></tr>
+            <tr><th>Client contact</th><td><H slug={slug} path="human.client_contact" value={hv('client_contact')} scope={scope} /></td></tr>
+            <tr><th>Provider contact</th><td><H slug={slug} path="human.polynize_contact" value={hv('polynize_contact')} scope={scope} /></td></tr>
             <tr><th>Engagement</th><td>{a.engagement_name}</td></tr>
             <tr><th>The Agent Team</th><td>{'The agents, capabilities and configuration described in the Blueprint at Schedule 1 (the agents named in section 3 of the SoW).'}</td></tr>
             <tr><th>Permitted Purpose</th><td>{`Use of the ${a.engagement_name} Agent Team within the Client’s business, strictly in accordance with the Specifications and the SOPs (see clause 9).`}</td></tr>
             <tr><th>Blueprint</th><td>{doc.generated_from}, attached as Schedule 1</td></tr>
-            <tr><th>Build window</th><td>Estimated <H slug={slug} path="human.estimated_build" value={hv('estimated_build')} canEdit={canEdit} /> first build cycle from Gate 03, subject to clause 6 and Client dependencies</td></tr>
-            <tr><th>Fees</th><td>{'$'}<H slug={slug} path="human.total_fee" value={hv('total_fee')} canEdit={canEdit} /> + GST (staged per the SoW fees section)</td></tr>
-            <tr><th>Payment terms</th><td><H slug={slug} path="human.payment_terms" value={hv('payment_terms')} canEdit={canEdit} />, <H slug={slug} path="human.payment_days" value={hv('payment_days')} canEdit={canEdit} /> days from invoice; see clause 7</td></tr>
-            <tr><th>Liability cap</th><td><H slug={slug} path="human.liability_cap" value={hv('liability_cap')} canEdit={canEdit} multiline />; see clause 17</td></tr>
-            <tr><th>Term</th><td>From the Effective Date until <H slug={slug} path="human.term_end" value={hv('term_end')} canEdit={canEdit} />; see clause 20</td></tr>
+            <tr><th>Build window</th><td>Estimated <H slug={slug} path="human.estimated_build" value={hv('estimated_build')} scope={scope} /> first build cycle from Gate 03, subject to clause 6 and Client dependencies</td></tr>
+            <tr><th>Fees</th><td>{'$'}<H slug={slug} path="human.total_fee" value={hv('total_fee')} scope={scope} /> + GST (staged per the SoW fees section)</td></tr>
+            <tr><th>Payment terms</th><td><H slug={slug} path="human.payment_terms" value={hv('payment_terms')} scope={scope} />, <H slug={slug} path="human.payment_days" value={hv('payment_days')} scope={scope} /> days from invoice; see clause 7</td></tr>
+            <tr><th>Liability cap</th><td><H slug={slug} path="human.liability_cap" value={hv('liability_cap')} scope={scope} multiline />; see clause 17</td></tr>
+            <tr><th>Term</th><td>From the Effective Date until <H slug={slug} path="human.term_end" value={hv('term_end')} scope={scope} />; see clause 20</td></tr>
             <tr><th>Support after Handoff</th><td>{'As set out in Schedule 4, in-scope only; see clause 19'}</td></tr>
             <tr><th>Governing law</th><td>Victoria, Australia</td></tr>
             <tr><th>Effective Date</th><td>{'The date the Statement of Works is executed'}</td></tr>

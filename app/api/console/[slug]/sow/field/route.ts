@@ -1,9 +1,13 @@
 /**
  * POST /api/console/[slug]/sow/field
  *
- * Team-scoped. Edits one field in sow/sow.json. Body: { path, value }.
- * `path` is an allowlisted dotted path (human.<key> or auto.<...>); see
- * applySowFieldEdit. Read-modify-write against the current file.
+ * Edits one field in sow/sow.json. Body: { path, value }. `path` is an
+ * allowlisted dotted path (human.<key> or auto.<...>); see applySowFieldEdit.
+ * Read-modify-write against the current file.
+ *
+ * Access control: the team may edit any field; a CLIENT (own slug only) may
+ * edit only client-owned HUMAN fields (the orange fields), enforced by
+ * authorizeSowFieldEdit. This is the second client-write path after questions.
  */
 
 import { type NextRequest, NextResponse } from 'next/server';
@@ -12,9 +16,13 @@ import { isValidConsoleSlug } from '@/app/console/_config/clients';
 import {
   authorizeClientAccess,
   requireConsoleAuth,
-  requireTeamScope,
 } from '@/lib/console-api-auth';
-import { applySowFieldEdit, readSowDoc, writeSowDoc } from '@/lib/sow/sow-io';
+import {
+  applySowFieldEdit,
+  authorizeSowFieldEdit,
+  readSowDoc,
+  writeSowDoc,
+} from '@/lib/sow/sow-io';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -31,12 +39,6 @@ export async function POST(
   const auth = await requireConsoleAuth(request);
   if (!auth.ok)
     return NextResponse.json({ error: auth.error }, { status: auth.status });
-  const teamGate = requireTeamScope(auth);
-  if (!teamGate.ok)
-    return NextResponse.json(
-      { error: teamGate.error },
-      { status: teamGate.status }
-    );
 
   const { slug } = await params;
   if (!isValidConsoleSlug(slug))
@@ -55,6 +57,18 @@ export async function POST(
     return NextResponse.json(
       { error: 'Invalid body', detail: parsed.error.message },
       { status: 400 }
+    );
+
+  // Field-level access control: team edits anything; a client edits only
+  // client-owned (orange) HUMAN fields. polynize + auto.* paths stay team-only.
+  const fieldGate = authorizeSowFieldEdit(
+    parsed.data.path,
+    auth.scope.type === 'team'
+  );
+  if (!fieldGate.ok)
+    return NextResponse.json(
+      { error: fieldGate.error },
+      { status: fieldGate.status }
     );
 
   const doc = await readSowDoc(slug);
