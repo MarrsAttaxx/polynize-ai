@@ -45,6 +45,8 @@ import {
 import { ReadinessStrip } from '@/app/console/_components/blueprint/ReadinessStrip';
 import { Infrastructure } from '@/app/console/_components/blueprint/Infrastructure';
 import { GapRegister } from '@/app/console/_components/blueprint/GapRegister';
+import { QuestionsForPolynize } from '@/app/console/_components/blueprint/QuestionsForPolynize';
+import { readQuestions } from '@/lib/blueprint/questions-io';
 import { RefreshButton } from './RefreshButton';
 import { CapabilityMapInteractive } from './_components/v2/CapabilityMapInteractive';
 import { BenchmarkingAnalysis } from './_components/v2/BenchmarkingAnalysis';
@@ -99,10 +101,14 @@ export async function V2BlueprintView({
   slug,
   isTeamUser,
   actorEmail,
+  viewerEmail,
 }: {
   slug: string;
   isTeamUser: boolean;
   actorEmail: string | null;
+  /** Signed-in viewer's email, any scope (team OR client). Drives the
+   *  client-writable Questions section's authoring + edit-own gating. */
+  viewerEmail: string | null;
 }) {
   const blueprint = await loadBlueprintV2(slug);
 
@@ -134,6 +140,7 @@ export async function V2BlueprintView({
 
   const { capabilityMap, engagementModel, workPlans, timeline, config } =
     blueprint;
+  const questionsDoc = await readQuestions(slug);
   const clientName =
     config?.client?.display_name ?? config?.client?.name ?? slug;
   const statusLabel = config?.engagement_status ?? 'client';
@@ -410,9 +417,26 @@ export async function V2BlueprintView({
           )}
         </SectionShell>
 
-        {/* 12. Work plan (2.0) */}
+        {/* 12. Questions for Polynize — the ONE client-writable section.
+            Client scope can add questions + edit their own open ones; team
+            scope sets status and answers. Sits directly under the gap
+            register, same visual language. */}
+        <SectionShell
+          number="12"
+          title="Questions for Polynize"
+          id="questions"
+        >
+          <QuestionsForPolynize
+            questions={questionsDoc.questions}
+            slug={slug}
+            isTeam={isTeamUser}
+            viewerEmail={viewerEmail}
+          />
+        </SectionShell>
+
+        {/* 13. Work plan (2.0) */}
         {showWorkPlans && (
-          <SectionShell number="12" title="Work plans" id="work-plans">
+          <SectionShell number="13" title="Work plans" id="work-plans">
             <WorkPlanSection
               workPlans={workPlans}
               slug={slug}
@@ -421,9 +445,9 @@ export async function V2BlueprintView({
           </SectionShell>
         )}
 
-        {/* 13. Project timeline (2.0) */}
+        {/* 14. Project timeline (2.0) */}
         {timeline && (
-          <SectionShell number="13" title="Project timeline" id="timeline">
+          <SectionShell number="14" title="Project timeline" id="timeline">
             <ProjectTimeline
               slug={slug}
               timeline={timeline}
@@ -432,11 +456,11 @@ export async function V2BlueprintView({
           </SectionShell>
         )}
 
-        {/* 14. Sign-off (restored 1.x) + readiness score. The full SoW
+        {/* 15. Sign-off (restored 1.x) + readiness score. The full SoW
             client-sign-off flow (readiness 100% → sign-off → SoW acceptance
             → phase transition) is a separate piece; this restores the 1.x
             sign-off section and shows the readiness score here too. */}
-        <SectionShell number="14" title="Sign-off" id="sign-off">
+        <SectionShell number="15" title="Sign-off" id="sign-off">
           <ReadinessStrip {...readinessProps} />
           {signOffSection && isPopulated(signOffSection.content) ? (
             <div style={{ marginTop: 18 }}>

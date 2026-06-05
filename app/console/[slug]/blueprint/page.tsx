@@ -81,6 +81,7 @@ export default async function BlueprintPage({
         slug={slug}
         isTeamUser={isTeamUser}
         actorEmail={actorEmail}
+        viewerEmail={user?.email ?? null}
       />
     );
   }
