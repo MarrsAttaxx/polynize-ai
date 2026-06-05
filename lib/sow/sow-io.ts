@@ -13,6 +13,7 @@ import type { CommitResult } from '@/lib/github-client';
 import {
   LenientSowDocSchema,
   SOW_SCHEMA_VERSION,
+  UNSIGNED,
   type SowDoc,
 } from './schema';
 import { HUMAN_FIELDS, humanFieldOwner } from './template';
@@ -64,6 +65,14 @@ function normalize(raw: unknown): SowDoc | null {
       integrations: a.integrations ?? [],
     },
     human: seedHuman(d.human as Record<string, string | null | undefined>),
+    signing: {
+      locked: d.signing?.locked ?? UNSIGNED.locked,
+      client_signature: d.signing?.client_signature ?? null,
+      signed_by: d.signing?.signed_by ?? null,
+      signed_at: d.signing?.signed_at ?? null,
+      unlocked_by: d.signing?.unlocked_by ?? null,
+      unlocked_at: d.signing?.unlocked_at ?? null,
+    },
   };
 }
 
@@ -210,5 +219,93 @@ export function authorizeSowFieldEdit(
     ok: false,
     status: 403,
     error: 'Forbidden: clients may only edit their own (orange) fields',
+  };
+}
+
+// ============================================================
+// Signing + lock (C2)
+// ============================================================
+
+/** Count of client-owned HUMAN fields not yet filled. */
+export function clientFieldsRemaining(doc: SowDoc): number {
+  return HUMAN_FIELDS.filter(
+    (f) => f.owner === 'client' && !(doc.human[f.key] && doc.human[f.key]!.trim())
+  ).length;
+}
+
+/**
+ * Authorize a client signature submission. Pure + unit-tested. Scope/slug are
+ * handled by the route (requireConsoleAuth + authorizeClientAccess); this is
+ * the signing-specific gate:
+ *   - the SoW must not already be locked (cannot sign a signed doc)
+ *   - ALL client-owned (orange) fields must be filled first
+ * It only ever leads to setting the client signature + lock; it never edits
+ * any other field, never touches the Polynize signature, and never unlocks.
+ */
+export function authorizeSowSign(
+  doc: SowDoc
+): { ok: true } | { ok: false; status: number; error: string } {
+  if (doc.signing.locked) {
+    return {
+      ok: false,
+      status: 409,
+      error: 'This Statement of Works is already signed and locked',
+    };
+  }
+  const remaining = clientFieldsRemaining(doc);
+  if (remaining > 0) {
+    return {
+      ok: false,
+      status: 403,
+      error: `Complete your ${remaining} remaining field${remaining === 1 ? '' : 's'} before signing`,
+    };
+  }
+  return { ok: true };
+}
+
+/** Apply a client signature and lock the doc. Pure. */
+export function applySignature(
+  doc: SowDoc,
+  signature: string,
+  signerEmail: string,
+  nowIso: string
+): SowDoc {
+  return {
+    ...doc,
+    signing: {
+      ...doc.signing,
+      locked: true,
+      client_signature: signature.trim(),
+      signed_by: signerEmail,
+      signed_at: nowIso,
+      // a fresh signing clears any prior unlock audit
+      unlocked_by: null,
+      unlocked_at: null,
+    },
+  };
+}
+
+/**
+ * Unlock a signed doc (team action). Clears the CLIENT signature (an unlocked
+ * agreement is no longer signed; re-signing is required) and records the
+ * unlock audit. The Polynize pre-signature is untouched (it is a HUMAN field
+ * default, not stored here). Pure.
+ */
+export function applyUnlock(
+  doc: SowDoc,
+  actorEmail: string,
+  nowIso: string
+): SowDoc {
+  return {
+    ...doc,
+    signing: {
+      ...doc.signing,
+      locked: false,
+      client_signature: null,
+      signed_by: null,
+      signed_at: null,
+      unlocked_by: actorEmail,
+      unlocked_at: nowIso,
+    },
   };
 }

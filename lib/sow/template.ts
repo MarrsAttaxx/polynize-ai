@@ -85,8 +85,9 @@ export const HUMAN_FIELDS: HumanFieldDef[] = [
   // Timeline — estimated_build: ambiguous, defaulted to polynize (the build window Polynize commits to).
   { key: 'estimated_build', label: 'Estimated build window', default: '4 to 6 weeks', owner: 'polynize' },
   // Execution
-  { key: 'signatory_name', label: 'Polynize signatory name', default: null, owner: 'polynize' },
-  { key: 'signatory_title', label: 'Polynize signatory title', default: null, owner: 'polynize' },
+  // Pre-filled so the Polynize signature renders (cursive) from the start.
+  { key: 'signatory_name', label: 'Polynize signatory name', default: 'Marrs Coiro', owner: 'polynize' },
+  { key: 'signatory_title', label: 'Polynize signatory title', default: 'Founder', owner: 'polynize' },
   { key: 'date_sent', label: 'Date sent', default: null, owner: 'polynize' },
 ];
 

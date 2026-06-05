@@ -22,9 +22,19 @@ import { SowToolbar } from './_components/SowToolbar';
 import { SowGenerateButton } from './_components/SowGenerateButton';
 import { SowPrintButton } from './_components/SowPrintButton';
 import type { SowViewerScope } from './_components/SowField';
+import { Dancing_Script } from 'next/font/google';
 import s from './sow.module.css';
 
 export const dynamic = 'force-dynamic';
+
+// Cursive signature font. Exposed as a CSS variable consumed by .cursive in
+// sow.module.css; both the Polynize and Client signatures use it.
+const dancingScript = Dancing_Script({
+  subsets: ['latin'],
+  weight: ['600'],
+  variable: '--font-dancing-script',
+  display: 'swap',
+});
 
 async function loadClientMeta(
   slug: string
@@ -74,7 +84,7 @@ export default async function SowPage({
   return (
     <>
       <div className={s.bgPattern} aria-hidden />
-      <div className={s.page}>
+      <div className={`${s.page} ${dancingScript.variable}`}>
         <header className={s.pageHeader}>
           <div className={s.eyebrow}>
             POLYNIZE AGENTIC MANAGEMENT CONSOLE · STATEMENT OF WORKS
@@ -97,7 +107,7 @@ export default async function SowPage({
               clientEmail={clientEmail}
               sowUrl={sowUrl}
             />
-            <SowDocument doc={doc} slug={slug} scope={viewerScope} />
+            <SowDocument doc={doc} slug={slug} viewerScope={viewerScope} />
           </>
         ) : (
           <div className={s.empty}>

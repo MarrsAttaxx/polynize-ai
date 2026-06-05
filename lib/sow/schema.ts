@@ -93,6 +93,37 @@ export type SowAuto = z.infer<typeof SowAutoSchema>;
 export const SowHumanSchema = z.record(z.string(), z.string().nullable());
 export type SowHuman = z.infer<typeof SowHumanSchema>;
 
+/**
+ * Signing + lock state (C2). The Polynize signature is not stored here: it is
+ * pre-filled from the signatory_name HUMAN field (default "Marrs Coiro"),
+ * rendered cursive. This block holds the CLIENT signature and the lock.
+ *
+ * locked = the client has signed; the whole doc is read-only until a team
+ * member unlocks. Unlock clears the client signature (an unlocked agreement is
+ * no longer signed) and records who unlocked + when.
+ */
+export const SowSigningSchema = z.object({
+  locked: z.boolean(),
+  /** The client's typed name, rendered in the cursive signature font. */
+  client_signature: z.string().nullable(),
+  /** Email of the signer (recorded server-side from the session). */
+  signed_by: z.string().nullable(),
+  signed_at: z.string().nullable(),
+  /** Unlock audit (mirrors the blueprint lock). */
+  unlocked_by: z.string().nullable(),
+  unlocked_at: z.string().nullable(),
+});
+export type SowSigning = z.infer<typeof SowSigningSchema>;
+
+export const UNSIGNED: SowSigning = {
+  locked: false,
+  client_signature: null,
+  signed_by: null,
+  signed_at: null,
+  unlocked_by: null,
+  unlocked_at: null,
+};
+
 export const SowDocSchema = z.object({
   schema_version: z.literal(SOW_SCHEMA_VERSION),
   generated_at: z.string(),
@@ -102,6 +133,7 @@ export const SowDocSchema = z.object({
   sow_reference: z.string(),
   auto: SowAutoSchema,
   human: SowHumanSchema,
+  signing: SowSigningSchema,
 });
 export type SowDoc = z.infer<typeof SowDocSchema>;
 
@@ -132,4 +164,14 @@ export const LenientSowDocSchema = z.object({
     })
     .passthrough(),
   human: z.record(z.string(), z.string().nullable().optional()),
+  signing: z
+    .object({
+      locked: z.boolean().optional(),
+      client_signature: z.string().nullable().optional(),
+      signed_by: z.string().nullable().optional(),
+      signed_at: z.string().nullable().optional(),
+      unlocked_by: z.string().nullable().optional(),
+      unlocked_at: z.string().nullable().optional(),
+    })
+    .optional(),
 });

@@ -78,6 +78,18 @@ export async function POST(
       { status: 404 }
     );
 
+  // A signed SoW is locked: no edits by anyone (client OR team) until a team
+  // member unlocks it. Enforced server-side, not just in the UI.
+  if (doc.signing.locked)
+    return NextResponse.json(
+      {
+        error:
+          'This Statement of Works is signed and locked. A team member must unlock it before editing.',
+        locked: true,
+      },
+      { status: 423 }
+    );
+
   const edit = applySowFieldEdit(doc, parsed.data.path, parsed.data.value);
   if (!edit.ok)
     return NextResponse.json({ error: edit.error }, { status: 400 });

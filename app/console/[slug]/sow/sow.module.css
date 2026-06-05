@@ -375,7 +375,15 @@
 
   .bgPattern,
   .pageHeader,
-  .toolbar { display: none !important; }
+  .toolbar,
+  .lockBanner,
+  .signPrintRow,
+  .sigForm,
+  .sigHint,
+  .unlockWrap { display: none !important; }
+  /* Cursive signatures + the signed-by line DO print (the signed agreement). */
+  .cursive { color: #000 !important; }
+  .sigMeta { color: #333 !important; }
 
   .page {
     max-width: none;
@@ -533,3 +541,85 @@
   color: var(--bp-text-3);
   font-style: italic;
 }
+
+/* ============================================================
+   Signing surface (C2): cursive signatures, sign-here, lock.
+   ============================================================ */
+.cursive {
+  font-family: var(--font-dancing-script), 'Dancing Script', 'Segoe Script', cursive;
+  font-size: 30px;
+  line-height: 1.2;
+  color: var(--bp-text);
+  margin: 6px 0;
+}
+
+.sigSigned { margin-top: 4px; }
+.sigMeta { font-size: 11.5px; color: var(--bp-text-2); margin-top: 2px; }
+.sigAwaiting { color: var(--bp-text-3); font-style: italic; margin-top: 10px; }
+
+.sigForm {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 10px;
+  align-items: flex-start;
+}
+.sigLabel { font-size: 12px; color: var(--bp-text-2); font-weight: 600; }
+.sigInput {
+  background: var(--bp-inset);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 6px;
+  color: var(--bp-text);
+  font: inherit;
+  padding: 7px 9px;
+  width: 100%;
+  max-width: 320px;
+  box-sizing: border-box;
+}
+.sigInput:disabled { opacity: 0.5; }
+.sigSubmit {
+  background: #4de8a0;
+  color: #0c1f18;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.sigSubmit:disabled { opacity: 0.5; cursor: default; }
+.sigHint { font-size: 11.5px; color: var(--bp-amber); }
+.sigError { font-size: 11.5px; color: var(--bp-coral); }
+
+.lockBanner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin: 12px 0;
+  padding: 10px 14px;
+  border-radius: 8px;
+  background: rgba(105, 252, 203, 0.08);
+  border: 1px solid rgba(105, 252, 203, 0.3);
+  color: var(--bp-text);
+  font-size: 13px;
+}
+.signPrintRow { margin-top: 16px; }
+.unlockWrap { display: inline-flex; gap: 10px; align-items: center; }
+.unlockBtn {
+  background: transparent;
+  color: var(--bp-text-2);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 8px;
+  padding: 6px 14px;
+  font-size: 12.5px;
+  cursor: pointer;
+}
+.unlockBtn:hover { color: var(--bp-text); }
+
+/* Toolbar sign-readiness cue (client). */
+.signReady { font-size: 12.5px; color: var(--bp-amber); font-weight: 600; }
+.signReadyGo { font-size: 13px; color: #4de8a0; font-weight: 700; text-decoration: none; }
+.signReadyGo:hover { text-decoration: underline; }
+.signReadyDone { font-size: 12.5px; color: #4de8a0; font-weight: 600; }

@@ -14,6 +14,7 @@ import type { BlueprintV2 } from '@/lib/blueprint/load-v2';
 import type { CapabilityMapV05, EngagementModel } from '@/lib/blueprint/schema-v2';
 import {
   SOW_SCHEMA_VERSION,
+  UNSIGNED,
   type SowAgent,
   type SowAuto,
   type SowCapabilityRow,
@@ -165,6 +166,7 @@ export function generateSowDoc(
     sow_reference: `SOW-${blueprint.slug}-${opts.dateStamp}`,
     auto,
     human,
+    signing: { ...UNSIGNED },
   };
 }
 

@@ -86,6 +86,20 @@ Polynize`;
         )}
       </div>
 
+      {isClient &&
+        (doc.signing.locked ? (
+          <span className={s.signReadyDone}>Signed</span>
+        ) : clientRemaining > 0 ? (
+          <span className={s.signReady}>
+            {clientRemaining} field{clientRemaining === 1 ? '' : 's'} to
+            complete before you can sign
+          </span>
+        ) : (
+          <a className={s.signReadyGo} href="#sow-execution">
+            Ready to sign ↓
+          </a>
+        ))}
+
       {isTeam &&
         (allPolynizeFilled ? (
           <a className={s.sendBtn} href={mailto}>

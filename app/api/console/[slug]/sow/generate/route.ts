@@ -70,6 +70,19 @@ export async function POST(
   // preserves any HUMAN field the user has actually completed (non-empty and
   // different from its registry default). First generation has no existing doc.
   const existing = await readSowDoc(slug);
+
+  // A signed SoW must not be silently overwritten by regenerate. Block it and
+  // require an explicit unlock first (unlock clears the client signature).
+  if (existing?.signing.locked)
+    return NextResponse.json(
+      {
+        error:
+          'This Statement of Works is signed and locked. Unlock it before regenerating.',
+        locked: true,
+      },
+      { status: 423 }
+    );
+
   const doc = preserveUserHumanValues(fresh, existing);
 
   const message =

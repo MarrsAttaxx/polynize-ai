@@ -19,7 +19,11 @@ import {
   humanFieldDef,
   humanFieldOwner,
 } from '@/lib/sow/template';
+import { clientFieldsRemaining } from '@/lib/sow/sow-io';
 import { SowField, type SowViewerScope } from './SowField';
+import { SowSignature } from './SowSignature';
+import { SowUnlockButton } from './SowUnlockButton';
+import { SowPrintButton } from './SowPrintButton';
 import s from '../sow.module.css';
 
 // HUMAN field: owner (colour + edit permission) comes from the registry,
@@ -56,15 +60,23 @@ function A({ value, slug, path, label, scope, multiline }: {
 export function SowDocument({
   doc,
   slug,
-  scope,
+  viewerScope,
 }: {
   doc: SowDoc;
   slug: string;
-  scope: SowViewerScope;
+  viewerScope: SowViewerScope;
 }) {
   const a = doc.auto;
   const h = doc.human;
   const hv = (k: string) => h[k] ?? null;
+
+  // A signed SoW is locked: every field renders read-only. Collapsing the
+  // field scope to 'anon' when locked makes all SowField call sites read-only
+  // without touching each one (the server also rejects edits when locked). The
+  // signing block + print below use the REAL viewer scope (viewerScope).
+  const locked = doc.signing.locked;
+  const scope: SowViewerScope = locked ? 'anon' : viewerScope;
+  const clientRemaining = clientFieldsRemaining(doc);
 
   const humanHeldExample =
     a.human_held.slice(0, 3).join(', ') || 'the items marked human-checked';
@@ -321,31 +333,52 @@ export function SowDocument({
         </p>
       </Section>
 
-      {/* ===== Execution ===== */}
-      <Section n="" title="Execution">
+      {/* ===== Execution / signatures ===== */}
+      <Section n="" title="Execution" id="sow-execution">
         <p>
-          {'Signing this Statement of Works binds both this SoW and the Service Agreement at Annexure A. Polynize has signed below; please sign to accept.'}
+          {'Signing this Statement of Works binds both this SoW and the Service Agreement at Annexure A. Polynize has signed below; the Client signs to accept.'}
         </p>
+        {locked && (
+          <div className={s.lockBanner}>
+            <span>This Statement of Works is signed and locked.</span>
+            {viewerScope === 'team' && <SowUnlockButton slug={slug} />}
+          </div>
+        )}
         <div className={s.sign}>
+          {/* Polynize: pre-signed (cursive renders signatory_name). */}
           <div className={s.signCol}>
-            <div className={s.signHead}>Signed for and on behalf of Polynize (Provider)</div>
-            <div>Polynize Pty Ltd (ACN <H slug={slug} path="human.polynize_acn" value={hv('polynize_acn')} scope={scope} />)</div>
+            <div className={s.signHead}>
+              Signed for and on behalf of Polynize (Provider)
+            </div>
+            <div className={s.cursive}>{hv('signatory_name') || 'Marrs Coiro'}</div>
             <dl className={s.signFields}>
               <div><dt>Name</dt><dd><H slug={slug} path="human.signatory_name" value={hv('signatory_name')} scope={scope} /></dd></div>
               <div><dt>Title / position</dt><dd><H slug={slug} path="human.signatory_title" value={hv('signatory_title')} scope={scope} /></dd></div>
               <div><dt>Date</dt><dd><H slug={slug} path="human.date_sent" value={hv('date_sent')} scope={scope} /></dd></div>
             </dl>
           </div>
+          {/* Client: DocuSign-style sign-here (gated on their fields). */}
           <div className={s.signCol}>
-            <div className={s.signHead}>Signed for and on behalf of the Client</div>
-            <div><H slug={slug} path="human.client_legal_name" value={hv('client_legal_name')} scope={scope} /> (ACN/ABN <H slug={slug} path="human.client_acn_abn" value={hv('client_acn_abn')} scope={scope} />)</div>
-            <dl className={s.signFields}>
-              <div><dt>Name</dt><dd className={s.signBlank}>&nbsp;</dd></div>
-              <div><dt>Title / position</dt><dd className={s.signBlank}>&nbsp;</dd></div>
-              <div><dt>Date</dt><dd className={s.signBlank}>&nbsp;</dd></div>
-            </dl>
+            <div className={s.signHead}>
+              Signed for and on behalf of the Client
+            </div>
+            <div>
+              <H slug={slug} path="human.client_legal_name" value={hv('client_legal_name')} scope={scope} />{' '}
+              (ACN/ABN <H slug={slug} path="human.client_acn_abn" value={hv('client_acn_abn')} scope={scope} />)
+            </div>
+            <SowSignature
+              slug={slug}
+              scope={viewerScope}
+              signing={doc.signing}
+              clientRemaining={clientRemaining}
+            />
           </div>
         </div>
+        {locked && (
+          <div className={s.signPrintRow}>
+            <SowPrintButton />
+          </div>
+        )}
       </Section>
 
       {/* ===== Annexure A — Service Agreement ===== */}
@@ -419,14 +452,16 @@ export function SowDocument({
 function Section({
   n,
   title,
+  id,
   children,
 }: {
   n: string;
   title: string;
+  id?: string;
   children: React.ReactNode;
 }) {
   return (
-    <section className={s.section}>
+    <section className={s.section} id={id}>
       <h2 className={s.sectionTitle}>
         {n ? <span className={s.sectionNum}>{n}</span> : null}
         {title}
