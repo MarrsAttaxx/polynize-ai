@@ -312,11 +312,12 @@ export function SowDocument({
           {'.'}
         </p>
         <table className={s.grid}>
-          <thead><tr><th>Milestone</th><th>Trigger</th><th>Amount (ex GST)</th></tr></thead>
+          <thead><tr><th>Phase</th><th>Trigger</th><th>Amount (ex GST)</th></tr></thead>
           <tbody>
+            <tr><td>Modelling fee <span className={s.paidTag}>Paid</span></td><td>{'Paid at modelling phase (already settled)'}</td><td>{'$'}<H slug={slug} path="human.modelling_fee" value={hv('modelling_fee')} scope={scope} /></td></tr>
             <tr><td>Build commencement</td><td>On signing this SoW (Gate 03)</td><td>{'$'}<H slug={slug} path="human.milestone_build_amount" value={hv('milestone_build_amount')} scope={scope} /></td></tr>
             <tr><td>Handoff</td><td>On acceptance (Gate 04)</td><td>{'$'}<H slug={slug} path="human.milestone_handoff_amount" value={hv('milestone_handoff_amount')} scope={scope} /></td></tr>
-            <tr><td>Support (if taken)</td><td>Per <H slug={slug} path="human.support_period" value={hv('support_period')} scope={scope} /></td><td>{'$'}<H slug={slug} path="human.support_fee" value={hv('support_fee')} scope={scope} /></td></tr>
+            <tr><td>Operate (monthly)</td><td>{'Monthly, starting '}<H slug={slug} path="human.operate_start_date" value={hv('operate_start_date')} scope={scope} /></td><td>{'$'}<H slug={slug} path="human.support_fee" value={hv('support_fee')} scope={scope} />{' per '}<H slug={slug} path="human.support_period" value={hv('support_period')} scope={scope} /></td></tr>
           </tbody>
         </table>
         <p>

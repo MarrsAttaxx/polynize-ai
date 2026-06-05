@@ -301,6 +301,26 @@
 }
 .needsInputMint:hover { background: rgba(77, 232, 160, 0.24); }
 
+/* "Paid" status tag on the Modelling fee row. That fee is settled at the
+   modelling phase, before this SoW is signed, so the row reads as historical
+   rather than owed. Neutral tone (NOT mint or amber) so it never reads as a
+   NEEDS INPUT marker; the amount beside it stays a fillable mint field. */
+.paidTag {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 1px 8px;
+  border-radius: 6px;
+  background: rgba(144, 144, 168, 0.14);
+  color: var(--bp-text-2);
+  border: 1px solid var(--bp-text-3);
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  vertical-align: middle;
+}
+
 /* Client's view of an unfilled Polynize field, and the read-only/anon empty
    rendering: a plain blank underline, never a to-do badge. */
 .fieldBlank {
@@ -461,20 +481,29 @@
     display: none !important;
   }
 
-  /* Unfilled HUMAN fields → blank underscore line, not a badge. */
-  .needsInput, .fieldTodo {
+  /* Unfilled HUMAN fields → blank underscore line, not a badge. Covers both the
+     orange client badge (.needsInput) and the mint Polynize badge
+     (.needsInputMint) so every unfilled field prints as a blank to complete. */
+  .needsInput, .needsInputMint, .fieldTodo {
     background: none !important;
     border: none !important;
     color: transparent !important;
     font-size: 0 !important;
     padding: 0 !important;
   }
-  .needsInput::after, .fieldTodo::after {
+  .needsInput::after, .needsInputMint::after, .fieldTodo::after {
     content: "_______________";
     color: #000;
     font-size: 11.5pt;
     letter-spacing: 0;
     font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  }
+
+  /* The Modelling row's "Paid" tag prints as a plain bordered label. */
+  .paidTag {
+    background: none !important;
+    color: #111 !important;
+    border: 1px solid #999 !important;
   }
 }
 

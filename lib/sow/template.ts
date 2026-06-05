@@ -62,11 +62,20 @@ export const HUMAN_FIELDS: HumanFieldDef[] = [
   { key: 'polynize_contact', label: 'Polynize contact (name, title, email)', default: null, owner: 'polynize' },
   // Commercial — Polynize sets the terms; billing_email is the client's.
   { key: 'total_fee', label: 'Total fee (ex GST)', default: null, owner: 'polynize' },
+  // Lifecycle fee schedule (§9.1): Modelling -> Build -> Handoff -> Operate.
+  // modelling_fee is settled at the modelling phase, before this SoW is signed,
+  // so its row is marked Paid; the amount still varies per engagement (NEEDS INPUT).
+  { key: 'modelling_fee', label: 'Modelling fee (ex GST)', default: null, owner: 'polynize' },
   { key: 'milestone_build_amount', label: 'Build commencement amount (ex GST)', default: null, owner: 'polynize' },
   { key: 'milestone_handoff_amount', label: 'Handoff amount (ex GST)', default: null, owner: 'polynize' },
-  { key: 'support_fee', label: 'Support fee (ex GST)', default: null, owner: 'polynize' },
+  // Operate = the monthly post-handoff service (formerly "Support"). Keys are
+  // kept as support_fee / support_period so any already-filled data survives;
+  // only the display labels are renamed to Operate.
+  { key: 'support_fee', label: 'Operate fee (ex GST, per month)', default: null, owner: 'polynize' },
   // support_period: ambiguous, defaulted to polynize (it pairs with support_fee).
-  { key: 'support_period', label: 'Support period', default: 'month', owner: 'polynize' },
+  { key: 'support_period', label: 'Operate billing period', default: 'month', owner: 'polynize' },
+  // operate_start_date: when monthly Operate billing begins (varies per engagement).
+  { key: 'operate_start_date', label: 'Operate start date', default: null, owner: 'polynize' },
   { key: 'billing_email', label: 'Billing email', default: null, owner: 'client' },
   { key: 'payment_days', label: 'Payment days', default: '14', owner: 'polynize' },
   { key: 'payment_terms', label: 'Payment terms', default: '50% on Gate 03, 50% on Handoff', owner: 'polynize' },
