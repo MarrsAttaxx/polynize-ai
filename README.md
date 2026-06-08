@@ -2,6 +2,12 @@
 
 This is the complete handoff package for the polynize.ai v1 rebuild. Everything Claude Code needs to build the site is inside this folder.
 
+## Understanding PAM
+
+This repo also runs the **PAM Console** (Polynize Agent Management), not just the public website. To understand how PAM is built, why it is built that way, and where it is headed, **start at [`docs/START-HERE.md`](docs/START-HERE.md)** — the entry point and index to the architecture, the load-bearing decision log, and the maturity report.
+
+> **Docs convention:** when you change PAM, update the relevant `docs/` file in the *same commit* so the docs never drift from the code. If a change would contradict a decision in `docs/decisions.md`, stop and flag it rather than proceeding.
+
 ## What to do with this
 
 1. **Unzip this folder into the root of your new Next.js repo.** After unzipping, your repo root should contain:

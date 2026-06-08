@@ -4,6 +4,22 @@
 
 ---
 
+## PAM documentation (read first if you are touching the PAM Console)
+
+This repo is both the public polynize.ai website **and** the PAM Console (Polynize Agent Management). For anything touching PAM, the durable onboarding + reference docs live in **[`docs/`](docs/START-HERE.md)**:
+
+- **`docs/START-HERE.md`** — entry point / index (read first)
+- **`docs/architecture.md`** — how PAM is built
+- **`docs/decisions.md`** — load-bearing decision log (D1-D14)
+- **`docs/maturity-report.md`** — technical + PM maturity assessment
+
+**Standing rules (do not skip):**
+
+1. **Docs stay in sync with code.** When you make a change to PAM, update the relevant `docs/` file in the **same commit**, so the docs never drift from the code. A drifted doc is worse than no doc.
+2. **Decisions are load-bearing.** If a change would contradict a decision in `docs/decisions.md`, **stop and flag it** rather than proceeding.
+
+---
+
 ## What you are doing
 
 Rebuilding polynize.ai v1 from a design handoff. The design lives in `design_handoff/designs/*.html` — React + Babel prototypes that define layout, copy, colors, behavior, and data contracts exactly.
