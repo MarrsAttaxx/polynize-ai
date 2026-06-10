@@ -189,7 +189,7 @@ The total number of agents, workers plus the one leader, must be 2 to 6 (so up t
 One of: "1.5-2x", "2-4x", "3-5x", "5x+".
 
 ### leverage_rationale
-One paragraph including a hiring comparison: "Solving this with traditional hiring would require approximately X FTE at \$Y. Your agent team achieves equivalent throughput for [Map + Transform + Operate]." Use team_size, business_description, and volume to ground the FTE count and salary benchmark. Volume signal is the most important grounding here.
+One paragraph including a hiring comparison: "Solving this with traditional hiring would require approximately X FTE at \$Y. Your agent team achieves equivalent throughput." Use team_size, business_description, and volume to ground the FTE count and salary benchmark. Volume signal is the most important grounding here. Do NOT mention Polynize prices, fees, or any dollar amount for the agent team. The only dollar figure allowed here is \$Y, the cost of the traditional-hiring alternative being compared against.
 
 ### hiring_comparison
 { "equivalent_fte": <number>, "estimated_annual_cost": "<low-high range, e.g. '110,000-130,000'>", "currency": "AUD", "note": "Plus recruitment, onboarding, leave, and management overhead" }

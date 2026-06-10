@@ -133,7 +133,7 @@ export const DEMO_CAPABILITY_MAP: CapabilityMapData = {
   },
   leverage_estimate: '3-5x',
   leverage_rationale:
-    "Solving this with traditional hiring would require approximately 2 additional FTE (research analyst + junior associate) at $90,000-$120,000 each, plus partner time supervising the work. Your agent team achieves equivalent throughput for a $10,000 build + $999/mo operation cost, compressing the research-to-recommendation cycle from weeks to days and concentrating senior partner time on the judgment calls that drive returns.",
+    "Solving this with traditional hiring would require approximately 2 additional FTE (research analyst + junior associate) at $90,000-$120,000 each, plus partner time supervising the work. Your agent team achieves equivalent throughput, compressing the research-to-recommendation cycle from weeks to days and concentrating senior partner time on the judgment calls that drive returns.",
   pricing_indicative: {
     map: {
       label: 'Map',
