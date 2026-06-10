@@ -7,11 +7,20 @@
 
    Fixed position so it covers the viewport. z-index 0 puts it below
    positioned content (which should have z-index >= 1 on its wrapper).
-   pointer-events: none so it never intercepts clicks anywhere. */
+   pointer-events: none so it never intercepts clicks anywhere.
+
+   !important on position + z-index is load-bearing: the grid renders as a
+   direct child of <body data-depth="tactile">, and tactile.css has a global
+   `body[data-depth="tactile"] > * { position: relative; z-index: 1 }` rule.
+   That selector's specificity (0,1,1) beats this single-class selector (0,1,0),
+   so without !important it overrides position:fixed -> relative, collapsing the
+   grid to a 0-height in-flow div and making the hatch invisible on every public
+   page. The console's .bgPattern is nested deeper (not a direct body child), so
+   it is unaffected — which is why the hatch showed there but not here. */
 .grid {
-  position: fixed;
+  position: fixed !important;
   inset: 0;
-  z-index: 0;
+  z-index: 0 !important;
   pointer-events: none;
   background-image:
     /* Horizontal lines — 80px pitch */
