@@ -70,7 +70,7 @@ export type CapabilityMapData = {
   };
   leverage_estimate: string;
   leverage_rationale: string;
-  pricing_indicative: {
+  pricing_indicative?: {
     map: PricingBand;
     transform: PricingBand;
     operate: PricingBand;
@@ -231,7 +231,7 @@ export type CapabilityMapV05 = {
   };
   leverage_estimate: string;
   leverage_rationale: string;
-  pricing_indicative: {
+  pricing_indicative?: {
     map: PricingBand;
     transform: PricingBand;
     operate: PricingBand;

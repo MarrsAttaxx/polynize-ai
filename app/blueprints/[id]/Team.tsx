@@ -10,7 +10,7 @@ export function Team({ payload }: { payload: BlueprintPayload }) {
   return (
     <section className={s.page} data-screen-label="Page 03 · Team">
       <div className={s.pageHead}>
-        <div className={s.pageNum}>02 / 04</div>
+        <div className={s.pageNum}>02 / 03</div>
         <div className={s.eyebrow}>§ your team</div>
         <h2 className={s.pageTitle}>
           One human.

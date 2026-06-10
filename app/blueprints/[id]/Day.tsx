@@ -12,7 +12,7 @@ export function Day({ payload }: { payload: BlueprintPayload }) {
   return (
     <section className={s.page} data-screen-label="Page 04 · Day in the Life">
       <div className={s.pageHead}>
-        <div className={s.pageNum}>03 / 04</div>
+        <div className={s.pageNum}>03 / 03</div>
         <div className={s.eyebrow}>§ a day in the life</div>
         <h2 className={s.pageTitle}>
           What a Tuesday

@@ -10,7 +10,7 @@ export function Heatmap({ payload }: { payload: BlueprintPayload }) {
   return (
     <section className={s.page} data-screen-label="Page 02 · Capability Map">
       <div className={s.pageHead}>
-        <div className={s.pageNum}>01 / 04</div>
+        <div className={s.pageNum}>01 / 03</div>
         <div className={s.eyebrow}>§ your capability map</div>
         <h2 className={s.pageTitle}>
           Your bottleneck,

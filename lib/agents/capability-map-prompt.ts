@@ -54,7 +54,7 @@ Before emitting JSON, work through the following internally. Do not narrate this
 
 6. Populate every schema field you can. Where the answers don't give you enough to populate a field with row-specific content, mark the row as PARTIAL or STUB and add a gap question that would close it during the modeling call. Where the bottleneck implies a capability you'd expect to exist but the prospect didn't mention, add it as a GHOST row.
 
-7. Compose the prospect-facing layer. Interpretation paragraph referencing the specific bottleneck. Team of 2-6 agents with short memorable names and role titles: the worker agents plus one standard team-leader agent (the extra agent that coordinates the team and is the Polynize, client, and agent-team connection point), with team_leader set to the leader's exact name. Leverage estimate with rationale including a hiring comparison. Pricing per the indicative bands.
+7. Compose the prospect-facing layer. Interpretation paragraph referencing the specific bottleneck. Team of 2-6 agents with short memorable names and role titles: the worker agents plus one standard team-leader agent (the extra agent that coordinates the team and is the Polynize, client, and agent-team connection point), with team_leader set to the leader's exact name. Leverage estimate with rationale including a hiring comparison.
 
 ---
 
@@ -191,9 +191,6 @@ One of: "1.5-2x", "2-4x", "3-5x", "5x+".
 ### leverage_rationale
 One paragraph including a hiring comparison: "Solving this with traditional hiring would require approximately X FTE at \$Y. Your agent team achieves equivalent throughput for [Map + Transform + Operate]." Use team_size, business_description, and volume to ground the FTE count and salary benchmark. Volume signal is the most important grounding here.
 
-### pricing_indicative
-Hardcoded baselines: Map from \$5,000 AUD, Transform from \$10,000 AUD, Operate from \$999 AUD/month. Use these exact values in the output.
-
 ### hiring_comparison
 { "equivalent_fte": <number>, "estimated_annual_cost": "<low-high range, e.g. '110,000-130,000'>", "currency": "AUD", "note": "Plus recruitment, onboarding, leave, and management overhead" }
 
@@ -276,27 +273,6 @@ Return valid JSON only, no markdown, no preamble. The renderer parses the respon
     },
     "leverage_estimate": "2-4x",
     "leverage_rationale": "<one paragraph including a hiring comparison>",
-    "pricing_indicative": {
-      "map": {
-        "label": "Map",
-        "from": 5000,
-        "currency": "AUD",
-        "description": "<one sentence on what Map covers for this bottleneck>"
-      },
-      "transform": {
-        "label": "Transform",
-        "from": 10000,
-        "currency": "AUD",
-        "description": "<one sentence on what Transform covers for this bottleneck>"
-      },
-      "operate": {
-        "label": "Operate",
-        "from": 999,
-        "currency": "AUD",
-        "period": "month",
-        "description": "<one sentence on what Operate covers for this bottleneck>"
-      }
-    },
     "hiring_comparison": {
       "equivalent_fte": <number>,
       "estimated_annual_cost": "<low-high range, e.g. '110,000-130,000'>",
@@ -312,7 +288,6 @@ Field-shape rules that often get wrong:
 - "edge_cases" inside each capability row is an array of PLAIN STRINGS, not objects. Example: ["Multi-claimant kit", "Reissued PCGS request"]. Max 5 items, each <= 200 chars.
 - "map_reflection.scope_uncertainty" / "cross_cutting_candidates" / "decisions_deferred" are arrays of OBJECTS with the exact shapes shown above. Never plain strings.
 - "excluded_capabilities" is an array of {name, reason} objects. Never plain strings.
-- "pricing_indicative" must use the exact nested {map, transform, operate} structure with the literal values shown (5000, 10000, 999, "AUD"). Description fields are short, bottleneck-specific.
 - "evidence" inside each capability row uses source_id from this exact set only: "q01_business", "q03_bottleneck", "q04_outcome", "q05_work_shape", "q06_volume", "q08_context".
 - "work_shape.type" inside each capability row must match one of these exact strings (or start with "Other: "): "Classification + routing", "Drafting + approval", "Calculation against rules", "Pattern detection + escalation", "Decision support", "Monitoring + alerting", "Data lookup + assembly", "Multi-turn conversation".
 

@@ -463,11 +463,6 @@ export function PhaseB({ answers, preloaded, onDataReady }: Props) {
               </div>
             </div>
 
-            <div className={s.pricingFootnote}>
-              Indicative pricing: starting from <strong>$5K AUD</strong> +{' '}
-              <strong>$399/mo</strong>
-            </div>
-
             <div className={s.ctas}>
               <a
                 href={BOOKING_URL}

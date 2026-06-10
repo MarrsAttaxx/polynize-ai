@@ -64,13 +64,11 @@ The prototype's `SHAPE_LIBRARY` in `agents/phase-b.jsx` has 5 shapes (Pipeline, 
 
 ### Pricing bands in the Blueprint
 
-Indicative baseline bands for the Blueprint's Map / Transform / Operate section:
+**Removed from the /agents flow (Marrs, 2026-06).** All pricing is removed from the public Map-your-bottleneck flow: the Blueprint's Map / Transform / Operate Pricing section and the Phase B "indicative pricing" footnote are gone, and the capability-map generation prompt no longer emits `pricing_indicative`. This reverses the prior locked decision below.
 
-- **Map:** from $5,000 AUD
-- **Transform:** from $10,000 AUD (scales with team size)
-- **Operate:** from $999 AUD per month (scales with team size)
+The removal was kept **reversible / dormant**, not ripped out: `lib/pricing.ts` (the bands + `PRICING_VERSION`) still exists, `pricing_indicative` is now an **optional** field in the generation schema (`capability-map-schema-v05.ts`) and the read types, and the blueprint API still stamps `pricing_version`. Re-enabling is: restore the prompt block, re-add the `Pricing` section to `/blueprints/[id]/page.tsx`, and make the field required again. The leverage / hiring-cost comparison (`hiring_comparison`, `leverage_*`) was left intact (it is the ROI argument, not Polynize pricing) but is no longer displayed because it lived inside the removed Pricing section.
 
-These are v1 placeholders. Marrs will provide a refined pricing document with proper per-shape and per-team-size calculations before launch. Plumb pricing through a `lib/pricing.ts` module so the logic upgrade is isolated. Persist a `pricing_version` field on each Blueprint so historical Blueprints don't break when pricing logic changes.
+Prior decision (the dormant baseline, for reference if pricing returns): indicative bands were Map from $5,000 AUD, Transform from $10,000 AUD (scales with team size), Operate from $999 AUD per month (scales with team size) — v1 placeholders pending Marrs's refined pricing document, with `pricing_version` persisted per Blueprint so historical Blueprints stay valid as pricing logic changes.
 
 ## Non-negotiables
 
@@ -136,7 +134,7 @@ Search the codebase for `CC-TODO:` and work through the list. Priority items Mar
    - Logo strip: needs real logos or cut
    - Metrics (+70% throughput, 5× output, 48h first agent, 0 vendor lock-in): back with real claims or cut
    - Testimonial: the Optio.ai / AJ Milne quote from the prior site is approved for reuse; drop it in
-2. **Pricing document** from Marrs, incoming, will refine the baseline bands
+2. **Pricing** is currently removed from the /agents flow (see Locked decisions). If/when it returns, Marrs's refined pricing document will refine the baseline bands before re-enabling.
 3. **Podcast episode data** in `directions/direction-b.jsx` §08: wire real "Think Better" episodes, consider pulling from RSS dynamically
 4. **Booking CTAs**: all currently `#`, wire to https://calendly.com/marrscoiro/meeting30
 

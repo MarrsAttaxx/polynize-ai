@@ -219,7 +219,10 @@ export const CapabilityMapV05Schema = z.object({
   team: TeamSchema,
   leverage_estimate: z.enum(['1.5-2x', '2-4x', '3-5x', '5x+']),
   leverage_rationale: z.string(),
-  pricing_indicative: PricingIndicativeSchema,
+  // pricing_indicative: pricing was removed from the /agents flow (display + prompt).
+  // Kept optional/dormant so the schema still validates older maps that carry it
+  // and so it is a clean re-enable when refined pricing lands.
+  pricing_indicative: PricingIndicativeSchema.optional(),
   hiring_comparison: HiringComparisonSchema,
   shape_internal: ShapeInternalSchema,
   shape_id: z.number().int().min(1).max(8),

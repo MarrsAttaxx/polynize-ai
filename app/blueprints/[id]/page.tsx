@@ -7,7 +7,6 @@ import { Cover } from './Cover';
 import { Heatmap } from './Heatmap';
 import { Team } from './Team';
 import { Day } from './Day';
-import { Pricing } from './Pricing';
 import { FinalCTA } from './FinalCTA';
 import s from './blueprint.module.css';
 
@@ -39,7 +38,6 @@ export default async function BlueprintPage({
         <Heatmap payload={payload} />
         <Team payload={payload} />
         <Day payload={payload} />
-        <Pricing payload={payload} />
         <FinalCTA payload={payload} />
       </div>
     </>
