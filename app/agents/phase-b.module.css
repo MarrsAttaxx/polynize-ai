@@ -508,6 +508,49 @@
 }
 
 /* ===== Two CTAs at the bottom ===== */
+.dayPreview {
+  margin: 56px auto 0;
+  width: 100%;
+  max-width: 720px;
+  text-align: left;
+}
+.dayTitle {
+  font-family: var(--font-space-grotesk), 'Space Grotesk', sans-serif;
+  font-size: clamp(26px, 4vw, 40px);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.05;
+  color: var(--text);
+  margin: 0 0 14px;
+}
+.dayLede {
+  font-size: 16px;
+  line-height: 1.6;
+  color: var(--text-2);
+  margin: 0 0 36px;
+  max-width: 640px;
+}
+.readyHead {
+  margin: 64px auto 0;
+  max-width: 640px;
+  text-align: center;
+}
+.readyTitle {
+  font-family: var(--font-space-grotesk), 'Space Grotesk', sans-serif;
+  font-size: clamp(28px, 4.5vw, 46px);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.05;
+  color: var(--text);
+  margin: 0 0 14px;
+}
+.readyLede {
+  font-size: 17px;
+  line-height: 1.55;
+  color: var(--text-2);
+  margin: 0 auto;
+  max-width: 560px;
+}
 .ctas {
   margin-top: 32px;
   display: grid;

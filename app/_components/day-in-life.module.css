@@ -1,0 +1,143 @@
+/* Day in the Life — shared timeline + close styling, used by both the public
+   blueprint (/blueprints/[id]) and the /agents Phase B reveal so the two stay
+   identical. Copied verbatim from the original blueprint Day styles. */
+
+.timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 48px;
+  border-left: 1px solid var(--border-soft);
+  padding-left: 40px;
+  margin-left: 24px;
+  position: relative;
+}
+.tlBlock {
+  position: relative;
+}
+.tlBlock::before {
+  content: '';
+  position: absolute;
+  left: -48px;
+  top: 6px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--mint);
+  box-shadow: 0 0 10px var(--mint);
+}
+.tlTime {
+  margin-bottom: 20px;
+}
+.tlHour {
+  font-family: var(--font-space-grotesk), 'Space Grotesk', sans-serif;
+  font-size: 28px;
+  font-weight: 600;
+  color: var(--text);
+}
+.tlLabel {
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--text-3);
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  margin-top: 4px;
+}
+.tlMessages {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.tlMsg {
+  display: flex;
+  gap: 10px;
+  max-width: 640px;
+}
+.tlMsgUser {
+  margin-left: auto;
+}
+.tlAv {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--tac-inset);
+  color: var(--mint);
+  font-family: var(--font-space-grotesk), 'Space Grotesk', sans-serif;
+  font-weight: 600;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 2px;
+  box-shadow: var(--tac-shadow-inset);
+}
+.tlBubble {
+  padding: 12px 16px;
+  background: var(--tac-surface);
+  border-radius: 14px 14px 14px 4px;
+  max-width: 500px;
+  box-shadow: var(--tac-shadow-raised-soft);
+  position: relative;
+}
+.tlBubbleHuman {
+  background: var(--tac-button-gradient);
+  color: var(--tac-button-text);
+  border-radius: 14px 14px 4px 14px;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.45) inset,
+    0 -1px 0 rgba(0, 0, 0, 0.25) inset,
+    3px 3px 8px rgba(0, 0, 0, 0.4),
+    0 0 14px rgba(105, 252, 203, 0.2);
+}
+.tlBubbleHuman .tlFrom,
+.tlBubbleHuman .tlText {
+  color: var(--bg);
+}
+.tlFrom {
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: var(--mint);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+.tlText {
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--text);
+}
+
+.dayClose {
+  margin-top: 64px;
+  padding: 32px;
+  background: var(--tac-surface);
+  border: none;
+  border-radius: 18px;
+  max-width: 720px;
+  box-shadow: var(--tac-shadow-raised);
+  position: relative;
+}
+.dayCloseEyebrow {
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  color: var(--text-3);
+  text-transform: uppercase;
+  margin-bottom: 18px;
+}
+.dayClose p {
+  font-size: 16px;
+  line-height: 1.6;
+  color: var(--text-2);
+  margin: 0;
+}
+
+@media (max-width: 760px) {
+  .timeline {
+    padding-left: 28px;
+    margin-left: 16px;
+  }
+  .tlBlock::before {
+    left: -35px;
+  }
+}

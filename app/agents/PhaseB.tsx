@@ -6,6 +6,7 @@ import { v05ToLegacy } from '@/lib/agents/v05-adapter';
 import { completeBlueprintFlow } from '@/lib/persist-client';
 import { track } from '@/lib/analytics';
 import { ResetLink } from '@/app/_components/ResetLink';
+import { DayInLife } from '@/app/_components/DayInLife';
 import s from './phase-b.module.css';
 
 const BOOKING_URL = 'https://calendly.com/marrscoiro/meeting30';
@@ -44,6 +45,7 @@ const LOADING_MESSAGES: { from: number; text: string }[] = [
 
 export function PhaseB({ answers, preloaded, onDataReady }: Props) {
   const firstName = (answers.name ?? '').trim().split(/\s+/)[0] ?? '';
+  const company = (answers.company ?? '').trim() || 'your business';
   const [v05, setV05] = useState<CapabilityMapV05 | null>(preloaded ?? null);
   const [stage, setStage] = useState<Stage>(preloaded ? 'done' : 'loading');
   const [revealIdx, setRevealIdx] = useState<number>(preloaded ? -2 : -1);
@@ -499,6 +501,31 @@ export function PhaseB({ answers, preloaded, onDataReady }: Props) {
                   </>
                 );
               })()}
+            </div>
+
+            <div className={s.dayPreview}>
+              <div className={s.eyebrow}>§ a day in the life</div>
+              <h3 className={s.dayTitle}>
+                What a Tuesday actually looks like<span style={{ color: 'var(--mint)' }}>.</span>
+              </h3>
+              <p className={s.dayLede}>
+                Based on the bottleneck you described at {company}, here&apos;s a lightly
+                fictionalised walk-through of a typical day with the team in place. The point
+                isn&apos;t the specifics. It&apos;s the rhythm. You show up, you make decisions, the
+                execution happens around you.
+              </p>
+              <DayInLife data={data} firstName={firstName || 'you'} />
+            </div>
+
+            <div className={s.readyHead}>
+              <h3 className={s.readyTitle}>
+                Ready to build this{firstName ? `, ${firstName}` : ''}
+                <span style={{ color: 'var(--mint)' }}>?</span>
+              </h3>
+              <p className={s.readyLede}>
+                A 30-minute call to walk you through the blueprint, sharpen the shape, and discuss
+                the most effective way to unblock this bottleneck with an agentic team.
+              </p>
             </div>
 
             <div className={s.ctas}>

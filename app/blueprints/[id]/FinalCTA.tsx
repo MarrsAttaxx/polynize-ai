@@ -12,8 +12,8 @@ export function FinalCTA({ payload }: { payload: BlueprintPayload }) {
         Ready to build this, {firstName}<span className={s.mint}>?</span>
       </h2>
       <p className={s.finalLede}>
-        A 30-minute call to walk the blueprint, sharpen the shape, and lock in your first Map
-        engagement.
+        A 30-minute call to walk you through the blueprint, sharpen the shape, and discuss the most
+        effective way to unblock this bottleneck with an agentic team.
       </p>
       <div className={s.ctas}>
         <TrackedLink
