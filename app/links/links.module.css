@@ -8,6 +8,9 @@
   gap: 24px;
   color: var(--text);
   font-family: var(--font-inter), 'Inter', sans-serif;
+  /* Sit above the fixed DraftingGrid (z-index 0). */
+  position: relative;
+  z-index: 1;
 }
 
 /* Terminal chrome — raised card with an inner recessed bar */

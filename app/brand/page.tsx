@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { BRAND_TOKENS } from '@/lib/brand/tokens';
+import { DraftingGrid } from '@/app/_components/DraftingGrid';
 import s from './brand.module.css';
 
 export const metadata: Metadata = {
@@ -33,6 +34,8 @@ export default function BrandPage() {
   });
 
   return (
+    <>
+    <DraftingGrid />
     <div className={s.root}>
       {/* Machine-readable payload for AI consumers */}
       <script
@@ -480,6 +483,7 @@ export default function BrandPage() {
         </footer>
       </main>
     </div>
+    </>
   );
 }
 

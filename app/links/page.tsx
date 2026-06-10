@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { DraftingGrid } from '@/app/_components/DraftingGrid';
 import s from './links.module.css';
 
 export const metadata: Metadata = {
@@ -164,6 +165,8 @@ const CONNECT: LinkCard[] = [
 
 export default function LinksPage() {
   return (
+    <>
+    <DraftingGrid />
     <div className={s.page}>
       {/* Terminal chrome */}
       <div className={s.chrome}>
@@ -222,6 +225,7 @@ export default function LinksPage() {
         <div className={s.footerCopy}>© 2026 polynize pty ltd</div>
       </div>
     </div>
+    </>
   );
 }
 

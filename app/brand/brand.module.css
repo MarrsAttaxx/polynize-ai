@@ -6,6 +6,9 @@
   color: var(--text);
   font-family: var(--font-inter), 'Inter', sans-serif;
   line-height: 1.6;
+  /* Sit above the fixed DraftingGrid (z-index 0). */
+  position: relative;
+  z-index: 1;
 }
 
 /* ---- Top anchor nav (recessed channel) ---- */
