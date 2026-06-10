@@ -440,18 +440,27 @@ export function PhaseB({ answers, preloaded, onDataReady }: Props) {
                 </article>
               </div>
 
-              <TeamBranchSvg agentCount={data.team.agents.length} />
-
-              <div
-                className={s.teamAgentRow}
-                style={{ ['--agent-count' as string]: data.team.agents.length }}
-              >
-                {data.team.agents.map((a) => (
+              {(() => {
+                // CWU formation: human -> lead agent -> worker agents. Lead is
+                // the agent whose name matches team_leader (D4); fall back to a
+                // flat human -> all-agents row if there's no match.
+                const all = data.team.agents;
+                const li = data.team.team_leader
+                  ? all.findIndex((a) => a.name === data.team.team_leader)
+                  : -1;
+                const lead = li >= 0 ? all[li] : null;
+                const workers = lead ? all.filter((_, i) => i !== li) : all;
+                const card = (a: (typeof all)[number], isLead: boolean) => (
                   <article
                     key={`${a.name}-${a.role}`}
                     className={s.dossierCard}
-                    aria-label={`${a.name}, ${a.role}`}
+                    aria-label={`${a.name}, ${a.role}${isLead ? ' (team lead)' : ''}`}
                   >
+                    {isLead && (
+                      <div className={s.dossierBadge} style={{ color: 'var(--mint)' }}>
+                        LEAD
+                      </div>
+                    )}
                     <div className={s.dossierAvatar}>
                       <BotIcon className={s.dossierIcon} />
                     </div>
@@ -459,8 +468,37 @@ export function PhaseB({ answers, preloaded, onDataReady }: Props) {
                     <div className={s.dossierRole}>{a.role}</div>
                     <p className={s.dossierDesc}>{a.short_desc}</p>
                   </article>
-                ))}
-              </div>
+                );
+
+                if (lead) {
+                  return (
+                    <>
+                      <TeamBranchSvg agentCount={1} />
+                      <div className={s.teamAgentRow} style={{ ['--agent-count' as string]: 1 }}>
+                        {card(lead, true)}
+                      </div>
+                      <TeamBranchSvg agentCount={workers.length} />
+                      <div
+                        className={s.teamAgentRow}
+                        style={{ ['--agent-count' as string]: workers.length }}
+                      >
+                        {workers.map((a) => card(a, false))}
+                      </div>
+                    </>
+                  );
+                }
+                return (
+                  <>
+                    <TeamBranchSvg agentCount={all.length} />
+                    <div
+                      className={s.teamAgentRow}
+                      style={{ ['--agent-count' as string]: all.length }}
+                    >
+                      {all.map((a) => card(a, false))}
+                    </div>
+                  </>
+                );
+              })()}
             </div>
 
             <div className={s.ctas}>

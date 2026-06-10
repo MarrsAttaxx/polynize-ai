@@ -104,6 +104,7 @@ export const DEMO_CAPABILITY_MAP: CapabilityMapData = {
       name: 'AJ Milne',
       role: 'Investment thesis, valuation, client relationships, and final calls.',
     },
+    team_leader: 'Flow',
     agents: [
       {
         name: 'Flow',

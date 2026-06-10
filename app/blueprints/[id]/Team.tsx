@@ -1,4 +1,5 @@
 import type { BlueprintPayload } from '@/lib/blueprint/load';
+import type { CapabilityAgent } from '@/lib/types';
 import s from './blueprint.module.css';
 import { firstNameOf } from './util';
 
@@ -6,6 +7,16 @@ export function Team({ payload }: { payload: BlueprintPayload }) {
   const { answers, data } = payload;
   const firstName = firstNameOf(answers.name);
   const agents = data.team.agents;
+
+  // CWU formation: 1 human -> 1 lead agent -> N worker agents. The lead is the
+  // agent whose name exactly matches team_leader (decision D4). If there is no
+  // match (older or off-shape data), fall back to a flat human -> all-agents
+  // layout so the section never breaks.
+  const leadIndex = data.team.team_leader
+    ? agents.findIndex((a) => a.name === data.team.team_leader)
+    : -1;
+  const lead = leadIndex >= 0 ? agents[leadIndex] : null;
+  const workers = lead ? agents.filter((_, i) => i !== leadIndex) : agents;
 
   return (
     <section className={s.page} data-screen-label="Page 03 · Team">
@@ -45,27 +56,61 @@ export function Team({ payload }: { payload: BlueprintPayload }) {
         </article>
       </div>
 
-      {/* Connector branch between human and the agent dossier row */}
-      <TeamBranchSvg agentCount={agents.length} />
+      {lead ? (
+        <>
+          {/* Human -> lead agent */}
+          <TeamBranchSvg agentCount={1} />
+          <div className={s.dossierAgentRow} style={{ ['--agent-count' as string]: 1 }}>
+            <AgentCard a={lead} badge="LEAD" />
+          </div>
 
-      {/* Agent dossier row */}
-      <div
-        className={s.dossierAgentRow}
-        style={{ ['--agent-count' as string]: agents.length }}
-      >
-        {agents.map((a, i) => (
-          <article key={`${a.name}-${i}`} className={s.dossierCard}>
-            <div className={s.dossierBadge}>A{String(i + 1).padStart(2, '0')}</div>
-            <div className={s.dossierAvatar}>
-              <PersonIcon className={s.dossierIcon} />
-            </div>
-            <div className={s.dossierName}>{a.name}</div>
-            <div className={s.dossierRole}>{a.role}</div>
-            <p className={s.dossierDesc}>{a.short_desc}</p>
-          </article>
-        ))}
-      </div>
+          {/* Lead -> worker agents */}
+          <TeamBranchSvg agentCount={workers.length} />
+          <div
+            className={s.dossierAgentRow}
+            style={{ ['--agent-count' as string]: workers.length }}
+          >
+            {workers.map((a, i) => (
+              <AgentCard key={`${a.name}-${i}`} a={a} badge={`A${String(i + 1).padStart(2, '0')}`} />
+            ))}
+          </div>
+        </>
+      ) : (
+        <>
+          {/* Connector branch between human and the agent dossier row */}
+          <TeamBranchSvg agentCount={agents.length} />
+
+          {/* Agent dossier row (flat fallback) */}
+          <div
+            className={s.dossierAgentRow}
+            style={{ ['--agent-count' as string]: agents.length }}
+          >
+            {agents.map((a, i) => (
+              <AgentCard key={`${a.name}-${i}`} a={a} badge={`A${String(i + 1).padStart(2, '0')}`} />
+            ))}
+          </div>
+        </>
+      )}
     </section>
+  );
+}
+
+function AgentCard({ a, badge }: { a: CapabilityAgent; badge: string }) {
+  return (
+    <article className={s.dossierCard}>
+      <div
+        className={s.dossierBadge}
+        style={badge === 'LEAD' ? { color: 'var(--mint)' } : undefined}
+      >
+        {badge}
+      </div>
+      <div className={s.dossierAvatar}>
+        <PersonIcon className={s.dossierIcon} />
+      </div>
+      <div className={s.dossierName}>{a.name}</div>
+      <div className={s.dossierRole}>{a.role}</div>
+      <p className={s.dossierDesc}>{a.short_desc}</p>
+    </article>
   );
 }
 

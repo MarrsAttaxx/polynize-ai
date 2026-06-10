@@ -362,6 +362,15 @@
 }
 
 /* --- Dossier card (shared styling for human + agents) --- */
+.dossierBadge {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 9.5px;
+  letter-spacing: 0.18em;
+  color: var(--text-3);
+}
 .dossierCard {
   display: flex;
   flex-direction: column;

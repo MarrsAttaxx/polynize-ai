@@ -67,6 +67,9 @@ export type CapabilityMapData = {
   team: {
     human_owner: HumanOwner;
     agents: CapabilityAgent[];
+    /** Exact name of the lead agent (the middle tier in the CWU formation:
+     *  1 human -> 1 lead agent -> N worker agents). Optional on the read path. */
+    team_leader?: string;
   };
   leverage_estimate: string;
   leverage_rationale: string;
@@ -228,6 +231,9 @@ export type CapabilityMapV05 = {
   team: {
     human_owner: HumanOwner;
     agents: CapabilityAgent[];
+    /** Exact name of the lead agent (the middle tier in the CWU formation:
+     *  1 human -> 1 lead agent -> N worker agents). Optional on the read path. */
+    team_leader?: string;
   };
   leverage_estimate: string;
   leverage_rationale: string;

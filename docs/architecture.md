@@ -61,6 +61,8 @@ Every engagement's team is **three tiers, always** (the CWU invariant — see `d
 
 In `capability-map.json`, the team is `{ human_owner: {name, role}, team_leader: "<exact agent name>", agents: [{name, role, short_desc}] }`. The `team_leader` string **must exactly match** one agent's `name`, or the org chart silently falls back to two tiers. The team leader is an *additional* agent on top of the workers (workers + 1 leader, within the 2–6 agent bound).
 
+This 1 -> 1 -> N formation (human -> lead agent -> worker agents) renders in **both** the PAM Console blueprint and the **public `/agents` blueprint** (`app/blueprints/[id]/Team.tsx`) plus its in-flow Phase B reveal (`app/agents/PhaseB.tsx`). The public renderers read `team_leader` off the (adapter-passed) `CapabilityMapData.team`, draw the lead as the middle tier, and fall back to a flat human -> all-agents row if `team_leader` doesn't match an agent. (Before 2026-06, the public renderers ignored `team_leader` and always drew the flat fallback — that was the bug that showed a "1 + N" team instead of "1 + 1 + N".)
+
 Live team leaders: Roxbury → Mable, EverStock → Scout, Newkind → Don, reMYnd → Joy.
 
 ---
