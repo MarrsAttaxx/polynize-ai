@@ -190,7 +190,7 @@ function DirCAjQuoteProblem() {
           A Real Customer <span className={s.dcMintEmph}>Journey</span>
         </h2>
         <p className={s.dcSectionLede}>
-          This is how we mapped, modelled and rectified Optio Capitals Real Capability
+          This is how we mapped, modelled and rectified Optio Capitals real capability
           bottleneck.
         </p>
       </div>
