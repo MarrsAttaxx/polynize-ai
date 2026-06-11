@@ -185,12 +185,14 @@ function DirCAjQuoteProblem() {
   return (
     <section className={s.dcSection}>
       <div className={s.dcSectionHead}>
-        <div className={s.dcSectionEyebrow}>Where we started</div>
+        <div className={s.dcSectionEyebrow}>How we work</div>
         <h2 className={s.dcH2}>
-          Every deal needed
-          <br />
-          <span className={s.dcMintEmph}>weeks of groundwork.</span>
+          A Real Customer <span className={s.dcMintEmph}>Journey</span>
         </h2>
+        <p className={s.dcSectionLede}>
+          This is how we mapped, modelled and rectified Optio Capitals Real Capability
+          bottleneck.
+        </p>
       </div>
 
       <AjQuoteCard
