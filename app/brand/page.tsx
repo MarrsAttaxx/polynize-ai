@@ -6,7 +6,7 @@ import s from './brand.module.css';
 export const metadata: Metadata = {
   title: 'Brand · polynize.ai',
   description:
-    'polynize.ai brand guidelines. Base tokens, Tactile depth system, component recipes, voice rules. Structured for humans and AI agents.',
+    'The polynize.ai brand system, v2.0. Positioning, narrative, voice, colour tokens, the Tactile depth system, and component recipes. Polynize maps the work, finds the human at its centre, and builds the hybrid team that amplifies them. Structured for humans to read and agents to parse.',
   robots: { index: false, follow: false },
 };
 
@@ -74,31 +74,59 @@ export default function BrandPage() {
 
         {/* ---- §01 Positioning ---- */}
         <section className={s.sec} id="positioning">
-          <SecHead n="01" title="Positioning" sub="What polynize.ai is, who it's for, and what it sells." />
+          <SecHead n="01" title="Positioning" sub="What Polynize is, who it serves, what it sells, and why the thinking is the moat." />
           <SecBody>
             <h3>What we are</h3>
             <p>
-              polynize.ai is the agentic arm of Polynize (polynize.io). We sell productised AI agent
-              teams to small and mid-size business owners. Enterprise buyers live on polynize.io. Do
-              not cross the streams.
+              Polynize is the work-design company for the agent era. We blueprint and build agent
+              teams. We reorganise how a business works, then build the hybrid human-agent team that
+              runs it. The thinking is the product. The agents are the output.
             </p>
-            <h3>Who we&apos;re for</h3>
+            <h3>Who we serve</h3>
             <p>
-              <strong>Primary ICP:</strong> SMB founders, operators, or team leads. Businesses with
-              a team (or a solo operator who wants to scale without hiring). Feeling a bottleneck.
-              Know AI is part of the answer but don&apos;t know how to apply it. Serious buyers, not
-              tinkerers.
+              <strong>The Scaling Operator.</strong> Owners, operators, and CEOs of established
+              medium-to-large businesses. We sell to the leadership layer as a partner, not as a
+              consulting replacement and not as another vendor.
             </p>
             <p>
-              <strong>Wrong visitor:</strong> someone looking for a personal AI assistant, someone
-              casually curious about AI tools, someone who wants to build an agent for fun. The site
-              is designed to make those visitors self-select out.
+              <strong>Wrong visitor:</strong> someone who wants to cut their team. The filter line is
+              plain. If you are trying to replace your people, Polynize does not make sense for you.
+              We build the team around the human and never cut them out.
             </p>
             <h3>What we sell</h3>
             <p>
-              A Cognitive Work Unit. One human holds judgment, three to seven agents hold execution,
-              shaped around one real outcome. Installed, trained, and operated by Polynize. We sell
-              the shift, not the tool.
+              The shift, not the tool. The entry product is the{' '}
+              <strong>capability blueprint</strong>: we map your business, show you the bottleneck,
+              and hand you the design of the team that solves it. Training, transformation, and
+              deployment all bind to that one analysis.
+            </p>
+            <h3>The moat</h3>
+            <p>Three things, and never all three in one place elsewhere.</p>
+            <p>
+              <strong>Capability mapping with depth.</strong> Break the work into capabilities, label
+              each one human, hybrid, or agent, benchmark what good looks like, measure the gap, and
+              design the team. The benchmark and the team shape are the unique outputs.
+            </p>
+            <p>
+              <strong>Human-first team design.</strong> We build the team around the human and never
+              cut them out.
+            </p>
+            <p>
+              <strong>A training product.</strong> We train the human first, then the agents.
+            </p>
+            <h3>Why tool-agnostic is the moat</h3>
+            <p>
+              We do not win at the technology layer. On scale, capital, and distribution the
+              platforms win. We win on the thinking: the blueprint, the team design, and the human
+              training, which travel across any model or any platform. That is why we can stand on
+              any stage and stay relevant.
+            </p>
+            <h3>Brand lines</h3>
+            <p>
+              <strong>Think better</strong> is the method line. <strong>Work worth doing</strong> is
+              the payoff line. The ladder reads: think better, build the team around the human, work
+              worth doing. One line: Polynize maps the work, finds the human at its centre, and
+              builds the hybrid team that amplifies them.
             </p>
           </SecBody>
         </section>
@@ -109,29 +137,35 @@ export default function BrandPage() {
           <SecBody>
             <h3>One. Execution is no longer the constraint.</h3>
             <p>
-              AI made execution cheap. What&apos;s scarce now is judgment, direction, and alignment.
-              The problem is no longer &quot;how do I get more work done.&quot; It&apos;s &quot;how
-              do I get more of the right work done, without personally being in every decision.&quot;
+              AI made execution cheap. Judgment, direction, and alignment are now the scarce things.
+              The question is no longer how to get more work done. It is how to get more of the right
+              work done, without being in every decision.
             </p>
-            <h3>Two. The unit of work has changed.</h3>
+            <h3>Two. You cannot redesign what you cannot see.</h3>
             <p>
-              The old unit was the employee, the team, the department. The new unit is the
-              Cognitive Work Unit: one human holding judgment, three to seven agents holding
-              execution, shaped around one real outcome. Early evidence suggests roughly 5x
-              throughput versus traditional team structures.
+              The capability blueprint is the recognition step before any team is built. It shows
+              which work is human, which is hybrid, and which is agent, and it benchmarks what good
+              looks like. It is the moment a client sees the shape of the fix, and it is where they
+              decide to sign.
             </p>
-            <h3>Three. You can&apos;t redesign what you can&apos;t see.</h3>
+            <h3>Three. The unit of work is one human, amplified.</h3>
             <p>
-              Before a business owner can move to this model, they need to see which parts of their
-              work are human-critical and which are agent-executable. The Heat Map makes that
-              visible. It&apos;s the recognition step before any agent team is designed.
+              One human at the centre holds judgment. One agent lead runs the team. Three to four
+              agents around the lead hold execution. The agent lead is load-bearing: the human
+              directs the lead, the lead runs the rest. Roughly 1 human + 4 agents = 5× throughput.
+              Read it as amplification of one human, never output from fewer staff.
+            </p>
+            <p>
+              The unit is the <strong>Cognitive Work Unit (CWU)</strong>. It is not one fixed shape.
+              It composes into different configurations depending on the work. The shape library is
+              in development and not yet final.
             </p>
           </SecBody>
         </section>
 
         {/* ---- §03 Voice ---- */}
         <section className={s.sec} id="voice">
-          <SecHead n="03" title="Voice & tone" sub="Direct, punchy, business-literate. Short sentences. No hype. Founder-to-founder." />
+          <SecHead n="03" title="Voice & tone" sub="Direct, business-literate. Short sentences. No hype. Operator-to-operator." />
           <SecBody>
             <h3>Word choice</h3>
             <div className={s.twoCol}>
@@ -184,8 +218,8 @@ export default function BrandPage() {
             <div className={s.specimen}>
               <div className={s.specimenLabel}>Inter · Body · 400 / 500 / 600</div>
               <p className={s.specimenBody}>
-                polynize.ai is the agentic arm of Polynize. We build productised agent teams for
-                small and mid-size businesses. Founder-to-founder voice. No hype.
+                Polynize is the work-design company for the agent era. We blueprint and build the
+                hybrid human-agent team that runs the work. Operator-to-operator voice. No hype.
               </p>
             </div>
             <div className={s.specimen}>
@@ -403,9 +437,9 @@ export default function BrandPage() {
                 <span className={s.componentLabel}>pills / chips</span>
                 <div className={s.componentDemo}>
                   <div className={s.demoChipRow}>
-                    <span className={s.demoChip}>founder</span>
                     <span className={s.demoChip}>operator</span>
-                    <span className={s.demoChip}>team lead</span>
+                    <span className={s.demoChip}>owner</span>
+                    <span className={s.demoChip}>CEO</span>
                   </div>
                 </div>
                 <p className={s.componentNote}>
@@ -425,7 +459,7 @@ export default function BrandPage() {
                 </div>
                 <p className={s.componentNote}>
                   Primary (gradient raised) for the human lead or active agent. Inset wells for
-                  secondary/inactive roles — icon containers sit in little holes.
+                  secondary/inactive roles. Icon containers sit in little holes.
                 </p>
               </div>
             </div>

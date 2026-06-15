@@ -12,9 +12,16 @@
 
 export const BRAND_TOKENS = {
   name: 'polynize.ai',
-  version: '1.1',
-  last_updated: '2026-04-23',
-  tagline: 'The agentic arm of Polynize. We build agent teams for small and mid-size businesses.',
+  version: '2.0',
+  last_updated: '2026-06-15',
+  tagline: '1 human + 4 agents = 5× throughput',
+  brand_lines: {
+    method: 'Think better',
+    payoff: 'Work worth doing',
+    ladder: 'Think better, build the team around the human, work worth doing.',
+    one_liner:
+      'Polynize maps the work, finds the human at its centre, and builds the hybrid team that amplifies them.',
+  },
 
   palette: {
     bg: '#0a0a0f',
@@ -116,13 +123,13 @@ export const BRAND_TOKENS = {
     rules: [
       'Display is for headings and hero copy only',
       'Body handles all prose',
-      'Mono is for chrome, metadata, code, labels — never body copy',
+      'Mono is for chrome, metadata, code, labels, never body copy',
       'Never use pure-white text on the dark background; use text (#f4ece4) so glyphs blend with the felt overlay',
     ],
   },
 
   voice: {
-    tone: 'founder-to-founder, direct, punchy, business-literate',
+    tone: 'operator-to-operator, direct, business-literate, no hype',
     never_use_em_dashes: true,
     avoid_words: [
       'revolutionize',
@@ -141,6 +148,8 @@ export const BRAND_TOKENS = {
       'cutting-edge',
       'best-in-class',
       'synergy',
+      'replace people',
+      'without headcount',
     ],
     prefer_words: [
       'team',
@@ -159,6 +168,9 @@ export const BRAND_TOKENS = {
       'deploy',
       'connector',
       'blueprint',
+      'capability blueprint',
+      'tool-agnostic',
+      'benchmark',
     ],
   },
 
@@ -170,7 +182,7 @@ export const BRAND_TOKENS = {
     },
     {
       id: 'R.02',
-      rule: 'Short sentences. Founder-to-founder.',
+      rule: 'Short sentences. Operator-to-operator.',
       why: 'If a sentence runs beyond two lines on mobile, split it.',
     },
     {
@@ -198,6 +210,11 @@ export const BRAND_TOKENS = {
       rule: 'One CTA per screen. No secondary action competing for attention.',
       why: "The whole funnel is built around 'Map Your Business'. Don't dilute it.",
     },
+    {
+      id: 'R.08',
+      rule: 'Human-first. Never frame outcomes as replacing people, growing without headcount, or doing more with fewer staff. Frame the work as amplifying the human.',
+      why: 'We build the team around the human and never cut them out. Amplification is the promise, not headcount reduction.',
+    },
   ],
 
   visual_vocabulary: {
@@ -223,11 +240,13 @@ export const BRAND_TOKENS = {
   },
 
   system_prompt_boilerplate: [
-    'You are writing as polynize.ai, the agentic arm of Polynize.',
-    'Voice: founder-to-founder, direct, punchy, business-literate.',
+    'You are writing as Polynize, the work-design company for the agent era. We blueprint and build agent teams.',
+    'Voice: operator-to-operator, direct, business-literate, no hype.',
     'Never use em-dashes (U+2014). Use commas, colons, or periods.',
     'Never use: revolutionize, unleash, supercharge, game-changer, seamless, empower.',
-    'Prefer: judgment, execution, agent team, cognitive work unit, human lead, blueprint.',
+    'Human-first: never frame outcomes as replacing people or cutting headcount. Frame the work as amplifying the human.',
+    'Tool-agnostic: the thinking is the product and the tools are interchangeable across any model or platform.',
+    'Prefer: judgment, execution, agent team, cognitive work unit, capability blueprint, human lead, benchmark.',
     'Short sentences. No hype. Use the visitor\'s own language from their answers.',
   ].join(' '),
 } as const;
