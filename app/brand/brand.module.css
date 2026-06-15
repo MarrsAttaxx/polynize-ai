@@ -140,6 +140,11 @@ main.main {
   gap: 48px;
 }
 .secBody > .spacer { grid-column: 1; }
+/* Let the content track shrink so wide children (the JSON payload, the long
+   boilerplate string) scroll/wrap inside their card instead of forcing the
+   1fr track wider than the page. Without this, grid min-width:auto blows the
+   section past the right edge. */
+.secBody > * { min-width: 0; }
 
 .secBody h3 {
   font-family: var(--font-space-grotesk), 'Space Grotesk', sans-serif;
@@ -572,6 +577,11 @@ main.main {
   font-size: 12px;
   line-height: 1.6;
   color: var(--text-2);
+  /* Wrap long lines (the joined boilerplate is a single long string; some JSON
+     values are long too) so the block never forces horizontal overflow.
+     Preserves the pretty-printed JSON's own newlines + indentation. */
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
 .jsonKey { color: var(--blue); }
 .jsonString { color: var(--mint); }
