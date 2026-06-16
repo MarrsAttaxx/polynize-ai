@@ -8,9 +8,11 @@
  */
 
 import { ep00Html } from './ep00';
+import { biz00Html } from './biz00';
 
 export const SHEETS: Record<string, string> = {
   'pam/ep00': ep00Html,
+  'biz/00': biz00Html,
 };
 
 export function getSheetHtml(show: string, episode: string): string | null {
