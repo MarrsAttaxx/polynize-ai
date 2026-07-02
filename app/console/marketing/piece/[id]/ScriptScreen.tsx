@@ -1,51 +1,93 @@
 'use client';
 
 /**
- * The Script screen (Phase-1 ticket T2). The first stage of the short-form
- * video middle module: an agent-drafted, human-editable script that autosaves
- * (debounced 1s + flush on blur), owner-scoped, in the authed console.
+ * The Script screen (Phase-1 tickets T2 + T4). An agent-drafted, human-editable
+ * script with an on-screen context chat, owner-scoped and autosaving, in the
+ * authed console.
  *
- * The teleprompter view (own URL, section-by-section stepping, remote advance)
- * is ticket T3; the context chat is T4; the April draft round-trip is T5. This
- * ticket proves the authed, owner-scoped, autosaving editor.
+ * Autosave is debounced (1s) + flushed on blur + flushed on unmount, and
+ * SERIALIZED: at most one PUT is in flight and the latest content is coalesced,
+ * so a slow/out-of-order request can never overwrite a newer edit.
+ *
+ * The chat (T4) rewrites the whole script on command. Two guards protect the
+ * user's work: the editor is LOCKED while a chat command is in flight (so
+ * concurrent typing can't be clobbered by the returning revision), and every
+ * chat apply is one-click UNDOABLE (so an over-aggressive rewrite is always
+ * recoverable, since the store keeps no version history).
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import type { MarketingPiece } from '@/lib/marketing/piece-store';
+import { ChatPanel } from './ChatPanel';
 import s from './script.module.css';
+import c from './chat.module.css';
 
 type SaveState = 'idle' | 'saving' | 'saved' | 'error';
 
 export function ScriptScreen({ initial }: { initial: MarketingPiece }) {
   const [script, setScript] = useState(initial.script);
   const [saveState, setSaveState] = useState<SaveState>('idle');
-  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const latest = useRef(initial.script);
+  const [chatBusy, setChatBusy] = useState(false);
+  const [undo, setUndo] = useState<string | null>(null);
 
-  const save = useCallback(
-    async (next: string) => {
-      setSaveState('saving');
-      try {
-        // Derive the state URL from the CURRENT path, not an absolute /console
-        // path: on pam.polynize.ai the middleware prepends /console to every
-        // request, so the browser path is /marketing/piece/<id> there and an
-        // absolute /console/... fetch would double up. current-path + /state
-        // is correct on both pam.polynize.ai and www.polynize.ai/console.
-        const url =
-          window.location.pathname.replace(/\/+$/, '') + '/state';
-        const res = await fetch(url, {
-          method: 'PUT',
-          headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({ ...initial, script: next }),
-        });
-        setSaveState(res.ok ? 'saved' : 'error');
-      } catch {
-        setSaveState('error');
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // `latest` is the single source of truth for what should be persisted; every
+  // edit path writes it. The save loop always reconciles against it.
+  const latest = useRef(initial.script);
+  const inFlight = useRef(false);
+
+  // Capture the state URL ONCE at mount. Deriving it inside save() at call time
+  // is wrong for the unmount flush: React's cleanup runs AFTER the App Router
+  // has already changed window.location.pathname to the destination, so the
+  // flush would PUT to the destination's /state route (404) and drop the edit.
+  // The piece URL is stable for this component's life, so snapshot it on mount.
+  // (Derived from the current path, not an absolute /console path, because on
+  // pam.polynize.ai the middleware prepends /console and an absolute fetch would
+  // double up. Correct on both pam.polynize.ai and www.polynize.ai/console.)
+  const stateUrlRef = useRef('');
+  useEffect(() => {
+    stateUrlRef.current = window.location.pathname.replace(/\/+$/, '') + '/state';
+  }, []);
+
+  // Serialized autosave: at most one PUT in flight. The loop always sends
+  // `latest.current` and, after each PUT, re-checks it — if a newer edit landed
+  // mid-flight it sends that too, so the last committed write is always the
+  // newest content (last-write-wins by construction). A fetch failure breaks the
+  // loop with an honest 'error'; the next edit/flush starts a fresh save. There
+  // is no queued value to strand, so an error can never poison the next cycle.
+  const save = useCallback(async () => {
+    if (inFlight.current) return; // a running loop will pick up latest.current
+    inFlight.current = true;
+    const url =
+      stateUrlRef.current || window.location.pathname.replace(/\/+$/, '') + '/state';
+    try {
+      for (;;) {
+        const content = latest.current;
+        setSaveState('saving');
+        let ok = false;
+        try {
+          const res = await fetch(url, {
+            method: 'PUT',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({ ...initial, script: content }),
+          });
+          ok = res.ok;
+        } catch {
+          ok = false;
+        }
+        if (!ok) {
+          setSaveState('error');
+          break;
+        }
+        if (latest.current !== content) continue; // newer edit arrived mid-flight
+        setSaveState('saved');
+        break;
       }
-    },
-    [initial]
-  );
+    } finally {
+      inFlight.current = false;
+    }
+  }, [initial]);
 
   const scheduleSave = useCallback(
     (next: string) => {
@@ -54,7 +96,7 @@ export function ScriptScreen({ initial }: { initial: MarketingPiece }) {
       if (timer.current) clearTimeout(timer.current);
       timer.current = setTimeout(() => {
         timer.current = null;
-        void save(next);
+        void save();
       }, 1000);
     },
     [save]
@@ -64,14 +106,32 @@ export function ScriptScreen({ initial }: { initial: MarketingPiece }) {
     if (timer.current) {
       clearTimeout(timer.current);
       timer.current = null;
+      void save();
     }
-    void save(latest.current);
   }, [save]);
 
-  // Flush any pending save on unmount.
-  useEffect(() => () => {
-    if (timer.current) clearTimeout(timer.current);
-  }, []);
+  // Flush a pending debounced save on unmount (e.g. clicking the Teleprompter
+  // link within the 1s debounce). Via a ref so the empty-dep effect always runs
+  // the current flush. The fetch survives client-side navigation.
+  const flushRef = useRef(flush);
+  flushRef.current = flush;
+  useEffect(() => () => flushRef.current(), []);
+
+  const applyChatEdit = useCallback(
+    (next: string) => {
+      setUndo(latest.current); // snapshot the pre-apply script for one-click undo
+      setScript(next);
+      scheduleSave(next);
+    },
+    [scheduleSave]
+  );
+
+  const revert = useCallback(() => {
+    if (undo === null) return;
+    setScript(undo);
+    scheduleSave(undo);
+    setUndo(null);
+  }, [undo, scheduleSave]);
 
   const saveLabel =
     saveState === 'saving'
@@ -119,22 +179,49 @@ export function ScriptScreen({ initial }: { initial: MarketingPiece }) {
         </div>
       </header>
 
-      <textarea
-        className={s.script}
-        value={script}
-        spellCheck={false}
-        onChange={(e) => {
-          setScript(e.target.value);
-          scheduleSave(e.target.value);
-        }}
-        onBlur={flush}
-        aria-label="Script"
-      />
+      <div className={c.workspace}>
+        <div className={s.editorCol}>
+          {undo !== null ? (
+            <div className={s.undoBar}>
+              <span>The chat rewrote the script.</span>
+              <button
+                type="button"
+                className={s.undoBtn}
+                onClick={revert}
+                disabled={chatBusy}
+              >
+                Undo
+              </button>
+            </div>
+          ) : null}
+          <textarea
+            className={s.script}
+            value={script}
+            spellCheck={false}
+            disabled={chatBusy}
+            onChange={(e) => {
+              setScript(e.target.value);
+              scheduleSave(e.target.value);
+              if (undo !== null) setUndo(null); // a manual edit ends the undo window
+            }}
+            onBlur={flush}
+            aria-label="Script"
+          />
+          <p className={s.hint}>
+            {chatBusy
+              ? 'The chat is editing the script. The editor unlocks when it is done.'
+              : 'Edits autosave. Use the chat to change the script by command, or open the teleprompter (own URL) to record.'}
+          </p>
+        </div>
 
-      <p className={s.hint}>
-        Edits autosave. Teleprompter mode (own URL, section stepping, remote
-        advance) and the context chat land in the next tickets.
-      </p>
+        <ChatPanel
+          script={script}
+          format={initial.format}
+          title={initial.title}
+          onBusyChange={setChatBusy}
+          onApply={applyChatEdit}
+        />
+      </div>
     </div>
   );
 }
