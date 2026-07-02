@@ -17,13 +17,7 @@ import s from './script.module.css';
 
 type SaveState = 'idle' | 'saving' | 'saved' | 'error';
 
-export function ScriptScreen({
-  pieceId,
-  initial,
-}: {
-  pieceId: string;
-  initial: MarketingPiece;
-}) {
+export function ScriptScreen({ initial }: { initial: MarketingPiece }) {
   const [script, setScript] = useState(initial.script);
   const [saveState, setSaveState] = useState<SaveState>('idle');
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -33,20 +27,24 @@ export function ScriptScreen({
     async (next: string) => {
       setSaveState('saving');
       try {
-        const res = await fetch(
-          `/console/marketing/piece/${pieceId}/state`,
-          {
-            method: 'PUT',
-            headers: { 'content-type': 'application/json' },
-            body: JSON.stringify({ ...initial, script: next }),
-          }
-        );
+        // Derive the state URL from the CURRENT path, not an absolute /console
+        // path: on pam.polynize.ai the middleware prepends /console to every
+        // request, so the browser path is /marketing/piece/<id> there and an
+        // absolute /console/... fetch would double up. current-path + /state
+        // is correct on both pam.polynize.ai and www.polynize.ai/console.
+        const url =
+          window.location.pathname.replace(/\/+$/, '') + '/state';
+        const res = await fetch(url, {
+          method: 'PUT',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ ...initial, script: next }),
+        });
         setSaveState(res.ok ? 'saved' : 'error');
       } catch {
         setSaveState('error');
       }
     },
-    [pieceId, initial]
+    [initial]
   );
 
   const scheduleSave = useCallback(

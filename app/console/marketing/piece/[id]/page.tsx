@@ -44,5 +44,5 @@ export default async function MarketingPiecePage({
     );
   }
 
-  return <ScriptScreen pieceId={id} initial={piece} />;
+  return <ScriptScreen initial={piece} />;
 }
