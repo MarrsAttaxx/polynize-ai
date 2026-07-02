@@ -1,0 +1,103 @@
+/* Script screen (T2) — tactile, on-brand. The editable script slab echoes the
+   biz/00 teleprompter design, inside the authed console. */
+
+.root {
+  max-width: 900px;
+  margin: 0 auto;
+  padding-bottom: 80px;
+  position: relative;
+  z-index: 1;
+}
+
+.head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+.headLeft {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.back {
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: var(--text-3);
+  text-decoration: none;
+  letter-spacing: 0.04em;
+}
+.back:hover {
+  color: var(--mint);
+}
+.titleWrap {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.eyebrow {
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--mint);
+}
+.title {
+  font-family: var(--font-space-grotesk), 'Space Grotesk', sans-serif;
+  font-size: clamp(26px, 4vw, 38px);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.04;
+  margin: 0;
+}
+
+.saveInd {
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--text-3);
+  white-space: nowrap;
+  transition: color 0.2s;
+  padding-top: 4px;
+}
+.saving { color: var(--amber); }
+.ok { color: var(--mint); }
+.err { color: var(--coral); }
+
+.script {
+  width: 100%;
+  min-height: 60vh;
+  resize: vertical;
+  background: var(--tac-surface);
+  color: var(--text);
+  border: none;
+  border-radius: 18px;
+  box-shadow: var(--tac-shadow-raised);
+  padding: 32px 36px;
+  font-family: var(--font-space-grotesk), 'Space Grotesk', sans-serif;
+  font-size: 19px;
+  line-height: 1.7;
+  outline: none;
+}
+.script:focus {
+  box-shadow:
+    var(--tac-shadow-raised),
+    0 0 0 1.5px rgba(105, 252, 203, 0.4);
+}
+
+.hint {
+  font-size: 12.5px;
+  color: var(--text-3);
+  margin: 14px 4px 0;
+  line-height: 1.5;
+}
+
+.notFound {
+  padding: 60px 0;
+  text-align: center;
+  color: var(--text-3);
+}
+.notFound code {
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  color: var(--text-2);
+}
