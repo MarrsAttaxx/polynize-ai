@@ -92,6 +92,8 @@ That single slice validates the socket contract, the chat-drives-interface patte
 
 Ordered so each ticket produces something visible/usable and nothing needs redesigning later.
 
+> **Build status (2026-07-02).** T2, T3, T6 shipped and deployed. T1 is running on an **interim store** (pieces persist in `content_shoot_sheets` keyed `marketing/{owner}/{pieceId}`, owner-scoped) because migration `0009` needs DB creds only Marrs has — swapping to `content_pieces` is a store-internal change, no route/UI churn. The **dashboard shell** (`/console/marketing`: streams-by-owner + in-development pieces) was pulled forward from "After Phase 1" per the PM steer and shipped alongside T3. **T4 (context chat) is next.** **T5 (April round-trip) is on hold** until "April" is provisioned in the PAM Master Agent Builder lane. Reads/writes are hardened against malformed rows (runtime shape guard + PUT validation + a subtree error boundary).
+
 **T1 — Data foundation.** Migration `0009_marketing_console.sql`: `content_pieces` + `concept_docs`, owner-scoped, uuid PKs, `stage_state jsonb`, `descript_project_id`. Seed the existing "Strip the AI out first" concept doc as row one.
 *Done:* the tables exist; the concept doc reads back via the service client.
 
@@ -116,7 +118,7 @@ Each is a shippable step. We build one, prove it, move on. Later phases (Treatme
 
 ## After Phase 1
 
-Treatment Map (the key screen, once a real Descript transcript + a proxy video exist to build it against — timing comes from **Descript**, addressed by text, not whisper), then the Record→Refine Descript wiring, then the Dashboard shell, then the tail + Donnie.
+Treatment Map (the key screen, once a real Descript transcript + a proxy video exist to build it against — timing comes from **Descript**, addressed by text, not whisper), then the Record→Refine Descript wiring, then the tail + Donnie. (The Dashboard shell was brought forward into Phase 1 — see the build-status note above — so it grows here rather than starting from scratch: calendar, analytics, and the pillar library land on the existing shell.)
 
 ---
 
