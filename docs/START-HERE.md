@@ -26,6 +26,7 @@ Historically PAM's long-term direction was **agentic-first**: agents (notably **
 | Understand *why* something is the way it is (before changing it) | **`decisions.md`** — load-bearing decisions; do not violate without flagging |
 | Know where the project stands vs world-class, and what's being worked toward | **`maturity-report.md`** |
 | Learn the vocabulary (CWU, ACTA, blueprint, motions, the named systems, the agents) | **`glossary.md`** |
+| Build the marketing console (the 2026 pivot, see D15) | **`pam-console/`** — storage + agent-socket decisions, the Phase-1 plan, and the content-format matrix |
 | Do a common operational task (deploy, roll back, provision a client, rotate a secret) | **`runbooks.md`** *(to be written)* |
 
 ---
