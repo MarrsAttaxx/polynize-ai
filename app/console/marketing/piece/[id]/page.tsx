@@ -27,7 +27,15 @@ export default async function MarketingPiecePage({
   }
 
   const owner = user.email;
-  const saved = await getPiece(owner, id);
+  // Degrade gracefully: if storage is unreachable (e.g. the Supabase project is
+  // paused), fall back to the seed so the screen still loads instead of the
+  // whole page 500-ing. Autosave surfaces its own error until storage is back.
+  let saved: MarketingPiece | null = null;
+  try {
+    saved = await getPiece(owner, id);
+  } catch (err) {
+    console.error('[marketing] piece read failed, using seed:', err);
+  }
   const seed = SEED_PIECES[id];
   const piece: MarketingPiece | null = saved ?? (seed ? { ...seed, owner } : null);
 
