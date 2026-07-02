@@ -78,6 +78,15 @@ The console must support the full surface of content we actually produce. This m
 |---|---|---|---|
 | LinkedIn | Share + personal-perspective repost | AMPLIFICATION | Re-voiced brand content via brand-voice docs + Slack alert |
 
+#### Team amplification flow (design task — later phase, agent-triggered)
+
+The intended flow, to design when we reach it:
+1. **Calendar as a shareable URL** posted in team Slack, so everyone sees when content is going out.
+2. On a piece going live, an **automatic trigger**: an agent (April's re-voicing skill) takes the published piece and drops an alert into a Slack channel (e.g. `#content-posting`) **per person** — each with (a) a link to the post and (b) copy-ready text that reframes the concept in *that person's* brand voice (from their brand-voice doc).
+3. The person: copy the text → click the link → LinkedIn → Share → light edit → post.
+
+So the human action is one-click-copy + a quick edit; the re-voicing and the Slack fan-out are the agent's job. Depends on: per-person brand-voice docs, the publish trigger (Raph), and a Slack integration. Not Phase 1.
+
 ---
 
 ## The format catalogue (channel-agnostic) — the swappable-middle registry

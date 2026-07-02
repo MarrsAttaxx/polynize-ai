@@ -21,6 +21,17 @@
 
 **Interim runtime (important):** we do **not** need all four Hermes agents provisioned to start. Text stages (e.g. script draft) run on the console's own **OpenRouter** layer as a stand-in; the real Hermes agent swaps in behind the socket when ready. Media stages (cut, generation) dispatch to the Hermes worker on Lightsail when it exists.
 
+### The marketing team (who plugs in where)
+
+| Agent | Role in this system |
+|---|---|
+| **April** | Interview / intake → concept doc; copy, language, voice. Also owns the Team re-voicing skill and the Kit.com newsletter. |
+| **Mikey** | Production machinery — rough cut, Treatment Map, treatment execution, captions. Drives Descript + asset generation. |
+| **Raph** | Publish — across accounts via Blotato. |
+| **Donnie** | Analytics — populates the dashboard, closes the loop via Windsor.ai. |
+| **Splinter** | Team lead / manager of the whole marketing team. Role in the console is **TBD** — noted for a possible future coordination slot; if one lands, he plugs in as another socket (per D1), not as a rebuild. |
+| **Leo** | Leads. A **separate** lead-gen system, **not** part of this content engine. Noted for awareness only. |
+
 ---
 
 ## D2 — Two stores: Supabase (system-of-record) + the Lightsail bucket (media)

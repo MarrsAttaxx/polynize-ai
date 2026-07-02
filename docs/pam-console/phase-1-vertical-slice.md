@@ -17,6 +17,23 @@ The slice: **the Script screen, inside the authed console, with the context chat
 
 ---
 
+## The test vehicle — "Strip the AI out first" (one concept → its set)
+
+The end-to-end proof of the system is this one Polynize-brand concept producing its full derivative set from a single 4-min source video (the long-form already exists from the alpha, mid-enrichment — real content to finish, not throwaway):
+
+| Output | Channel(s) |
+|---|---|
+| Long-form video (~4 min) | YouTube |
+| 3× short-form video (same content, 3 hooks) | TikTok · Instagram · YouTube Shorts |
+| Short-form video | LinkedIn |
+| Image carousel | Instagram |
+| Short-form post *(text — to confirm)* | (brand social) |
+| Long-form LinkedIn post + image carousel | LinkedIn |
+
+This is the Series One TOF+MOF set for the **Polynize brand** owner. **It is the test target, not the Phase-1 build.** Phase 1 builds only the short-form **Script screen** (one module); the full set comes online as each middle module is built, with this concept flowing through as the proof. The existing long-form is the first real piece to carry through once the medium/long-form module lands.
+
+*(One ambiguity to confirm with Marrs: "a short-form post" — a short written/text post, vs the short-form video already listed.)*
+
 ## Why this slice (and why nothing blocks it)
 
 - **Short-form video** is the only fully-proven middle module (alpha), and it is your lane.
