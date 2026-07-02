@@ -91,24 +91,32 @@ export function ScriptScreen({ initial }: { initial: MarketingPiece }) {
           </Link>
           <div className={s.titleWrap}>
             <span className={s.eyebrow}>
-              {initial.format.replace(/_/g, ' ')} · script
+              {(initial.format ?? '').replace(/_/g, ' ')} · script
             </span>
             <h1 className={s.title}>{initial.title}</h1>
           </div>
         </div>
-        <span
-          className={`${s.saveInd} ${
-            saveState === 'saving'
-              ? s.saving
-              : saveState === 'saved'
-                ? s.ok
-                : saveState === 'error'
-                  ? s.err
-                  : ''
-          }`}
-        >
-          {saveLabel}
-        </span>
+        <div className={s.headRight}>
+          <Link
+            href={`/console/marketing/piece/${initial.piece_id}/teleprompter`}
+            className={s.prompterLink}
+          >
+            ▶ Teleprompter
+          </Link>
+          <span
+            className={`${s.saveInd} ${
+              saveState === 'saving'
+                ? s.saving
+                : saveState === 'saved'
+                  ? s.ok
+                  : saveState === 'error'
+                    ? s.err
+                    : ''
+            }`}
+          >
+            {saveLabel}
+          </span>
+        </div>
       </header>
 
       <textarea

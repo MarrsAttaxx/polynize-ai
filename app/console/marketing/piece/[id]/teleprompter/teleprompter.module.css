@@ -1,0 +1,112 @@
+/* Teleprompter (T3) — full-screen, chrome-less, white-on-black, one section at
+   a time. Sits above the console top nav (z-index 100). */
+
+.root {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: #000;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.topbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 20px;
+}
+.exit {
+  color: rgba(255, 255, 255, 0.6);
+  text-decoration: none;
+  font-family: var(--font-jetbrains-mono), monospace;
+  font-size: 13px;
+  white-space: nowrap;
+}
+.exit:hover {
+  color: #fff;
+}
+.title {
+  flex: 1;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.4);
+  font-family: var(--font-jetbrains-mono), monospace;
+  font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.counter {
+  color: rgba(255, 255, 255, 0.6);
+  font-family: var(--font-jetbrains-mono), monospace;
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+/* Full-height tap zones behind the stage. */
+.zone {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  width: 50%;
+  z-index: 1;
+  background: transparent;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.zoneLeft {
+  left: 0;
+}
+.zoneRight {
+  right: 0;
+}
+
+/* The reading stage does not catch pointer events, so taps reach the zones. */
+.stage {
+  position: relative;
+  z-index: 2;
+  pointer-events: none;
+  max-width: 92vw;
+  padding: 0 6vw;
+  text-align: center;
+}
+.header {
+  font-family: var(--font-jetbrains-mono), monospace;
+  font-size: clamp(14px, 2.4vw, 22px);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #7cffb2;
+  margin-bottom: 3vh;
+}
+.body {
+  font-family: var(--font-space-grotesk), 'Space Grotesk', sans-serif;
+  font-weight: 600;
+  font-size: clamp(28px, 5.2vw, 62px);
+  line-height: 1.35;
+  white-space: pre-wrap;
+}
+
+.hint {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 3;
+  text-align: center;
+  padding: 14px;
+  font-family: var(--font-jetbrains-mono), monospace;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.35);
+  pointer-events: none;
+}

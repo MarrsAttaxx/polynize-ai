@@ -9,7 +9,12 @@
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/console-auth';
-import { getPiece, savePiece, type MarketingPiece } from '@/lib/marketing/piece-store';
+import {
+  getPiece,
+  savePiece,
+  isValidPiece,
+  type MarketingPiece,
+} from '@/lib/marketing/piece-store';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -63,14 +68,24 @@ export async function PUT(
   }
 
   // Owner from the session, id from the route — not from the body.
-  const piece: MarketingPiece = {
+  const piece = {
     ...(body as Record<string, unknown>),
     owner: user.email,
     piece_id: id,
-  } as MarketingPiece;
+  };
+
+  // Reject partial pieces so a malformed row can never be persisted (which
+  // would later crash the dashboard/teleprompter render on read).
+  if (!isValidPiece(piece)) {
+    return NextResponse.json(
+      { error: 'piece is missing required fields (stream, format, title, script)' },
+      { status: 400 }
+    );
+  }
+  const valid: MarketingPiece = piece;
 
   try {
-    const { updated_at } = await savePiece(user.email, piece);
+    const { updated_at } = await savePiece(user.email, valid);
     return NextResponse.json({ ok: true, updated_at });
   } catch (err) {
     return NextResponse.json(

@@ -12,6 +12,7 @@ import type { MarketingPiece } from './piece-store';
 export const SEED_PIECES: Record<string, Omit<MarketingPiece, 'owner'>> = {
   'strip-the-ai-out-first': {
     piece_id: 'strip-the-ai-out-first',
+    stream: 'polynize',
     format: 'short_form_video',
     title: 'Strip the AI out first',
     concept_ref: 'capability-mapping/strip-the-ai-out-first',
