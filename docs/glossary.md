@@ -10,11 +10,11 @@
 
 **PAM (Polynize Agent Management)** — the system that both runs Polynize as a business and is the delivery product for clients. Manages AI agent teams across the engagement lifecycle.
 
-**Engagement** — a single client project. Four are live: Roxbury, EverStock, Newkind, reMYnd. Each has its own GitHub repo holding its data.
+**Engagement** — a single client project. As of 2026-06 one is live in PAM: **EverStock** (Newkind, reMYnd, and Roxbury were removed in the pivot — see `decisions.md` D15). Each engagement has its own GitHub repo holding its data.
 
 **Engagement lifecycle / phases** — **Modelling → Build → Operate**.
-- *Modelling*: analysing the client's business and agreeing scope (pre-build). Three engagements are here (EverStock, Newkind, reMYnd).
-- *Build*: building the agent team (active sprint). Roxbury is here.
+- *Modelling*: analysing the client's business and agreeing scope (pre-build).
+- *Build*: building the agent team (active sprint). EverStock is here.
 - *Operate*: the agents are live and running; ongoing tuning/support (post-handoff).
 
 **Blueprint** — the per-engagement analysis: the capability map, benchmarking, uplift plan, next steps, and the team. Rendered in the Console from `capability-map.json` + `engagement-model.json` + the 5 live sections of `blueprint.md`. Has two layers (see architecture.md): the pre-agent *analysis* layer and the downstream *team/work-plan* layer.

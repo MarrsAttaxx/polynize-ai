@@ -123,7 +123,7 @@ export async function V2BlueprintView({
             </div>
             <h1 className={s.title}>{slug}</h1>
             {isTeamUser && (
-              <Link href="/console" className={s.backLink}>
+              <Link href="/console/blueprinting" className={s.backLink}>
                 ← All clients
               </Link>
             )}
@@ -258,7 +258,7 @@ export async function V2BlueprintView({
           <h1 className={s.title}>{clientName}</h1>
           <div className={s.headerActions}>
             {isTeamUser ? (
-              <Link href="/console" className={s.backLink}>
+              <Link href="/console/blueprinting" className={s.backLink}>
                 ← All clients
               </Link>
             ) : (

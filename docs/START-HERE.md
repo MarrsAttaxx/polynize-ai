@@ -12,7 +12,9 @@ PAM is the system that both *runs* Polynize as a business and *is* the delivery 
 
 The human-facing surface is the **PAM Console** — a Next.js app (the `polynize-ai` project, which also serves the public polynize.ai website), deployed on Vercel, that renders each engagement's Blueprint and SoW with role-based access (Polynize team sees/edits all; a client sees only their own engagement, read-only except two narrow write paths). The content for each engagement lives as JSON + markdown in a **per-engagement GitHub repo** — the Console reads these live on each request. **The repos are the source of truth; committing is how content changes.**
 
-There are four live engagements: **Roxbury** (Build phase), **EverStock**, **Newkind**, and **reMYnd** (all Modelling phase). The long-term direction is **agentic-first**: agents (notably **Ben**) that ingest transcripts and write/maintain the Blueprints automatically, gated by automated checks — but that depends on safety infrastructure (testing, staging, monitoring) that doesn't fully exist yet. See the maturity report for the honest gap.
+**2026-06 pivot:** PAM is becoming the **marketing engine**. Capability mapping / blueprinting is moving to **Cognitive Studio on polynize.io**, and the **Newkind, reMYnd, and Roxbury** repos were **hard-deleted** for the SOC 2 audit and off-boarding (Roxbury continues as a client outside PAM). See `decisions.md` D15. The Console home is now a three-section launcher: **Marketing** (primary), **Leads**, **Blueprinting** (legacy). The one live engagement left in PAM is **EverStock** (active build).
+
+Historically PAM's long-term direction was **agentic-first**: agents (notably **Ben**) that ingest transcripts and write/maintain the Blueprints automatically, gated by automated checks — that work now sits with Cognitive Studio on polynize.io. See the maturity report for the honest gap.
 
 ---
 
@@ -53,7 +55,7 @@ These are the rules most likely to be violated by someone acting cold. Full deta
 
 ## Current state (snapshot — keep this fresh)
 
-- **All four blueprints** are live and on the 2.0 structure (Roxbury 92% Build · EverStock 45% · Newkind 44% · reMYnd 41%, all Modelling).
+- **EverStock's blueprint** is live on the 2.0 structure (active build) — the sole remaining engagement. Newkind, reMYnd, and Roxbury were hard-deleted in the 2026-06 pivot (see `decisions.md` D15).
 - **The SoW flow is complete:** Blueprint→agreement merge, two-colour fields (mint=Polynize/orange=client), counters, send-to-client, DocuSign-style signing + server-enforced lock, print-to-PDF.
 - **Client read-only access** is live (test emails provisioned; real client emails held back until the experience is polished). Cross-tenant access is sealed (no leak).
 - **Waiting on:** Shourov's **Cognitive Studio** (the rigorous transform engine, ~next week) — the upstream dependency for wiring **Ben** (the automated transform that replaces the manual emulator builds).

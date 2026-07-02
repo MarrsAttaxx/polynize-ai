@@ -176,6 +176,20 @@ Format per entry: the decision, the context that forced it, the rationale, and t
 
 ---
 
+## D15 — PAM pivots to a marketing engine; blueprinting moves to Cognitive Studio
+
+**Decision (2026-06):** The PAM Console's primary purpose becomes the **marketing engine**. Capability mapping + blueprinting is being absorbed into **Cognitive Studio on polynize.io**, so PAM no longer owns that workflow long-term. The Console home is now a three-section launcher: **Marketing** (primary, incoming build), **Leads** (the polynize.ai funnel), and **Blueprinting** (legacy).
+
+**Consequences already applied:**
+- **Newkind, reMYnd, and Roxbury engagement repos were hard-deleted** (repo + git history) for the SOC 2 audit and because they are no longer active PAM engagements (Roxbury continues as a client, handled outside PAM). This supersedes D4/D12/D14 *for those three engagements only* — their data is gone by design.
+- **EverStock is the sole remaining engagement** and stays under Blueprinting (active build). `everstock-build` (no console marker) is untouched.
+- `CONSOLE_CLIENTS` fallback reduced to `['everstock']`; dynamic discovery still finds any repo carrying `.polynize/client-config.yaml`.
+- Blueprinting disappears once EverStock wraps; Leads will likely change when **Salesforce** becomes the core CRM.
+
+**Open:** the marketing engine's own design (a UX-flow + functional spec) is the next major project and will define that section's shell.
+
+---
+
 ## How to add to this log
 
 When you make a decision that future-you (or a cold agent) might be tempted to undo, add an entry: the decision, the context that forced it, why, and the consequence of violating it. The bar for inclusion: *would someone seeing this cold reasonably think it's wrong or improvable, when it's actually deliberate?* If yes, it belongs here.
@@ -187,3 +201,4 @@ When you make a decision that future-you (or a cold agent) might be tempted to u
 | Date | Change |
 |---|---|
 | 2026-06-05 | Initial decision log: D1–D14 captured from the build history. |
+| 2026-06-18 | D15: PAM → marketing engine; mapping/blueprinting to Cognitive Studio; Newkind/reMYnd/Roxbury repos hard-deleted (SOC 2 + off-boarding); EverStock retained. |

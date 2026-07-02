@@ -21,7 +21,7 @@ The data for each engagement lives as JSON + markdown files in a per-engagement 
 All under the `polynize-agentic` GitHub org.
 
 - **`polynize-ai`** — the website + the PAM Console, one Next.js app, one Vercel project. Deploys to production on push to `origin/main`. This is where all Console *code* lives.
-- **Engagement repos** — one per client: `roxburys`, `everstock`, `newkind`, `remynd`. Each holds that engagement's Blueprint data and config. The Console reads these live.
+- **Engagement repos** — one per client. As of 2026-06 the only live engagement repo is `everstock` (plus `everstock-build`, its build repo, which carries no console marker). `newkind`, `remynd`, and `roxburys` were **hard-deleted** in the pivot (SOC 2 + off-boarding; see `decisions.md` D15). Each engagement repo holds that engagement's Blueprint data and config; the Console reads these live.
 
 ### Engagement repo layout
 ```
@@ -201,5 +201,5 @@ Rationale: new-shape data must never be read by an old schema. If the data lands
 | The gap-register parsing/split | polynize-ai: `parseGapRegister` + `GapRegister` |
 | The SoW merge / fields / signing | polynize-ai: `lib/sow/` (`template.ts`, `generate.ts`, `sow-io.ts`) + the SoW route + `SowDocument` |
 | Auth / roles | polynize-ai: the auth/scope resolver + `requireTeamScope` / `authorizeClientAccess` |
-| A specific engagement's data | that engagement's repo (`roxburys` / `everstock` / `newkind` / `remynd`) |
+| A specific engagement's data | that engagement's repo (`everstock`; `newkind` / `remynd` / `roxburys` removed 2026-06, see D15) |
 | Engagement metadata (phase, status, RAG) | that repo's `.polynize/client-config.yaml` |

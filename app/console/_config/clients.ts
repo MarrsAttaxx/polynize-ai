@@ -7,12 +7,7 @@
  * fails (GitHub outage, auth blip) the dashboard still shows the known
  * engagements instead of going blank. It is no longer the source of truth.
  */
-export const CONSOLE_CLIENTS = [
-  'newkind',
-  'remynd',
-  'everstock',
-  'roxburys',
-] as const;
+export const CONSOLE_CLIENTS = ['everstock'] as const;
 
 export type ClientSlug = (typeof CONSOLE_CLIENTS)[number];
 

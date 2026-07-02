@@ -7,7 +7,7 @@ export default async function ConsoleDebugPage() {
   let error: string | null = null;
 
   try {
-    content = await readClientFile('newkind', '.polynize/client-config.yaml');
+    content = await readClientFile('everstock', '.polynize/client-config.yaml');
   } catch (err) {
     error = err instanceof Error ? err.message : String(err);
   }
@@ -18,7 +18,7 @@ export default async function ConsoleDebugPage() {
         Console debug
       </h1>
       <p style={{ fontFamily: 'var(--font-jetbrains-mono), JetBrains Mono, monospace', fontSize: 12, letterSpacing: '0.02em', color: 'var(--text-3)', margin: '0 0 28px' }}>
-        Reading <code>.polynize/client-config.yaml</code> from <code>polynize-agentic/newkind</code>
+        Reading <code>.polynize/client-config.yaml</code> from <code>polynize-agentic/everstock</code>
       </p>
       {error !== null && (
         <div

@@ -1,0 +1,123 @@
+/* PAM Control Centre launcher — three section cards (Marketing / Leads /
+   Blueprinting). Marketing is the featured, full-width card (the console's
+   new primary); Leads and Blueprinting sit beneath it. Tactile substrate,
+   same tokens as the rest of the console. */
+
+.cards {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 18px;
+}
+
+.card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  text-decoration: none;
+  color: inherit;
+  background: var(--tac-surface);
+  border-radius: 18px;
+  box-shadow: var(--tac-shadow-raised);
+  padding: 28px 30px 24px;
+  min-height: 158px;
+  transition:
+    transform var(--tac-transition),
+    box-shadow var(--tac-transition);
+}
+
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.18), var(--tac-shadow-raised);
+}
+
+/* Marketing — featured: spans both columns, taller, mint ring + glow. */
+.cardFeatured {
+  grid-column: 1 / -1;
+  min-height: 196px;
+  background: var(--tac-surface-2);
+  box-shadow:
+    var(--tac-shadow-raised),
+    0 0 0 1px rgba(105, 252, 203, 0.22),
+    0 0 26px rgba(105, 252, 203, 0.1);
+}
+
+.cardEyebrow {
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+
+.cardFeatured .cardEyebrow {
+  color: var(--mint);
+}
+
+.cardTitle {
+  font-family: var(--font-space-grotesk), 'Space Grotesk', sans-serif;
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--text);
+}
+
+.cardFeatured .cardTitle {
+  font-size: 36px;
+}
+
+.cardDesc {
+  font-size: 14px;
+  color: var(--text-2);
+  line-height: 1.5;
+  max-width: 54ch;
+}
+
+.cardArrow {
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  color: var(--text-3);
+  font-size: 18px;
+  margin-top: auto;
+  padding-top: 8px;
+  transition:
+    color var(--tac-transition),
+    transform var(--tac-transition);
+}
+
+.card:hover .cardArrow {
+  color: var(--mint);
+  transform: translateX(3px);
+}
+
+/* Marketing placeholder page (design incoming). */
+.placeholder {
+  background: var(--tac-surface);
+  border-radius: 18px;
+  box-shadow: var(--tac-shadow-raised);
+  padding: 48px 40px;
+  text-align: center;
+}
+
+.placeholderLead {
+  font-family: var(--font-space-grotesk), 'Space Grotesk', sans-serif;
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text);
+  margin: 0 0 10px;
+}
+
+.placeholderNote {
+  font-size: 14px;
+  color: var(--text-3);
+  line-height: 1.55;
+  margin: 0;
+}
+
+@media (max-width: 640px) {
+  .cards {
+    grid-template-columns: 1fr;
+  }
+  .cardFeatured {
+    grid-column: auto;
+  }
+}

@@ -143,7 +143,7 @@ export async function LegacyBlueprintView({
             </div>
             <h1 className={s.title}>{clientName}</h1>
             {isTeamUser && (
-              <Link href="/console" className={s.backLink}>
+              <Link href="/console/blueprinting" className={s.backLink}>
                 ← All clients
               </Link>
             )}
@@ -189,7 +189,7 @@ export async function LegacyBlueprintView({
           <h1 className={s.title}>{parsed.preamble.title}</h1>
           <div className={s.headerActions}>
             {isTeamUser ? (
-              <Link href="/console" className={s.backLink}>
+              <Link href="/console/blueprinting" className={s.backLink}>
                 ← All clients
               </Link>
             ) : (

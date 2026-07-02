@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Link from 'next/link';
 import { getCurrentUserEmail } from '@/lib/console-auth';
 import { SignInGate } from './_components/SignInGate';
 import { signOutAction } from './_actions';
@@ -33,7 +34,7 @@ export default async function ConsoleLayout({
   return (
     <div className={s.shell}>
       <nav className={s.topNav}>
-        <div className={s.eyebrow}>§ polynize agentic management console</div>
+        <Link href="/console" className={s.eyebrow}>§ polynize agentic management console</Link>
         <div className={s.userBlock}>
           <span className={s.userEmail}>{email}</span>
           <form action={signOutAction}>

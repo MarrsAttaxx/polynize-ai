@@ -107,7 +107,7 @@ function parseStatus(raw: ParsedConfig['status']): ClientStatus {
 
 function parseEngagementStatus(raw: unknown): EngagementStatus {
   if (raw === 'lead' || raw === 'client' || raw === 'archived') return raw;
-  // Default: existing engagements are clients (Roxbury / Newkind / etc).
+  // Default: existing engagements are clients (e.g. EverStock).
   return 'client';
 }
 

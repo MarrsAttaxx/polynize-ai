@@ -38,7 +38,7 @@ function eq<T>(name: string, a: T, b: T) {
 }
 
 // ----- isValidConsoleSlug (route slug guard; replaced the fixed allowlist) -----
-for (const s of ['tailor-co', 'newkind', 'remynd', 'everstock', 'roxburys']) {
+for (const s of ['tailor-co', 'everstock', 'acme-co', 'beta-corp', 'client-01']) {
   check(`slug guard accepts ${s}`, isValidConsoleSlug(s));
 }
 for (const s of ['../etc', 'a/b', '.polynize', 'Tailor-Co', '', 'a b', 'foo.bar']) {
