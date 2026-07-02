@@ -38,13 +38,14 @@
 
 No new patterns. Everything queryable is relational in Supabase (where we already are); everything heavy is a blob in the Lightsail bucket (S3-compatible — this *is* the spec's "agent-shared storage" bucket).
 
-| Entity | Where | Why |
-|---|---|---|
-| Pieces, stages, streams, ideas, calendar, pillars, concept docs, treatment rows, jobs | **Supabase Postgres** | The Dashboard is all cross-piece queries (by owner, stage, date, platform). A key-value blob store cannot answer those; Postgres can. |
-| The swappable middle's per-stage payload | **Supabase, `stage_state jsonb` column** on the piece | Keeps the proven teleprompter autosave ergonomics without losing queryability of the fixed spine. |
-| Renders, generated b-roll, proxy videos, face-bank, masters, large agent artifacts | **Lightsail bucket** (S3-compatible), prefixed `pam/{owner}/{piece_id}/...` | Blobs do not belong in Postgres rows. Agents on the Lightsail box read/write directly; the console serves via signed URLs. |
+The two stores map to **two distinct concerns** (confirmed with the PM):
 
-**The rule:** fixed-spine + dashboard-queryable fields are Postgres **columns**; the swappable middle is a **jsonb column**; media/large artifacts are **bucket objects**. State it once, hold it.
+| Concern | Where | What |
+|---|---|---|
+| **Console app data** (queryable) | **Supabase Postgres** | Pieces, stages, streams, ideas, calendar, pillar index, treatment rows, jobs, owner records — everything the Dashboard queries by owner/stage/date/platform. The swappable middle's per-stage payload rides in a `stage_state jsonb` column on the piece. |
+| **Agent-shared state + media** (durable, outlives disposable compute) | **The Lightsail bucket** — this **is** the `polynize-agents` S3-compatible bucket, prefix-partitioned | The **concept bank** (`pam/concept-bank/{owner}/...`), **brand-voice docs** (`pam/brand-voice/{owner}/...`), the **pattern/rules library** (`pam/patterns/...`), and heavy media — renders, generated b-roll, proxy videos, face-bank, masters (`pam/media/{owner}/{piece}/...`). Agents on the Lightsail box read/write directly; the console serves via signed URLs and keeps a lightweight **index row** in Supabase for anything it must list (e.g. a `concepts` index → `bucket_key`). |
+
+**The rule:** console app data + queryable indexes are Postgres **columns**; the swappable middle is a **jsonb column**; agent-shared artifacts + media are **bucket objects, prefix-partitioned by owner**. Two concerns, two stores. State it once, hold it.
 
 ### Schema sketch (new migration, `0009_marketing_console.sql`)
 
@@ -58,9 +59,10 @@ content_pieces
   scheduled_at timestamptz null
   created_at · updated_at
 
-concept_docs
+concepts                                              -- INDEX; the doc BODY lives in the bucket (pam/concept-bank/{owner}/)
   id uuid pk · owner_id text · concept text · framing text
-  body_md text · version int · status text · created_at · updated_at
+  bucket_key text · status text · created_at · updated_at
+  body_md text null                                   -- Phase-1 interim only (until the bucket is wired)
 
 pillars
   id uuid pk · name text · format text · state text  -- active | developing
@@ -87,7 +89,7 @@ jobs                                                  -- the agent socket's asyn
   input_ref text · output_ref text · error text · created_at · updated_at
 ```
 
-**`owner_id` is non-null on every content row from day one** (see D4). Concept docs live in Supabase (queryable, one API for console + agents); we can add version snapshots later if needed — they are stable once approved, so no git-style versioning for now.
+**`owner_id` is non-null on every content row from day one** (see D4). The **concept bank, brand-voice docs, and pattern library live in the bucket** (agent-shared, durable, outlives compute); Supabase holds only the queryable **index** (`concepts.bucket_key`). **Phase-1 interim:** until the bucket is wired, the concept body sits in `concepts.body_md`, and the piece store uses the existing `content_shoot_sheets` table so the Script screen works **without waiting on this migration being applied** (see the Phase-1 plan). Both swap to the bucket / `content_pieces` when provisioned — one store module, no screen rework.
 
 ### D2.1 — A piece is the production unit; a channel is a publish unit
 
@@ -123,6 +125,13 @@ status(job_id)               -> { status, output_ref, error }
 **Decision:** every content row carries `owner_id`/stream from the first migration. No permissions UI, no RLS policies yet.
 
 **Why:** you asked to find your sessions where you left them, and to keep your work separate from Shourov's as the team grows. That is a **data-model** decision (an owner column), not a permissions feature — and it is near-impossible to retrofit once concept docs, pieces, and bucket paths exist without an owner dimension. Cheap now, expensive later. Team users can still read across owners in v1; isolation later becomes a policy flip, not a migration.
+
+**Threaded from ticket one (confirmed with the PM), in all three places:**
+- **Data model** — `owner_id` non-null on every table (`0009`), resolved from `getCurrentUser()`.
+- **Agent context / socket** — the job contract's input carries `owner`, so April writes to *that owner's* concept-bank prefix and reads *that owner's* brand-voice doc.
+- **Bucket paths** — every prefix is owner-partitioned (`pam/{kind}/{owner}/...`).
+
+Build Marrs-first, multi-tenant by design. **Do NOT build the team-admin / permissions layer yet.**
 
 ---
 

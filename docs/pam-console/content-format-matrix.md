@@ -121,7 +121,7 @@ So the human action is one-click-copy + a quick edit; the re-voicing and the Sla
 - **Shourov's** rows are indicative; he confirms his own concepts/pillars/channels.
 - **Newsletter (Kit.com)** and **Substack** integrations are not built (note: Kit.com already has a partial integration in the repo for lead sequences).
 - Publishing (Blotato) not yet wired; confirm Blotato posts to each channel (TikTok flagged).
-- **Marrs Attacks** placement (LinkedIn + TikTok) confirmed; other pillars TBD, live in the pillar library.
+- **Marrs Attacks** placement (LinkedIn + TikTok) is **provisional** — it reads personal/satirical, but LinkedIn is Marrs's professional channel, so the fit is slightly awkward. It lives in the pillar library and is easily adjusted; don't block on it. Other pillars TBD.
 
 ---
 
