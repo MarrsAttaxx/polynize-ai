@@ -190,6 +190,18 @@ Format per entry: the decision, the context that forced it, the rationale, and t
 
 ---
 
+## D16 — April interviews in-console, and the agent connection is transport-abstract
+
+**Decision (2026-07):** April's concept-extraction interview runs **inside the console** (the intake screen, top of the production spine), not over Slack. The console always hosts the interview via its own context-chat, calling April through the agent socket (`docs/pam-console/agent-socket-contract.md`). The connection is **transport-abstract**: the console does not know or care what runtime is behind the socket.
+
+**Context:** We are mid **SOC 2 audit** and minimising Slack data flow. The interview — loosely imagined as a Slack surface — needs a home in the console. This also reframes **T5**: it was "the April draft round-trip through the socket"; it becomes "April plugs in at the intake screen and runs the interview → concept doc." Same socket work, now with a screen at the front of the spine (where concepts are *created*, filling the gap the Script screen currently assumes is already filled).
+
+**Rationale:** Keeping the interview in-console keeps sensitive intake data inside the audited surface. Keeping the connection transport-abstract means Slack can be added later as an *additional* surface (post-audit) without a console rebuild — that becomes April's concern, not the console's. The context-chat primitive already shipped on the Script screen (T4) is the right reusable surface for the interview.
+
+**Consequence if violated:** Building the interview against Slack, or hard-wiring a specific agent runtime into the intake screen, reintroduces the Slack data flow the audit is minimising and couples the console to one transport. Do not build console-only assumptions either (no "there is no Slack" logic) — build to the socket, stay agnostic. Sequencing is unchanged: the real April still lands via the Master Agent Builder before the round-trip is live (the interim OpenRouter stand-in fills in until then, per D1).
+
+---
+
 ## How to add to this log
 
 When you make a decision that future-you (or a cold agent) might be tempted to undo, add an entry: the decision, the context that forced it, why, and the consequence of violating it. The bar for inclusion: *would someone seeing this cold reasonably think it's wrong or improvable, when it's actually deliberate?* If yes, it belongs here.
@@ -202,3 +214,4 @@ When you make a decision that future-you (or a cold agent) might be tempted to u
 |---|---|
 | 2026-06-05 | Initial decision log: D1–D14 captured from the build history. |
 | 2026-06-18 | D15: PAM → marketing engine; mapping/blueprinting to Cognitive Studio; Newkind/reMYnd/Roxbury repos hard-deleted (SOC 2 + off-boarding); EverStock retained. |
+| 2026-07-03 | D16: April interviews in-console (SOC 2, minimise Slack); T5 reframed as the intake screen; agent connection is transport-abstract. See `pam-console/agent-socket-contract.md`. |

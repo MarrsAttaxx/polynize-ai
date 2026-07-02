@@ -19,14 +19,16 @@ The PAM Console is becoming Polynize's **marketing engine** — the working envi
 
 **Reference (the constraints + the plumbing):**
 4. **`storage-and-agent-socket.md`** — the load-bearing decisions: no central agent, Supabase + Lightsail-bucket split, the agent socket, `owner_id` day-one, OpenRouter/DeepSeek, and the team roster.
-5. **`../../asset-kit/PAM-CONSOLE-HANDOFF.md`** — the alpha's operational findings (Descript workflow, the rules, tooling). Skim; consult when we hit production stages.
+5. **`agent-socket-contract.md`** — the concrete plug shape between the console and the agents: the two capabilities (sync `converse`, async jobs), the `AgentProvider` seam, the job lifecycle, the intake interview, and the concept-doc artifact. What April is built against.
+6. **`../../asset-kit/PAM-CONSOLE-HANDOFF.md`** — the alpha's operational findings (Descript workflow, the rules, tooling). Skim; consult when we hit production stages.
 
 ---
 
 ## Where things stand
 
-- **Decisions locked** with Marrs: no central agent (the console is the conductor), Supabase + Lightsail bucket, short-form video first, OpenRouter (DeepSeek default).
-- **Nothing built yet** — Phase 1 is scoped into tickets, ready to start on Marrs's go.
+- **Decisions locked** with Marrs: no central agent (the console is the conductor), Supabase + Lightsail bucket, short-form video first, OpenRouter (DeepSeek default), April interviews in-console (D16).
+- **Shipped & deployed:** T2 (Script screen), T3 (teleprompter), T4 (context chat), T6 (LLM → OpenRouter), and the dashboard shell. T1 runs on an interim store (migration `0009` pending creds). See the build-status note in `phase-1-vertical-slice.md`.
+- **In flight:** T5 reframed as the **intake screen** (April interviews in-console → concept doc). Dependency-free groundwork underway (socket contract done); the real April round-trip waits on the Master Agent Builder. The `polynize-agents` bucket is provisioned (access keys pending).
 - The old blueprint console (EverStock) still lives under the `/console` launcher's "Blueprinting" card; the new marketing work is the "Marketing" card.
 
 ## First milestone (Phase 1)

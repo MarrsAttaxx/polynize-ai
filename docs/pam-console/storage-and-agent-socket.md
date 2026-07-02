@@ -43,7 +43,9 @@ The two stores map to **two distinct concerns** (confirmed with the PM):
 | Concern | Where | What |
 |---|---|---|
 | **Console app data** (queryable) | **Supabase Postgres** | Pieces, stages, streams, ideas, calendar, pillar index, treatment rows, jobs, owner records — everything the Dashboard queries by owner/stage/date/platform. The swappable middle's per-stage payload rides in a `stage_state jsonb` column on the piece. |
-| **Agent-shared state + media** (durable, outlives disposable compute) | **The Lightsail bucket** — this **is** the `polynize-agents` S3-compatible bucket, prefix-partitioned | The **concept bank** (`pam/concept-bank/{owner}/...`), **brand-voice docs** (`pam/brand-voice/{owner}/...`), the **pattern/rules library** (`pam/patterns/...`), and heavy media — renders, generated b-roll, proxy videos, face-bank, masters (`pam/media/{owner}/{piece}/...`). Agents on the Lightsail box read/write directly; the console serves via signed URLs and keeps a lightweight **index row** in Supabase for anything it must list (e.g. a `concepts` index → `bucket_key`). |
+| **Agent-shared state + media** (durable, outlives disposable compute) | **The Lightsail bucket** — this **is** the `polynize-agents` S3-compatible bucket, prefix-partitioned | The **concept bank** (`pam/concept-bank/{owner}/...`), **brand-voice docs** (`pam/brand-voice-docs/{owner}/...`), the **pattern/rules library** (`pam/pattern-library/...`), and heavy media — renders, generated b-roll, proxy videos, face-bank, masters (`pam/media/{owner}/{piece}/...`). Agents on the Lightsail box read/write directly; the console serves via signed URLs and keeps a lightweight **index row** in Supabase for anything it must list (e.g. a `concepts` index → `bucket_key`). |
+
+> **Provisioned (2026-07):** the bucket exists — `polynize-agents`, region `ap-southeast-2` (Sydney), all objects private, with the folder skeleton `pam/brand-voice-docs`, `pam/concept-bank`, `pam/pattern-library`. **These are the canonical folder names** (the earlier drafts said `brand-voice` / `patterns` — the bucket is the source of truth). Still pending: the bucket access keys (into `AGENTS_S3_ACCESS_KEY_ID` / `AGENTS_S3_SECRET_ACCESS_KEY` on Vercel + the agent runtimes; bucket = `AGENTS_BUCKET`, region = `AGENTS_BUCKET_REGION`), and the **owner-key convention** under each prefix (recommended: signed-in email, to match the interim store's `marketing/{owner}/` keying). Until the keys land, concept/brand-voice bodies ride in the interim store.
 
 **The rule:** console app data + queryable indexes are Postgres **columns**; the swappable middle is a **jsonb column**; agent-shared artifacts + media are **bucket objects, prefix-partitioned by owner**. Two concerns, two stores. State it once, hold it.
 
@@ -118,6 +120,8 @@ status(job_id)               -> { status, output_ref, error }
   - **Production commands** ("generate the b-roll", "run the rough cut") = **enqueue a job** to a worker. Deferred until the worker exists.
 - Model the **first** plug concretely (April drafting a script) before generalising, so the abstraction is validated by a real implementation instead of designed against nothing.
 
+> **Expanded into a full spec:** `agent-socket-contract.md` details the two capabilities (sync `converse` for the interview + script-chat; async jobs for productions), the `AgentProvider` seam, the job lifecycle, the job types (`concept_finalize`, `script_draft`), and the pull-vs-push worker wiring. Per D16, April's **concept interview now runs in-console** (the intake screen, top of the spine) — the console hosts the interview via its own context-chat and calls April through this socket; the interview produces `core-concept-{framing}.md` into `pam/concept-bank/{owner}/`.
+
 ---
 
 ## D4 — `owner_id` and streams from day one (session continuity, not permissions)
@@ -157,7 +161,7 @@ Agents read `polynize.ai/brand` fresh before each job. The machine-readable mech
 
 ## Open items to confirm
 
-1. Bucket details: the exact Lightsail bucket name + access keys (for the media store).
+1. Bucket details: ~~name~~ **done** (`polynize-agents`, `ap-southeast-2`, private, folders `pam/{brand-voice-docs,concept-bank,pattern-library}`). **Still pending:** the bucket access keys (into env), and the owner-key convention (email vs slug).
 2. Per-agent OpenRouter keys (one per April/Mikey/Raph/Donnie) — naming/provisioning.
 3. Confirm Blotato is the sole publish authz surface (Raph plugs into it) and Windsor.ai is the analytics source (Donnie).
 4. Personal Brand Voice docs live in the **private** store (Supabase/bucket), NOT the public `polynize-ai` repo (they contain personal content).
