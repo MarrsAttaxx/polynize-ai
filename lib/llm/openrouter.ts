@@ -50,7 +50,9 @@ export async function completeWithOpenRouter(args: CompleteArgs): Promise<string
         // class of bugs that Gemini 3.5 Flash was producing on the v0.5
         // envelope. Providers that ignore this parameter degrade silently
         // to plain text output (same behavior as before this flag existed).
-        response_format: { type: 'json_object' },
+        // Opt out (json: false) for prose/Markdown prompts, which must not be
+        // wrapped in a JSON object (the intake interview + concept doc).
+        ...(args.json === false ? {} : { response_format: { type: 'json_object' } }),
         messages: [
           { role: 'system', content: args.system },
           ...args.messages,

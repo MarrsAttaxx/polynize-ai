@@ -119,13 +119,13 @@ Every converse call and job input carries `owner`. April reads *that owner's* br
 
 ## 7. What's buildable now vs gated
 
-| Piece | Now (dependency-free) | Gated on |
+| Piece | Status | Gated on |
 |---|---|---|
-| The seam (`lib/agents/` provider interface + interim OpenRouter provider) | ✅ | — |
-| The interim `jobs` store + dispatcher (pull) + polling | ✅ | — |
-| The intake screen shell + interview chat (backed by the interim April stand-in) | ✅ | — |
-| Concept-doc **write to the bucket** | interim store now | bucket creds (`AGENTS_S3_*`) + owner-key decision |
-| The **real** April behind the seam | — | April provisioned (Master Agent Builder) |
+| The seam (`lib/agents/` provider interface + interim OpenRouter provider) | ✅ shipped | — |
+| The interim `jobs` store + polling | ✅ shipped | — |
+| The intake screen + interview chat + concept view + Concept bank (interim April stand-in) | ✅ shipped | — |
+| Concept-doc **write to the bucket** | interim store now (keyed on the eventual S3 key) | bucket creds (`AGENTS_S3_*`); owner-key = email (confirmed) |
+| The **real** April behind the seam (pull worker) | — | April provisioned (Master Agent Builder) |
 
 ---
 

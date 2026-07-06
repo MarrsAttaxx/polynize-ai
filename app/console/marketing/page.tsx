@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { getCurrentUser } from '@/lib/console-auth';
 import { listSavedPieces, type MarketingPiece } from '@/lib/marketing/piece-store';
+import { listConcepts, type ConceptDoc } from '@/lib/marketing/concept-store';
 import { SEED_PIECES } from '@/lib/marketing/seed';
 import s from '../_components/client-card.module.css';
 import l from '../_components/launcher.module.css';
@@ -41,6 +42,15 @@ export default async function MarketingPage() {
   }
   const pieces = [...byId.values()];
 
+  // Concepts are the top of the spine (created on the intake screen). Degrade to
+  // an empty bank if storage is unreachable.
+  let concepts: ConceptDoc[] = [];
+  try {
+    concepts = await listConcepts(user.email);
+  } catch (err) {
+    console.error('[marketing] concept list failed, showing none:', err);
+  }
+
   return (
     <>
       <div className={s.bgPattern} aria-hidden />
@@ -49,6 +59,37 @@ export default async function MarketingPage() {
           <div className={s.eyebrow}>marketing engine</div>
           <h1 className={s.title}>Marketing</h1>
         </div>
+
+        <section className={s.dashSection}>
+          <div className={s.dashSectionHead}>
+            <h2 className={s.dashSectionTitle}>Concept bank</h2>
+            <Link href="/console/marketing/intake" className={s.newConceptCta}>
+              + Start a concept
+            </Link>
+          </div>
+          {concepts.length === 0 ? (
+            <p className={s.dashSectionEmpty}>
+              No concepts yet. Start one and April will interview you.
+            </p>
+          ) : (
+            <div className={l.cards}>
+              {concepts.map((c) => (
+                <Link
+                  key={c.concept_ref}
+                  href={`/console/marketing/concept/${c.framing_slug}`}
+                  className={l.card}
+                >
+                  <span className={l.cardEyebrow}>concept · {c.stream}</span>
+                  <span className={l.cardTitle}>{c.title}</span>
+                  <span className={l.cardDesc}>Open the concept doc.</span>
+                  <span className={l.cardArrow} aria-hidden>
+                    →
+                  </span>
+                </Link>
+              ))}
+            </div>
+          )}
+        </section>
 
         {STREAMS.map((stream) => {
           const items = pieces.filter((p) => (p.stream || 'polynize') === stream.id);

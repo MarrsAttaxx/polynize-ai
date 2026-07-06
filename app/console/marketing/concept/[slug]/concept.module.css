@@ -1,0 +1,99 @@
+/* Concept doc view — a clean reading surface for core-concept-{slug}.md. */
+
+.root {
+  max-width: 760px;
+  margin: 0 auto;
+  padding-bottom: 80px;
+  position: relative;
+  z-index: 1;
+}
+
+.head {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+.back {
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: var(--text-3);
+  text-decoration: none;
+  letter-spacing: 0.04em;
+  align-self: flex-start;
+}
+.back:hover {
+  color: var(--mint);
+}
+.eyebrow {
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--mint);
+  margin-top: 6px;
+}
+.title {
+  font-family: var(--font-space-grotesk), 'Space Grotesk', sans-serif;
+  font-size: clamp(26px, 4vw, 38px);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.05;
+  margin: 0;
+}
+
+.doc {
+  background: var(--tac-surface);
+  border-radius: 18px;
+  box-shadow: var(--tac-shadow-raised);
+  padding: 32px 36px;
+  color: var(--text-2);
+  font-size: 16px;
+  line-height: 1.7;
+}
+.doc :global(h2) {
+  font-family: var(--font-space-grotesk), 'Space Grotesk', sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--mint);
+  margin: 26px 0 8px;
+}
+.doc :global(h2:first-child) {
+  margin-top: 0;
+}
+.doc :global(h1) {
+  font-family: var(--font-space-grotesk), 'Space Grotesk', sans-serif;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0 0 12px;
+}
+.doc :global(p) {
+  margin: 0 0 12px;
+}
+.doc :global(ul),
+.doc :global(ol) {
+  margin: 0 0 14px;
+  padding-left: 22px;
+}
+.doc :global(li) {
+  margin: 0 0 6px;
+}
+.doc :global(strong) {
+  color: var(--text);
+  font-weight: 700;
+}
+.doc :global(a) {
+  color: var(--mint);
+}
+
+.notFound {
+  padding: 50px 0;
+  text-align: center;
+  color: var(--text-3);
+}
+.notFound code {
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  color: var(--text-2);
+}

@@ -10,6 +10,13 @@ export type CompleteArgs = {
   messages: ChatMessage[];
   maxTokens?: number;
   temperature?: number;
+  /**
+   * Request structured JSON output where the provider supports it (OpenRouter's
+   * response_format). Defaults to true to preserve the behavior the JSON-consuming
+   * callers rely on. Set false for prose/Markdown prompts (e.g. the intake
+   * interview and concept doc), which must NOT be wrapped in a JSON object.
+   */
+  json?: boolean;
 };
 
 /**

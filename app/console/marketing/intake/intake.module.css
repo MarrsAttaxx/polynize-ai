@@ -1,0 +1,205 @@
+/* Intake screen (T5) — the interview surface, same tactile/on-brand language as
+   the Script screen and its chat. */
+
+.root {
+  max-width: 780px;
+  margin: 0 auto;
+  padding-bottom: 80px;
+  position: relative;
+  z-index: 1;
+}
+
+.head {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+.back {
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: var(--text-3);
+  text-decoration: none;
+  letter-spacing: 0.04em;
+  align-self: flex-start;
+}
+.back:hover {
+  color: var(--mint);
+}
+.eyebrow {
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--mint);
+  margin-top: 6px;
+}
+.title {
+  font-family: var(--font-space-grotesk), 'Space Grotesk', sans-serif;
+  font-size: clamp(26px, 4vw, 36px);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.05;
+  margin: 0;
+}
+.lede {
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--text-2);
+  margin: 2px 0 0;
+  max-width: 60ch;
+}
+
+.meta {
+  display: flex;
+  gap: 14px;
+  margin-bottom: 18px;
+  flex-wrap: wrap;
+}
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+  min-width: 220px;
+}
+.fieldLabel {
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+.framingInput,
+.streamSelect {
+  background: var(--tac-surface);
+  color: var(--text);
+  border: 1px solid var(--tac-edge-dark, rgba(255, 255, 255, 0.1));
+  border-radius: 10px;
+  padding: 11px 13px;
+  font-family: var(--font-space-grotesk), 'Space Grotesk', sans-serif;
+  font-size: 15px;
+  outline: none;
+}
+.framingInput:focus,
+.streamSelect:focus {
+  border-color: rgba(105, 252, 203, 0.5);
+}
+.framingInput:disabled,
+.streamSelect:disabled {
+  opacity: 0.6;
+}
+
+.transcript {
+  background: var(--tac-surface);
+  border-radius: 18px;
+  box-shadow: var(--tac-shadow-raised);
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 320px;
+  max-height: 56vh;
+  overflow-y: auto;
+}
+.msg {
+  font-size: 15px;
+  line-height: 1.6;
+  padding: 12px 15px;
+  border-radius: 14px;
+  max-width: 88%;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.user {
+  align-self: flex-end;
+  background: rgba(105, 252, 203, 0.1);
+  color: var(--text);
+  border: 1px solid rgba(105, 252, 203, 0.25);
+}
+.assistant {
+  align-self: flex-start;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-2);
+  border: 1px solid var(--tac-edge-dark, rgba(255, 255, 255, 0.08));
+}
+.thinking {
+  color: var(--amber);
+  font-style: italic;
+}
+
+.error {
+  color: var(--coral);
+  font-size: 13px;
+  margin: 12px 2px 0;
+}
+
+.composer {
+  display: flex;
+  gap: 10px;
+  margin-top: 14px;
+}
+.input {
+  flex: 1;
+  background: rgba(0, 0, 0, 0.18);
+  border: 1px solid var(--tac-edge-dark, rgba(255, 255, 255, 0.1));
+  border-radius: 12px;
+  padding: 12px 14px;
+  color: var(--text);
+  font-family: var(--font-space-grotesk), 'Space Grotesk', sans-serif;
+  font-size: 15px;
+  outline: none;
+}
+.input:focus {
+  border-color: rgba(105, 252, 203, 0.5);
+}
+.input:disabled {
+  opacity: 0.6;
+}
+.send {
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: var(--bg, #0a0a0f);
+  background: var(--mint);
+  border: none;
+  border-radius: 12px;
+  padding: 0 18px;
+  cursor: pointer;
+  transition: opacity var(--tac-transition);
+}
+.send:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.finalizeRow {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: 20px;
+  flex-wrap: wrap;
+}
+.finalize {
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 13px;
+  color: var(--mint);
+  background: rgba(105, 252, 203, 0.08);
+  border: 1px solid rgba(105, 252, 203, 0.3);
+  border-radius: 10px;
+  padding: 11px 20px;
+  cursor: pointer;
+  transition: background var(--tac-transition), border-color var(--tac-transition);
+}
+.finalize:hover:not(:disabled) {
+  background: rgba(105, 252, 203, 0.14);
+  border-color: var(--mint);
+}
+.finalize:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.finalizeHint {
+  font-size: 12px;
+  color: var(--text-3);
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+}
