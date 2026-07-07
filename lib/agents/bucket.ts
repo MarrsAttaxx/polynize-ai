@@ -13,6 +13,7 @@ import {
   GetObjectCommand,
   PutObjectCommand,
   ListObjectsV2Command,
+  DeleteObjectCommand,
 } from '@aws-sdk/client-s3';
 
 let cached: S3Client | null = null;
@@ -73,6 +74,11 @@ export async function putObjectText(
       ContentType: contentType,
     })
   );
+}
+
+/** Delete an object (idempotent — S3 returns success even if it was absent). */
+export async function deleteObject(key: string): Promise<void> {
+  await client().send(new DeleteObjectCommand({ Bucket: bucketName(), Key: key }));
 }
 
 /** List all object keys under a prefix (paginated). */

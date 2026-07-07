@@ -5,6 +5,7 @@ import remarkGfm from 'remark-gfm';
 import { getCurrentUser } from '@/lib/console-auth';
 import { getConcept } from '@/lib/marketing/concept-store';
 import { DevelopButton } from './DevelopButton';
+import { DeleteButton } from './DeleteButton';
 import s from './concept.module.css';
 
 export const dynamic = 'force-dynamic';
@@ -55,7 +56,10 @@ export default async function ConceptPage({
         <span className={s.eyebrow}>concept · {concept.stream}</span>
         <h1 className={s.title}>{concept.title}</h1>
       </header>
-      <DevelopButton />
+      <div className={s.developRow}>
+        <DevelopButton />
+        <DeleteButton stream={concept.stream} />
+      </div>
       <article className={s.doc}>
         <ReactMarkdown remarkPlugins={[remarkGfm]}>{concept.body_md}</ReactMarkdown>
       </article>

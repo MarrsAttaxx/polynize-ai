@@ -214,6 +214,18 @@ Format per entry: the decision, the context that forced it, the rationale, and t
 
 ---
 
+## D18 — Metricool replaces Blotato + Windsor.ai (behind an abstraction, gated on a test); Palmier is craft-tier, never in the console
+
+**Decision (2026-07):** The tail zone consolidates onto **Metricool** via its official MCP (`https://ai.metricool.com/mcp`, auth via OAuth or `METRICOOL_USER_TOKEN` + `METRICOOL_USER_ID`): **publishing** (Raph's socket, replacing Blotato) and **analytics** (Donnie's socket, replacing Windsor.ai). One platform, one MCP, one auth. Separately, **Palmier Pro is a craft-tier LOCAL tool and is NOT integrated into the console**; Descript remains the console's cloud editing engine.
+
+**Context:** Both incumbents burned us on specific failures (Blotato publishing; Windsor is generic ETL, not social-native). Metricool does both halves, is social-native (per-post/reel engagement, best-time, competitors), and has a real video/Reels publishing engine. Palmier fixes the Higgsfield round-trip seam-glitches by generating b-roll in-timeline — but its MCP runs on `http://127.0.0.1:19789` (localhost, Mac-only), unreachable from the headless AWS console.
+
+**Rationale + the gate:** Build both legs **behind an abstraction; do not hard-wire until the test passes.** The one risk that decides publishing: Metricool's MCP `post_schedule_post` reportedly sends `providers` as strings (`["linkedin"]`) instead of objects (`[{"network":"linkedin"}]`), so scheduling fails (READ works). **Before committing publishing, run the schedule test:** schedule one real (video/Reel, multi-network) post to a test account and confirm it lands. **Pass → Metricool for both.** **Fail → publishing routes through the Purple Horizons `metricool-cli` (open-source) instead; analytics stays on the MCP (its read side works).** Known analytics gap (not a Metricool fault, do not chase): skip-rate, retention curves, sends-per-reach are platform-native only, out of scope for automated pull. Plan: Metricool **Advanced tier** (~$53-67/mo) powers the API/MCP in production.
+
+**Consequence if violated:** Hard-wiring Metricool publishing before the schedule test repeats the Blotato burn. Wiring **Palmier** into any console stage (Mikey's production socket, Treatment execution) is architecturally impossible from headless AWS — it is Marrs's local craft workflow, never a console backend. Keep the tier split: the console is the **scale tier** (cloud, agentic: Descript + Metricool); Palmier is **craft tier** (local, Mac). Both products are young; re-verify the flagged risks at build time. This is tail-zone work, deferred until Raph/Donnie are provisioned.
+
+---
+
 ## How to add to this log
 
 When you make a decision that future-you (or a cold agent) might be tempted to undo, add an entry: the decision, the context that forced it, why, and the consequence of violating it. The bar for inclusion: *would someone seeing this cold reasonably think it's wrong or improvable, when it's actually deliberate?* If yes, it belongs here.
@@ -228,3 +240,4 @@ When you make a decision that future-you (or a cold agent) might be tempted to u
 | 2026-06-18 | D15: PAM → marketing engine; mapping/blueprinting to Cognitive Studio; Newkind/reMYnd/Roxbury repos hard-deleted (SOC 2 + off-boarding); EverStock retained. |
 | 2026-07-03 | D16: April interviews in-console (SOC 2, minimise Slack); T5 reframed as the intake screen; agent connection is transport-abstract. See `pam-console/agent-socket-contract.md`. |
 | 2026-07-07 | D17: small structured data flows through the job contract (console is the writer); large blobs go direct to storage and return a ref. One payload-size rule. |
+| 2026-07-07 | D18: tail zone consolidates on Metricool (publish + analytics) behind an abstraction, gated on a schedule test (metricool-cli fallback); Palmier is craft-tier local, never in the console; Descript stays. |

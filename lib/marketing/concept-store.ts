@@ -15,12 +15,17 @@
  * Server-side only.
  */
 
-import { getSheetState, saveSheetState } from '@/lib/content/shoot-sheet-store';
+import {
+  getSheetState,
+  saveSheetState,
+  deleteSheetState,
+} from '@/lib/content/shoot-sheet-store';
 import { supabaseService } from '@/lib/supabase';
 import {
   isBucketConfigured,
   getObjectText,
   putObjectText,
+  deleteObject,
   listKeys,
 } from '@/lib/agents/bucket';
 
@@ -216,6 +221,16 @@ export async function saveConcept(doc: {
 /** Load one concept for this owner by framing slug, or null. */
 export async function getConcept(owner: string, slug: string): Promise<ConceptDoc | null> {
   return readConceptAt(conceptKey(owner, slug));
+}
+
+/** Delete one concept for this owner by framing slug (idempotent). Owner-scoped. */
+export async function deleteConcept(owner: string, slug: string): Promise<void> {
+  const key = conceptKey(owner, slug);
+  if (isBucketConfigured()) {
+    await deleteObject(key);
+  } else {
+    await deleteSheetState(key);
+  }
 }
 
 /**

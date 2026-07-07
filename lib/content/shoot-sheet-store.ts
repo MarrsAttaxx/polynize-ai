@@ -37,3 +37,9 @@ export async function saveSheetState(
   if (error) throw new Error(`content_shoot_sheets write failed: ${error.message}`);
   return { updated_at };
 }
+
+/** Delete a row by slug (idempotent — no error if the row is already gone). */
+export async function deleteSheetState(slug: string): Promise<void> {
+  const { error } = await supabaseService().from(TABLE).delete().eq('episode_id', slug);
+  if (error) throw new Error(`content_shoot_sheets delete failed: ${error.message}`);
+}
