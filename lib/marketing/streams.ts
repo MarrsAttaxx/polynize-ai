@@ -10,7 +10,7 @@ export const STREAMS = [
   { id: 'polynize', label: 'Polynize (brand)' },
   { id: 'marrs', label: 'Marrs' },
   { id: 'shourov', label: 'Shourov' },
-  { id: 'patrycia', label: 'Patrycia' },
+  { id: 'patricia', label: 'Patricia' },
   { id: 'team', label: 'Team' },
 ] as const;
 
