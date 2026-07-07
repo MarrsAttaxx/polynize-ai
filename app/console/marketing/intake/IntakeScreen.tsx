@@ -93,6 +93,28 @@ export function IntakeScreen({
       if (el) el.scrollTop = el.scrollHeight;
     });
 
+  // Clear the whole intake and start fresh — including a stuck in-flight state and
+  // the persisted draft, which is what otherwise keeps rehydrating the same
+  // interview on reload.
+  const reset = useCallback(() => {
+    if (!window.confirm('Clear this interview and start a new concept?')) return;
+    finalizingRef.current = false;
+    sendingRef.current = false;
+    doneRef.current = false;
+    try {
+      localStorage.removeItem(draftKey);
+    } catch {
+      // non-fatal
+    }
+    setMessages([OPENER]);
+    setFraming('');
+    setStream(initialStream);
+    setInput('');
+    setError(null);
+    setSending(false);
+    setFinalizing(false);
+  }, [draftKey, initialStream]);
+
   const send = useCallback(
     async (text: string) => {
       const trimmed = text.trim();
@@ -197,9 +219,14 @@ export function IntakeScreen({
   return (
     <div className={s.root}>
       <header className={s.head}>
-        <Link href="/console/marketing" className={s.back}>
-          ← Marketing
-        </Link>
+        <div className={s.headTop}>
+          <Link href="/console/marketing" className={s.back}>
+            ← Marketing
+          </Link>
+          <button type="button" className={s.resetBtn} onClick={reset}>
+            ↺ Start over
+          </button>
+        </div>
         <span className={s.eyebrow}>intake · new concept</span>
         <h1 className={s.title}>Interview with April</h1>
         <p className={s.lede}>

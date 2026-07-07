@@ -15,16 +15,37 @@
   gap: 8px;
   margin-bottom: 20px;
 }
+.headTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
 .back {
   font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
   font-size: 12px;
   color: var(--text-3);
   text-decoration: none;
   letter-spacing: 0.04em;
-  align-self: flex-start;
 }
 .back:hover {
   color: var(--mint);
+}
+.resetBtn {
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: var(--text-3);
+  background: transparent;
+  border: 1px solid var(--tac-edge-dark, rgba(255, 255, 255, 0.12));
+  border-radius: 8px;
+  padding: 7px 13px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color var(--tac-transition), border-color var(--tac-transition);
+}
+.resetBtn:hover {
+  color: var(--mint);
+  border-color: var(--mint);
 }
 .eyebrow {
   font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
