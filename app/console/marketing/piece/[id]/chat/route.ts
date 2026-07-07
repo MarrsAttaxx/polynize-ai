@@ -32,6 +32,7 @@ const BodySchema = z.object({
   script: z.string().max(MAX_SCRIPT_BYTES),
   format: z.string().max(120).optional(),
   title: z.string().max(300).optional(),
+  concept: z.string().max(50_000).optional(),
   history: z
     .array(
       z.object({
@@ -43,11 +44,14 @@ const BodySchema = z.object({
     .optional(),
 });
 
-function systemPrompt(format?: string, title?: string): string {
+function systemPrompt(format?: string, title?: string, concept?: string): string {
   const kind = (format ?? 'short_form_video').replace(/_/g, ' ');
+  const conceptBlock = concept
+    ? `\n\nThis script is being drafted from the concept below. Treat it as the source of truth for the thesis, the beats, the proof, and the register. When asked to "write the full script" or "draft from the concept", produce a complete ${kind} script grounded in it (do not invent facts it does not contain).\n\nCONCEPT:\n"""\n${concept}\n"""`
+    : '';
   return `You are April, Polynize's copy and voice specialist, editing a marketing script${
     title ? ` titled "${title}"` : ''
-  } (format: ${kind}).
+  } (format: ${kind}).${conceptBlock}
 
 The person you are helping is editing the script and will give you interface-driving commands, for example: "tighten this line", "give me three sharper hooks", "cut the intro", "make beat 3 punchier", "shorter". Your job is to act on the command and return the revised script.
 
@@ -109,7 +113,7 @@ export async function POST(
   let raw: string;
   try {
     raw = await complete({
-      system: systemPrompt(body.format, body.title),
+      system: systemPrompt(body.format, body.title, body.concept),
       messages,
       maxTokens: 4000,
       temperature: 0.6,

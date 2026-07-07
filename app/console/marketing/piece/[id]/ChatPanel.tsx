@@ -25,12 +25,16 @@ export function ChatPanel({
   script,
   format,
   title,
+  conceptBody,
   onApply,
   onBusyChange,
 }: {
   script: string;
   format?: string;
   title?: string;
+  /** The source concept doc, if this piece was developed from one — lets April
+   *  draft/refine the script grounded in the full concept, not just the scaffold. */
+  conceptBody?: string;
   onApply: (next: string) => void;
   /** Notifies the parent when a command is in flight, so it can lock the editor. */
   onBusyChange?: (busy: boolean) => void;
@@ -71,6 +75,7 @@ export function ChatPanel({
             script: scriptRef.current,
             format,
             title,
+            concept: conceptBody,
             history,
           }),
         });
@@ -106,14 +111,23 @@ export function ChatPanel({
         });
       }
     },
-    [messages, sending, format, title, onApply, onBusyChange]
+    [messages, sending, format, title, conceptBody, onApply, onBusyChange]
   );
+
+  // When the piece has a source concept, offer the draft-from-concept action first.
+  const quickActions = conceptBody
+    ? ['Write the full script from the concept', ...QUICK_ACTIONS]
+    : QUICK_ACTIONS;
 
   return (
     <aside className={s.panel} aria-label="Script chat">
       <div className={s.head}>
         <span className={s.eyebrow}>context chat</span>
-        <p className={s.blurb}>Tell it what to change. It edits the script in place.</p>
+        <p className={s.blurb}>
+          {conceptBody
+            ? 'April has the concept. Ask her to draft the script, or change it in place.'
+            : 'Tell it what to change. It edits the script in place.'}
+        </p>
       </div>
 
       <div className={s.transcript} ref={scrollRef}>
@@ -121,7 +135,7 @@ export function ChatPanel({
           <div className={s.empty}>
             <p>Try a command, or start typing your own.</p>
             <div className={s.quick}>
-              {QUICK_ACTIONS.map((q) => (
+              {quickActions.map((q) => (
                 <button
                   key={q}
                   type="button"

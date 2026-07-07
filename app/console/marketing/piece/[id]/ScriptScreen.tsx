@@ -25,7 +25,13 @@ import c from './chat.module.css';
 
 type SaveState = 'idle' | 'saving' | 'saved' | 'error';
 
-export function ScriptScreen({ initial }: { initial: MarketingPiece }) {
+export function ScriptScreen({
+  initial,
+  conceptBody,
+}: {
+  initial: MarketingPiece;
+  conceptBody?: string;
+}) {
   const [script, setScript] = useState(initial.script);
   const [saveState, setSaveState] = useState<SaveState>('idle');
   const [chatBusy, setChatBusy] = useState(false);
@@ -218,6 +224,7 @@ export function ScriptScreen({ initial }: { initial: MarketingPiece }) {
           script={script}
           format={initial.format}
           title={initial.title}
+          conceptBody={conceptBody}
           onBusyChange={setChatBusy}
           onApply={applyChatEdit}
         />

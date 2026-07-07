@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { getCurrentUser } from '@/lib/console-auth';
 import { getPiece, type MarketingPiece } from '@/lib/marketing/piece-store';
+import { getConcept } from '@/lib/marketing/concept-store';
 import { SEED_PIECES } from '@/lib/marketing/seed';
 import { ScriptScreen } from './ScriptScreen';
 import s from './script.module.css';
@@ -52,5 +53,21 @@ export default async function MarketingPiecePage({
     );
   }
 
-  return <ScriptScreen initial={piece} />;
+  // If this piece was developed from a concept, load the concept body so the chat
+  // (April) can draft/refine the script grounded in the full concept, not just the
+  // visible scaffold. Only resolves S3-style concept refs; degrades to undefined.
+  let conceptBody: string | undefined;
+  if (piece.concept_ref) {
+    const m = piece.concept_ref.match(/core-concept-(.+)\.md$/);
+    if (m) {
+      try {
+        const concept = await getConcept(owner, m[1]);
+        conceptBody = concept?.body_md;
+      } catch (err) {
+        console.error('[marketing] concept read for chat context failed:', err);
+      }
+    }
+  }
+
+  return <ScriptScreen initial={piece} conceptBody={conceptBody} />;
 }
