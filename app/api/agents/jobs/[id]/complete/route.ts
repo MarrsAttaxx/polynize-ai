@@ -18,6 +18,7 @@ import { authenticateAgent } from '@/lib/agent-auth';
 import { isAgentBridgeActive } from '@/lib/agents/socket';
 import { findJob, updateJob } from '@/lib/agents/jobs-store';
 import { saveConcept } from '@/lib/marketing/concept-store';
+import { stripEmDashes } from '@/lib/em-dash';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -81,7 +82,10 @@ export async function POST(
   }
 
   // Success path. Owner + stream + framing come from the job (server truth).
-  const markdown = body.output!.markdown;
+  // Strip em-dashes as a server backstop (brand non-negotiable #3): the durable
+  // concept doc must be em-dash-clean regardless of what the agent returns, and
+  // the interim path already strips — this keeps the real path consistent.
+  const markdown = stripEmDashes(body.output!.markdown);
   try {
     if (job.job_type === 'concept_finalize') {
       const input = (job.input ?? {}) as { stream?: unknown; framing?: unknown };
