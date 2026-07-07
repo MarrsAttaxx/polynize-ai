@@ -20,6 +20,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import type { MarketingPiece } from '@/lib/marketing/piece-store';
 import { ChatPanel } from './ChatPanel';
+import { StageRail } from './StageRail';
 import s from './script.module.css';
 import c from './chat.module.css';
 
@@ -150,6 +151,7 @@ export function ScriptScreen({
 
   return (
     <div className={s.root}>
+      <StageRail pieceId={initial.piece_id} current="script" />
       <header className={s.head}>
         <div className={s.headLeft}>
           <Link href="/console/marketing" className={s.back}>
