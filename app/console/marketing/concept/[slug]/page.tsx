@@ -4,6 +4,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { getCurrentUser } from '@/lib/console-auth';
 import { getConcept } from '@/lib/marketing/concept-store';
+import { DevelopButton } from './DevelopButton';
 import s from './concept.module.css';
 
 export const dynamic = 'force-dynamic';
@@ -48,12 +49,13 @@ export default async function ConceptPage({
   return (
     <div className={s.root}>
       <header className={s.head}>
-        <Link href="/console/marketing" className={s.back}>
-          ← Marketing
+        <Link href={`/console/marketing/stream/${concept.stream}`} className={s.back}>
+          ← {concept.stream}
         </Link>
         <span className={s.eyebrow}>concept · {concept.stream}</span>
         <h1 className={s.title}>{concept.title}</h1>
       </header>
+      <DevelopButton />
       <article className={s.doc}>
         <ReactMarkdown remarkPlugins={[remarkGfm]}>{concept.body_md}</ReactMarkdown>
       </article>

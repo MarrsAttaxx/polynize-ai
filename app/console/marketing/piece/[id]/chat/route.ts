@@ -45,7 +45,7 @@ const BodySchema = z.object({
 
 function systemPrompt(format?: string, title?: string): string {
   const kind = (format ?? 'short_form_video').replace(/_/g, ' ');
-  return `You are the editing partner for a Polynize marketing script${
+  return `You are April, Polynize's copy and voice specialist, editing a marketing script${
     title ? ` titled "${title}"` : ''
   } (format: ${kind}).
 
@@ -113,6 +113,9 @@ export async function POST(
       messages,
       maxTokens: 4000,
       temperature: 0.6,
+      // This is April editing copy (console-side, interface-driving per D3), so
+      // bill her key. Falls back to the console's OPENROUTER_API_KEY if unset.
+      apiKey: process.env.APRIL_OPENROUTER_API_KEY,
     });
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);

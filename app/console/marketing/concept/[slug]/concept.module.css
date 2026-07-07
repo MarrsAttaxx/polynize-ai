@@ -42,14 +42,67 @@
   margin: 0;
 }
 
+.developRow {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin: 0 0 22px;
+}
+.developBtn {
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 13px;
+  color: var(--bg, #0a0a0f);
+  background: var(--mint);
+  border: none;
+  border-radius: 10px;
+  padding: 12px 20px;
+  cursor: pointer;
+  transition: opacity var(--tac-transition);
+}
+.developBtn:hover:not(:disabled) {
+  opacity: 0.9;
+}
+.developBtn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.developError {
+  font-size: 13px;
+  color: var(--coral);
+}
+
 .doc {
   background: var(--tac-surface);
   border-radius: 18px;
   box-shadow: var(--tac-shadow-raised);
   padding: 32px 36px;
   color: var(--text-2);
+  font-family: var(--font-space-grotesk), 'Space Grotesk', system-ui, sans-serif;
   font-size: 16px;
   line-height: 1.7;
+  /* Never let a long line, URL, or fenced block push past the card. */
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+.doc :global(pre) {
+  max-width: 100%;
+  overflow-x: auto;
+  background: rgba(0, 0, 0, 0.28);
+  border: 1px solid var(--tac-edge-dark, rgba(255, 255, 255, 0.08));
+  border-radius: 10px;
+  padding: 12px 14px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.doc :global(code) {
+  font-size: 0.92em;
+  word-break: break-word;
+}
+.doc :global(hr) {
+  border: none;
+  border-top: 1px solid var(--tac-edge-dark, rgba(255, 255, 255, 0.12));
+  margin: 22px 0;
 }
 .doc :global(h2) {
   font-family: var(--font-space-grotesk), 'Space Grotesk', sans-serif;
