@@ -57,12 +57,27 @@ failed   -> worker set a human-readable error, set failed
 - The **worker** reads `input`, does the work, writes `output` (a bucket object or a DB field), sets `output_ref` + `done` — or `error` + `failed`. **Never leave a job running.**
 - **Idempotency:** a worker handed a `job_id` it already completed must not double-write; check status first.
 
-### Worker wiring — the one open decision for April's builders
+### Worker wiring — LOCKED (2026-07): console-API pull
 
-The console can drive either shape; pick one and the console builds the matching dispatcher:
+The agent pulls from a **console-owned agent API** over a per-agent bearer token, outbound-only. The console owns the data layer; the agent is coupled to the *job contract*, not to Supabase/S3 internals, so the whole data layer can be rebuilt over the years without touching an agent box. The agent holds **one bearer token and nothing else** — no Supabase creds, no S3 creds (D16/D17).
 
-- **(a) Pull** — the worker polls the `jobs` store for `agent=<name>, status=queued`, claims one, writes output. Best for a Lightsail worker; no inbound URL. **Recommended.**
-- **(b) Push** — the worker exposes `submit`/`status` HTTP endpoints the console calls.
+```
+POST /api/agents/jobs/claim              Authorization: Bearer <PAM_AGENT_TOKEN>
+  → atomically claims the oldest queued job for the token's agent (queued -> running)
+  → 200 { job: { id, job_type, owner, input } }   or   { job: null }
+
+POST /api/agents/jobs/[id]/complete      Authorization: Bearer <PAM_AGENT_TOKEN>
+  body { output: { markdown } }  on success   |   { error: "..." }  on failure
+  → the console writes the artifact (owner/keying from the job, never the agent),
+    flips the job done/failed, records output_ref
+```
+
+- The agent identity comes from the **token** (`PAM_AGENT_TOKEN_<AGENT>`), so a token can only claim/complete its own agent's jobs.
+- Owner, stream, framing, slug, and the S3 key are all resolved **server-side from the job record** — a compromised agent cannot write into another owner's concept bank.
+- Small results ride the contract (D17: April returns markdown, console writes it). Large blobs (Mikey's media, later) go direct to storage and return a ref instead.
+- **Interview = Option B:** the live interview (`converse`) runs console-side in April's name (her persona + the owner's brand-voice doc from the bucket, billed to `APRIL_OPENROUTER_API_KEY`); only the deep synthesis (`concept_finalize`) is a job the real April pull worker claims. Consistent with D3 (interface-driving = console-side) and keeps the interview snappy.
+
+Selected by `AGENT_PROVIDER=hermes` (vs the `interim` stand-in). Interim caveat: the claim is a non-atomic read-then-write on the interim jobs store — safe with exactly one poller per agent; the real `jobs` table closes it with `UPDATE ... WHERE status='queued' RETURNING`.
 
 ---
 
@@ -72,10 +87,11 @@ The console can drive either shape; pick one and the console builds the matching
 The interview turns run through **converse** (sync). When the owner (or April via `signal: 'ready_to_finalize'`) ends the interview, the console enqueues this job.
 
 ```
-input:  { owner, stream, framing, transcript: Message[], brand_voice_ref }
-output: writes  pam/concept-bank/{owner}/core-concept-{framing-slug}.md   (the concept doc)
-        output_ref = that bucket key
-        console also writes an INDEX row so the doc is listable (see §5)
+input:  { owner, stream, framing, transcript: Message[], brandVoice? }
+        brandVoice is the owner's brand-voice TEXT inline (not a ref): the agent
+        holds no bucket creds (D17), so the console reads it and passes it in.
+output: the agent returns { markdown }; the CONSOLE writes it to
+        pam/concept-bank/{owner}/core-concept-{framing-slug}.md and records output_ref.
 ```
 
 ### `script_draft` — the original T5 draft (feeds the Script screen)
@@ -129,12 +145,25 @@ Every converse call and job input carries `owner`. April reads *that owner's* br
 
 ---
 
-## 8. Open decisions
+## 8. Decisions (all resolved 2026-07)
 
-1. **Pull vs push** worker wiring (§2) — April's builders choose; console builds the matching dispatcher.
-2. **Owner key** = signed-in email (recommended, matches the interim store) vs a short slug. Locks the bucket prefix + index key.
-3. **Bucket credentials** (`AGENTS_S3_ACCESS_KEY_ID` / `..._SECRET`) into Vercel + April's runtime — provisioned bucket, keys pending.
-4. Per-agent OpenRouter keys + the settled DeepSeek model id.
+1. **Worker wiring** = console-API pull (§2). ✅
+2. **Owner key** = signed-in email. ✅
+3. **Interview** = Option B (console-run, in April's name). ✅
+4. **Storage split** = D17 (small through the contract, large direct + ref). ✅
+5. **Bucket** = keep Lightsail (whole-bucket key, console-only); partition in code. ✅
+
+### Env to go live (console = Vercel; April = her Secrets Manager)
+
+| Var | Where | Purpose |
+|---|---|---|
+| `AGENTS_BUCKET` / `AGENTS_BUCKET_REGION` / `AGENTS_S3_ACCESS_KEY_ID` / `AGENTS_S3_SECRET_ACCESS_KEY` | Console | Bucket read/write (console is the writer). Flips concept-store from interim to S3. |
+| `PAM_AGENT_TOKEN_APRIL` | Console | Verifies April's bearer on the pull API. |
+| `PAM_AGENT_TOKEN` | April | The same token value; April polls with it. |
+| `APRIL_OPENROUTER_API_KEY` | Console | Bills the console-run interview to April's key. |
+| `AGENT_PROVIDER=hermes` | Console | The flip: real April behind the seam. Leave unset (interim) until the rest is in. |
+
+April polls `POST {CONSOLE_BASE_URL}/api/agents/jobs/claim` and reports on `POST {CONSOLE_BASE_URL}/api/agents/jobs/{id}/complete` with her bearer. `CONSOLE_BASE_URL` = `https://pam.polynize.ai` (the `/api/*` routes are host-agnostic and not rewritten by middleware).
 
 ---
 

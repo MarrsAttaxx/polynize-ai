@@ -61,9 +61,24 @@ export interface AgentProvider {
  * Select the active provider. Interim (OpenRouter stand-in) is the only one until
  * the real agents are provisioned; `AGENT_PROVIDER` is the swap point.
  */
+/**
+ * Is the real-agent pull bridge active? The claim/complete API must be inert
+ * unless we have flipped to the real agents, EVEN IF a per-agent token is already
+ * set (pre-flip staging). Otherwise a live poller could claim an interim job that
+ * the interim provider is about to run inline, and both would execute it.
+ */
+export function isAgentBridgeActive(): boolean {
+  return (process.env.AGENT_PROVIDER ?? 'interim') === 'hermes';
+}
+
 export async function getAgentProvider(): Promise<AgentProvider> {
   const which = process.env.AGENT_PROVIDER ?? 'interim';
   switch (which) {
+    case 'hermes': {
+      // The real agents: console-run interview + pull-worker jobs.
+      const { hermesProvider } = await import('./hermes-provider');
+      return hermesProvider;
+    }
     case 'interim':
     default: {
       const { interimProvider } = await import('./interim-provider');

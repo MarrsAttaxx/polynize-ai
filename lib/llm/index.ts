@@ -17,6 +17,13 @@ export type CompleteArgs = {
    * interview and concept doc), which must NOT be wrapped in a JSON object.
    */
   json?: boolean;
+  /**
+   * Override the provider API key for this call (OpenRouter). Used to bill a
+   * specific agent's key when the console runs that agent's cognition on its
+   * behalf (e.g. the console-run interview bills April's key). Falls back to the
+   * provider's env key when unset.
+   */
+  apiKey?: string;
 };
 
 /**

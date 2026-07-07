@@ -13,7 +13,7 @@ const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions';
 const DEFAULT_TIMEOUT_MS = 240_000;
 
 export async function completeWithOpenRouter(args: CompleteArgs): Promise<string> {
-  const apiKey = process.env.OPENROUTER_API_KEY;
+  const apiKey = args.apiKey ?? process.env.OPENROUTER_API_KEY;
   if (!apiKey) throw new Error('OPENROUTER_API_KEY is not set');
   const model = process.env.OPENROUTER_MODEL ?? 'minimax/minimax-01';
   const referer = process.env.OPENROUTER_REFERER ?? 'https://polynize.ai';

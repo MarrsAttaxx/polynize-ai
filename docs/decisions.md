@@ -202,6 +202,18 @@ Format per entry: the decision, the context that forced it, the rationale, and t
 
 ---
 
+## D17 — Small structured data flows through the job contract; large blobs go direct to storage and return a ref
+
+**Decision (2026-07):** Agents return **small structured results through the job contract** (April returns the concept Markdown on `/api/agents/jobs/[id]/complete`; the console writes it to the bucket). Agents that produce **large binary artifacts write them direct to storage and return a ref** (Mikey's rendered video/b-roll later: upload to the bucket, return the object key on complete). This is **one rule, not two patterns** — the split is driven by payload size, not by which agent it is.
+
+**Context:** April-via-console (markdown through the API) and Mikey-direct-to-S3 (video refs) look like an inconsistency between two agents. They are the same principle applied to different payload sizes.
+
+**Rationale:** The physical reason is you do not pipe gigabytes through a JSON API (request-size limits, function memory, latency). For small data, routing it through the contract keeps the **console the single writer** and lets it enforce owner-partitioning + keying server-side (the agent never needs storage credentials). For large blobs, that round-trip is infeasible, so the agent writes direct and hands back a ref the console records.
+
+**Consequence if violated:** Routing large media through the job API blows request/memory limits. Routing tiny data direct-to-storage would force S3 credentials onto every agent box and lose the server-side owner enforcement the contract provides. When adding an agent, choose the path by artifact size, and keep the console the writer for anything small enough to pass through the contract.
+
+---
+
 ## How to add to this log
 
 When you make a decision that future-you (or a cold agent) might be tempted to undo, add an entry: the decision, the context that forced it, why, and the consequence of violating it. The bar for inclusion: *would someone seeing this cold reasonably think it's wrong or improvable, when it's actually deliberate?* If yes, it belongs here.
@@ -215,3 +227,4 @@ When you make a decision that future-you (or a cold agent) might be tempted to u
 | 2026-06-05 | Initial decision log: D1–D14 captured from the build history. |
 | 2026-06-18 | D15: PAM → marketing engine; mapping/blueprinting to Cognitive Studio; Newkind/reMYnd/Roxbury repos hard-deleted (SOC 2 + off-boarding); EverStock retained. |
 | 2026-07-03 | D16: April interviews in-console (SOC 2, minimise Slack); T5 reframed as the intake screen; agent connection is transport-abstract. See `pam-console/agent-socket-contract.md`. |
+| 2026-07-07 | D17: small structured data flows through the job contract (console is the writer); large blobs go direct to storage and return a ref. One payload-size rule. |

@@ -14,6 +14,7 @@ import { z } from 'zod';
 import { getCurrentUser } from '@/lib/console-auth';
 import { getAgentProvider } from '@/lib/agents/socket';
 import { framingSlug } from '@/lib/marketing/concept-store';
+import { getBrandVoice } from '@/lib/marketing/brand-voice-store';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -70,6 +71,10 @@ export async function POST(req: NextRequest) {
   }
 
   try {
+    // Attach the owner's brand-voice TEXT inline (not a ref): the real April holds
+    // no bucket creds (D17), so the console, which does, passes the register in the
+    // job so the concept doc is synthesised in-voice. undefined when absent.
+    const brandVoice = await getBrandVoice(user.email);
     const provider = await getAgentProvider();
     const { jobId } = await provider.submitJob({
       jobType: 'concept_finalize',
@@ -79,6 +84,7 @@ export async function POST(req: NextRequest) {
         stream: body.stream,
         framing: body.framing.trim(),
         transcript: body.transcript,
+        brandVoice,
       },
     });
     return NextResponse.json({ jobId });
