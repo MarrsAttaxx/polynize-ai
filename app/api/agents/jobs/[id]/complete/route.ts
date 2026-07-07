@@ -34,6 +34,28 @@ const BodySchema = z
     message: 'exactly one of output or error is required',
   });
 
+/**
+ * Reject an echo before it can pollute the concept bank (the source of truth for
+ * the whole downstream pipeline). A real concept doc never contains the interview
+ * or prompt markers, and must have substantive content, not just empty headings.
+ * Belt-and-braces behind the agent's own validator.
+ */
+function looksLikeEcho(md: string): boolean {
+  if (
+    /INTERVIEW TRANSCRIPT|\[OWNER\]|\[APRIL\]|BEGIN SOURCE MATERIAL|Start your output immediately/i.test(
+      md
+    )
+  ) {
+    return true;
+  }
+  // Content outside the section headings must be non-trivial.
+  const body = md
+    .replace(/^#{1,6}.*$/gm, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+  return body.length < 200;
+}
+
 export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -94,6 +116,16 @@ export async function POST(
       if (!framing) {
         await updateJob(job.owner, id, { status: 'failed', error: 'job input was incomplete' });
         return NextResponse.json({ error: 'job input missing framing' }, { status: 422 });
+      }
+      if (looksLikeEcho(markdown)) {
+        console.error(
+          `[agents.complete] ${agent} job ${id} rejected: output looks like an echo or empty skeleton`
+        );
+        await updateJob(job.owner, id, {
+          status: 'failed',
+          error: 'The draft came back empty or echoed the interview. Try again.',
+        });
+        return NextResponse.json({ error: 'output rejected (echo/empty)' }, { status: 422 });
       }
       const doc = await saveConcept({
         owner: job.owner,
