@@ -17,7 +17,7 @@ const roleClass: Record<StageRole, string> = {
 export function StageRail({ pieceId, current }: { pieceId: string; current: string }) {
   return (
     <nav className={s.rail} aria-label="Production stages">
-      {SHORT_FORM_STAGES.map((st, i) => {
+      {SHORT_FORM_STAGES.map((st) => {
         const isCurrent = st.id === current;
         const inner = (
           <span
@@ -40,11 +40,6 @@ export function StageRail({ pieceId, current }: { pieceId: string; current: stri
             ) : (
               inner
             )}
-            {i < SHORT_FORM_STAGES.length - 1 ? (
-              <span className={s.sep} aria-hidden>
-                →
-              </span>
-            ) : null}
           </span>
         );
       })}
