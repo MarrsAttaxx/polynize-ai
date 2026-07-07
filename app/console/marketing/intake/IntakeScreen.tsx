@@ -219,6 +219,8 @@ export function IntakeScreen({ owner }: { owner: string }) {
             placeholder="e.g. strip the AI out first"
             disabled={finalizing}
             aria-label="Working framing"
+            autoCapitalize="sentences"
+            enterKeyHint="done"
           />
         </label>
         <label className={s.field}>
@@ -272,6 +274,9 @@ export function IntakeScreen({ owner }: { owner: string }) {
           placeholder="answer April…"
           aria-label="Answer"
           disabled={busy}
+          autoCapitalize="sentences"
+          autoCorrect="on"
+          enterKeyHint="send"
         />
         <button className={s.send} type="submit" disabled={busy || !input.trim()}>
           Send

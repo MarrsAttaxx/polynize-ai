@@ -78,7 +78,8 @@
   border-radius: 10px;
   padding: 11px 13px;
   font-family: var(--font-space-grotesk), 'Space Grotesk', sans-serif;
-  font-size: 15px;
+  /* 16px minimum so iOS Safari does not auto-zoom on focus. */
+  font-size: 16px;
   outline: none;
 }
 .framingInput:focus,
@@ -141,13 +142,15 @@
 }
 .input {
   flex: 1;
+  min-width: 0;
   background: rgba(0, 0, 0, 0.18);
   border: 1px solid var(--tac-edge-dark, rgba(255, 255, 255, 0.1));
   border-radius: 12px;
   padding: 12px 14px;
   color: var(--text);
   font-family: var(--font-space-grotesk), 'Space Grotesk', sans-serif;
-  font-size: 15px;
+  /* 16px minimum so iOS Safari does not auto-zoom on focus. */
+  font-size: 16px;
   outline: none;
 }
 .input:focus {
@@ -202,4 +205,44 @@
   font-size: 12px;
   color: var(--text-3);
   font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+}
+
+/* Mobile: a real chat surface. Full-height column so the transcript grows and
+   the composer + finalize sit at the bottom of the viewport (no keyboard-hidden
+   composer), with safe-area clearance and thumb-friendly tap targets. Uses dvh
+   so the layout tracks the visible viewport as the keyboard opens. */
+@media (max-width: 640px) {
+  .root {
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    padding: 12px 14px calc(env(safe-area-inset-bottom, 0px) + 12px);
+  }
+  .head {
+    margin-bottom: 12px;
+  }
+  .lede {
+    display: none; /* reclaim vertical space for the transcript on small screens */
+  }
+  .meta {
+    margin-bottom: 12px;
+  }
+  .transcript {
+    flex: 1;
+    min-height: 0;
+    max-height: none;
+  }
+  .composer {
+    margin-top: 12px;
+  }
+  .send {
+    min-height: 46px;
+    padding: 0 20px;
+  }
+  .finalizeRow {
+    margin-top: 12px;
+  }
+  .finalize {
+    min-height: 46px;
+  }
 }
