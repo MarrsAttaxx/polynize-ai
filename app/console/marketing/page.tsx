@@ -75,7 +75,6 @@ export default async function MarketingPage() {
                 href={`/console/marketing/stream/${st.id}`}
                 className={l.card}
               >
-                <span className={l.cardEyebrow}>stream</span>
                 <span className={l.cardTitle}>{st.label}</span>
                 <span className={l.cardDesc}>
                   {total === 0

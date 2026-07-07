@@ -7,7 +7,7 @@
  * Order here is the display order on the dashboard.
  */
 export const STREAMS = [
-  { id: 'polynize', label: 'Polynize (brand)' },
+  { id: 'polynize', label: 'Polynize' },
   { id: 'marrs', label: 'Marrs' },
   { id: 'shourov', label: 'Shourov' },
   { id: 'patricia', label: 'Patricia' },

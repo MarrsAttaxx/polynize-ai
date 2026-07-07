@@ -68,7 +68,6 @@ export default async function StreamPage({
           <Link href="/console/marketing" className={s.marketingBack}>
             ← Marketing
           </Link>
-          <div className={s.eyebrow}>stream</div>
           <h1 className={s.title}>{streamLabel(stream)}</h1>
         </div>
 
