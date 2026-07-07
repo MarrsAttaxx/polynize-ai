@@ -559,21 +559,38 @@
   font-style: italic;
 }
 
-.newConceptCta {
-  margin-left: auto;
+/* Marketing dashboard: the key "Start a concept" action + the per-stream back link. */
+.marketingCtaRow {
+  margin: 2px 0 28px;
+}
+.startConceptCta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 13px;
+  color: var(--bg, #0a0a0f);
+  background: var(--mint);
+  border: none;
+  border-radius: 10px;
+  padding: 12px 20px;
+  text-decoration: none;
+  transition: opacity var(--tac-transition);
+}
+.startConceptCta:hover {
+  opacity: 0.9;
+}
+.marketingBack {
+  display: inline-block;
+  margin-bottom: 12px;
   font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
   font-size: 12px;
-  color: var(--mint);
+  letter-spacing: 0.04em;
+  color: var(--text-3);
   text-decoration: none;
-  border: 1px solid rgba(105, 252, 203, 0.3);
-  border-radius: 8px;
-  padding: 7px 13px;
-  white-space: nowrap;
-  transition: background var(--tac-transition), border-color var(--tac-transition);
 }
-.newConceptCta:hover {
-  background: rgba(105, 252, 203, 0.08);
-  border-color: var(--mint);
+.marketingBack:hover {
+  color: var(--mint);
 }
 
 .archivedDetails {

@@ -2,26 +2,20 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { getCurrentUser } from '@/lib/console-auth';
 import { listSavedPieces, type MarketingPiece } from '@/lib/marketing/piece-store';
-import { listConcepts, type ConceptDoc } from '@/lib/marketing/concept-store';
+import { listConcepts } from '@/lib/marketing/concept-store';
 import { SEED_PIECES } from '@/lib/marketing/seed';
+import { STREAMS, DEFAULT_STREAM } from '@/lib/marketing/streams';
 import s from '../_components/client-card.module.css';
 import l from '../_components/launcher.module.css';
 
 export const dynamic = 'force-dynamic';
 
 /**
- * Marketing engine — the dashboard SHELL (the console's home). Streams by owner
- * plus the in-development pieces. Explicitly minimal: no calendar, analytics, or
- * pillar library yet (those need data and come in later phases). The Marketing
- * launcher card lands here, not on a piece.
+ * Marketing engine — the dashboard. A key "Start a concept" action plus one card
+ * per stream (owner bucket): Polynize brand, Marrs, Shourov, Patrycia, Team. Each
+ * card shows its counts and opens that owner's workflow (their concepts + pieces).
+ * Concepts and pieces live INSIDE their stream, not in a flat top-level list.
  */
-const STREAMS = [
-  { id: 'marrs', label: 'Marrs' },
-  { id: 'polynize', label: 'Polynize (brand)' },
-  { id: 'shourov', label: 'Shourov' },
-  { id: 'team', label: 'Team' },
-] as const;
-
 export default async function MarketingPage() {
   const user = await getCurrentUser();
   if (!user) return null;
@@ -29,8 +23,11 @@ export default async function MarketingPage() {
     redirect(`/console/${user.scope.slug}/blueprint`);
   }
 
-  // Seeds are always present; merge any saved pieces on top (saved wins),
-  // deduped by piece_id. Degrade to seeds-only if storage is unreachable.
+  // Tally concepts + pieces per stream for the card counts. Degrade to zeros if a
+  // store is unreachable (never 500 the dashboard).
+  const counts = new Map<string, { concepts: number; pieces: number }>();
+  for (const st of STREAMS) counts.set(st.id, { concepts: 0, pieces: 0 });
+
   const byId = new Map<string, MarketingPiece>();
   for (const seed of Object.values(SEED_PIECES)) {
     byId.set(seed.piece_id, { ...seed, owner: user.email });
@@ -38,17 +35,19 @@ export default async function MarketingPage() {
   try {
     for (const p of await listSavedPieces(user.email)) byId.set(p.piece_id, p);
   } catch (err) {
-    console.error('[marketing] piece list failed, showing seeds only:', err);
+    console.error('[marketing] piece list failed:', err);
   }
-  const pieces = [...byId.values()];
-
-  // Concepts are the top of the spine (created on the intake screen). Degrade to
-  // an empty bank if storage is unreachable.
-  let concepts: ConceptDoc[] = [];
+  for (const p of byId.values()) {
+    const c = counts.get(p.stream || DEFAULT_STREAM);
+    if (c) c.pieces += 1;
+  }
   try {
-    concepts = await listConcepts(user.email);
+    for (const cpt of await listConcepts(user.email)) {
+      const c = counts.get(cpt.stream || DEFAULT_STREAM);
+      if (c) c.concepts += 1;
+    }
   } catch (err) {
-    console.error('[marketing] concept list failed, showing none:', err);
+    console.error('[marketing] concept list failed:', err);
   }
 
   return (
@@ -60,75 +59,38 @@ export default async function MarketingPage() {
           <h1 className={s.title}>Marketing</h1>
         </div>
 
-        <section className={s.dashSection}>
-          <div className={s.dashSectionHead}>
-            <h2 className={s.dashSectionTitle}>Concept bank</h2>
-            <Link href="/console/marketing/intake" className={s.newConceptCta}>
-              + Start a concept
-            </Link>
-          </div>
-          {concepts.length === 0 ? (
-            <p className={s.dashSectionEmpty}>
-              No concepts yet. Start one and April will interview you.
-            </p>
-          ) : (
-            <div className={l.cards}>
-              {concepts.map((c) => (
-                <Link
-                  key={c.concept_ref}
-                  href={`/console/marketing/concept/${c.framing_slug}`}
-                  className={l.card}
-                >
-                  <span className={l.cardEyebrow}>concept · {c.stream}</span>
-                  <span className={l.cardTitle}>{c.title}</span>
-                  <span className={l.cardDesc}>Open the concept doc.</span>
-                  <span className={l.cardArrow} aria-hidden>
-                    →
-                  </span>
-                </Link>
-              ))}
-            </div>
-          )}
-        </section>
+        <div className={s.marketingCtaRow}>
+          <Link href="/console/marketing/intake" className={s.startConceptCta}>
+            + Start a concept
+          </Link>
+        </div>
 
-        {STREAMS.map((stream) => {
-          const items = pieces.filter((p) => (p.stream || 'polynize') === stream.id);
-          return (
-            <section key={stream.id} className={s.dashSection}>
-              <div className={s.dashSectionHead}>
-                <h2 className={s.dashSectionTitle}>{stream.label}</h2>
-                <span className={s.dashSectionCount}>{items.length}</span>
-              </div>
-              {items.length === 0 ? (
-                <p className={s.dashSectionEmpty}>No pieces in development yet.</p>
-              ) : (
-                <div className={l.cards}>
-                  {items.map((p) => (
-                    <Link
-                      key={p.piece_id}
-                      href={`/console/marketing/piece/${p.piece_id}`}
-                      className={l.card}
-                    >
-                      <span className={l.cardEyebrow}>
-                        {(p.format ?? '').replace(/_/g, ' ')} · {p.stage ?? 'draft'}
-                      </span>
-                      <span className={l.cardTitle}>{p.title}</span>
-                      <span className={l.cardDesc}>Open the production flow.</span>
-                      <span className={l.cardArrow} aria-hidden>
-                        →
-                      </span>
-                    </Link>
-                  ))}
-                </div>
-              )}
-            </section>
-          );
-        })}
-
-        <p className={l.placeholderNote} style={{ marginTop: 24 }}>
-          Shell view: streams and in-development pieces. The content calendar,
-          analytics, and the pillar library land in later phases.
-        </p>
+        <div className={l.cards}>
+          {STREAMS.map((st) => {
+            const c = counts.get(st.id) ?? { concepts: 0, pieces: 0 };
+            const total = c.concepts + c.pieces;
+            return (
+              <Link
+                key={st.id}
+                href={`/console/marketing/stream/${st.id}`}
+                className={l.card}
+              >
+                <span className={l.cardEyebrow}>stream</span>
+                <span className={l.cardTitle}>{st.label}</span>
+                <span className={l.cardDesc}>
+                  {total === 0
+                    ? 'Nothing yet'
+                    : `${c.concepts} concept${c.concepts === 1 ? '' : 's'} · ${c.pieces} piece${
+                        c.pieces === 1 ? '' : 's'
+                      }`}
+                </span>
+                <span className={l.cardArrow} aria-hidden>
+                  →
+                </span>
+              </Link>
+            );
+          })}
+        </div>
       </div>
     </>
   );

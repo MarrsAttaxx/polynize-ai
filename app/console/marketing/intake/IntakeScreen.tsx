@@ -12,16 +12,9 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import s from './intake.module.css';
+import { STREAMS, isStreamId, type StreamId } from '@/lib/marketing/streams';
 
 type Msg = { role: 'user' | 'assistant'; content: string };
-type Stream = 'marrs' | 'polynize' | 'shourov' | 'team';
-
-const STREAMS: { id: Stream; label: string }[] = [
-  { id: 'marrs', label: 'Marrs' },
-  { id: 'polynize', label: 'Polynize (brand)' },
-  { id: 'shourov', label: 'Shourov' },
-  { id: 'team', label: 'Team' },
-];
 
 // Draft persistence so an in-progress interview survives a reload/navigation
 // before it is finalized (the concept doc is only written at finalize). The key
@@ -35,11 +28,17 @@ const OPENER: Msg = {
     "I'm April. Let's find the one sharp idea worth making. In a sentence, what is the thing you believe about your work that most people get wrong?",
 };
 
-export function IntakeScreen({ owner }: { owner: string }) {
+export function IntakeScreen({
+  owner,
+  initialStream,
+}: {
+  owner: string;
+  initialStream: StreamId;
+}) {
   const router = useRouter();
   const draftKey = `${DRAFT_KEY_BASE}:${owner}`;
   const [framing, setFraming] = useState('');
-  const [stream, setStream] = useState<Stream>('polynize');
+  const [stream, setStream] = useState<StreamId>(initialStream);
   const [messages, setMessages] = useState<Msg[]>([OPENER]);
   const [input, setInput] = useState('');
   const [sending, setSending] = useState(false);
@@ -61,8 +60,8 @@ export function IntakeScreen({ owner }: { owner: string }) {
         messages?: unknown;
       };
       if (typeof d.framing === 'string') setFraming(d.framing);
-      if (typeof d.stream === 'string' && STREAMS.some((o) => o.id === d.stream)) {
-        setStream(d.stream as Stream);
+      if (isStreamId(d.stream)) {
+        setStream(d.stream);
       }
       if (Array.isArray(d.messages) && d.messages.length > 0) {
         setMessages(d.messages as Msg[]);
@@ -228,7 +227,7 @@ export function IntakeScreen({ owner }: { owner: string }) {
           <select
             className={s.streamSelect}
             value={stream}
-            onChange={(e) => setStream(e.target.value as Stream)}
+            onChange={(e) => setStream(e.target.value as StreamId)}
             disabled={finalizing}
             aria-label="Stream"
           >

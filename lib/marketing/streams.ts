@@ -1,0 +1,32 @@
+/**
+ * The marketing streams (owner buckets) — one source of truth so the dashboard
+ * cards, the per-stream view, the intake selector, and the finalize validator
+ * never drift. A stream is who the content is FOR (brand or a person); `owner`
+ * (the signed-in email) is separate and drives storage partitioning.
+ *
+ * Order here is the display order on the dashboard.
+ */
+export const STREAMS = [
+  { id: 'polynize', label: 'Polynize (brand)' },
+  { id: 'marrs', label: 'Marrs' },
+  { id: 'shourov', label: 'Shourov' },
+  { id: 'patrycia', label: 'Patrycia' },
+  { id: 'team', label: 'Team' },
+] as const;
+
+export type StreamId = (typeof STREAMS)[number]['id'];
+
+/** Tuple form for zod's z.enum(...). */
+export const STREAM_IDS = STREAMS.map((s) => s.id) as [StreamId, ...StreamId[]];
+
+export function isStreamId(x: unknown): x is StreamId {
+  return typeof x === 'string' && (STREAM_IDS as readonly string[]).includes(x);
+}
+
+/** Label for a stream id, falling back to the raw id (e.g. a legacy value). */
+export function streamLabel(id: string): string {
+  return STREAMS.find((s) => s.id === id)?.label ?? id;
+}
+
+/** Default stream when none is chosen. */
+export const DEFAULT_STREAM: StreamId = 'polynize';

@@ -15,6 +15,7 @@ import { getCurrentUser } from '@/lib/console-auth';
 import { getAgentProvider } from '@/lib/agents/socket';
 import { framingSlug } from '@/lib/marketing/concept-store';
 import { getBrandVoice } from '@/lib/marketing/brand-voice-store';
+import { STREAM_IDS } from '@/lib/marketing/streams';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -28,7 +29,7 @@ const MAX_BODY_BYTES = 256 * 1024;
 
 const BodySchema = z.object({
   framing: z.string().min(1).max(300),
-  stream: z.enum(['marrs', 'polynize', 'shourov', 'team']),
+  stream: z.enum(STREAM_IDS),
   transcript: z
     .array(
       z.object({
