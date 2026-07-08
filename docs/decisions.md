@@ -226,6 +226,30 @@ Format per entry: the decision, the context that forced it, the rationale, and t
 
 ---
 
+## D19 — The Output-plan step is the top→middle pivot; treatment is format-specific; "shoot once, cut many"
+
+**Decision (2026-07-08, aligned with Marrs):** Between the concept doc and the middle module there is a load-bearing **Output-plan** step: the owner selects **platforms + formats + ICP (per output)**. This is not a fan-out convenience — it determines *which* middle modules run **and how the script is written**. Full model in `pam-console/production-model.md`.
+
+- **Unit model:** a concept → one **"production"** that owns (for video) a **single canonical recording** + a set of **format outputs**; each output is a piece running its format-specific module. **Video outputs share the one recording ("shoot once, cut many");** text/image outputs derive from concept + script.
+- **Script authoring inputs:** concept + selected formats + ICP + **the stream's brand voice**; the script is the **shot-list** that yields the canonical recording.
+- **Treatment is format-specific, NOT format-agnostic** — it lives inside a format's module, post-record. (Supersedes an earlier "format-agnostic treatment map" framing, which was wrong.)
+- **v1:** video module wired; other formats selectable but "module coming." The flow must not assume video (most users lean non-video; Marrs is the main video user).
+
+**Consequence if violated:** collapsing Output-plan back into a single "develop into a script" button (the current shortcut) hard-codes short-form video, breaks multi-format + ICP, and mis-authors the script. Building the treatment map as format-agnostic produces a screen that can't actually treat a specific output.
+
+---
+
+## D20 — Brand voice is per-STREAM, editable, referenced on every content creation
+
+**Decision (2026-07-08):** Brand voice is keyed by **stream** (Polynize / Marrs / Shourov / Patricia), not by owner email — a concept is *for* a stream regardless of who is signed in. Each stream's home surfaces its **brand voice + brand guidelines** docs; they are **created via an April interview** and **editable/updatable**. Content creation in a stream (concept synthesis, the interview register, script authoring) reads that stream's brand voice.
+
+- **Polynize** sources its voice from **polynize.ai/brand** (D6, live dependency) if pullable, else a platform copy. **Other streams** get a bucket doc created via April (seed her interview from Marrs's brand-voice master prompt).
+- **Refactor note:** the current `getBrandVoice(owner-email)` + `pam/brand-voice-docs/{owner}/` keying moves to per-stream.
+
+**Consequence if violated:** keying brand voice on the signed-in user means a Polynize piece written by any team member gets that person's voice, not the Polynize voice. Voice is the product; it must follow the stream.
+
+---
+
 ## How to add to this log
 
 When you make a decision that future-you (or a cold agent) might be tempted to undo, add an entry: the decision, the context that forced it, why, and the consequence of violating it. The bar for inclusion: *would someone seeing this cold reasonably think it's wrong or improvable, when it's actually deliberate?* If yes, it belongs here.
@@ -241,3 +265,5 @@ When you make a decision that future-you (or a cold agent) might be tempted to u
 | 2026-07-03 | D16: April interviews in-console (SOC 2, minimise Slack); T5 reframed as the intake screen; agent connection is transport-abstract. See `pam-console/agent-socket-contract.md`. |
 | 2026-07-07 | D17: small structured data flows through the job contract (console is the writer); large blobs go direct to storage and return a ref. One payload-size rule. |
 | 2026-07-07 | D18: tail zone consolidates on Metricool (publish + analytics) behind an abstraction, gated on a schedule test (metricool-cli fallback); Palmier is craft-tier local, never in the console; Descript stays. |
+| 2026-07-08 | D19: Output-plan step (platforms + formats + ICP) is the top→middle pivot; production owns one recording + many outputs (shoot once, cut many); treatment is format-specific. See `pam-console/production-model.md`. |
+| 2026-07-08 | D20: brand voice is per-stream (not per-owner), editable, April-created, referenced on every content creation. |

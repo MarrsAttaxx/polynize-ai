@@ -19,7 +19,8 @@ The PAM Console is becoming Polynize's **marketing engine** — the working envi
 
 **Reference (the constraints + the plumbing):**
 4. **`storage-and-agent-socket.md`** — the load-bearing decisions: no central agent, Supabase + Lightsail-bucket split, the agent socket, `owner_id` day-one, OpenRouter/DeepSeek, and the team roster.
-5. **`agent-socket-contract.md`** — the concrete plug shape between the console and the agents: the two capabilities (sync `converse`, async jobs), the `AgentProvider` seam, the job lifecycle, the intake interview, and the concept-doc artifact. What April is built against.
+5. **`production-model.md`** — the revised spine (aligned 2026-07-08): the Output-plan step (platforms + formats + ICP), "shoot once, cut many", format-specific treatment, per-stream brand voice, the build order, and the real Descript fixture. **Read before building the middle/output stages.**
+6. **`agent-socket-contract.md`** — the concrete plug shape between the console and the agents: the two capabilities (sync `converse`, async jobs), the `AgentProvider` seam, the job lifecycle, the intake interview, and the concept-doc artifact. What April is built against.
 6. **`runbooks.md`** — operating the live pieces: the agent-bridge flip/rollback, activation signals, triage, storage backends, and how to add a new user/stream card. Read when operating or debugging, not building.
 7. **`../../asset-kit/PAM-CONSOLE-HANDOFF.md`** — the alpha's operational findings (Descript workflow, the rules, tooling). Skim; consult when we hit production stages.
 
