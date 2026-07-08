@@ -250,6 +250,19 @@ Format per entry: the decision, the context that forced it, the rationale, and t
 
 ---
 
+## D21 — Content pillars are the style layer: pillar → blueprint → treatment; per-stream library; referenced on creation
+
+**Decision (reaffirmed 2026-07-08):** A **content pillar** is a recurring **style within a format** (e.g. "Marrs Attacks", "Show and Tell", podcast). It was always in the spec (`ux-flow-v1.0.md` §4.7 + §5, `content-format-matrix.md`, `pillars` table in `0009`); integrated into the aligned model here. Production logic: **concept → framing → pillar (inside a format) → platform.**
+
+- Each pillar has a **blueprint** = which format module + which treatment sub-modules + the pillar-specific specifics/style. **The Treatment stage swaps by pillar** — the pillar's fingerprint. Build a format's middle module once; a new pillar is a light specialisation (mainly its treatment recipe).
+- **Referenced on content creation:** a piece for a pillar follows that pillar's predefined style/format (especially video — the script style + treatment come from the blueprint). So the Output-plan (D19) carries **pillar** alongside format + ICP, and script authoring + treatment read the blueprint.
+- **Content-pillar library** is a **per-stream** stream-home core asset (alongside brand voice + guidelines), pillars in `active` / `developing` states. Demoted (config + ideation, not a daily-driver).
+- **ICP archetype set** (from the brand-voice builder, `brand-voice-builder-prompt.md`): Organisational Architect · High-Stakes Operator · Revenue Accelerator · Talent Champion · Service Ops Leader (+ custom) — the taxonomy for the Output-plan ICP field.
+
+**Consequence if violated:** ignoring the pillar when creating a piece produces off-style content (wrong treatment recipe, wrong register); the pillar blueprint is the recipe, the production spine is the kitchen. Treatment that doesn't vary by pillar collapses the thing that differentiates the styles.
+
+---
+
 ## How to add to this log
 
 When you make a decision that future-you (or a cold agent) might be tempted to undo, add an entry: the decision, the context that forced it, why, and the consequence of violating it. The bar for inclusion: *would someone seeing this cold reasonably think it's wrong or improvable, when it's actually deliberate?* If yes, it belongs here.
@@ -267,3 +280,4 @@ When you make a decision that future-you (or a cold agent) might be tempted to u
 | 2026-07-07 | D18: tail zone consolidates on Metricool (publish + analytics) behind an abstraction, gated on a schedule test (metricool-cli fallback); Palmier is craft-tier local, never in the console; Descript stays. |
 | 2026-07-08 | D19: Output-plan step (platforms + formats + ICP) is the top→middle pivot; production owns one recording + many outputs (shoot once, cut many); treatment is format-specific. See `pam-console/production-model.md`. |
 | 2026-07-08 | D20: brand voice is per-stream (not per-owner), editable, April-created, referenced on every content creation. |
+| 2026-07-08 | D21: content pillars = style layer (pillar→blueprint→treatment-swaps-by-pillar); per-stream pillar library; referenced on creation. ICP archetypes captured. See `brand-voice-builder-prompt.md`. |

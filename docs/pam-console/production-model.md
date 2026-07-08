@@ -18,8 +18,9 @@ Idea → April interview → **core concept doc**. One concept, no format assump
 ### 2. Output plan — THE missing, load-bearing step (build next)
 A screen after the concept: the owner selects **which content to make**, and that choice drives everything downstream (which middle modules run, AND how the script is written).
 - **Select platforms** to post on (IG, TikTok, LinkedIn, YouTube, …).
-- **Select formats**: video, image + text, short-form text, long-form text, carousel, … (the finite catalogue).
-- **ICP per output** (ideal customer persona), defaulting from the concept's "Who it is for"; can differ per output (a founder short-form vs an ops-lead LinkedIn post).
+- **Select formats**: video, image + text, short-form text, long-form text, carousel, … (the finite catalogue, from `content-format-matrix.md`).
+- **Select the content pillar** per output (see "Content pillars" below) — the pillar sits inside a format and carries the predefined style/recipe.
+- **ICP per output** (ideal customer persona), defaulting from the concept's "Who it is for"; can differ per output. Canonical archetype set (from the brand-voice builder): **Organisational Architect · High-Stakes Operator · Revenue Accelerator · Talent Champion · Service Ops Leader** (+ custom).
 - **Next** → creates the production + drives the script.
 - Users differ: most (Marrs / Shourov / Patricia via their streams) will lean non-video; **the flow must not assume video**. Marrs is the main video user.
 
@@ -47,10 +48,22 @@ Content in a stream must be written in **that stream's** voice. Today `getBrandV
 
 ---
 
+## Content pillars — the style layer (already in the plan; confirmed 2026-07-08)
+
+Pillars were fully specified in the original spec (`ux-flow-v1.0.md` §4.7 + §5, `content-format-matrix.md`, and the `pillars` table in migration `0009`). Reaffirmed + integrated into this model:
+
+- **A content pillar = a recurring STYLE within a format** (e.g. "Marrs Attacks", "Show and Tell", the podcast pillar). Production logic: **core concept → framing → expressed via a content pillar (which sits inside a format) → on a platform.**
+- **Each pillar has a blueprint** = *which format module + which treatment sub-modules + the pillar-specific specifics/style*. The blueprint IS the pillar's production recipe.
+- **The Treatment stage swaps by pillar** — the pillar's fingerprint (split-screen / b-roll / cards / layout / overlays) is what makes one short-form pillar differ from another. Build a format's middle module once; each new pillar is a light specialisation (mainly its treatment recipe).
+- **Referenced on content creation** (this is the point Marrs raised): if a piece is for a specific pillar, it must follow that pillar's predefined **style and format** — especially for video (the script style + the treatment recipe come from the pillar blueprint). So the Output-plan carries the pillar, and script authoring + treatment read its blueprint.
+- **Content-pillar library** (`ux-flow-v1.0.md` §4.7): a per-stream library of pillars, each blueprinted, with two states — **active** (in production) and **developing** (an idea being worked up). Demoted in the layout (config + ideation, not a daily-driver). Sits alongside the brand-voice + guidelines docs as a **stream-home core asset**. Owner adds/edits pillars here.
+
+So a **stream home** now surfaces three core things: **brand voice · brand guidelines · content-pillar library**. And the Output-plan inputs are: platforms + format + **pillar** + ICP, all feeding script authoring, which also reads the stream's brand voice.
+
 ## Build order (CC's recommendation; Marrs deferred to CC)
 
 1. **Output-plan step + the production/output data model** (the pivot). Video path wired; other formats selectable-but-"coming". This defines the production→outputs shape everything else hangs off.
-2. **Per-stream brand voice** — stream-home core docs, April-create + edit, keyed by stream, wired into script authoring + concept synthesis. (Script authoring uses the existing brand-voice read until this lands, then upgrades to per-stream.)
+2. **Stream-home core assets** — per-stream **brand voice** (April-create via `brand-voice-builder-prompt.md` + editable, keyed by stream) + **brand guidelines** + the **content-pillar library** (add/edit pillars, active/developing). Wired into script authoring + treatment + concept synthesis. (Script authoring uses the existing brand-voice read until this lands, then upgrades to per-stream.)
 3. **Per-format middle modules** — the short-form (and long-form) video module's post-record stages, starting with the **Treatment Map** (format-specific), built against the real Descript fixture below.
 4. **Tail** — Metricool publish/analytics (D18), when Raph/Donnie land.
 
@@ -66,10 +79,11 @@ The console has read-only Descript MCP access (server `4a742644-…`, tools `lis
 
 ---
 
-## Open items (capture before building)
-- Marrs's **brand-voice master prompt** (seeds April's brand-voice interview).
-- The **format catalogue** (from `content-format-matrix.md`) as the selectable set in the Output-plan step.
+## Open items
+- ~~Marrs's brand-voice master prompt~~ **captured** → `brand-voice-builder-prompt.md` (source for April's brand-voice interview; also defines the 5 ICP archetypes).
+- The **format catalogue + pillar definitions** come from `content-format-matrix.md` (the format/style surface) + the `pillars` table (`0009`). Confirm the initial active pillars per stream at build time.
 - The **polynize.ai/brand** pull mechanism for the Polynize stream's voice.
+- Marrs's confirmation of the initial pillar set (e.g. Marrs Attacks, Show and Tell, podcast) and which are `active` vs `developing`.
 
 ---
 
