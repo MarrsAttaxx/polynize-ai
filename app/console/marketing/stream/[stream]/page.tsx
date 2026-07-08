@@ -5,6 +5,7 @@ import { listSavedPieces, type MarketingPiece } from '@/lib/marketing/piece-stor
 import { listConcepts, type ConceptDoc } from '@/lib/marketing/concept-store';
 import { SEED_PIECES } from '@/lib/marketing/seed';
 import { isStreamId, streamLabel, DEFAULT_STREAM } from '@/lib/marketing/streams';
+import { getBrandVoiceForStream } from '@/lib/marketing/brand-voice-store';
 import s from '../../../_components/client-card.module.css';
 import l from '../../../_components/launcher.module.css';
 
@@ -60,6 +61,15 @@ export default async function StreamPage({
   }
   const pieces = [...byId.values()].filter((p) => (p.stream || DEFAULT_STREAM) === stream);
 
+  // Stream-home core asset (D20): the brand voice every piece in this stream is
+  // written in. Degrade to "not set" on error so the page still renders.
+  let brandVoiceSet = false;
+  try {
+    brandVoiceSet = !!(await getBrandVoiceForStream(stream));
+  } catch (err) {
+    console.error('[marketing.stream] brand voice read failed:', err);
+  }
+
   return (
     <>
       <div className={s.bgPattern} aria-hidden />
@@ -77,6 +87,12 @@ export default async function StreamPage({
             className={s.startConceptCta}
           >
             + Start a concept
+          </Link>
+          <Link
+            href={`/console/marketing/stream/${stream}/brand-voice`}
+            className={s.marketingBack}
+          >
+            Brand voice: {brandVoiceSet ? 'set' : 'not set yet'} · edit →
           </Link>
         </div>
 

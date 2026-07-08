@@ -12,6 +12,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getCurrentUser } from '@/lib/console-auth';
 import { getAgentProvider } from '@/lib/agents/socket';
+import { STREAM_IDS } from '@/lib/marketing/streams';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -23,6 +24,7 @@ const MAX_BODY_BYTES = 256 * 1024;
 
 const BodySchema = z.object({
   framing: z.string().max(300).optional(),
+  stream: z.enum(STREAM_IDS).optional(),
   message: z.string().min(1).max(4000),
   history: z
     .array(
@@ -57,6 +59,7 @@ export async function POST(req: NextRequest) {
     const result = await provider.converse({
       agent: 'april',
       owner: user.email,
+      stream: body.stream,
       systemContext: { title: body.framing },
       history: body.history ?? [],
       message: body.message.trim(),

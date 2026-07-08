@@ -15,7 +15,7 @@ import { NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/console-auth';
 import { getPiece } from '@/lib/marketing/piece-store';
 import { getConcept } from '@/lib/marketing/concept-store';
-import { getBrandVoice } from '@/lib/marketing/brand-voice-store';
+import { getBrandVoiceForStream } from '@/lib/marketing/brand-voice-store';
 import { icpLabel, formatById } from '@/lib/marketing/output-plan';
 import { complete } from '@/lib/llm';
 import { stripEmDashes } from '@/lib/em-dash';
@@ -91,13 +91,8 @@ export async function POST(
   }
 
   const formatLabel = formatById(piece.format)?.label ?? 'post';
-  let brandVoice: string | undefined;
-  try {
-    // D20: brand voice should be per-stream; owner-keyed until that rekey lands.
-    brandVoice = await getBrandVoice(owner);
-  } catch {
-    brandVoice = undefined;
-  }
+  // Per-stream brand voice (D20): the post is written in the stream's voice.
+  const brandVoice = await getBrandVoiceForStream(piece.stream);
 
   const source = piece.script?.trim()
     ? `CONCEPT:\n"""\n${conceptBody}\n"""\n\nSCRIPT (draft, for reference):\n"""\n${piece.script}\n"""`

@@ -16,7 +16,7 @@
 import { complete } from '@/lib/llm';
 import { stripEmDashes } from '@/lib/em-dash';
 import { interviewerSystemPrompt } from './prompts';
-import { getBrandVoice } from '@/lib/marketing/brand-voice-store';
+import { getBrandVoiceForStream } from '@/lib/marketing/brand-voice-store';
 import { createJob, getJob } from './jobs-store';
 import type {
   AgentProvider,
@@ -27,7 +27,11 @@ import type {
 } from './socket';
 
 async function converse(req: ConverseRequest): Promise<ConverseResult> {
-  const brandVoice = await getBrandVoice(req.owner);
+  // Per-stream brand voice (D20): the interview register follows the stream the
+  // content is for, not the signed-in user. No stream → no personal register.
+  const brandVoice = req.stream
+    ? await getBrandVoiceForStream(req.stream)
+    : undefined;
   const reply = await complete({
     system: interviewerSystemPrompt(brandVoice),
     messages: [...req.history, { role: 'user', content: req.message }],

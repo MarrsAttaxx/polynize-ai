@@ -132,7 +132,7 @@ export function IntakeScreen({
           {
             method: 'POST',
             headers: { 'content-type': 'application/json' },
-            body: JSON.stringify({ framing, message: trimmed, history }),
+            body: JSON.stringify({ framing, stream, message: trimmed, history }),
           }
         );
         if (!res.ok) {

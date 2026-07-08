@@ -21,6 +21,8 @@ export type JobStatus = 'queued' | 'running' | 'done' | 'failed';
 export interface ConverseRequest {
   agent: AgentName;
   owner: string;
+  /** The stream the content is FOR — drives per-stream brand voice (D20). */
+  stream?: string;
   /** Conditioning the agent reads (brand voice, the concept-in-progress, format). */
   systemContext?: {
     brandVoice?: string;
