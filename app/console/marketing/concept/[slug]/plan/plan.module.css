@@ -1,0 +1,235 @@
+/* The Output-plan step — choose the outputs to make from a concept. */
+
+.root {
+  max-width: 760px;
+  margin: 0 auto;
+  padding-bottom: 80px;
+  position: relative;
+  z-index: 1;
+}
+
+.head {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 26px;
+}
+.back {
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: var(--text-3);
+  text-decoration: none;
+  letter-spacing: 0.04em;
+  align-self: flex-start;
+}
+.back:hover {
+  color: var(--mint);
+}
+.eyebrow {
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--mint);
+  margin-top: 6px;
+}
+.title {
+  font-family: var(--font-space-grotesk), 'Space Grotesk', sans-serif;
+  font-size: clamp(24px, 4vw, 34px);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.08;
+  margin: 0;
+}
+.sub {
+  color: var(--text-3);
+  font-size: 14px;
+  line-height: 1.6;
+  margin: 4px 0 0;
+  max-width: 60ch;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 26px;
+}
+.group {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.groupTitle {
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  margin: 0;
+}
+
+.formats {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.format {
+  background: var(--tac-surface);
+  border: 1px solid var(--tac-edge-dark, rgba(255, 255, 255, 0.1));
+  border-radius: 14px;
+  padding: 14px 16px;
+  transition: border-color var(--tac-transition);
+}
+.formatOn {
+  border-color: rgba(126, 231, 195, 0.5);
+}
+.formatHead {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+}
+.check {
+  width: 17px;
+  height: 17px;
+  accent-color: var(--mint);
+  cursor: pointer;
+}
+.formatLabel {
+  font-family: var(--font-space-grotesk), 'Space Grotesk', sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+  flex: 1;
+}
+.kind {
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: 999px;
+}
+.kind_video {
+  color: var(--mint);
+  background: rgba(126, 231, 195, 0.12);
+}
+.kind_text {
+  color: var(--amber);
+  background: rgba(240, 180, 90, 0.12);
+}
+.kind_image {
+  color: var(--coral);
+  background: rgba(255, 122, 107, 0.12);
+}
+
+.channels {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+  padding-left: 29px;
+}
+.chip {
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: var(--text-3);
+  background: transparent;
+  border: 1px solid var(--tac-edge-dark, rgba(255, 255, 255, 0.12));
+  border-radius: 999px;
+  padding: 5px 12px;
+  cursor: pointer;
+  transition: color var(--tac-transition), border-color var(--tac-transition),
+    background var(--tac-transition);
+}
+.chipOn {
+  color: var(--bg, #0a0a0f);
+  background: var(--mint);
+  border-color: var(--mint);
+}
+
+.coming {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 4px;
+}
+.comingLabel {
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  opacity: 0.7;
+}
+.comingList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.comingItem {
+  font-size: 12px;
+  color: var(--text-3);
+  border: 1px dashed var(--tac-edge-dark, rgba(255, 255, 255, 0.12));
+  border-radius: 999px;
+  padding: 5px 12px;
+  opacity: 0.6;
+}
+
+.select,
+.input {
+  font-family: var(--font-space-grotesk), 'Space Grotesk', sans-serif;
+  font-size: 14px;
+  color: var(--text);
+  background: var(--tac-surface);
+  border: 1px solid var(--tac-edge-dark, rgba(255, 255, 255, 0.12));
+  border-radius: 10px;
+  padding: 11px 14px;
+  width: 100%;
+  max-width: 420px;
+}
+.select:focus,
+.input:focus {
+  outline: none;
+  border-color: rgba(126, 231, 195, 0.5);
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-top: 6px;
+}
+.create {
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 13px;
+  color: var(--bg, #0a0a0f);
+  background: var(--mint);
+  border: none;
+  border-radius: 10px;
+  padding: 13px 22px;
+  cursor: pointer;
+  transition: opacity var(--tac-transition);
+}
+.create:hover:not(:disabled) {
+  opacity: 0.9;
+}
+.create:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.error {
+  font-size: 13px;
+  color: var(--coral);
+}
+
+.notFound {
+  padding: 50px 0;
+  text-align: center;
+  color: var(--text-3);
+}
+.notFound code {
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  color: var(--text-2);
+}

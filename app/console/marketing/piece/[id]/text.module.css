@@ -1,0 +1,176 @@
+/* Text output screen — post copy for a non-video piece. */
+
+.root {
+  max-width: 760px;
+  margin: 0 auto;
+  padding-bottom: 80px;
+  position: relative;
+  z-index: 1;
+}
+
+.head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 14px;
+}
+.headLeft {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.back {
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: var(--text-3);
+  text-decoration: none;
+  letter-spacing: 0.04em;
+  align-self: flex-start;
+}
+.back:hover {
+  color: var(--mint);
+}
+.titleWrap {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.eyebrow {
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--amber);
+}
+.title {
+  font-family: var(--font-space-grotesk), 'Space Grotesk', sans-serif;
+  font-size: clamp(22px, 3.4vw, 30px);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.08;
+  margin: 0;
+}
+.saveInd {
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: var(--text-3);
+  white-space: nowrap;
+}
+.saving {
+  color: var(--text-3);
+}
+.ok {
+  color: var(--mint);
+}
+.err {
+  color: var(--coral);
+}
+
+.platforms {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.platform {
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--text-3);
+  border: 1px solid var(--tac-edge-dark, rgba(255, 255, 255, 0.12));
+  border-radius: 999px;
+  padding: 4px 11px;
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+.draftBtn {
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 13px;
+  color: var(--bg, #0a0a0f);
+  background: var(--mint);
+  border: none;
+  border-radius: 10px;
+  padding: 11px 18px;
+  cursor: pointer;
+  transition: opacity var(--tac-transition);
+}
+.draftBtn:hover:not(:disabled) {
+  opacity: 0.9;
+}
+.draftBtn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.ghostBtn,
+.approveBtn {
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 12px;
+  background: transparent;
+  border: 1px solid var(--tac-edge-dark, rgba(255, 255, 255, 0.12));
+  border-radius: 10px;
+  padding: 10px 15px;
+  cursor: pointer;
+  transition: color var(--tac-transition), border-color var(--tac-transition);
+  color: var(--text-3);
+}
+.ghostBtn:hover:not(:disabled) {
+  color: var(--text);
+  border-color: rgba(255, 255, 255, 0.28);
+}
+.ghostBtn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.approveBtn {
+  color: var(--mint);
+  border-color: rgba(126, 231, 195, 0.4);
+}
+.approveBtn:hover:not(:disabled) {
+  background: rgba(126, 231, 195, 0.1);
+}
+.approveBtn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.approvedTag {
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: var(--mint);
+  background: rgba(126, 231, 195, 0.12);
+  border-radius: 999px;
+  padding: 6px 12px;
+}
+
+.body {
+  width: 100%;
+  min-height: 380px;
+  resize: vertical;
+  background: var(--tac-surface);
+  border: 1px solid var(--tac-edge-dark, rgba(255, 255, 255, 0.1));
+  border-radius: 16px;
+  padding: 22px 24px;
+  color: var(--text);
+  font-family: var(--font-space-grotesk), 'Space Grotesk', system-ui, sans-serif;
+  font-size: 16px;
+  line-height: 1.7;
+}
+.body:focus {
+  outline: none;
+  border-color: rgba(126, 231, 195, 0.45);
+}
+
+.hint {
+  font-size: 13px;
+  color: var(--text-3);
+  margin: 12px 2px 0;
+  line-height: 1.5;
+}
+.error {
+  color: var(--coral);
+}

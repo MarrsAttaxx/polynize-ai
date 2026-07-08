@@ -59,6 +59,9 @@
   padding: 12px 20px;
   cursor: pointer;
   transition: opacity var(--tac-transition);
+  /* Works as an <a> (the plan link) too. */
+  display: inline-block;
+  text-decoration: none;
 }
 .developBtn:hover:not(:disabled) {
   opacity: 0.9;
@@ -89,6 +92,73 @@
 .deleteBtn:disabled {
   opacity: 0.5;
   cursor: default;
+}
+
+.outputs {
+  margin: 0 0 26px;
+}
+.outputsTitle {
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  margin: 0 0 10px;
+}
+.outputList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.outputItem {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--tac-surface);
+  border: 1px solid var(--tac-edge-dark, rgba(255, 255, 255, 0.1));
+  border-radius: 12px;
+  padding: 12px 15px;
+  text-decoration: none;
+  transition: border-color var(--tac-transition);
+}
+.outputItem:hover {
+  border-color: rgba(126, 231, 195, 0.5);
+}
+.outputKind {
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: 999px;
+}
+.kind_video {
+  color: var(--mint);
+  background: rgba(126, 231, 195, 0.12);
+}
+.kind_text {
+  color: var(--amber);
+  background: rgba(240, 180, 90, 0.12);
+}
+.kind_image {
+  color: var(--coral);
+  background: rgba(255, 122, 107, 0.12);
+}
+.outputLabel {
+  font-family: var(--font-space-grotesk), 'Space Grotesk', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  flex: 1;
+}
+.outputStatus {
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  color: var(--text-3);
 }
 
 .doc {

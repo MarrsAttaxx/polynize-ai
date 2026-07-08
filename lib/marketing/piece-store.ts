@@ -23,8 +23,31 @@ export type MarketingPiece = {
   concept_ref?: string;
   pillar?: string;
   stage?: string;
+  /**
+   * The video shot-list (short_form_video / medium_video). Empty for non-video
+   * pieces, which carry their draft in `body`. Kept required-string so the
+   * autosave PUT + isValidPiece round-trip is unchanged for existing pieces.
+   */
   script: string;
   updated_at?: string;
+
+  // --- Output-plan fields (D19/D23). All optional so existing pieces stay valid.
+  //     Named to match migration 0009 content_pieces where a column exists, so
+  //     the eventual DB swap is a lift, not a remap.
+  /** The module family that renders this piece: video | text | image. */
+  kind?: 'video' | 'text' | 'image';
+  /** The concept's framing (0009: framing). */
+  framing?: string;
+  /** Selected ICP archetype id (see output-plan.ICP_ARCHETYPES). */
+  icp?: string;
+  /** Selected publish channels; become calendar_entries at the tail. */
+  platforms?: string[];
+  /** Lifecycle (0009: status): draft | in_progress | approved | published. */
+  status?: string;
+  /** Provenance of the produced media (D22): human_capture | ai_generated | hybrid. */
+  provenance?: 'human_capture' | 'ai_generated' | 'hybrid';
+  /** The text draft for non-video pieces (post copy). Video uses `script`. */
+  body?: string;
 };
 
 function keyFor(owner: string, pieceId: string): string {

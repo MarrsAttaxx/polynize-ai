@@ -4,7 +4,9 @@ import { getCurrentUser } from '@/lib/console-auth';
 import { getPiece, type MarketingPiece } from '@/lib/marketing/piece-store';
 import { getConcept } from '@/lib/marketing/concept-store';
 import { SEED_PIECES } from '@/lib/marketing/seed';
+import { kindOf } from '@/lib/marketing/output-plan';
 import { ScriptScreen } from './ScriptScreen';
+import { TextOutputScreen } from './TextOutputScreen';
 import s from './script.module.css';
 
 export const dynamic = 'force-dynamic';
@@ -51,6 +53,13 @@ export default async function MarketingPiecePage({
         </div>
       </div>
     );
+  }
+
+  // Non-video pieces (text) open on the text output screen; it drafts from the
+  // concept server-side, so no concept body is threaded through here.
+  const kind = piece.kind ?? kindOf(piece.format);
+  if (kind === 'text') {
+    return <TextOutputScreen initial={piece} />;
   }
 
   // If this piece was developed from a concept, load the concept body so the chat

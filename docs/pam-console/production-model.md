@@ -60,12 +60,17 @@ Pillars were fully specified in the original spec (`ux-flow-v1.0.md` §4.7 + §5
 
 So a **stream home** now surfaces three core things: **brand voice · brand guidelines · content-pillar library**. And the Output-plan inputs are: platforms + format + **pillar** + ICP, all feeding script authoring, which also reads the stream's brand voice.
 
-## Build order (CC's recommendation; Marrs deferred to CC)
+## Build order (REVISED 2026-07-08 — prove the spine with text first, D23)
 
-1. **Output-plan step + the production/output data model** (the pivot). Video path wired; other formats selectable-but-"coming". This defines the production→outputs shape everything else hangs off.
-2. **Stream-home core assets** — per-stream **brand voice** (April-create via `brand-voice-builder-prompt.md` + editable, keyed by stream) + **brand guidelines** + the **content-pillar library** (add/edit pillars, active/developing). Wired into script authoring + treatment + concept synthesis. (Script authoring uses the existing brand-voice read until this lands, then upgrades to per-stream.)
-3. **Per-format middle modules** — the short-form (and long-form) video module's post-record stages, starting with the **Treatment Map** (format-specific), built against the real Descript fixture below.
-4. **Tail** — Metricool publish/analytics (D18), when Raph/Donnie land.
+The earlier order (below, struck) led with the video middle. Marrs approved reversing it: **text is the cheapest way to prove the shared spine** (Output-plan + approve gate + tail + data model) — all of which video needs too — without also debugging the Treatment Map. Video routing to the Script screen stays live throughout; video is de-risked, not deprioritized. See D23.
+
+1. **Output-plan step + the output data model** (the pivot). A one-tap pre-filled confirm (platforms + formats + pillar + ICP) that spawns one piece per selected **built** output, all sharing the concept. Keyed to the `0009` `content_pieces` columns so the DB swap is clean; no separate productions table (siblings share `concept_ref`; the video family later shares `descript_project_id`). Replaces the hardcoded "Develop into a script" shortcut (D19). *(In progress.)*
+2. **One text output module** — concept + script → post copy (one April LLM call), editable + approvable. This completes a full idea→published loop on the cheapest format.
+3. **Tail** — publish/track. Manual "copy + mark published" now; Metricool (D18) behind the abstraction when creds + the schedule test land.
+4. **Stream-home core assets** — per-stream **brand voice** (rekey `getBrandVoice` owner→stream now; the April brand-voice *interview flow* deferred until Shourov onboards — he runs `brand-voice-builder-prompt.md` by hand meantime) + brand guidelines (link to polynize.ai/brand, D6) + a doc-per-pillar picker (defer the library UI until >3 pillars).
+5. **Video middle modules** — the Treatment Map (format-specific) built against the real Descript fixture below, with Descript orchestrated (test-first per D23), then the rest of the video post-record stages.
+
+*Prior order (superseded): 1) Output-plan; 2) stream-home assets; 3) Treatment Map; 4) tail.*
 
 ---
 

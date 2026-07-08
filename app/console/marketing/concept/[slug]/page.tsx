@@ -4,16 +4,18 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { getCurrentUser } from '@/lib/console-auth';
 import { getConcept } from '@/lib/marketing/concept-store';
-import { DevelopButton } from './DevelopButton';
+import { listSavedPieces, type MarketingPiece } from '@/lib/marketing/piece-store';
+import { formatById } from '@/lib/marketing/output-plan';
 import { DeleteButton } from './DeleteButton';
 import s from './concept.module.css';
 
 export const dynamic = 'force-dynamic';
 
 /**
- * Concept doc view (T5 output). Renders core-concept-{slug}.md for the owner.
- * Team-scope only; owner from the session so the slug alone can't read another
- * owner's concept. This is the doc the rest of the spine drafts from.
+ * Concept doc view + production hub. Renders core-concept-{slug}.md and the
+ * outputs planned from it (D19/D23): "Plan outputs" opens the Output-plan step,
+ * which fans the concept into one piece per selected format. Team-scope only;
+ * owner from the session so the slug alone can't read another owner's concept.
  */
 export default async function ConceptPage({
   params,
@@ -47,6 +49,17 @@ export default async function ConceptPage({
     );
   }
 
+  // The concept's outputs (pieces created from it). Degrade to none on error so
+  // the doc still renders.
+  let outputs: MarketingPiece[] = [];
+  try {
+    outputs = (await listSavedPieces(user.email)).filter(
+      (p) => p.concept_ref === concept.concept_ref
+    );
+  } catch (err) {
+    console.error('[concept] outputs read failed:', err);
+  }
+
   return (
     <div className={s.root}>
       <header className={s.head}>
@@ -56,10 +69,40 @@ export default async function ConceptPage({
         <span className={s.eyebrow}>concept · {concept.stream}</span>
         <h1 className={s.title}>{concept.title}</h1>
       </header>
+
       <div className={s.developRow}>
-        <DevelopButton />
+        <Link href={`/console/marketing/concept/${slug}/plan`} className={s.developBtn}>
+          {outputs.length ? 'Plan more outputs →' : 'Plan outputs →'}
+        </Link>
         <DeleteButton stream={concept.stream} />
       </div>
+
+      {outputs.length > 0 ? (
+        <section className={s.outputs}>
+          <h2 className={s.outputsTitle}>Outputs</h2>
+          <ul className={s.outputList}>
+            {outputs.map((p) => {
+              const fmt = formatById(p.format);
+              const kind = p.kind ?? fmt?.kind ?? 'video';
+              return (
+                <li key={p.piece_id}>
+                  <Link
+                    href={`/console/marketing/piece/${p.piece_id}`}
+                    className={s.outputItem}
+                  >
+                    <span className={`${s.outputKind} ${s[`kind_${kind}`] ?? ''}`}>
+                      {kind}
+                    </span>
+                    <span className={s.outputLabel}>{fmt?.label ?? p.format}</span>
+                    <span className={s.outputStatus}>{p.status ?? 'draft'}</span>
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      ) : null}
+
       <article className={s.doc}>
         <ReactMarkdown remarkPlugins={[remarkGfm]}>{concept.body_md}</ReactMarkdown>
       </article>

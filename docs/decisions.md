@@ -263,6 +263,33 @@ Format per entry: the decision, the context that forced it, the rationale, and t
 
 ---
 
+## D22 — The authenticity line: human faces and voices are always real captures
+
+**Decision (2026-07-08, with Marrs):** Polynize's product is amplifying **human** creativity, and the flagship concept is literally "Strip the AI out first." So a hard line on generative media:
+
+- **Any output presenting Marrs or Shourov on camera or as the speaker is a real recorded capture** (footage / voice). No AI avatars, no full cloned-narration presented as them.
+- **Generative video is licensed only for:** the b-roll world (the owned satirical "AI look" register on polynize.ai/brand), diagrams, cards/overlays, and an optional **disclosed, faceless** brand-owner explainer format (Polynize stream only, piloted before it earns a module).
+- **`shorts_studio` (restyle-to-AI) is rejected for talking-head content** — it converts the authentic recording into an AI render, paying the full shoot cost while destroying the only thing the shoot buys.
+- **Voice cloning is narrow:** surgical word/phrase repair inside Marrs's own approved recording (ear-approved), and dubbing/language transfer of finished pieces. Never a full cloned read presented as him.
+- **Provenance is tracked:** every output carries a `provenance` marker (`human_capture | ai_generated | hybrid`) so a published piece always knows what it is. Per-piece AI exceptions (e.g. a satirical bit where the AI look *is* the joke) are allowed only when **explicit and disclosed**, never silent.
+
+**Consequence if violated:** an AI-generated Marrs is self-refutation of the brand thesis; blurring human vs AI provenance is a reputational risk the brand cannot afford. This is why the answer to "can we just AI-generate the videos?" is: only the b-roll and the non-video formats, never the human on camera.
+
+---
+
+## D23 — Prove the spine with text first; Descript is orchestrated, not replaced (test-first)
+
+**Decision (2026-07-08, with Marrs):** Reverse the earlier build order. Marrs is the primary user and video is the flagship, but **text is the cheapest way to prove the entire shared spine** (Output-plan step, approve gate, publish/track tail, the output data model) — all of which video also needs. Video adds only the expensive, prerequisite-blocked middle (Treatment Map + Descript orchestration + b-roll) on top of that same spine. So:
+
+- **Build order:** Output-plan step (one-tap confirm) → **one text output module** (concept + script → post copy, one LLM call) → **tail** (manual publish now, Metricool per D18 when creds land) → **then** the video Treatment Map. Video routing to the existing Script screen stays live throughout; video is de-risked, not deprioritized.
+- **The disagreement was never text-vs-video** — it was "what proves the shared plumbing fastest." Text has no middle, so it shakes out the skeleton in days without also debugging the Treatment Map.
+- **Descript is kept and orchestrated, not routed around.** The alpha's #1 solved time sink was the raw→clean cut, *solved by Descript*; the friction to remove is **iteration latency**, not Descript. Wire Mikey to drive Descript's write surface (`import_media`, `prompt_project_agent`, `publish_project`) so routine cuts/republishes run agent-side, with the Descript UI as the human escape hatch for surgical fixes.
+- **Test-first gate (Marrs):** brand fidelity and quality are non-negotiable, so **no reliance on `prompt_project_agent` until one real piece is run through it and Marrs eyeballs the cut + brand adherence.** It is a validated capability, not an assumed one. `explainer_video` (the free assembly/render backend) is likewise proven on one test piece before it becomes the compositor.
+
+**Consequence if violated:** building the video middle before the spine means you debug the tail, the approve gate, the data model, and the Treatment Map all at once, and still cannot publish what you make. Routing around Descript re-opens a solved bottleneck to avoid a friction that is actually review latency.
+
+---
+
 ## How to add to this log
 
 When you make a decision that future-you (or a cold agent) might be tempted to undo, add an entry: the decision, the context that forced it, why, and the consequence of violating it. The bar for inclusion: *would someone seeing this cold reasonably think it's wrong or improvable, when it's actually deliberate?* If yes, it belongs here.
@@ -281,3 +308,5 @@ When you make a decision that future-you (or a cold agent) might be tempted to u
 | 2026-07-08 | D19: Output-plan step (platforms + formats + ICP) is the top→middle pivot; production owns one recording + many outputs (shoot once, cut many); treatment is format-specific. See `pam-console/production-model.md`. |
 | 2026-07-08 | D20: brand voice is per-stream (not per-owner), editable, April-created, referenced on every content creation. |
 | 2026-07-08 | D21: content pillars = style layer (pillar→blueprint→treatment-swaps-by-pillar); per-stream pillar library; referenced on creation. ICP archetypes captured. See `brand-voice-builder-prompt.md`. |
+| 2026-07-08 | D22: the authenticity line — human faces/voices are always real captures; generative video only for b-roll/diagrams/disclosed-faceless; provenance flag on every output; voice cloning is patch/dub only. |
+| 2026-07-08 | D23: prove the spine with text first (Output-plan → text module → tail → then video Treatment Map); Descript is orchestrated not replaced; `prompt_project_agent` + `explainer_video` are test-first (one real piece, Marrs eyeballs brand fidelity, before reliance). |
