@@ -587,24 +587,13 @@
 .startConceptCta:hover {
   opacity: 0.9;
 }
-/* Secondary action on the right of the dashboard CTA row (the Calendar). */
-.calendarLink {
-  display: inline-flex;
+/* Groups the primary actions (Start a concept + Calendar) so they sit adjacent
+   on the left of the CTA row rather than being split apart by space-between. */
+.ctaGroup {
+  display: flex;
   align-items: center;
-  gap: 8px;
-  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
-  font-size: 13px;
-  color: var(--text-2);
-  background: transparent;
-  border: 1px solid var(--tac-edge-dark, rgba(255, 255, 255, 0.14));
-  border-radius: 10px;
-  padding: 11px 18px;
-  text-decoration: none;
-  transition: color var(--tac-transition), border-color var(--tac-transition);
-}
-.calendarLink:hover {
-  color: var(--text);
-  border-color: rgba(105, 252, 203, 0.5);
+  gap: 12px;
+  flex-wrap: wrap;
 }
 .marketingBack {
   display: inline-block;
