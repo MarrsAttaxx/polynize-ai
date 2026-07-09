@@ -30,3 +30,28 @@ export function channelLabel(id: string): string {
     id.charAt(0).toUpperCase() + id.slice(1)
   );
 }
+
+/**
+ * Map our channel id to Metricool's `network` name (see docs/pam-console/metricool-api.md).
+ * Returns null for channels Metricool does not publish (Substack, Newsletter), which
+ * are handled outside the Metricool call. Note X is still `twitter` in Metricool.
+ */
+export function metricoolNetwork(id: string): string | null {
+  switch (id) {
+    case 'linkedin':
+      return 'linkedin';
+    case 'instagram':
+      return 'instagram';
+    case 'tiktok':
+      return 'tiktok';
+    case 'youtube':
+      return 'youtube';
+    case 'x':
+      return 'twitter';
+    case 'substack':
+    case 'newsletter':
+      return null;
+    default:
+      return null;
+  }
+}
