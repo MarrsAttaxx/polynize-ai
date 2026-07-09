@@ -12,7 +12,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { PlatformIcon } from '../_components/PlatformIcon';
-import { channelLabel } from '@/lib/marketing/channels';
+import { channelLabel, metricoolNetwork } from '@/lib/marketing/channels';
 import { streamLabel } from '@/lib/marketing/streams';
 import type { CalendarEntry } from '@/lib/marketing/calendar-store';
 import s from './calendar.module.css';
@@ -49,6 +49,7 @@ function mondayIndex(d: Date): number {
 export function CalendarBoard({ initial }: { initial: CalendarEntry[] }) {
   const [entries, setEntries] = useState<CalendarEntry[]>(initial);
   const [busy, setBusy] = useState<string | null>(null);
+  const [errs, setErrs] = useState<Record<string, string>>({});
   const [view, setView] = useState<View>('list');
   const [cursor, setCursor] = useState<Date>(() => new Date());
 
@@ -109,57 +110,118 @@ export function CalendarBoard({ initial }: { initial: CalendarEntry[] }) {
     }
   };
 
+  const setErr = (entryId: string, msg: string | null) =>
+    setErrs((e) => {
+      const n = { ...e };
+      if (msg) n[entryId] = msg;
+      else delete n[entryId];
+      return n;
+    });
+
+  const schedule = async (entry: CalendarEntry) => {
+    const when = entry.scheduled_at ? ` for ${entry.scheduled_at.slice(0, 10)}` : '';
+    if (
+      !window.confirm(
+        `Schedule this ${channelLabel(entry.channel)} post${when}? It will be sent to Metricool.`
+      )
+    ) {
+      return;
+    }
+    setBusy(entry.entry_id);
+    setErr(entry.entry_id, null);
+    try {
+      const res = await fetch(entryUrl(entry.entry_id) + '/schedule', { method: 'POST' });
+      const b = (await res.json().catch(() => null)) as
+        | { entry?: CalendarEntry; error?: string; warning?: string }
+        | null;
+      if (!res.ok) {
+        setErr(entry.entry_id, b?.error ?? 'Could not schedule.');
+        return;
+      }
+      if (b?.entry) {
+        setEntries((es) => es.map((x) => (x.entry_id === entry.entry_id ? b.entry! : x)));
+      }
+      if (b?.warning) setErr(entry.entry_id, b.warning);
+    } catch {
+      setErr(entry.entry_id, 'Network error. Try again.');
+    } finally {
+      setBusy(null);
+    }
+  };
+
   // -------- shared full entry card (List + Day) --------
-  const renderEntry = (e: CalendarEntry) => (
-    <div key={e.entry_id} className={s.entry} data-busy={busy === e.entry_id}>
-      <span className={s.entryIcon} title={channelLabel(e.channel)}>
-        <PlatformIcon channel={e.channel} size={20} title={channelLabel(e.channel)} />
-      </span>
-      <div className={s.entryMain}>
-        <div className={s.entryTop}>
-          <span className={s.entryTitle}>{e.title}</span>
-          <span className={s.entryStream}>{streamLabel(e.stream)}</span>
-          <span className={s.entryChannel}>{channelLabel(e.channel)}</span>
-          <span className={`${s.entryStatus} ${e.scheduled_at ? s.stPlanned : s.stDraft}`}>
-            {e.scheduled_at ? 'Planned' : 'Draft'}
-          </span>
-        </div>
-        <p className={s.entryCopy}>{e.post_copy}</p>
-        <div className={s.entryActions}>
-          <label className={s.dateLabel}>
-            Date
-            <input
-              type="date"
-              className={s.dateInput}
-              value={keyOf(e.scheduled_at)}
-              onChange={(ev) => setDate(e, ev.target.value)}
+  const renderEntry = (e: CalendarEntry) => {
+    const isScheduled = e.status === 'scheduled' || e.status === 'published';
+    const statusLabel =
+      e.status === 'published'
+        ? 'Published'
+        : e.status === 'scheduled'
+          ? 'Scheduled'
+          : e.scheduled_at
+            ? 'Planned'
+            : 'Draft';
+    const statusClass = isScheduled ? s.stScheduled : e.scheduled_at ? s.stPlanned : s.stDraft;
+    const metricoolSupported = metricoolNetwork(e.channel) !== null;
+    const canSchedule = !!e.scheduled_at && !isScheduled && metricoolSupported;
+
+    return (
+      <div key={e.entry_id} className={s.entry} data-busy={busy === e.entry_id}>
+        <span className={s.entryIcon} title={channelLabel(e.channel)}>
+          <PlatformIcon channel={e.channel} size={20} title={channelLabel(e.channel)} />
+        </span>
+        <div className={s.entryMain}>
+          <div className={s.entryTop}>
+            <span className={s.entryTitle}>{e.title}</span>
+            <span className={s.entryStream}>{streamLabel(e.stream)}</span>
+            <span className={s.entryChannel}>{channelLabel(e.channel)}</span>
+            <span className={`${s.entryStatus} ${statusClass}`}>{statusLabel}</span>
+          </div>
+          <p className={s.entryCopy}>{e.post_copy}</p>
+          <div className={s.entryActions}>
+            <label className={s.dateLabel}>
+              Date
+              <input
+                type="date"
+                className={s.dateInput}
+                value={keyOf(e.scheduled_at)}
+                onChange={(ev) => setDate(e, ev.target.value)}
+                disabled={busy === e.entry_id || isScheduled}
+              />
+            </label>
+            <Link className={s.entryLink} href={`/console/marketing/piece/${e.piece_id}`}>
+              Open piece
+            </Link>
+            {e.metricool_url ? (
+              <a className={s.entryLink} href={e.metricool_url} target="_blank" rel="noreferrer">
+                View in Metricool
+              </a>
+            ) : null}
+            {canSchedule ? (
+              <button
+                type="button"
+                className={s.scheduleBtn}
+                onClick={() => schedule(e)}
+                disabled={busy === e.entry_id}
+              >
+                Schedule
+              </button>
+            ) : !metricoolSupported ? (
+              <span className={s.entryLinkMuted}>Not published via Metricool</span>
+            ) : null}
+            <button
+              type="button"
+              className={s.removeBtn}
+              onClick={() => remove(e)}
               disabled={busy === e.entry_id}
-            />
-          </label>
-          <Link className={s.entryLink} href={`/console/marketing/piece/${e.piece_id}`}>
-            Open piece
-          </Link>
-          {e.metricool_url ? (
-            <a className={s.entryLink} href={e.metricool_url} target="_blank" rel="noreferrer">
-              View in Metricool
-            </a>
-          ) : (
-            <span className={s.entryLinkMuted} title="Available once the post is scheduled to Metricool">
-              Metricool link (after scheduling)
-            </span>
-          )}
-          <button
-            type="button"
-            className={s.removeBtn}
-            onClick={() => remove(e)}
-            disabled={busy === e.entry_id}
-          >
-            Remove
-          </button>
+            >
+              Remove
+            </button>
+          </div>
+          {errs[e.entry_id] ? <p className={s.entryErr}>{errs[e.entry_id]}</p> : null}
         </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   const unscheduledBanner =
     view !== 'list' && undated.length > 0 ? (

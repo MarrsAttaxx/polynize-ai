@@ -35,8 +35,11 @@ export default async function CalendarPage() {
         <span className={s.eyebrow}>publishing calendar</span>
         <h1 className={s.title}>Calendar</h1>
         <p className={s.sub}>
-          What is going out, across every stream. Set a date on each post to plan it.
-          Scheduling to your channels arrives with the publish step.
+          What is going out, across every stream. Set a date on each post to plan it,
+          then Schedule it to send it to Metricool.{' '}
+          <Link href="/console/marketing/metricool" className={s.connectLink}>
+            Connect Metricool →
+          </Link>
         </p>
       </header>
       <CalendarBoard initial={entries} />
