@@ -310,6 +310,11 @@ Format per entry: the decision, the context that forced it, the rationale, and t
 
 **Consequence if violated:** putting the Metricool connection inside an agent (rather than the console) scatters credentials and breaks in headless runs; treating the calendar as an agent surface loses the team's shared window; using one global Metricool brand id posts a stream's content under the wrong brand. Keep brains and hands separate, keep the calendar console-owned, and key the brand per stream.
 
+**Update (2026-07-09, after the first real test):**
+- **The queue is console-side.** Metricool's REST API exposes post-create + best-time analytics but **no queue / time-slot / autoschedule endpoint** (confirmed against their docs + the full-coverage CLI). So "Add to queue" is ours: per-stream **ideal time slots + timezone** stored as console config (`posting-schedule.json`), and Add-to-queue appends a post to the next open slot after the last queued one, then schedules it at that concrete time via REST. "Next in the queue, next in the queue."
+- **Timezone gotcha:** Metricool's default brand timezone is **Europe/Madrid**; a post sent as 9am Sydney displayed as ~1am. Fix: the console sends each stream's configured timezone (default `Australia/Sydney`), AND the brand's timezone must be set to match in Metricool. Timezone is per-stream config on the Connect screen.
+- **Raph is deferred (maybe unneeded).** Because Metricool holds the ideal-time behaviour via the console-side queue, the "schedule at best times / move things around" value Raph would add is largely covered. Marrs's call: do not build Raph now; revisit only if the queue proves insufficient in practice.
+
 ---
 
 ## How to add to this log
@@ -334,3 +339,4 @@ When you make a decision that future-you (or a cold agent) might be tempted to u
 | 2026-07-08 | D23: prove the spine with text first (Output-plan → text module → tail → then video Treatment Map); Descript is orchestrated not replaced; `prompt_project_agent` + `explainer_video` are test-first (one real piece, Marrs eyeballs brand fidelity, before reliance). |
 | 2026-07-09 | D18 update: the console reaches Metricool via REST (token), not the MCP (headless-safe + sidesteps the providers bug); per-stream → Metricool-brand-id mapping. |
 | 2026-07-09 | D24: publishing = brains (Raph proposes/rearranges the plan) + hands (console makes the Metricool REST call, holds the creds); the calendar is console-owned (reads calendar_entries, usable pre-Metricool); Step 1 (per-platform copy + calendar view) built; analytics is per-stream. |
+| 2026-07-09 | D24 update: Metricool has no queue API, so "Add to queue" is console-side (per-stream ideal-time slots + timezone, next-slot append); timezone gotcha (Metricool defaults to Madrid, set brand tz to Sydney); Raph deferred (queue likely covers his near-term value). Step 2 fully built. |

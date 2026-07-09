@@ -75,10 +75,10 @@ export function CalendarBoard({ initial }: { initial: CalendarEntry[] }) {
   const entryUrl = (entryId: string) =>
     window.location.pathname.replace(/\/+$/, '') + '/' + entryId;
 
-  const setDate = async (entry: CalendarEntry, date: string) => {
+  const setSchedule = async (entry: CalendarEntry, scheduledAt: string) => {
     setBusy(entry.entry_id);
     const prev = entries;
-    const scheduled_at = date || undefined;
+    const scheduled_at = scheduledAt || undefined;
     setEntries((es) =>
       es.map((e) => (e.entry_id === entry.entry_id ? { ...e, scheduled_at } : e))
     );
@@ -86,11 +86,39 @@ export function CalendarBoard({ initial }: { initial: CalendarEntry[] }) {
       const res = await fetch(entryUrl(entry.entry_id), {
         method: 'PUT',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ scheduled_at: date || null }),
+        body: JSON.stringify({ scheduled_at: scheduledAt || null }),
       });
       if (!res.ok) setEntries(prev);
     } catch {
       setEntries(prev);
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const addToQueue = async (entry: CalendarEntry) => {
+    if (
+      !window.confirm(
+        `Add this ${channelLabel(entry.channel)} post to the queue? It will be scheduled at the next ideal time and sent to Metricool.`
+      )
+    ) {
+      return;
+    }
+    setBusy(entry.entry_id);
+    setErr(entry.entry_id, null);
+    try {
+      const res = await fetch(entryUrl(entry.entry_id) + '/queue', { method: 'POST' });
+      const b = (await res.json().catch(() => null)) as
+        | { entry?: CalendarEntry; error?: string; warning?: string }
+        | null;
+      if (!res.ok) {
+        setErr(entry.entry_id, b?.error ?? 'Could not add to the queue.');
+        return;
+      }
+      if (b?.entry) setEntries((es) => es.map((x) => (x.entry_id === entry.entry_id ? b.entry! : x)));
+      if (b?.warning) setErr(entry.entry_id, b.warning);
+    } catch {
+      setErr(entry.entry_id, 'Network error. Try again.');
     } finally {
       setBusy(null);
     }
@@ -162,7 +190,10 @@ export function CalendarBoard({ initial }: { initial: CalendarEntry[] }) {
             : 'Draft';
     const statusClass = isScheduled ? s.stScheduled : e.scheduled_at ? s.stPlanned : s.stDraft;
     const metricoolSupported = metricoolNetwork(e.channel) !== null;
-    const canSchedule = !!e.scheduled_at && !isScheduled && metricoolSupported;
+    const dateVal = keyOf(e.scheduled_at);
+    const timeVal = e.scheduled_at && e.scheduled_at.length >= 16 ? e.scheduled_at.slice(11, 16) : '';
+    const onDate = (d: string) => setSchedule(e, d ? d + (timeVal ? `T${timeVal}` : '') : '');
+    const onTime = (t: string) => setSchedule(e, dateVal ? dateVal + (t ? `T${t}` : '') : '');
 
     return (
       <div key={e.entry_id} className={s.entry} data-busy={busy === e.entry_id}>
@@ -183,9 +214,19 @@ export function CalendarBoard({ initial }: { initial: CalendarEntry[] }) {
               <input
                 type="date"
                 className={s.dateInput}
-                value={keyOf(e.scheduled_at)}
-                onChange={(ev) => setDate(e, ev.target.value)}
+                value={dateVal}
+                onChange={(ev) => onDate(ev.target.value)}
                 disabled={busy === e.entry_id || isScheduled}
+              />
+            </label>
+            <label className={s.dateLabel}>
+              Time
+              <input
+                type="time"
+                className={s.dateInput}
+                value={timeVal}
+                onChange={(ev) => onTime(ev.target.value)}
+                disabled={busy === e.entry_id || isScheduled || !dateVal}
               />
             </label>
             <Link className={s.entryLink} href={`/console/marketing/piece/${e.piece_id}`}>
@@ -196,15 +237,28 @@ export function CalendarBoard({ initial }: { initial: CalendarEntry[] }) {
                 View in Metricool
               </a>
             ) : null}
-            {canSchedule ? (
-              <button
-                type="button"
-                className={s.scheduleBtn}
-                onClick={() => schedule(e)}
-                disabled={busy === e.entry_id}
-              >
-                Schedule
-              </button>
+            {!isScheduled && metricoolSupported ? (
+              <>
+                <button
+                  type="button"
+                  className={s.queueBtn}
+                  onClick={() => addToQueue(e)}
+                  disabled={busy === e.entry_id}
+                  title="Schedule at the next ideal time for this brand"
+                >
+                  Add to queue
+                </button>
+                {e.scheduled_at ? (
+                  <button
+                    type="button"
+                    className={s.scheduleBtn}
+                    onClick={() => schedule(e)}
+                    disabled={busy === e.entry_id}
+                  >
+                    Schedule at set time
+                  </button>
+                ) : null}
+              </>
             ) : !metricoolSupported ? (
               <span className={s.entryLinkMuted}>Not published via Metricool</span>
             ) : null}

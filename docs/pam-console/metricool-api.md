@@ -43,6 +43,10 @@ Metricool networks: linkedin, facebook, instagram, gbp, twitter, tiktok, youtube
 - **x -> `twitter`** (Metricool still uses `twitter`)
 - **substack, newsletter -> not Metricool networks** (published elsewhere; skip in the Metricool call).
 
+## No queue endpoint + timezone gotcha (confirmed 2026-07-09)
+- **No queue / time-slot / autoschedule endpoint.** The API creates a post at a specific `publicationDate`, and `/planner/best-time-to-publish` returns analytics. There is no "add to the brand's queue / next slot" call. So the **queue is computed console-side** (per-stream ideal-time slots in `posting-schedule.json`; append to the next open slot; then create the post at that concrete time).
+- **Timezone:** Metricool defaults a brand to **Europe/Madrid**. A post sent as 9am `Australia/Sydney` displayed as ~1am. Send each stream's configured tz AND set the brand's timezone in Metricool to match (Sydney). Their docs example: `"timezone": "Europe/Madrid"`.
+
 ## Build notes
 - Client: `lib/marketing/metricool-client.ts` (mirrors `resend-client.ts`: lazy config, skip-when-unconfigured). Built inert until the env vars land.
 - Brand mapping: a `/console/marketing/settings` (or per-stream) surface lists brands via `/admin/simpleProfiles` and maps each stream to a `blogId`, stored as console config (not env). One-time setup.

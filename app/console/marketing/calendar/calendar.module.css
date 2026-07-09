@@ -410,7 +410,7 @@
   color: var(--text-3);
   opacity: 0.7;
 }
-.scheduleBtn {
+.queueBtn {
   font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
   font-size: 12px;
   color: var(--bg, #0a0a0f);
@@ -421,8 +421,27 @@
   cursor: pointer;
   transition: opacity var(--tac-transition);
 }
-.scheduleBtn:hover:not(:disabled) {
+.queueBtn:hover:not(:disabled) {
   opacity: 0.9;
+}
+.queueBtn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.scheduleBtn {
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: var(--text-2);
+  background: transparent;
+  border: 1px solid var(--tac-edge-dark, rgba(255, 255, 255, 0.14));
+  border-radius: 8px;
+  padding: 6px 13px;
+  cursor: pointer;
+  transition: color var(--tac-transition), border-color var(--tac-transition);
+}
+.scheduleBtn:hover:not(:disabled) {
+  color: var(--text);
+  border-color: rgba(105, 252, 203, 0.5);
 }
 .scheduleBtn:disabled {
   opacity: 0.5;

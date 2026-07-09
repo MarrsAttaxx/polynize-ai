@@ -11,11 +11,17 @@
 
 import { getSheetState, saveSheetState } from '@/lib/content/shoot-sheet-store';
 import { isBucketConfigured, getObjectText, putObjectText } from '@/lib/agents/bucket';
+import {
+  normalizeStreamSchedule,
+  type PostingSchedule,
+  type StreamSchedule,
+} from './posting-schedule';
 
 /** stream id -> Metricool blogId. */
 export type BrandMap = Record<string, string>;
 
 const KEY = 'pam/config/metricool-brand-map.json';
+const SCHEDULE_KEY = 'pam/config/posting-schedule.json';
 
 export async function getBrandMap(): Promise<BrandMap> {
   try {
@@ -51,3 +57,39 @@ function normalize(x: unknown): BrandMap {
   }
   return out;
 }
+
+// --- Posting schedule (per-stream timezone + ideal time slots) ----------------
+
+function normalizeSchedule(x: unknown): PostingSchedule {
+  if (!x || typeof x !== 'object' || Array.isArray(x)) return {};
+  const out: PostingSchedule = {};
+  for (const [stream, v] of Object.entries(x as Record<string, unknown>)) {
+    out[stream] = normalizeStreamSchedule(v);
+  }
+  return out;
+}
+
+export async function getPostingSchedule(): Promise<PostingSchedule> {
+  try {
+    if (isBucketConfigured()) {
+      const text = await getObjectText(SCHEDULE_KEY);
+      return text ? normalizeSchedule(JSON.parse(text) as unknown) : {};
+    }
+    const s = await getSheetState(SCHEDULE_KEY);
+    return normalizeSchedule((s as { schedule?: unknown } | null)?.schedule);
+  } catch (e) {
+    console.error(`[metricool-config] schedule read failed, treating as empty: ${e instanceof Error ? e.message : String(e)}`);
+    return {};
+  }
+}
+
+export async function savePostingSchedule(schedule: PostingSchedule): Promise<void> {
+  const clean = normalizeSchedule(schedule);
+  if (isBucketConfigured()) {
+    await putObjectText(SCHEDULE_KEY, JSON.stringify(clean, null, 2));
+  } else {
+    await saveSheetState(SCHEDULE_KEY, { schedule: clean });
+  }
+}
+
+export type { PostingSchedule, StreamSchedule };

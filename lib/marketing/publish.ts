@@ -1,0 +1,81 @@
+/**
+ * Publish one calendar entry to Metricool (D24). Shared by the manual Schedule
+ * route and the Add-to-queue route so there is one place that resolves the brand,
+ * network, and timezone and calls the REST client. The caller sets entry.scheduled_at
+ * (a chosen time, or a computed queue slot); this sends it and marks it scheduled.
+ *
+ * Returns a discriminated result rather than throwing, so routes map it straight
+ * to a response. Server-side only.
+ */
+
+import { saveEntry, type CalendarEntry } from './calendar-store';
+import { getBrandMap, getPostingSchedule } from './metricool-config-store';
+import { isMetricoolConfigured, schedulePost } from './metricool-client';
+import { metricoolNetwork, channelLabel } from './channels';
+import { streamLabel } from './streams';
+import { defaultStreamSchedule } from './posting-schedule';
+
+export type PublishResult =
+  | { ok: true; entry: CalendarEntry; warning?: string }
+  | { ok: false; status: number; error: string };
+
+/** Normalize a stored date/datetime to Metricool's 'YYYY-MM-DDTHH:mm:ss' (no Z). */
+export function toDateTime(scheduledAt: string): string {
+  const raw = scheduledAt.trim();
+  if (raw.length <= 10) return `${raw}T09:00:00`; // date only -> default 9am
+  if (raw.length === 16) return `${raw}:00`; // 'YYYY-MM-DDTHH:mm'
+  return raw.replace(/\.\d+/, '').replace(/Z$/, '').slice(0, 19);
+}
+
+export async function publishEntry(owner: string, entry: CalendarEntry): Promise<PublishResult> {
+  if (!isMetricoolConfigured()) {
+    return { ok: false, status: 400, error: 'Metricool is not connected. Add the keys in Vercel, then map your brands.' };
+  }
+  if (!entry.scheduled_at) {
+    return { ok: false, status: 400, error: 'set a date and time on this post first' };
+  }
+  const network = metricoolNetwork(entry.channel);
+  if (!network) {
+    return { ok: false, status: 400, error: `${channelLabel(entry.channel)} is not published through Metricool.` };
+  }
+  const blogId = (await getBrandMap())[entry.stream];
+  if (!blogId) {
+    return {
+      ok: false,
+      status: 400,
+      error: `Map the ${streamLabel(entry.stream)} stream to a Metricool brand first (Connect Metricool).`,
+    };
+  }
+
+  const schedule = (await getPostingSchedule())[entry.stream] ?? defaultStreamSchedule();
+
+  let result;
+  try {
+    result = await schedulePost({
+      blogId,
+      text: entry.post_copy,
+      networks: [network],
+      dateTime: toDateTime(entry.scheduled_at),
+      timezone: schedule.timezone,
+      media: [],
+      draft: false,
+    });
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    console.error(`[publish] Metricool call failed: ${msg}`);
+    return { ok: false, status: 502, error: `Metricool rejected the post: ${msg}` };
+  }
+
+  entry.status = 'scheduled';
+  if (result.id) entry.external_ref = result.id;
+  entry.metricool_url = 'https://app.metricool.com/planning';
+  entry.updated_at = new Date().toISOString();
+
+  try {
+    await saveEntry(owner, entry);
+  } catch (err) {
+    console.error('[publish] entry save after schedule failed:', err);
+    return { ok: true, entry, warning: 'Scheduled in Metricool, but the calendar record did not update. Refresh.' };
+  }
+  return { ok: true, entry };
+}

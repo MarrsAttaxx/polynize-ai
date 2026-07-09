@@ -1,6 +1,6 @@
 /**
  * PUT /console/marketing/metricool/save — save the stream -> Metricool brand map
- * (D24). Team-scope only. Keys must be known streams; values are blogId strings.
+ * and the per-stream posting schedule (timezone + ideal times) (D24). Team-scope.
  */
 
 import type { NextRequest } from 'next/server';
@@ -8,13 +8,27 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getCurrentUser } from '@/lib/console-auth';
 import { isStreamId } from '@/lib/marketing/streams';
-import { saveBrandMap, type BrandMap } from '@/lib/marketing/metricool-config-store';
+import {
+  saveBrandMap,
+  savePostingSchedule,
+  type BrandMap,
+  type PostingSchedule,
+} from '@/lib/marketing/metricool-config-store';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
 const BodySchema = z.object({
   map: z.record(z.string(), z.string().max(64)),
+  schedule: z
+    .record(
+      z.string(),
+      z.object({
+        timezone: z.string().max(64),
+        slots: z.array(z.string().max(5)).max(24),
+      })
+    )
+    .optional(),
 });
 
 export async function PUT(req: NextRequest) {
@@ -30,14 +44,19 @@ export async function PUT(req: NextRequest) {
     return NextResponse.json({ error: 'invalid request' }, { status: 400 });
   }
 
-  // Keep only known streams with a non-empty blogId.
-  const clean: BrandMap = {};
+  // Keep only known streams.
+  const cleanMap: BrandMap = {};
   for (const [stream, blogId] of Object.entries(body.map)) {
-    if (isStreamId(stream) && blogId.trim()) clean[stream] = blogId.trim();
+    if (isStreamId(stream) && blogId.trim()) cleanMap[stream] = blogId.trim();
+  }
+  const cleanSchedule: PostingSchedule = {};
+  for (const [stream, cfg] of Object.entries(body.schedule ?? {})) {
+    if (isStreamId(stream)) cleanSchedule[stream] = cfg; // store-layer normalizes slots/tz
   }
 
   try {
-    await saveBrandMap(clean);
+    await saveBrandMap(cleanMap);
+    if (body.schedule) await savePostingSchedule(cleanSchedule);
     return NextResponse.json({ ok: true });
   } catch (err) {
     console.error('[metricool.save] write failed:', err);
