@@ -1,0 +1,45 @@
+import Link from 'next/link';
+import { redirect } from 'next/navigation';
+import { getCurrentUser } from '@/lib/console-auth';
+import { listEntries, type CalendarEntry } from '@/lib/marketing/calendar-store';
+import { CalendarBoard } from './CalendarBoard';
+import s from './calendar.module.css';
+
+export const dynamic = 'force-dynamic';
+
+/**
+ * The publishing calendar (Step 1) — the shared view of what is going out, across
+ * every stream. Reads the console's own calendar entries; usable before Metricool
+ * is wired. Team-scope only; owner from the session.
+ */
+export default async function CalendarPage() {
+  const user = await getCurrentUser();
+  if (!user) return null;
+  if (user.scope.type === 'client') {
+    redirect(`/console/${user.scope.slug}/blueprint`);
+  }
+
+  let entries: CalendarEntry[] = [];
+  try {
+    entries = await listEntries(user.email);
+  } catch (err) {
+    console.error('[calendar] list failed:', err);
+  }
+
+  return (
+    <div className={s.root}>
+      <header className={s.head}>
+        <Link href="/console/marketing" className={s.back}>
+          ← Marketing
+        </Link>
+        <span className={s.eyebrow}>publishing calendar</span>
+        <h1 className={s.title}>Calendar</h1>
+        <p className={s.sub}>
+          What is going out, across every stream. Set a date on each post to plan it.
+          Scheduling to your channels arrives with the publish step.
+        </p>
+      </header>
+      <CalendarBoard initial={entries} />
+    </div>
+  );
+}

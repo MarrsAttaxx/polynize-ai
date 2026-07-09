@@ -63,6 +63,9 @@ export default async function MarketingPage() {
           <Link href="/console/marketing/intake" className={s.startConceptCta}>
             + Start a concept
           </Link>
+          <Link href="/console/marketing/calendar" className={s.calendarLink}>
+            Calendar →
+          </Link>
         </div>
 
         <div className={l.cards}>

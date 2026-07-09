@@ -13,6 +13,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import type { MarketingPiece } from '@/lib/marketing/piece-store';
 import s from './text.module.css';
 
@@ -23,12 +24,16 @@ function channelLabel(id: string): string {
 }
 
 export function TextOutputScreen({ initial }: { initial: MarketingPiece }) {
+  const router = useRouter();
   const [body, setBody] = useState(initial.body ?? '');
   const [status, setStatus] = useState(initial.status ?? 'draft');
   const [saveState, setSaveState] = useState<SaveState>('idle');
   const [drafting, setDrafting] = useState(false);
+  const [preparing, setPreparing] = useState(false);
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const channelCount = initial.platforms?.length ?? 0;
 
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const latestBody = useRef(initial.body ?? '');
@@ -148,6 +153,26 @@ export function TextOutputScreen({ initial }: { initial: MarketingPiece }) {
     }
   };
 
+  const prepare = async () => {
+    if (preparing) return;
+    setPreparing(true);
+    setError(null);
+    try {
+      const url = window.location.pathname.replace(/\/+$/, '') + '/prepare';
+      const res = await fetch(url, { method: 'POST' });
+      if (!res.ok) {
+        const b = (await res.json().catch(() => null)) as { error?: string } | null;
+        setError(b?.error ?? 'Could not prepare the posts.');
+        setPreparing(false);
+        return;
+      }
+      router.push('/console/marketing/calendar');
+    } catch {
+      setError('Network error. Try again.');
+      setPreparing(false);
+    }
+  };
+
   const saveLabel =
     saveState === 'saving'
       ? 'Saving…'
@@ -215,6 +240,18 @@ export function TextOutputScreen({ initial }: { initial: MarketingPiece }) {
             <button type="button" className={s.ghostBtn} onClick={() => setStatusNow('draft')}>
               Reopen
             </button>
+            {channelCount > 0 ? (
+              <button
+                type="button"
+                className={s.draftBtn}
+                onClick={prepare}
+                disabled={preparing}
+              >
+                {preparing
+                  ? 'Preparing…'
+                  : `Prepare posts for ${channelCount} channel${channelCount === 1 ? '' : 's'} →`}
+              </button>
+            ) : null}
           </>
         ) : (
           <button

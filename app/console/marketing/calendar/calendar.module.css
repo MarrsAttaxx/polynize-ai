@@ -1,0 +1,229 @@
+/* Publishing calendar — grouped-by-date list of upcoming posts. */
+
+.root {
+  max-width: 900px;
+  margin: 0 auto;
+  padding-bottom: 80px;
+  position: relative;
+  z-index: 1;
+}
+
+.head {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 26px;
+}
+.back {
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: var(--text-3);
+  text-decoration: none;
+  letter-spacing: 0.04em;
+  align-self: flex-start;
+}
+.back:hover {
+  color: var(--mint);
+}
+.eyebrow {
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--mint);
+  margin-top: 6px;
+}
+.title {
+  font-family: var(--font-space-grotesk), 'Space Grotesk', sans-serif;
+  font-size: clamp(26px, 4vw, 38px);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.05;
+  margin: 0;
+}
+.sub {
+  color: var(--text-3);
+  font-size: 14px;
+  line-height: 1.6;
+  margin: 4px 0 0;
+  max-width: 62ch;
+}
+
+.board {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+.dayGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.dayHead {
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-2);
+  margin: 0;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--tac-edge-dark, rgba(255, 255, 255, 0.08));
+}
+.entries {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.entry {
+  display: flex;
+  gap: 14px;
+  background: var(--tac-surface);
+  border: 1px solid var(--tac-edge-dark, rgba(255, 255, 255, 0.1));
+  border-radius: 14px;
+  padding: 14px 16px;
+  transition: opacity var(--tac-transition);
+}
+.entry[data-busy='true'] {
+  opacity: 0.55;
+}
+.entryIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text);
+  flex-shrink: 0;
+}
+.entryMain {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+  flex: 1;
+}
+.entryTop {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.entryTitle {
+  font-family: var(--font-space-grotesk), 'Space Grotesk', sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+}
+.entryStream,
+.entryChannel {
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  color: var(--text-3);
+}
+.entryChannel::before {
+  content: '· ';
+  color: var(--text-3);
+}
+.entryStatus {
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: 999px;
+  margin-left: auto;
+}
+.stPlanned {
+  color: var(--mint);
+  background: rgba(105, 252, 203, 0.12);
+}
+.stDraft {
+  color: var(--text-3);
+  background: rgba(255, 255, 255, 0.06);
+}
+.entryCopy {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-2);
+  /* Clamp the caption preview to a few lines. */
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+}
+.entryActions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-top: 2px;
+}
+.dateLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+.dateInput {
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: var(--text);
+  background: var(--tac-inset, #0f0f17);
+  border: 1px solid var(--tac-edge-dark, rgba(255, 255, 255, 0.12));
+  border-radius: 8px;
+  padding: 6px 8px;
+  color-scheme: dark;
+}
+.dateInput:focus {
+  outline: none;
+  border-color: rgba(105, 252, 203, 0.45);
+}
+.entryLink {
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: var(--mint);
+  text-decoration: none;
+}
+.entryLink:hover {
+  text-decoration: underline;
+}
+.entryLinkMuted {
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--text-3);
+  opacity: 0.7;
+}
+.removeBtn {
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--text-3);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  margin-left: auto;
+  transition: color var(--tac-transition);
+}
+.removeBtn:hover:not(:disabled) {
+  color: var(--coral);
+}
+.removeBtn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.empty {
+  text-align: center;
+  color: var(--text-3);
+  font-size: 14px;
+  padding: 60px 0;
+}

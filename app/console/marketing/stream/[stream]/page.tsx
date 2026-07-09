@@ -90,9 +90,18 @@ export default async function StreamPage({
           </Link>
           <Link
             href={`/console/marketing/stream/${stream}/brand-voice`}
-            className={s.marketingBack}
+            className={`${s.brandVoiceCard} ${brandVoiceSet ? s.bvSet : s.bvUnset}`}
           >
-            Brand voice: {brandVoiceSet ? 'set' : 'not set yet'} · edit →
+            <span className={s.bvHead}>
+              <span className={s.bvDot} aria-hidden />
+              <span className={s.bvTitle}>Brand voice</span>
+              <span className={s.bvState}>{brandVoiceSet ? 'Set' : 'Not set'}</span>
+            </span>
+            <span className={s.bvDesc}>
+              {brandVoiceSet
+                ? 'The voice every concept and post in this stream is written in. Edit it.'
+                : 'Set the voice so every concept and post in this stream sounds like this brand.'}
+            </span>
           </Link>
         </div>
 

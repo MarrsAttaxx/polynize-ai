@@ -224,6 +224,8 @@ Format per entry: the decision, the context that forced it, the rationale, and t
 
 **Consequence if violated:** Hard-wiring Metricool publishing before the schedule test repeats the Blotato burn. Wiring **Palmier** into any console stage (Mikey's production socket, Treatment execution) is architecturally impossible from headless AWS — it is Marrs's local craft workflow, never a console backend. Keep the tier split: the console is the **scale tier** (cloud, agentic: Descript + Metricool); Palmier is **craft tier** (local, Mac). Both products are young; re-verify the flagged risks at build time. This is tail-zone work, deferred until Raph/Donnie are provisioned.
 
+**Update (2026-07-09, with Marrs):** The console reaches Metricool via its **REST API with a token**, NOT its MCP. The MCP is built for an AI agent to call tools interactively and needs a login to authorize; the console runs **headless on Vercel**, where an interactively-authed MCP is absent (the alpha's "connectors absent in headless contexts" risk). Calling REST also lets us control the exact payload, which **sidesteps the `providers`-as-strings bug** this decision worried about. Metricool splits accounts by **brand** (Polynize, Marrs Coiro, …), so config is a **per-stream → Metricool brand-id map** (a stream maps to a Metricool brand), not one global id. Env: `METRICOOL_USER_TOKEN`, `METRICOOL_USER_ID`, and a per-stream brand-id map. See **D24** for the full publishing model. (This does not change D18's substance: Metricool is still the tail for publish + analytics, behind an abstraction; only the *interface* to it is REST, not MCP.)
+
 ---
 
 ## D19 — The Output-plan step is the top→middle pivot; treatment is format-specific; "shoot once, cut many"
@@ -290,6 +292,26 @@ Format per entry: the decision, the context that forced it, the rationale, and t
 
 ---
 
+## D24 — Publishing: the console is the hands, Raph is the brains; the calendar is console-owned; per-stream brand mapping
+
+**Decision (2026-07-09, with Marrs):** The publishing tail has two layers, and they stay separate:
+
+- **The brains = Raph (an agent):** the judgment. Which channels, what date, the best times for the audience, per-platform caption wording, and conversational rearranging ("move that to Saturday"). Raph *proposes and adjusts a plan*; he does not hold the Metricool connection.
+- **The hands = the console:** once a plan is set, the console makes the actual Metricool REST call (D18 update). The console is the single writer to the outside world (consistent with D3/D17: agents reason, the console executes and holds the creds).
+
+**The calendar is a console-owned surface**, not an agent's. It reads the console's own `calendar_entries` (one row per piece × channel), so the team can see what is coming up **before Metricool is even wired**. Each entry links back to its piece in the console and, once scheduled, out to its post in Metricool (there is no live platform URL until it publishes, so the Metricool link is the pre-live destination).
+
+**Build order (publishing, chosen 2026-07-09):**
+1. **Step 1 — console-side, no external dependency (built):** per-platform caption generation (April adapts the approved post per channel) + the calendar view (grouped by date, platform marks, links, manual date-set). Closes the loop visually; usable immediately.
+2. **Step 2 — needs Metricool creds:** the console's hands call Metricool's REST API to actually schedule/publish; entries gain their live Metricool link + `external_ref`. Gated on the D18 schedule test (verify the first real post lands).
+3. **Step 3 — Raph:** the chat layer that proposes and rearranges the schedule (using Metricool's built-in best-time data), talking to the console which executes.
+
+**Analytics is per stream (feeds the top of the funnel).** Because Metricool splits by brand and each stream maps to a brand, performance data is **per-stream** and belongs on each stream's dashboard (Donnie's read side, D18). The loop back to the top — using what performed to shape the next concept/hook — is a later intelligence layer (it can also draw on the social-intel data source); noted, not built.
+
+**Consequence if violated:** putting the Metricool connection inside an agent (rather than the console) scatters credentials and breaks in headless runs; treating the calendar as an agent surface loses the team's shared window; using one global Metricool brand id posts a stream's content under the wrong brand. Keep brains and hands separate, keep the calendar console-owned, and key the brand per stream.
+
+---
+
 ## How to add to this log
 
 When you make a decision that future-you (or a cold agent) might be tempted to undo, add an entry: the decision, the context that forced it, why, and the consequence of violating it. The bar for inclusion: *would someone seeing this cold reasonably think it's wrong or improvable, when it's actually deliberate?* If yes, it belongs here.
@@ -310,3 +332,5 @@ When you make a decision that future-you (or a cold agent) might be tempted to u
 | 2026-07-08 | D21: content pillars = style layer (pillar→blueprint→treatment-swaps-by-pillar); per-stream pillar library; referenced on creation. ICP archetypes captured. See `brand-voice-builder-prompt.md`. |
 | 2026-07-08 | D22: the authenticity line — human faces/voices are always real captures; generative video only for b-roll/diagrams/disclosed-faceless; provenance flag on every output; voice cloning is patch/dub only. |
 | 2026-07-08 | D23: prove the spine with text first (Output-plan → text module → tail → then video Treatment Map); Descript is orchestrated not replaced; `prompt_project_agent` + `explainer_video` are test-first (one real piece, Marrs eyeballs brand fidelity, before reliance). |
+| 2026-07-09 | D18 update: the console reaches Metricool via REST (token), not the MCP (headless-safe + sidesteps the providers bug); per-stream → Metricool-brand-id mapping. |
+| 2026-07-09 | D24: publishing = brains (Raph proposes/rearranges the plan) + hands (console makes the Metricool REST call, holds the creds); the calendar is console-owned (reads calendar_entries, usable pre-Metricool); Step 1 (per-platform copy + calendar view) built; analytics is per-stream. |
