@@ -608,8 +608,35 @@
   color: var(--mint);
 }
 
-/* Brand-voice card — sits at the right of the CTA row on a stream page. Green
-   (mint) accent when the voice is set, red (coral) when it is not. */
+/* Secondary CTA (Import a concept) next to the primary. */
+.importCta {
+  display: inline-flex;
+  align-items: center;
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 13px;
+  color: var(--text-2);
+  background: transparent;
+  border: 1px solid var(--tac-edge-dark, rgba(255, 255, 255, 0.14));
+  border-radius: 10px;
+  padding: 11px 18px;
+  text-decoration: none;
+  transition: color var(--tac-transition), border-color var(--tac-transition);
+}
+.importCta:hover {
+  color: var(--text);
+  border-color: rgba(105, 252, 203, 0.5);
+}
+
+/* The stream-home asset cards (brand voice + templates) on the right. */
+.assetCards {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+/* Brand-voice / asset card — sits at the right of the CTA row on a stream page.
+   Green (mint) accent when set/ready, red (coral) when missing. */
 .brandVoiceCard {
   display: flex;
   flex-direction: column;

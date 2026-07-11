@@ -44,6 +44,9 @@ export type MarketingPiece = {
   platforms?: string[];
   /** Lifecycle (0009: status): draft | in_progress | approved | published. */
   status?: string;
+  /** The Content Pillar Template this piece was created from (D25): a stream
+   *  template's storage key, or `library:{id}` for a built-in. */
+  template_ref?: string;
   /** Provenance of the produced media (D22): human_capture | ai_generated | hybrid. */
   provenance?: 'human_capture' | 'ai_generated' | 'hybrid';
   /** The text draft for non-video pieces (post copy). Video uses `script`. */

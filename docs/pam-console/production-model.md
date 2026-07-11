@@ -60,6 +60,14 @@ Pillars were fully specified in the original spec (`ux-flow-v1.0.md` §4.7 + §5
 
 So a **stream home** now surfaces three core things: **brand voice · brand guidelines · content-pillar library**. And the Output-plan inputs are: platforms + format + **pillar** + ICP, all feeding script authoring, which also reads the stream's brand voice.
 
+## The creative loop (D25, aligned 2026-07-11 — supersedes the Output-plan form as the default path)
+
+**Pick a core concept → pick a Content Pillar Template → the console asks only for what the template can't know → queue.** A CPT is a D21 pillar made concrete: it declares *what you bring* (inputs), *what you get* (outputs: formats + platforms), *how it's made* (the production recipe agents run), plus ICP, register, an example, and a lifecycle (active/developing/retired, performance-driven). Per-stream library alongside brand voice + a built-in starter library to borrow from. Concepts are **living master documents** (multi-input, appendable, Import door for externally-extracted .md concepts). Media library is per-stream (banked). Fireflies extraction postponed (see `concept-extraction.md`).
+
+**Next builds (agreed 2026-07-11):** 1) template library + template-driven creation + concept Import; 2) living concepts ("Add material"); 3) per-stream media library; 4) video templates via the video middle (Treatment/edit), starting with Podcast Clips (episode in → hook-first captioned short out); Marrs Attacks is the north-star template, after the machinery proves. (Fireflies extractor: postponed.)
+
+---
+
 ## Build order (REVISED 2026-07-08 — prove the spine with text first, D23)
 
 The earlier order (below, struck) led with the video middle. Marrs approved reversing it: **text is the cheapest way to prove the shared spine** (Output-plan + approve gate + tail + data model) — all of which video needs too — without also debugging the Treatment Map. Video routing to the Script screen stays live throughout; video is de-risked, not deprioritized. See D23.

@@ -1,15 +1,9 @@
 /**
- * POST /console/marketing/concept/[slug]/plan/create — the Output-plan step (D19/D23).
- *
- * Replaces the old "develop into a script" shortcut. From a concept, the owner's
- * selected outputs fan out to one piece each: every piece shares the concept
- * (concept_ref), carries the plan (format, platforms, icp, pillar, framing), and
- * routes to its format module. Video pieces open on the Script screen; text
- * pieces on the text output screen. Only `built` formats create pieces (coming
- * formats are not selectable), so the step never spawns dead pieces.
- *
- * Idempotent per (concept, format): re-planning an already-created output returns
- * the existing piece rather than duplicating. Team-scope only; owner from session.
+ * POST /console/marketing/concept/[slug]/plan/create — the CUSTOM Output-plan
+ * path (D19/D25). The default creation path is the template picker
+ * (concept/[slug]/create); this remains for one-off plans. Fans a concept out to
+ * one piece per selected built format via the shared createOutputs. Idempotent
+ * per (concept, format) among custom (template-less) pieces. Team-scope only.
  */
 
 import type { NextRequest } from 'next/server';
@@ -17,13 +11,8 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getCurrentUser } from '@/lib/console-auth';
 import { getConcept } from '@/lib/marketing/concept-store';
-import {
-  listSavedPieces,
-  savePiece,
-  type MarketingPiece,
-} from '@/lib/marketing/piece-store';
 import { formatById } from '@/lib/marketing/output-plan';
-import { scaffoldScript } from '@/lib/marketing/concept-parse';
+import { createOutputs, creationTarget, type OutputSpec } from '@/lib/marketing/create-outputs';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -52,8 +41,8 @@ export async function POST(
     return NextResponse.json({ error: 'invalid request' }, { status: 400 });
   }
 
-  // Keep only formats that actually have a production module. Anything else is
-  // "coming" and must not create a piece with nowhere to go.
+  // Keep only formats that actually have a production module ("coming" formats
+  // must not create pieces with nowhere to go).
   const selected = [...new Set(body.formats)]
     .map((id) => formatById(id))
     .filter((f): f is NonNullable<typeof f> => !!f && f.module === 'built');
@@ -76,53 +65,14 @@ export async function POST(
   }
 
   try {
-    const existing = await listSavedPieces(user.email);
-    const pieces: { pieceId: string; format: string; kind: string; reused: boolean }[] = [];
-
-    for (const fmt of selected) {
-      const prior = existing.find(
-        (p) => p.concept_ref === concept.concept_ref && p.format === fmt.id
-      );
-      if (prior) {
-        pieces.push({ pieceId: prior.piece_id, format: fmt.id, kind: fmt.kind, reused: true });
-        continue;
-      }
-
-      const platforms =
-        body.platforms?.[fmt.id]?.filter((c) => fmt.channels.includes(c)) ??
-        fmt.channels.slice();
-
-      const piece: MarketingPiece = {
-        piece_id: crypto.randomUUID(),
-        owner: user.email,
-        stream: concept.stream,
-        format: fmt.id,
-        kind: fmt.kind,
-        title: concept.title,
-        concept_ref: concept.concept_ref,
-        framing: concept.framing,
-        pillar: body.pillar || undefined,
-        icp: body.icp || undefined,
-        platforms,
-        status: 'draft',
-        // Video is a human on-camera capture (D22). Text is authored copy: no
-        // media provenance until it gains generated assets.
-        ...(fmt.kind === 'video' ? { provenance: 'human_capture' as const } : {}),
-        stage: fmt.kind === 'video' ? 'script' : 'draft',
-        script: fmt.kind === 'video' ? scaffoldScript(concept.framing, concept.body_md) : '',
-        body: fmt.kind === 'video' ? undefined : '',
-      };
-      await savePiece(user.email, piece);
-      pieces.push({ pieceId: piece.piece_id, format: fmt.id, kind: fmt.kind, reused: false });
-    }
-
-    // One output → open it directly; several → land on the concept hub listing them.
-    const primary = pieces[0];
-    const target =
-      pieces.length === 1
-        ? `/console/marketing/piece/${primary.pieceId}`
-        : `/console/marketing/concept/${slug}`;
-    return NextResponse.json({ pieces, target });
+    const specs: OutputSpec[] = selected.map((fmt) => ({
+      format: fmt,
+      platforms: body.platforms?.[fmt.id] ?? fmt.channels.slice(),
+      icp: body.icp,
+      pillar: body.pillar,
+    }));
+    const pieces = await createOutputs(user.email, concept, specs);
+    return NextResponse.json({ pieces, target: creationTarget(pieces, slug) });
   } catch (err) {
     console.error('[concept.plan] create failed:', err);
     return NextResponse.json({ error: 'could not create the outputs' }, { status: 500 });

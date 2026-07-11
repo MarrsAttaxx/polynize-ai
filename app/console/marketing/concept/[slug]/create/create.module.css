@@ -1,0 +1,232 @@
+/* Create content from a concept — the template picker (D25). */
+
+.root {
+  max-width: 860px;
+  margin: 0 auto;
+  padding-bottom: 80px;
+  position: relative;
+  z-index: 1;
+}
+
+.head {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 26px;
+}
+.back {
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: var(--text-3);
+  text-decoration: none;
+  letter-spacing: 0.04em;
+  align-self: flex-start;
+}
+.back:hover {
+  color: var(--mint);
+}
+.eyebrow {
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--mint);
+  margin-top: 6px;
+}
+.title {
+  font-family: var(--font-space-grotesk), 'Space Grotesk', sans-serif;
+  font-size: clamp(24px, 4vw, 34px);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.08;
+  margin: 0;
+}
+.sub {
+  color: var(--text-3);
+  font-size: 14px;
+  line-height: 1.6;
+  margin: 4px 0 0;
+  max-width: 62ch;
+}
+.customLink {
+  color: var(--mint);
+  text-decoration: none;
+  white-space: nowrap;
+}
+.customLink:hover {
+  text-decoration: underline;
+}
+
+.picker {
+  display: flex;
+  flex-direction: column;
+  gap: 26px;
+}
+.group {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.groupTitle {
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  margin: 0;
+}
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 14px;
+}
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: var(--tac-surface);
+  border: 1px solid var(--tac-edge-dark, rgba(255, 255, 255, 0.1));
+  border-radius: 14px;
+  padding: 16px 18px;
+}
+.cardDim {
+  opacity: 0.65;
+}
+.cardHead {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.cardName {
+  flex: 1;
+  font-family: var(--font-space-grotesk), 'Space Grotesk', sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text);
+}
+.status {
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: 999px;
+}
+.stActive {
+  color: var(--mint);
+  background: rgba(105, 252, 203, 0.12);
+}
+.stDev {
+  color: var(--amber);
+  background: rgba(240, 184, 107, 0.12);
+}
+.cardDesc {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-2);
+  line-height: 1.5;
+}
+.cardMakes {
+  margin: 0;
+  font-size: 12.5px;
+  color: var(--text-3);
+}
+.cardMakes strong {
+  color: var(--text-2);
+  font-weight: 600;
+}
+.cardIo {
+  margin: 0;
+  font-size: 12.5px;
+  color: var(--text-3);
+  line-height: 1.45;
+}
+.ioLabel {
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  margin-right: 4px;
+}
+.cardExample {
+  margin: 0;
+  font-size: 12px;
+  font-style: italic;
+  color: var(--text-3);
+}
+.cardFoot {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 4px;
+}
+.useBtn {
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 12.5px;
+  color: var(--bg, #0a0a0f);
+  background: var(--mint);
+  border: none;
+  border-radius: 9px;
+  padding: 9px 16px;
+  cursor: pointer;
+  transition: opacity var(--tac-transition);
+}
+.useBtn:hover:not(:disabled) {
+  opacity: 0.9;
+}
+.useBtn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.comingNote {
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--text-3);
+}
+.libTag {
+  margin-left: auto;
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  border: 1px dashed var(--tac-edge-dark, rgba(255, 255, 255, 0.14));
+  border-radius: 999px;
+  padding: 3px 8px;
+}
+.emptyNote {
+  font-size: 13px;
+  color: var(--text-3);
+  margin: 0;
+}
+.manageLink {
+  color: var(--mint);
+  text-decoration: none;
+}
+.manageLink:hover {
+  text-decoration: underline;
+}
+.manageFoot {
+  margin: 4px 0 0;
+  font-size: 13px;
+}
+.error {
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: var(--coral);
+  background: rgba(255, 122, 107, 0.08);
+  border-radius: 8px;
+  padding: 9px 12px;
+  margin: 0;
+}
+
+.notFound {
+  padding: 50px 0;
+  text-align: center;
+  color: var(--text-3);
+}
+.notFound code {
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  color: var(--text-2);
+}

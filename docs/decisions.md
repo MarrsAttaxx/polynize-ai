@@ -317,6 +317,20 @@ Format per entry: the decision, the context that forced it, the rationale, and t
 
 ---
 
+## D25 — Content Pillar Templates are the creative loop; concepts are living source documents
+
+**Decision (2026-07-11, with Marrs):** The daily creative loop is: **pick a core concept → pick a Content Pillar Template (CPT) → the console guides you through only what the template can't know → queue.** This extends D19/D21: a CPT *is* a pillar with its blueprint made concrete, and **the template carries the plan** (platforms + format + ICP + register), so selecting one replaces the Output-plan form as the default path (the manual "custom plan" remains as the fallback).
+
+- **A template declares three things:** *what you bring* (inputs, e.g. "the finished episode"), *what you get* (outputs, e.g. "a captioned short with a re-cut hook + first-frame thumbnail"), and *how it's made* (the production recipe / agent instructions, refined run over run — this is what lets agents one-shot the piece). Plus ICP, platforms, an example piece, and a lifecycle status (**active / developing / retired**) driven by real performance: keep what works, kill what flops.
+- **Per-stream template library** alongside the brand-voice doc (a stream-home core asset), plus a **built-in starter library** (curated over time, e.g. from what performs on sandcastles.ai) that streams can borrow/copy from. A template shows its example before you commit to it; it doesn't go *active* until one real piece made from it was good.
+- **Core concepts are living master documents:** multi-input (interviews, pasted docs, dropped .md files, later images), continually appendable, each feeding many pieces. Console gains (a) an **Import concept** door (paste a .md → concept in a stream) and (b) later an **"Add material"** action (April folds new input into the master doc, keeping a source list).
+- **Media library is per-STREAM** (not per-user), like brand voice: a stream's photos/videos (faces for LinkedIn images, b-roll, direct in-console upload of a pillar recording) live with the stream and are drawn on at creation. Banked as the build after templates + living concepts.
+- **Fireflies concept extraction is POSTPONED** (client-data security: meeting transcripts hold client-confidential material; keep that in an isolated Claude session for now). Marrs extracts manually → .md → Import. Method + learnings captured in `pam-console/concept-extraction.md`; the in-console design (candidate inbox + editorial charter + human promotion gate) is banked there for later. ICP archetypes not final yet — extracted concepts firm up when they are.
+
+**Consequence if violated:** rebuilding the Output-plan form as the primary path re-introduces per-piece ceremony the template exists to remove; making templates rigid forms (no chat escape hatch) violates the "can't be a form" doctrine; keying the media library per-user splits assets from the stream whose content needs them; wiring Fireflies into the console before the security posture is designed leaks client-confidential context into the content engine.
+
+---
+
 ## How to add to this log
 
 When you make a decision that future-you (or a cold agent) might be tempted to undo, add an entry: the decision, the context that forced it, why, and the consequence of violating it. The bar for inclusion: *would someone seeing this cold reasonably think it's wrong or improvable, when it's actually deliberate?* If yes, it belongs here.
@@ -340,3 +354,4 @@ When you make a decision that future-you (or a cold agent) might be tempted to u
 | 2026-07-09 | D18 update: the console reaches Metricool via REST (token), not the MCP (headless-safe + sidesteps the providers bug); per-stream → Metricool-brand-id mapping. |
 | 2026-07-09 | D24: publishing = brains (Raph proposes/rearranges the plan) + hands (console makes the Metricool REST call, holds the creds); the calendar is console-owned (reads calendar_entries, usable pre-Metricool); Step 1 (per-platform copy + calendar view) built; analytics is per-stream. |
 | 2026-07-09 | D24 update: Metricool has no queue API, so "Add to queue" is console-side (per-stream ideal-time slots + timezone, next-slot append); timezone gotcha (Metricool defaults to Madrid, set brand tz to Sydney); Raph deferred (queue likely covers his near-term value). Step 2 fully built. |
+| 2026-07-11 | D25: Content Pillar Templates = the creative loop (concept + template → guided completion → queue); template carries the plan (default path; custom remains); per-stream template library + built-in starters; concepts become living master documents (+ Import door); media library per-stream (banked); Fireflies extraction postponed for client-data security (manual Claude-session extraction → Import; method in `concept-extraction.md`). |

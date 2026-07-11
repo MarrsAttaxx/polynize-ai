@@ -1,0 +1,144 @@
+/* Import a concept (D25). */
+
+.root {
+  max-width: 760px;
+  margin: 0 auto;
+  padding-bottom: 80px;
+  position: relative;
+  z-index: 1;
+}
+
+.head {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 22px;
+}
+.back {
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: var(--text-3);
+  text-decoration: none;
+  letter-spacing: 0.04em;
+  align-self: flex-start;
+}
+.back:hover {
+  color: var(--mint);
+}
+.eyebrow {
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--mint);
+  margin-top: 6px;
+}
+.title {
+  font-family: var(--font-space-grotesk), 'Space Grotesk', sans-serif;
+  font-size: clamp(24px, 4vw, 34px);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin: 0;
+}
+.sub {
+  color: var(--text-3);
+  font-size: 14px;
+  line-height: 1.6;
+  margin: 4px 0 0;
+  max-width: 62ch;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.rowFields {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.field,
+.fieldGrow,
+.fieldWide {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 10.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+.field {
+  min-width: 180px;
+}
+.fieldGrow {
+  flex: 1;
+  min-width: 240px;
+}
+.input {
+  font-family: var(--font-space-grotesk), 'Space Grotesk', sans-serif;
+  font-size: 14px;
+  color: var(--text);
+  background: var(--tac-inset, #0f0f17);
+  border: 1px solid var(--tac-edge-dark, rgba(255, 255, 255, 0.12));
+  border-radius: 10px;
+  padding: 10px 12px;
+  width: 100%;
+  text-transform: none;
+  letter-spacing: normal;
+  color-scheme: dark;
+}
+.input:focus {
+  outline: none;
+  border-color: rgba(105, 252, 203, 0.45);
+}
+.doc {
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--text);
+  background: var(--tac-surface);
+  border: 1px solid var(--tac-edge-dark, rgba(255, 255, 255, 0.1));
+  border-radius: 14px;
+  padding: 18px 20px;
+  min-height: 360px;
+  resize: vertical;
+  width: 100%;
+  text-transform: none;
+  letter-spacing: normal;
+}
+.doc:focus {
+  outline: none;
+  border-color: rgba(105, 252, 203, 0.45);
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+.save {
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 13px;
+  color: var(--bg, #0a0a0f);
+  background: var(--mint);
+  border: none;
+  border-radius: 10px;
+  padding: 12px 22px;
+  cursor: pointer;
+  transition: opacity var(--tac-transition);
+}
+.save:hover:not(:disabled) {
+  opacity: 0.9;
+}
+.save:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.error {
+  font-size: 13px;
+  color: var(--coral);
+}

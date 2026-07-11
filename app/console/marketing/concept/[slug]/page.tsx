@@ -71,8 +71,8 @@ export default async function ConceptPage({
       </header>
 
       <div className={s.developRow}>
-        <Link href={`/console/marketing/concept/${slug}/plan`} className={s.developBtn}>
-          {outputs.length ? 'Plan more outputs →' : 'Plan outputs →'}
+        <Link href={`/console/marketing/concept/${slug}/create`} className={s.developBtn}>
+          {outputs.length ? 'Create more content →' : 'Create content →'}
         </Link>
         <DeleteButton stream={concept.stream} />
       </div>
@@ -93,7 +93,10 @@ export default async function ConceptPage({
                     <span className={`${s.outputKind} ${s[`kind_${kind}`] ?? ''}`}>
                       {kind}
                     </span>
-                    <span className={s.outputLabel}>{fmt?.label ?? p.format}</span>
+                    <span className={s.outputLabel}>
+                      {fmt?.label ?? p.format}
+                      {p.pillar ? <span className={s.outputPillar}> · {p.pillar}</span> : null}
+                    </span>
                     <span className={s.outputStatus}>{p.status ?? 'draft'}</span>
                   </Link>
                 </li>

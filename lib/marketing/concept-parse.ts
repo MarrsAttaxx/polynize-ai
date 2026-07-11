@@ -2,10 +2,12 @@
  * Concept-doc parsing helpers, shared by the Output-plan fan-out (video script
  * scaffold) and the text output module (thesis + beats for the post draft).
  *
- * The concept doc is Markdown with a fixed set of section headings (written by
- * April at finalize). We read sections tolerantly: a heading is matched by its
- * text regardless of `#` level or a trailing colon, and bullet/numbered list
- * items under a section are collected as that section's points.
+ * The concept doc is Markdown with a fixed set of section headings. April writes
+ * the canonical set; IMPORTED concepts (e.g. extracted from meetings, D25) use
+ * near-miss headings ("Who it's for", "The core concept"), so matching is
+ * tolerant: `#` level, trailing colons, and contractions are normalized, close
+ * synonyms are aliased, and any UNRECOGNIZED heading still ends the current
+ * section (so an imported doc's extra sections never bleed into a known one).
  */
 
 const SECTIONS = new Set([
@@ -18,8 +20,28 @@ const SECTIONS = new Set([
   'source voice',
 ]);
 
+/** Close synonyms seen in imported docs, mapped onto the canonical names. */
+const ALIASES: Record<string, string> = {
+  'core concept': 'core thesis',
+  'the core concept': 'core thesis',
+  'core value of the idea': 'where it lands',
+};
+
+function isHeading(line: string): boolean {
+  return /^\s*#{1,6}\s/.test(line);
+}
+
 function sectionOf(line: string): string | null {
-  const t = line.trim().replace(/^#+\s*/, '').replace(/:$/, '').toLowerCase();
+  let t = line
+    .trim()
+    .replace(/^#+\s*/, '')
+    .replace(/:$/, '')
+    .toLowerCase()
+    // "Who it's for" (imported) vs "Who it is for" (April): drop contractions.
+    .replace(/[’']/g, '')
+    .replace(/\bwho its for\b/, 'who it is for')
+    .trim();
+  t = ALIASES[t] ?? t;
   return SECTIONS.has(t) ? t : null;
 }
 
@@ -29,9 +51,14 @@ export function sectionItems(bodyMd: string, section: string): string[] {
   const items: string[] = [];
   let inSection = false;
   for (const line of bodyMd.split('\n')) {
-    const here = sectionOf(line);
-    if (here) {
-      inSection = here === want;
+    if (isHeading(line)) {
+      inSection = sectionOf(line) === want;
+      continue;
+    }
+    // Non-heading section labels (e.g. "Key beats:" on its own line) also count.
+    const bare = sectionOf(line);
+    if (bare !== null) {
+      inSection = bare === want;
       continue;
     }
     if (!inSection) continue;
@@ -47,9 +74,13 @@ export function sectionProse(bodyMd: string, section: string): string {
   const lines: string[] = [];
   let inSection = false;
   for (const line of bodyMd.split('\n')) {
-    const here = sectionOf(line);
-    if (here) {
-      inSection = here === want;
+    if (isHeading(line)) {
+      inSection = sectionOf(line) === want;
+      continue;
+    }
+    const bare = sectionOf(line);
+    if (bare !== null) {
+      inSection = bare === want;
       continue;
     }
     if (!inSection) continue;

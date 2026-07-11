@@ -17,6 +17,8 @@ import { z } from 'zod';
 import { getCurrentUser } from '@/lib/console-auth';
 import { complete, type ChatMessage } from '@/lib/llm';
 import { stripEmDashes } from '@/lib/em-dash';
+import { getPiece } from '@/lib/marketing/piece-store';
+import { resolveTemplateRef } from '@/lib/marketing/create-outputs';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -44,14 +46,22 @@ const BodySchema = z.object({
     .optional(),
 });
 
-function systemPrompt(format?: string, title?: string, concept?: string): string {
+function systemPrompt(
+  format?: string,
+  title?: string,
+  concept?: string,
+  recipe?: string
+): string {
   const kind = (format ?? 'short_form_video').replace(/_/g, ' ');
   const conceptBlock = concept
     ? `\n\nThis script is being drafted from the concept below. Treat it as the source of truth for the thesis, the beats, the proof, and the register. When asked to "write the full script" or "draft from the concept", produce a complete ${kind} script grounded in it (do not invent facts it does not contain).\n\nCONCEPT:\n"""\n${concept}\n"""`
     : '';
+  const recipeBlock = recipe
+    ? `\n\nThis piece follows a Content Pillar Template. Its production recipe is the house style for this script; follow it exactly:\n"""\n${recipe}\n"""`
+    : '';
   return `You are April, Polynize's copy and voice specialist, editing a marketing script${
     title ? ` titled "${title}"` : ''
-  } (format: ${kind}).${conceptBlock}
+  } (format: ${kind}).${conceptBlock}${recipeBlock}
 
 The person you are helping is editing the script and will give you interface-driving commands, for example: "tighten this line", "give me three sharper hooks", "cut the intro", "make beat 3 punchier", "shorter". Your job is to act on the command and return the revised script.
 
@@ -85,10 +95,23 @@ export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  await params; // id is not needed server-side (no persistence here), but keep the signature honest
+  const { id } = await params;
   const user = await getCurrentUser();
   if (!user || user.scope.type !== 'team') {
     return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
+  }
+
+  // Template recipe (D25): resolved server-side from the piece so the pillar's
+  // house style shapes the script edits too. Degrades to none on any failure.
+  let recipe: string | undefined;
+  try {
+    const piece = await getPiece(user.email, id);
+    if (piece && typeof piece.template_ref === 'string' && piece.template_ref) {
+      const template = await resolveTemplateRef(piece.template_ref);
+      recipe = template?.recipe || undefined;
+    }
+  } catch {
+    recipe = undefined;
   }
 
   const rawBody = await req.text();
@@ -113,7 +136,7 @@ export async function POST(
   let raw: string;
   try {
     raw = await complete({
-      system: systemPrompt(body.format, body.title, body.concept),
+      system: systemPrompt(body.format, body.title, body.concept, recipe),
       messages,
       maxTokens: 4000,
       temperature: 0.6,

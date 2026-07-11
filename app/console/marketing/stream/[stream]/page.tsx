@@ -6,6 +6,7 @@ import { listConcepts, type ConceptDoc } from '@/lib/marketing/concept-store';
 import { SEED_PIECES } from '@/lib/marketing/seed';
 import { isStreamId, streamLabel, DEFAULT_STREAM } from '@/lib/marketing/streams';
 import { getBrandVoiceForStream } from '@/lib/marketing/brand-voice-store';
+import { listTemplates } from '@/lib/marketing/template-store';
 import s from '../../../_components/client-card.module.css';
 import l from '../../../_components/launcher.module.css';
 
@@ -61,13 +62,23 @@ export default async function StreamPage({
   }
   const pieces = [...byId.values()].filter((p) => (p.stream || DEFAULT_STREAM) === stream);
 
-  // Stream-home core asset (D20): the brand voice every piece in this stream is
-  // written in. Degrade to "not set" on error so the page still renders.
+  // Stream-home core assets (D20/D25): the brand voice every piece in this
+  // stream is written in, and the template library it creates from. Degrade
+  // gracefully on error so the page still renders.
   let brandVoiceSet = false;
   try {
     brandVoiceSet = !!(await getBrandVoiceForStream(stream));
   } catch (err) {
     console.error('[marketing.stream] brand voice read failed:', err);
+  }
+  let activeTemplates = 0;
+  let totalTemplates = 0;
+  try {
+    const templates = await listTemplates(stream);
+    totalTemplates = templates.length;
+    activeTemplates = templates.filter((t) => t.status === 'active').length;
+  } catch (err) {
+    console.error('[marketing.stream] template list failed:', err);
   }
 
   return (
@@ -82,27 +93,56 @@ export default async function StreamPage({
         </div>
 
         <div className={s.marketingCtaRow}>
-          <Link
-            href={`/console/marketing/intake?stream=${stream}`}
-            className={s.startConceptCta}
-          >
-            + Start a concept
-          </Link>
-          <Link
-            href={`/console/marketing/stream/${stream}/brand-voice`}
-            className={`${s.brandVoiceCard} ${brandVoiceSet ? s.bvSet : s.bvUnset}`}
-          >
-            <span className={s.bvHead}>
-              <span className={s.bvDot} aria-hidden />
-              <span className={s.bvTitle}>Brand voice</span>
-              <span className={s.bvState}>{brandVoiceSet ? 'Set' : 'Not set'}</span>
-            </span>
-            <span className={s.bvDesc}>
-              {brandVoiceSet
-                ? 'The voice every concept and post in this stream is written in. Edit it.'
-                : 'Set the voice so every concept and post in this stream sounds like this brand.'}
-            </span>
-          </Link>
+          <div className={s.ctaGroup}>
+            <Link
+              href={`/console/marketing/intake?stream=${stream}`}
+              className={s.startConceptCta}
+            >
+              + Start a concept
+            </Link>
+            <Link
+              href={`/console/marketing/import?stream=${stream}`}
+              className={s.importCta}
+            >
+              Import a concept
+            </Link>
+          </div>
+          <div className={s.assetCards}>
+            <Link
+              href={`/console/marketing/stream/${stream}/brand-voice`}
+              className={`${s.brandVoiceCard} ${brandVoiceSet ? s.bvSet : s.bvUnset}`}
+            >
+              <span className={s.bvHead}>
+                <span className={s.bvDot} aria-hidden />
+                <span className={s.bvTitle}>Brand voice</span>
+                <span className={s.bvState}>{brandVoiceSet ? 'Set' : 'Not set'}</span>
+              </span>
+              <span className={s.bvDesc}>
+                {brandVoiceSet
+                  ? 'The voice every concept and post in this stream is written in. Edit it.'
+                  : 'Set the voice so every concept and post in this stream sounds like this brand.'}
+              </span>
+            </Link>
+            <Link
+              href={`/console/marketing/stream/${stream}/templates`}
+              className={`${s.brandVoiceCard} ${activeTemplates > 0 ? s.bvSet : s.bvUnset}`}
+            >
+              <span className={s.bvHead}>
+                <span className={s.bvDot} aria-hidden />
+                <span className={s.bvTitle}>Templates</span>
+                <span className={s.bvState}>
+                  {activeTemplates > 0
+                    ? `${activeTemplates} active`
+                    : totalTemplates > 0
+                      ? 'In development'
+                      : 'None yet'}
+                </span>
+              </span>
+              <span className={s.bvDesc}>
+                The repeatable recipes this stream&rsquo;s content is made from. Manage them.
+              </span>
+            </Link>
+          </div>
         </div>
 
         <section className={s.dashSection}>

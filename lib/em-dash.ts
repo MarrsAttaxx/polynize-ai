@@ -1,4 +1,7 @@
-const EM_DASH = /\u2014/g;
+// Consume horizontal whitespace around the em-dash so "a — b" becomes "a, b"
+// rather than "a ,  b". [ \t] (not \s) so a line-leading em-dash never swallows
+// the preceding newline.
+const EM_DASH = /[ \t]*—[ \t]*/g;
 
 export function stripEmDashes(input: string): string {
   return input.replace(EM_DASH, ', ');

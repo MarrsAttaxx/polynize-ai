@@ -17,6 +17,7 @@ import { getPiece } from '@/lib/marketing/piece-store';
 import { getConcept } from '@/lib/marketing/concept-store';
 import { getBrandVoiceForStream } from '@/lib/marketing/brand-voice-store';
 import { icpLabel, formatById } from '@/lib/marketing/output-plan';
+import { resolveTemplateRef } from '@/lib/marketing/create-outputs';
 import { complete } from '@/lib/llm';
 import { stripEmDashes } from '@/lib/em-dash';
 
@@ -27,6 +28,7 @@ function systemPrompt(opts: {
   formatLabel: string;
   icp?: string;
   brandVoice?: string;
+  recipe?: string;
 }): string {
   const audience = opts.icp
     ? `\n\nWrite it for this audience: ${opts.icp}. Speak to their world and what they care about, without naming the persona in the copy.`
@@ -34,7 +36,10 @@ function systemPrompt(opts: {
   const voice = opts.brandVoice
     ? `\n\nWrite in this brand voice. Match its register, phrasing, and point of view:\n"""\n${opts.brandVoice}\n"""`
     : '';
-  return `You are April, Polynize's copy and voice specialist. Write a ${opts.formatLabel} from the concept the user gives you.${audience}${voice}
+  const recipe = opts.recipe
+    ? `\n\nThis piece follows a Content Pillar Template. Its production recipe is the house style for this piece; follow it exactly:\n"""\n${opts.recipe}\n"""`
+    : '';
+  return `You are April, Polynize's copy and voice specialist. Write a ${opts.formatLabel} from the concept the user gives you.${audience}${voice}${recipe}
 
 Polynize voice:
 - Direct, contrarian, concrete. No hype, no filler, no corporate throat-clearing.
@@ -71,8 +76,10 @@ export async function POST(
   }
 
   // Resolve the concept body from the piece's concept_ref (the source of truth).
+  // typeof guards: the state PUT accepts arbitrary optional fields, so a stored
+  // non-string ref must degrade, not throw.
   let conceptBody = '';
-  if (piece.concept_ref) {
+  if (typeof piece.concept_ref === 'string' && piece.concept_ref) {
     const m = piece.concept_ref.match(/core-concept-(.+)\.md$/);
     if (m) {
       try {
@@ -93,6 +100,13 @@ export async function POST(
   const formatLabel = formatById(piece.format)?.label ?? 'post';
   // Per-stream brand voice (D20): the post is written in the stream's voice.
   const brandVoice = await getBrandVoiceForStream(piece.stream);
+  // Template recipe (D25): the piece's template shapes how the draft is written.
+  // Degrades to none if the ref is missing or the template was deleted.
+  let recipe: string | undefined;
+  if (typeof piece.template_ref === 'string' && piece.template_ref) {
+    const template = await resolveTemplateRef(piece.template_ref);
+    recipe = template?.recipe || undefined;
+  }
 
   const source = piece.script?.trim()
     ? `CONCEPT:\n"""\n${conceptBody}\n"""\n\nSCRIPT (draft, for reference):\n"""\n${piece.script}\n"""`
@@ -101,7 +115,7 @@ export async function POST(
   let raw: string;
   try {
     raw = await complete({
-      system: systemPrompt({ formatLabel, icp: icpLabel(piece.icp), brandVoice }),
+      system: systemPrompt({ formatLabel, icp: icpLabel(piece.icp), brandVoice, recipe }),
       messages: [{ role: 'user', content: `${source}\n\nWrite the ${formatLabel}.` }],
       maxTokens: 1800,
       temperature: 0.7,
