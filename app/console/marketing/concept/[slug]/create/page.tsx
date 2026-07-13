@@ -5,6 +5,7 @@ import { getConcept } from '@/lib/marketing/concept-store';
 import { listTemplates, type ContentTemplate } from '@/lib/marketing/template-store';
 import { LIBRARY_TEMPLATES } from '@/lib/marketing/template-library';
 import { TemplatePicker } from './TemplatePicker';
+import { BackLink } from '@/app/console/marketing/_components/BackLink';
 import s from './create.module.css';
 
 export const dynamic = 'force-dynamic';
@@ -62,14 +63,12 @@ export default async function CreateFromConceptPage({
   return (
     <div className={s.root}>
       <header className={s.head}>
-        <Link href={`/console/marketing/concept/${slug}`} className={s.back}>
-          ← {concept.title}
-        </Link>
+        <BackLink fallbackHref={`/console/marketing/concept/${slug}`} className={s.back} />
         <span className={s.eyebrow}>create content · {concept.stream}</span>
-        <h1 className={s.title}>Pick a template</h1>
+        <h1 className={s.title}>Pick a content series</h1>
         <p className={s.sub}>
-          A template already knows its format, platforms, audience, and production recipe;
-          you bring the concept. Or{' '}
+          A content series already knows its format, platforms, audience, and production
+          recipe; you bring the concept. Or{' '}
           <Link href={`/console/marketing/concept/${slug}/plan`} className={s.customLink}>
             plan a custom output →
           </Link>

@@ -7,6 +7,7 @@ import { SEED_PIECES } from '@/lib/marketing/seed';
 import { isStreamId, streamLabel, DEFAULT_STREAM } from '@/lib/marketing/streams';
 import { getBrandVoiceForStream } from '@/lib/marketing/brand-voice-store';
 import { listTemplates } from '@/lib/marketing/template-store';
+import { BackLink } from '@/app/console/marketing/_components/BackLink';
 import s from '../../../_components/client-card.module.css';
 import l from '../../../_components/launcher.module.css';
 
@@ -86,27 +87,14 @@ export default async function StreamPage({
       <div className={s.bgPattern} aria-hidden />
       <div className={s.dashboard}>
         <div className={s.header}>
-          <Link href="/console/marketing" className={s.marketingBack}>
-            ← Marketing
-          </Link>
+          <BackLink fallbackHref="/console/marketing" className={s.marketingBack} />
           <h1 className={s.title}>{streamLabel(stream)}</h1>
         </div>
 
-        <div className={s.marketingCtaRow}>
-          <div className={s.ctaGroup}>
-            <Link
-              href={`/console/marketing/intake?stream=${stream}`}
-              className={s.startConceptCta}
-            >
-              + Start a concept
-            </Link>
-            <Link
-              href={`/console/marketing/import?stream=${stream}`}
-              className={s.importCta}
-            >
-              Import a concept
-            </Link>
-          </div>
+        {/* Stream setup — the assets to get right first (they shape everything
+            downstream), so they read at the top. */}
+        <section className={s.setupPanel}>
+          <span className={s.setupTitle}>Stream setup</span>
           <div className={s.assetCards}>
             <Link
               href={`/console/marketing/stream/${stream}/brand-voice`}
@@ -129,7 +117,7 @@ export default async function StreamPage({
             >
               <span className={s.bvHead}>
                 <span className={s.bvDot} aria-hidden />
-                <span className={s.bvTitle}>Templates</span>
+                <span className={s.bvTitle}>Content series</span>
                 <span className={s.bvState}>
                   {activeTemplates > 0
                     ? `${activeTemplates} active`
@@ -139,16 +127,30 @@ export default async function StreamPage({
                 </span>
               </span>
               <span className={s.bvDesc}>
-                The repeatable recipes this stream&rsquo;s content is made from. Manage them.
+                The repeatable series this stream&rsquo;s content is made from. Manage them.
               </span>
             </Link>
           </div>
-        </div>
+        </section>
 
         <section className={s.dashSection}>
           <div className={s.dashSectionHead}>
             <h2 className={s.dashSectionTitle}>Concepts</h2>
             <span className={s.dashSectionCount}>{concepts.length}</span>
+          </div>
+          <div className={s.sectionCtas}>
+            <Link
+              href={`/console/marketing/intake?stream=${stream}`}
+              className={s.startConceptCta}
+            >
+              + Start a concept
+            </Link>
+            <Link
+              href={`/console/marketing/import?stream=${stream}`}
+              className={s.importCta}
+            >
+              Import a concept
+            </Link>
           </div>
           {concepts.length === 0 ? (
             <p className={s.dashSectionEmpty}>

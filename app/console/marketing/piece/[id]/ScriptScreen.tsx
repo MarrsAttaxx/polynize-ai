@@ -21,6 +21,7 @@ import Link from 'next/link';
 import type { MarketingPiece } from '@/lib/marketing/piece-store';
 import { ChatPanel } from './ChatPanel';
 import { StageRail } from './StageRail';
+import { BackLink } from '@/app/console/marketing/_components/BackLink';
 import s from './script.module.css';
 import c from './chat.module.css';
 
@@ -154,9 +155,7 @@ export function ScriptScreen({
       <StageRail pieceId={initial.piece_id} current="script" />
       <header className={s.head}>
         <div className={s.headLeft}>
-          <Link href="/console/marketing" className={s.back}>
-            ← Marketing
-          </Link>
+          <BackLink fallbackHref="/console/marketing" className={s.back} />
           <div className={s.titleWrap}>
             <span className={s.eyebrow}>
               {(initial.format ?? '').replace(/_/g, ' ')} · script

@@ -1,4 +1,3 @@
-import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { getCurrentUser } from '@/lib/console-auth';
 import { STREAMS } from '@/lib/marketing/streams';
@@ -10,6 +9,7 @@ import {
   type PostingSchedule,
 } from '@/lib/marketing/metricool-config-store';
 import { MetricoolSettings } from './MetricoolSettings';
+import { BackLink } from '@/app/console/marketing/_components/BackLink';
 import s from './metricool.module.css';
 
 export const dynamic = 'force-dynamic';
@@ -53,9 +53,7 @@ export default async function MetricoolPage() {
   return (
     <div className={s.root}>
       <header className={s.head}>
-        <Link href="/console/marketing/calendar" className={s.back}>
-          ← Calendar
-        </Link>
+        <BackLink fallbackHref="/console/marketing/calendar" className={s.back} />
         <span className={s.eyebrow}>connect · metricool</span>
         <h1 className={s.title}>Metricool</h1>
         <p className={s.sub}>

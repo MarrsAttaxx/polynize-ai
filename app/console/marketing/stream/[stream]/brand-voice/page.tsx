@@ -4,6 +4,7 @@ import { getCurrentUser } from '@/lib/console-auth';
 import { isStreamId, streamLabel } from '@/lib/marketing/streams';
 import { getBrandVoiceForStream } from '@/lib/marketing/brand-voice-store';
 import { BrandVoiceEditor } from './BrandVoiceEditor';
+import { BackLink } from '@/app/console/marketing/_components/BackLink';
 import s from './brand-voice.module.css';
 
 export const dynamic = 'force-dynamic';
@@ -50,9 +51,7 @@ export default async function BrandVoicePage({
   return (
     <div className={s.root}>
       <header className={s.head}>
-        <Link href={`/console/marketing/stream/${stream}`} className={s.back}>
-          ← {streamLabel(stream)}
-        </Link>
+        <BackLink fallbackHref={`/console/marketing/stream/${stream}`} className={s.back} />
         <span className={s.eyebrow}>brand voice · {streamLabel(stream)}</span>
         <h1 className={s.title}>Brand voice</h1>
         <p className={s.sub}>

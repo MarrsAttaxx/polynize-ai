@@ -1,15 +1,38 @@
-/* Production spine rail — each stage a clean box; scrolls on narrow screens. */
+/* Production spine, drawn as a flow: a labelled bordered track of stages joined
+   by chevrons. Scrolls on narrow screens. */
+.railWrap {
+  margin-bottom: 24px;
+}
+.railTitle {
+  display: block;
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  margin: 0 0 8px 2px;
+}
 .rail {
   display: flex;
-  align-items: stretch;
-  gap: 8px;
-  margin-bottom: 24px;
-  padding-bottom: 6px;
+  align-items: center;
+  gap: 4px;
+  padding: 10px 12px;
+  border: 1px solid var(--tac-edge-dark, rgba(255, 255, 255, 0.1));
+  border-radius: 12px;
+  background: var(--tac-surface);
   overflow-x: auto;
   scrollbar-width: none;
 }
 .rail::-webkit-scrollbar {
   display: none;
+}
+.sep {
+  flex: none;
+  color: var(--text-3);
+  font-size: 15px;
+  line-height: 1;
+  padding: 0 2px;
+  opacity: 0.7;
 }
 .item {
   display: inline-flex;
@@ -26,10 +49,10 @@
   font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
   font-size: 12px;
   color: var(--text-2);
-  background: var(--tac-surface);
+  background: var(--tac-inset, rgba(255, 255, 255, 0.04));
   border: 1px solid var(--tac-edge-dark, rgba(255, 255, 255, 0.1));
-  border-radius: 10px;
-  padding: 9px 13px;
+  border-radius: 8px;
+  padding: 8px 12px;
   transition: color var(--tac-transition), border-color var(--tac-transition),
     background var(--tac-transition);
 }

@@ -5,6 +5,7 @@ import { isStreamId, streamLabel } from '@/lib/marketing/streams';
 import { listTemplates, type ContentTemplate } from '@/lib/marketing/template-store';
 import { LIBRARY_TEMPLATES } from '@/lib/marketing/template-library';
 import { TemplatesManager } from './TemplatesManager';
+import { BackLink } from '@/app/console/marketing/_components/BackLink';
 import s from './templates.module.css';
 
 export const dynamic = 'force-dynamic';
@@ -49,15 +50,13 @@ export default async function TemplatesPage({
   return (
     <div className={s.root}>
       <header className={s.head}>
-        <Link href={`/console/marketing/stream/${stream}`} className={s.back}>
-          ← {streamLabel(stream)}
-        </Link>
-        <span className={s.eyebrow}>content pillar templates · {streamLabel(stream)}</span>
-        <h1 className={s.title}>Templates</h1>
+        <BackLink fallbackHref={`/console/marketing/stream/${stream}`} className={s.back} />
+        <span className={s.eyebrow}>content series · {streamLabel(stream)}</span>
+        <h1 className={s.title}>Content series</h1>
         <p className={s.sub}>
-          A template is a repeatable recipe: what you bring, what you get, and how it is
-          made, plus the platforms and audience it serves. Refine them over time; keep the
-          ones that work, retire the ones that flop.
+          A content series is a repeatable recipe for a run of posts: what you bring, what
+          you get, and how it is made, plus the platforms and audience it serves. Refine
+          them over time; keep the ones that work, retire the ones that flop.
         </p>
       </header>
       <TemplatesManager

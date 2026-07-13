@@ -4,6 +4,7 @@ import { getCurrentUser } from '@/lib/console-auth';
 import { getConcept } from '@/lib/marketing/concept-store';
 import { FORMATS, ICP_ARCHETYPES, defaultPlan } from '@/lib/marketing/output-plan';
 import { OutputPlanForm } from './OutputPlanForm';
+import { BackLink } from '@/app/console/marketing/_components/BackLink';
 import s from './plan.module.css';
 
 export const dynamic = 'force-dynamic';
@@ -51,9 +52,7 @@ export default async function OutputPlanPage({
   return (
     <div className={s.root}>
       <header className={s.head}>
-        <Link href={`/console/marketing/concept/${slug}`} className={s.back}>
-          ← {concept.title}
-        </Link>
+        <BackLink fallbackHref={`/console/marketing/concept/${slug}`} className={s.back} />
         <span className={s.eyebrow}>plan the outputs · {concept.stream}</span>
         <h1 className={s.title}>What should this concept become?</h1>
         <p className={s.sub}>

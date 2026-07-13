@@ -70,7 +70,19 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={`${spaceGrotesk.variable} ${inter.variable} ${jetbrainsMono.variable}`}>
-      <body data-depth="tactile">{children}</body>
+      <body data-depth="tactile" suppressHydrationWarning>
+        {/* Apply the saved theme before paint to avoid a flash, but ONLY on
+            console routes: the public site is dark-only, so light mode must not
+            leak to it on a hard load. Client nav in/out is handled by the
+            console ThemeToggle's mount/unmount. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              "try{if(location.pathname.indexOf('/console')===0&&localStorage.getItem('pam-theme')==='light')document.body.classList.add('theme-light')}catch(e){}",
+          }}
+        />
+        {children}
+      </body>
     </html>
   );
 }

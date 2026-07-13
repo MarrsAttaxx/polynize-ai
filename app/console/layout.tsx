@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { getCurrentUserEmail } from '@/lib/console-auth';
 import { SignInGate } from './_components/SignInGate';
+import { ThemeToggle } from './_components/ThemeToggle';
 import { signOutAction } from './_actions';
 import s from './_components/sign-in-gate.module.css';
 
@@ -34,8 +35,9 @@ export default async function ConsoleLayout({
   return (
     <div className={s.shell}>
       <nav className={s.topNav}>
-        <Link href="/console" className={s.eyebrow}>§ polynize agentic management console</Link>
+        <Link href="/console" className={s.eyebrow}>§ PAM control centre</Link>
         <div className={s.userBlock}>
+          <ThemeToggle />
           <span className={s.userEmail}>{email}</span>
           <form action={signOutAction}>
             <button type="submit" className={s.signOutBtn}>

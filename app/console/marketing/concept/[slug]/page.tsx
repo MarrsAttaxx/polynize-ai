@@ -7,6 +7,7 @@ import { getConcept } from '@/lib/marketing/concept-store';
 import { listSavedPieces, type MarketingPiece } from '@/lib/marketing/piece-store';
 import { formatById } from '@/lib/marketing/output-plan';
 import { DeleteButton } from './DeleteButton';
+import { BackLink } from '@/app/console/marketing/_components/BackLink';
 import s from './concept.module.css';
 
 export const dynamic = 'force-dynamic';
@@ -63,9 +64,10 @@ export default async function ConceptPage({
   return (
     <div className={s.root}>
       <header className={s.head}>
-        <Link href={`/console/marketing/stream/${concept.stream}`} className={s.back}>
-          ← {concept.stream}
-        </Link>
+        <BackLink
+          fallbackHref={`/console/marketing/stream/${concept.stream}`}
+          className={s.back}
+        />
         <span className={s.eyebrow}>concept · {concept.stream}</span>
         <h1 className={s.title}>{concept.title}</h1>
       </header>

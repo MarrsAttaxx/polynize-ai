@@ -201,6 +201,25 @@
   color: var(--text);
   border-color: var(--text-3);
 }
+.themeToggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  appearance: none;
+  border: 1px solid var(--tac-divider, rgba(255, 255, 255, 0.08));
+  background: transparent;
+  color: var(--text-2);
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 12px;
+  padding: 7px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: color var(--tac-transition), border-color var(--tac-transition);
+}
+.themeToggle:hover {
+  color: var(--text);
+  border-color: rgba(105, 252, 203, 0.5);
+}
 .main {
   flex: 1;
   padding: 48px 28px;

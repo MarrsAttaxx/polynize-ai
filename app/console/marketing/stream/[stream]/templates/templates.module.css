@@ -58,6 +58,16 @@
   flex-direction: column;
   gap: 12px;
 }
+/* Bordered section panel — visual hierarchy so each block reads as its own unit. */
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  border: 1px solid var(--tac-edge-dark, rgba(255, 255, 255, 0.1));
+  border-radius: 16px;
+  padding: 18px 20px;
+  background: var(--tac-surface);
+}
 .groupHead {
   display: flex;
   align-items: center;
@@ -97,7 +107,7 @@
   align-items: center;
   gap: 12px;
   flex-wrap: wrap;
-  background: var(--tac-surface);
+  background: var(--tac-surface-2, var(--tac-surface));
   border: 1px solid var(--tac-edge-dark, rgba(255, 255, 255, 0.1));
   border-radius: 12px;
   padding: 12px 15px;

@@ -1,8 +1,8 @@
-import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { getCurrentUser } from '@/lib/console-auth';
 import { isStreamId, STREAMS, DEFAULT_STREAM, type StreamId } from '@/lib/marketing/streams';
 import { ImportForm } from './ImportForm';
+import { BackLink } from '@/app/console/marketing/_components/BackLink';
 import s from './import.module.css';
 
 export const dynamic = 'force-dynamic';
@@ -29,9 +29,7 @@ export default async function ImportConceptPage({
   return (
     <div className={s.root}>
       <header className={s.head}>
-        <Link href="/console/marketing" className={s.back}>
-          ← Marketing
-        </Link>
+        <BackLink fallbackHref="/console/marketing" className={s.back} />
         <span className={s.eyebrow}>import a concept</span>
         <h1 className={s.title}>Import a concept</h1>
         <p className={s.sub}>

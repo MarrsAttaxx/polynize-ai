@@ -19,6 +19,7 @@ import { complete, type ChatMessage } from '@/lib/llm';
 import { stripEmDashes } from '@/lib/em-dash';
 import { getPiece } from '@/lib/marketing/piece-store';
 import { resolveTemplateRef } from '@/lib/marketing/create-outputs';
+import { HOOK_GUIDANCE } from '@/lib/marketing/hook-guidance';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -62,6 +63,8 @@ function systemPrompt(
   return `You are April, Polynize's copy and voice specialist, editing a marketing script${
     title ? ` titled "${title}"` : ''
   } (format: ${kind}).${conceptBlock}${recipeBlock}
+
+${HOOK_GUIDANCE}
 
 The person you are helping is editing the script and will give you interface-driving commands, for example: "tighten this line", "give me three sharper hooks", "cut the intro", "make beat 3 punchier", "shorter". Your job is to act on the command and return the revised script.
 

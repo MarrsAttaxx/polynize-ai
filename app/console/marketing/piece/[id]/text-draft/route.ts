@@ -20,6 +20,7 @@ import { icpLabel, formatById } from '@/lib/marketing/output-plan';
 import { resolveTemplateRef } from '@/lib/marketing/create-outputs';
 import { complete } from '@/lib/llm';
 import { stripEmDashes } from '@/lib/em-dash';
+import { HOOK_GUIDANCE } from '@/lib/marketing/hook-guidance';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -40,6 +41,8 @@ function systemPrompt(opts: {
     ? `\n\nThis piece follows a Content Pillar Template. Its production recipe is the house style for this piece; follow it exactly:\n"""\n${opts.recipe}\n"""`
     : '';
   return `You are April, Polynize's copy and voice specialist. Write a ${opts.formatLabel} from the concept the user gives you.${audience}${voice}${recipe}
+
+${HOOK_GUIDANCE}
 
 Polynize voice:
 - Direct, contrarian, concrete. No hype, no filler, no corporate throat-clearing.

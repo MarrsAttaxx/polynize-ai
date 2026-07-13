@@ -9,9 +9,9 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import s from './intake.module.css';
+import { BackLink } from '@/app/console/marketing/_components/BackLink';
 import { STREAMS, isStreamId, type StreamId } from '@/lib/marketing/streams';
 
 type Msg = { role: 'user' | 'assistant'; content: string };
@@ -220,9 +220,7 @@ export function IntakeScreen({
     <div className={s.root}>
       <header className={s.head}>
         <div className={s.headTop}>
-          <Link href="/console/marketing" className={s.back}>
-            ← Marketing
-          </Link>
+          <BackLink fallbackHref="/console/marketing" className={s.back} />
           <button type="button" className={s.resetBtn} onClick={reset}>
             ↺ Start over
           </button>

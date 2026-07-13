@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import { getCurrentUser } from '@/lib/console-auth';
 import { listEntries, type CalendarEntry } from '@/lib/marketing/calendar-store';
 import { CalendarBoard } from './CalendarBoard';
+import { BackLink } from '@/app/console/marketing/_components/BackLink';
 import s from './calendar.module.css';
 
 export const dynamic = 'force-dynamic';
@@ -29,9 +30,7 @@ export default async function CalendarPage() {
   return (
     <div className={s.root}>
       <header className={s.head}>
-        <Link href="/console/marketing" className={s.back}>
-          ← Marketing
-        </Link>
+        <BackLink fallbackHref="/console/marketing" className={s.back} />
         <span className={s.eyebrow}>publishing calendar</span>
         <h1 className={s.title}>Calendar</h1>
         <p className={s.sub}>

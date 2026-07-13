@@ -12,8 +12,8 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { BackLink } from '@/app/console/marketing/_components/BackLink';
 import type { MarketingPiece } from '@/lib/marketing/piece-store';
 import s from './text.module.css';
 
@@ -188,9 +188,7 @@ export function TextOutputScreen({ initial }: { initial: MarketingPiece }) {
     <div className={s.root}>
       <header className={s.head}>
         <div className={s.headLeft}>
-          <Link href="/console/marketing" className={s.back}>
-            ← Marketing
-          </Link>
+          <BackLink fallbackHref="/console/marketing" className={s.back} />
           <div className={s.titleWrap}>
             <span className={s.eyebrow}>
               {(initial.format ?? '').replace(/_/g, ' ')} · post

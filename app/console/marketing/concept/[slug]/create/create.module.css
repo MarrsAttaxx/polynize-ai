@@ -67,6 +67,16 @@
   flex-direction: column;
   gap: 12px;
 }
+/* Bordered section panel — visual hierarchy so each group reads as its own unit. */
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  border: 1px solid var(--tac-edge-dark, rgba(255, 255, 255, 0.1));
+  border-radius: 16px;
+  padding: 18px 20px;
+  background: var(--tac-surface);
+}
 .groupTitle {
   font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
   font-size: 11px;
@@ -84,7 +94,7 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
-  background: var(--tac-surface);
+  background: var(--tac-surface-2, var(--tac-surface));
   border: 1px solid var(--tac-edge-dark, rgba(255, 255, 255, 0.1));
   border-radius: 14px;
   padding: 16px 18px;

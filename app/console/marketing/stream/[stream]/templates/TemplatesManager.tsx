@@ -131,7 +131,7 @@ export function TemplatesManager({
 
   const remove = async (t: ContentTemplate) => {
     if (busy) return;
-    if (!window.confirm(`Delete the "${t.name}" template? Pieces already made from it keep working.`)) return;
+    if (!window.confirm(`Delete the "${t.name}" content series? Pieces already made from it keep working.`)) return;
     setBusy(true);
     setError(null);
     try {
@@ -177,11 +177,11 @@ export function TemplatesManager({
     <div className={s.manager}>
       {error ? <p className={s.error}>{error}</p> : null}
 
-      <section className={s.group}>
+      <section className={s.panel}>
         <div className={s.groupHead}>
-          <h2 className={s.groupTitle}>This stream&rsquo;s templates</h2>
+          <h2 className={s.groupTitle}>Your content series</h2>
           <button type="button" className={s.newBtn} onClick={() => setDraft({ ...BLANK })}>
-            + New template
+            + New series
           </button>
         </div>
         {templates.length === 0 ? (
@@ -209,7 +209,7 @@ export function TemplatesManager({
 
       {draft ? (
         <section className={s.editor}>
-          <h2 className={s.groupTitle}>{draft.template_id ? `Edit: ${draft.name}` : 'New template'}</h2>
+          <h2 className={s.groupTitle}>{draft.template_id ? `Edit: ${draft.name}` : 'New content series'}</h2>
           <div className={s.fields}>
             <label className={s.field}>
               Name
@@ -298,8 +298,8 @@ export function TemplatesManager({
       ) : null}
 
       {copyable.length > 0 ? (
-        <section className={s.group}>
-          <h2 className={s.groupTitle}>Built-in library</h2>
+        <section className={s.panel}>
+          <h2 className={s.groupTitle}>Built-in series library</h2>
           <div className={s.list}>
             {copyable.map((t) => (
               <div key={t.template_id} className={s.row}>
@@ -315,8 +315,8 @@ export function TemplatesManager({
             ))}
           </div>
           <p className={s.libNote}>
-            Library templates are usable directly from the picker; copy one here to refine
-            its recipe for this stream.
+            Built-in series are usable directly when you create content; copy one here to
+            refine its recipe for this stream.
           </p>
         </section>
       ) : null}

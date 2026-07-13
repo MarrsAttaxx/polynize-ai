@@ -331,6 +331,18 @@ Format per entry: the decision, the context that forced it, the rationale, and t
 
 ---
 
+## D26 — April skills placement, "Content Series" rename, and console design principles
+
+**Decision (2026-07-13, with Marrs):**
+
+- **April's hook + curiosity-gap skills live in two places.** The canonical docs are in the repo (`docs/pam-console/april-skills/hook-writing-v1.0.md`, `curiosity-gap.md`) and go to the Master Agent Builder for the real April agent. Because the console runs April's cognition console-side for copy/script tasks (its own prompt with April's key), a **condensed distillation** (`lib/marketing/hook-guidance.ts`) is injected into the script-chat and text-draft prompts so hooks improve now. The full docs are the source of truth; the fragment is kept tight so it does not bloat prompts. Rule of thumb for future April skills: canonical doc in the repo, condensed fragment injected only where that skill is exercised.
+- **"Content Pillar" / "Templates" → "Content Series" in the UI.** "Pillar" is jargon; "series" instantly conveys *a recurring set of posts in the same style*. User-facing copy uses **Content Series** (library = the content-series library, each item a series); the internal code identifiers (`template`, `pillar`, `template_ref`, `content-templates/`) are unchanged to avoid a risky rename. Distinct from **stream** (the brand bucket: Polynize / Marrs / …), which keeps its name.
+- **Console design principles (now canon):** (1) the per-screen back button (`BackLink`) goes to the PREVIOUS screen, not a fixed destination (fresh deep links fall back to the logical parent); the top nav ("§ PAM control centre") is the way home. (2) **Visual hierarchy**: sections are bordered panels with a clear title, so each block reads as its own unit (Marrs's ADHD-driven, best-practice requirement) — apply on every page. (3) **Light + dark themes**: a cream (not white) light mode toggled top-right and persisted; `--bg` stays dark (it is the ink for text on mint/coral accents, which stays dark in both themes), only neutrals flip. Secondary buttons use a light mint outline that brightens on hover, not a dark border that vanishes on dark bg.
+
+**Consequence if violated:** re-pinning back buttons to fixed destinations reintroduces the "jumps to the top from anywhere" disorientation; dropping the bordered-section hierarchy makes pages hard to parse; changing `--bg` to cream in light mode turns every on-accent label unreadable; renaming the internal `template`/`stream` identifiers is a large, needless refactor (the rename is display-only).
+
+---
+
 ## How to add to this log
 
 When you make a decision that future-you (or a cold agent) might be tempted to undo, add an entry: the decision, the context that forced it, why, and the consequence of violating it. The bar for inclusion: *would someone seeing this cold reasonably think it's wrong or improvable, when it's actually deliberate?* If yes, it belongs here.
@@ -355,3 +367,4 @@ When you make a decision that future-you (or a cold agent) might be tempted to u
 | 2026-07-09 | D24: publishing = brains (Raph proposes/rearranges the plan) + hands (console makes the Metricool REST call, holds the creds); the calendar is console-owned (reads calendar_entries, usable pre-Metricool); Step 1 (per-platform copy + calendar view) built; analytics is per-stream. |
 | 2026-07-09 | D24 update: Metricool has no queue API, so "Add to queue" is console-side (per-stream ideal-time slots + timezone, next-slot append); timezone gotcha (Metricool defaults to Madrid, set brand tz to Sydney); Raph deferred (queue likely covers his near-term value). Step 2 fully built. |
 | 2026-07-11 | D25: Content Pillar Templates = the creative loop (concept + template → guided completion → queue); template carries the plan (default path; custom remains); per-stream template library + built-in starters; concepts become living master documents (+ Import door); media library per-stream (banked); Fireflies extraction postponed for client-data security (manual Claude-session extraction → Import; method in `concept-extraction.md`). |
+| 2026-07-13 | D26: April hook/curiosity-gap skills = canonical docs in repo + condensed injection into console prompts (+ hand to Master Agent Builder); "Content Pillar/Templates" → "Content Series" in UI (code identifiers unchanged); design principles: back button → previous screen, bordered-section visual hierarchy everywhere, cream light theme + dark toggle (--bg stays dark ink). |
