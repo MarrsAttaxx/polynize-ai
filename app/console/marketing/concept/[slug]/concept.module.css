@@ -50,6 +50,30 @@
   flex-wrap: wrap;
   margin: 0 0 22px;
 }
+.actionGroup {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+/* Secondary action (Update concept): light mint outline, brightens on hover. */
+.updateBtn {
+  display: inline-block;
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 13px;
+  color: var(--mint);
+  background: transparent;
+  border: 1px solid rgba(105, 252, 203, 0.4);
+  border-radius: 10px;
+  padding: 11px 18px;
+  text-decoration: none;
+  transition: color var(--tac-transition), border-color var(--tac-transition),
+    background var(--tac-transition);
+}
+.updateBtn:hover {
+  border-color: var(--mint);
+  background: rgba(105, 252, 203, 0.08);
+}
 .developBtn {
   font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
   font-size: 13px;
@@ -99,6 +123,10 @@
 
 .outputs {
   margin: 0 0 26px;
+  padding: 18px 20px;
+  border-radius: 16px;
+  background: var(--tac-surface);
+  box-shadow: var(--tac-shadow-raised);
 }
 .outputsTitle {
   font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
@@ -120,7 +148,7 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  background: var(--tac-surface);
+  background: var(--tac-surface-2, var(--tac-surface));
   border: 1px solid var(--tac-edge-dark, rgba(255, 255, 255, 0.1));
   border-radius: 12px;
   padding: 12px 15px;

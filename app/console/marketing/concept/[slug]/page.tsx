@@ -60,9 +60,14 @@ export default async function ConceptPage({
       </header>
 
       <div className={s.developRow}>
-        <Link href={`/console/marketing/concept/${slug}/create`} className={s.developBtn}>
-          Create content →
-        </Link>
+        <div className={s.actionGroup}>
+          <Link href={`/console/marketing/concept/${slug}/create`} className={s.developBtn}>
+            Create content →
+          </Link>
+          <Link href={`/console/marketing/concept/${slug}/update`} className={s.updateBtn}>
+            Update concept
+          </Link>
+        </div>
         <DeleteButton stream={concept.stream} />
       </div>
 

@@ -7,6 +7,7 @@ import { SEED_PIECES } from '@/lib/marketing/seed';
 import { isStreamId, streamLabel, DEFAULT_STREAM } from '@/lib/marketing/streams';
 import { getBrandVoiceForStream } from '@/lib/marketing/brand-voice-store';
 import { listTemplates } from '@/lib/marketing/template-store';
+import { formatById } from '@/lib/marketing/output-plan';
 import { BackLink } from '@/app/console/marketing/_components/BackLink';
 import s from '../../../_components/client-card.module.css';
 import l from '../../../_components/launcher.module.css';
@@ -62,6 +63,22 @@ export default async function StreamPage({
     console.error('[marketing.stream] piece list failed:', err);
   }
   const pieces = [...byId.values()].filter((p) => (p.stream || DEFAULT_STREAM) === stream);
+
+  // Group in-development pieces by their core concept: one card per concept,
+  // drilling into a hub that lists that concept's pieces. Pieces without a
+  // concept-bank ref (e.g. the seed) stay as individual cards.
+  const groups = new Map<string, MarketingPiece[]>();
+  const loose: MarketingPiece[] = [];
+  for (const p of pieces) {
+    const m = p.concept_ref?.match(/core-concept-(.+)\.md$/);
+    if (m) {
+      if (!groups.has(m[1])) groups.set(m[1], []);
+      groups.get(m[1])!.push(p);
+    } else {
+      loose.push(p);
+    }
+  }
+  const devCount = groups.size + loose.length;
 
   // Stream-home core assets (D20/D25): the brand voice every piece in this
   // stream is written in, and the template library it creates from. Degrade
@@ -179,13 +196,38 @@ export default async function StreamPage({
         <section className={`${s.dashSection} ${s.panel}`}>
           <div className={s.dashSectionHead}>
             <h2 className={s.dashSectionTitle}>In development</h2>
-            <span className={s.dashSectionCount}>{pieces.length}</span>
+            <span className={s.dashSectionCount}>{devCount}</span>
           </div>
-          {pieces.length === 0 ? (
+          {devCount === 0 ? (
             <p className={s.dashSectionEmpty}>No pieces in development yet.</p>
           ) : (
             <div className={l.cards}>
-              {pieces.map((p) => (
+              {[...groups.entries()].map(([slug, grouped]) => {
+                const kinds = [
+                  ...new Set(
+                    grouped.map(
+                      (p) => p.pillar || formatById(p.format)?.label || p.format
+                    )
+                  ),
+                ];
+                return (
+                  <Link
+                    key={slug}
+                    href={`/console/marketing/concept/${slug}/develop`}
+                    className={`${l.card} ${s.onPanelCard}`}
+                  >
+                    <span className={l.cardEyebrow}>
+                      core concept · {grouped.length} piece{grouped.length === 1 ? '' : 's'}
+                    </span>
+                    <span className={l.cardTitle}>{grouped[0].title}</span>
+                    <span className={l.cardDesc}>{kinds.join(' · ')}</span>
+                    <span className={l.cardArrow} aria-hidden>
+                      →
+                    </span>
+                  </Link>
+                );
+              })}
+              {loose.map((p) => (
                 <Link
                   key={p.piece_id}
                   href={`/console/marketing/piece/${p.piece_id}`}
