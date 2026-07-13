@@ -11,7 +11,18 @@ export const STREAMS = [
   { id: 'marrs', label: 'Marrs' },
   { id: 'shourov', label: 'Shourov' },
   { id: 'patricia', label: 'Patricia' },
+  { id: 'julian', label: 'Julian' },
+  { id: 'dhamiri', label: 'Dhamiri' },
+  { id: 'avik', label: 'Avik' },
+  { id: 'kristin', label: 'Kristin' },
 ] as const;
+
+/**
+ * Stream avatars shown on the dashboard cards (mint-ringed circles). Files live
+ * in public/pam/avatars/ and are registered here as they land; streams without
+ * an entry render an initial-letter circle instead.
+ */
+export const STREAM_AVATARS: Record<string, string> = {};
 
 export type StreamId = (typeof STREAMS)[number]['id'];
 

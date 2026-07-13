@@ -4,7 +4,7 @@ import { getCurrentUser } from '@/lib/console-auth';
 import { listSavedPieces, type MarketingPiece } from '@/lib/marketing/piece-store';
 import { listConcepts } from '@/lib/marketing/concept-store';
 import { SEED_PIECES } from '@/lib/marketing/seed';
-import { STREAMS, DEFAULT_STREAM } from '@/lib/marketing/streams';
+import { STREAMS, STREAM_AVATARS, DEFAULT_STREAM } from '@/lib/marketing/streams';
 import s from '../_components/client-card.module.css';
 import l from '../_components/launcher.module.css';
 
@@ -74,12 +74,21 @@ export default async function MarketingPage() {
           {STREAMS.map((st) => {
             const c = counts.get(st.id) ?? { concepts: 0, pieces: 0 };
             const total = c.concepts + c.pieces;
+            const avatar = STREAM_AVATARS[st.id];
             return (
               <Link
                 key={st.id}
                 href={`/console/marketing/stream/${st.id}`}
-                className={l.card}
+                className={`${l.card} ${s.hasAvatar}`}
               >
+                <span className={s.streamAvatar} aria-hidden>
+                  {avatar ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={avatar} alt="" className={s.streamAvatarImg} />
+                  ) : (
+                    <span className={s.streamAvatarInitial}>{st.label[0]}</span>
+                  )}
+                </span>
                 <span className={l.cardTitle}>{st.label}</span>
                 <span className={l.cardDesc}>
                   {total === 0
