@@ -22,7 +22,16 @@ export const STREAMS = [
  * in public/pam/avatars/ and are registered here as they land; streams without
  * an entry render an initial-letter circle instead.
  */
-export const STREAM_AVATARS: Record<string, string> = {};
+export const STREAM_AVATARS: Record<string, string> = {
+  marrs: '/pam/avatars/marrs.jpeg',
+  shourov: '/pam/avatars/shourov.jpeg',
+  patricia: '/pam/avatars/patricia.png',
+  julian: '/pam/avatars/julian.jpeg',
+  dhamiri: '/pam/avatars/dhamiri.png',
+  avik: '/pam/avatars/avik.jpeg',
+  kristin: '/pam/avatars/kristin.jpeg',
+  // polynize: logo pending — shows the "P" initial until it lands.
+};
 
 export type StreamId = (typeof STREAMS)[number]['id'];
 
