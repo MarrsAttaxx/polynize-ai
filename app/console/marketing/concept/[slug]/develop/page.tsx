@@ -1,10 +1,12 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { getCurrentUser } from '@/lib/console-auth';
-import { getConcept, conceptKey } from '@/lib/marketing/concept-store';
+import { getConcept } from '@/lib/marketing/concept-store';
 import { listSavedPieces, type MarketingPiece } from '@/lib/marketing/piece-store';
+import { pieceInDevGroup } from '@/lib/marketing/dev-group';
 import { formatById } from '@/lib/marketing/output-plan';
 import { BackLink } from '@/app/console/marketing/_components/BackLink';
+import { AdoptCreateButton } from './AdoptCreateButton';
 import s from '../concept.module.css';
 
 export const dynamic = 'force-dynamic';
@@ -35,19 +37,13 @@ export default async function ConceptDevelopPage({
     console.error('[concept.develop] concept read failed:', err);
   }
 
-  // Match the same grouping the stream page uses: concept-bank refs by their
-  // slug, plus non-bank refs by their tail and ref-less pieces by piece id, so
-  // EVERY in-development card (including pre-concept-bank pieces like the seed)
-  // lands on a hub that finds its pieces.
+  // Same grouping the stream page uses (shared predicate), so EVERY
+  // in-development card (including pre-concept-bank pieces) finds its pieces.
   let pieces: MarketingPiece[] = [];
   try {
-    const ref = conceptKey(owner, slug);
-    pieces = (await listSavedPieces(owner)).filter((p) => {
-      if (p.concept_ref === ref) return true;
-      if (/core-concept-.+\.md$/.test(p.concept_ref ?? '')) return false;
-      const tail = p.concept_ref?.split('/').filter(Boolean).pop();
-      return tail === slug || p.piece_id === slug;
-    });
+    pieces = (await listSavedPieces(owner)).filter((p) =>
+      pieceInDevGroup(p, owner, slug)
+    );
   } catch (err) {
     console.error('[concept.develop] pieces read failed:', err);
   }
@@ -78,10 +74,13 @@ export default async function ConceptDevelopPage({
               </Link>
             </>
           ) : (
-            <span className={s.noConceptNote}>
-              This piece predates the concept bank, so there is no core concept to
-              create more content from.
-            </span>
+            <>
+              <AdoptCreateButton />
+              <span className={s.noConceptNote}>
+                First use sets this up as a core concept (from the piece&rsquo;s script),
+                then opens the series picker.
+              </span>
+            </>
           )}
         </div>
       </div>
