@@ -21,6 +21,7 @@ import Link from 'next/link';
 import type { MarketingPiece } from '@/lib/marketing/piece-store';
 import { ChatPanel } from './ChatPanel';
 import { StageRail } from './StageRail';
+import { PieceDeleteButton } from './PieceDeleteButton';
 import { BackLink } from '@/app/console/marketing/_components/BackLink';
 import s from './script.module.css';
 import c from './chat.module.css';
@@ -183,6 +184,7 @@ export function ScriptScreen({
           >
             {saveLabel}
           </span>
+          <PieceDeleteButton stream={initial.stream} />
         </div>
       </header>
 

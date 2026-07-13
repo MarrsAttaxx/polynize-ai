@@ -11,7 +11,6 @@ export const STREAMS = [
   { id: 'marrs', label: 'Marrs' },
   { id: 'shourov', label: 'Shourov' },
   { id: 'patricia', label: 'Patricia' },
-  { id: 'team', label: 'Team' },
 ] as const;
 
 export type StreamId = (typeof STREAMS)[number]['id'];

@@ -133,9 +133,9 @@ export default async function StreamPage({
           </div>
         </section>
 
-        <section className={s.dashSection}>
+        <section className={`${s.dashSection} ${s.panel}`}>
           <div className={s.dashSectionHead}>
-            <h2 className={s.dashSectionTitle}>Concepts</h2>
+            <h2 className={s.dashSectionTitle}>Core concepts</h2>
             <span className={s.dashSectionCount}>{concepts.length}</span>
           </div>
           <div className={s.sectionCtas}>
@@ -176,7 +176,7 @@ export default async function StreamPage({
           )}
         </section>
 
-        <section className={s.dashSection}>
+        <section className={`${s.dashSection} ${s.panel}`}>
           <div className={s.dashSectionHead}>
             <h2 className={s.dashSectionTitle}>In development</h2>
             <span className={s.dashSectionCount}>{pieces.length}</span>

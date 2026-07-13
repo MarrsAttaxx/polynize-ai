@@ -35,7 +35,7 @@ export default async function ConsoleLayout({
   return (
     <div className={s.shell}>
       <nav className={s.topNav}>
-        <Link href="/console" className={s.eyebrow}>§ PAM control centre</Link>
+        <Link href="/console" className={s.eyebrow}>PAM control centre</Link>
         <div className={s.userBlock}>
           <ThemeToggle />
           <span className={s.userEmail}>{email}</span>

@@ -10,7 +10,11 @@
  * Server-side only (goes through supabaseService via shoot-sheet-store).
  */
 
-import { getSheetState, saveSheetState } from '@/lib/content/shoot-sheet-store';
+import {
+  getSheetState,
+  saveSheetState,
+  deleteSheetState,
+} from '@/lib/content/shoot-sheet-store';
 import { supabaseService } from '@/lib/supabase';
 
 export type MarketingPiece = {
@@ -117,4 +121,9 @@ export async function savePiece(
   piece: MarketingPiece
 ): Promise<{ updated_at: string }> {
   return saveSheetState(keyFor(owner, piece.piece_id), piece);
+}
+
+/** Delete a piece for this owner (idempotent). Owner-scoped. */
+export async function deletePiece(owner: string, pieceId: string): Promise<void> {
+  await deleteSheetState(keyFor(owner, pieceId));
 }

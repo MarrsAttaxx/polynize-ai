@@ -88,7 +88,8 @@
   border: 0;
   cursor: pointer;
   background: var(--mint);
-  color: #0a1521;
+  /* Ink on the mint fill: dark in dark mode, white on the darker-green light mint. */
+  color: var(--bg, #0a1521);
   font-family: var(--font-inter), 'Inter', sans-serif;
   font-weight: 600;
   font-size: 14.5px;

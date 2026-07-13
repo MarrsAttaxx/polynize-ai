@@ -105,6 +105,13 @@ body.theme-light[data-depth="tactile"] {
   --border: rgba(63, 201, 154, 0.32);
   --border-soft: rgba(15, 40, 35, 0.08);
 
+  /* Bright mint reads washed-out and low-contrast on cream, both as text and as
+     a fill. In light mode use a darker green, and flip the on-accent ink (--bg,
+     which is only ever used as text ON a mint fill in the console) to white so
+     dark-green buttons show white text. Dark mode keeps bright mint + dark ink. */
+  --mint: #0f7d61;
+  --bg: #ffffff;
+
   /* Shadow recipes: soft, dark-tinted drops with a white top highlight. */
   --tac-shadow-raised:
     0 1px 0 var(--tac-edge-light) inset,

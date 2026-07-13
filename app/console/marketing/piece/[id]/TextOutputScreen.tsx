@@ -14,6 +14,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { BackLink } from '@/app/console/marketing/_components/BackLink';
+import { PieceDeleteButton } from './PieceDeleteButton';
 import type { MarketingPiece } from '@/lib/marketing/piece-store';
 import s from './text.module.css';
 
@@ -196,19 +197,22 @@ export function TextOutputScreen({ initial }: { initial: MarketingPiece }) {
             <h1 className={s.title}>{initial.title}</h1>
           </div>
         </div>
-        <span
-          className={`${s.saveInd} ${
-            saveState === 'saving'
-              ? s.saving
-              : saveState === 'saved'
-                ? s.ok
-                : saveState === 'error'
-                  ? s.err
-                  : ''
-          }`}
-        >
-          {saveLabel}
-        </span>
+        <div className={s.headRight}>
+          <span
+            className={`${s.saveInd} ${
+              saveState === 'saving'
+                ? s.saving
+                : saveState === 'saved'
+                  ? s.ok
+                  : saveState === 'error'
+                    ? s.err
+                    : ''
+            }`}
+          >
+            {saveLabel}
+          </span>
+          <PieceDeleteButton stream={initial.stream} />
+        </div>
       </header>
 
       {initial.platforms && initial.platforms.length > 0 ? (

@@ -26,16 +26,14 @@ export function BackLink({
     // Let the browser handle new-tab / modified clicks via the href.
     if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
     e.preventDefault();
-    // Use the App Router's in-app history index, not window.history.length:
-    // `idx` is 0 on the entry page (however much cross-origin history the tab
-    // already had) and only climbs after a genuine in-app navigation. So we step
-    // back only when there is an in-app screen to return to; otherwise fall back
-    // to the logical parent (never off-app / to an unrelated prior origin).
-    const idx =
-      typeof window !== 'undefined'
-        ? (window.history.state as { idx?: number } | null)?.idx ?? 0
-        : 0;
-    if (idx > 0) {
+    // Prefer the App Router's in-app history index when it exposes one (idx > 0
+    // means there is an in-app screen to return to). Next does not always set
+    // `idx`, so when it is absent fall back to history.length (> 1 means we
+    // navigated here in-session). This is the fix for "Back always jumped to the
+    // dashboard": relying on idx alone made it undefined -> always the fallback.
+    const idx = (window.history.state as { idx?: number } | null)?.idx;
+    const canGoBack = typeof idx === 'number' ? idx > 0 : window.history.length > 1;
+    if (canGoBack) {
       router.back();
     } else {
       router.push(fallbackHref);
