@@ -163,13 +163,25 @@ async function writeConceptAt(key: string, record: ConceptDoc): Promise<void> {
 
 // --- Public API --------------------------------------------------------------
 
-export async function saveConcept(doc: {
-  owner: string;
-  stream: string;
-  framing: string;
-  title: string;
-  body_md: string;
-}): Promise<ConceptDoc> {
+export async function saveConcept(
+  doc: {
+    owner: string;
+    stream: string;
+    framing: string;
+    title: string;
+    body_md: string;
+  },
+  opts?: {
+    /**
+     * Always create a NEW concept, even when one with the same framing exists
+     * (the walk continues to a free slug instead of updating in place). Used by
+     * the Concept Library's copy-to-stream: without it, copying a concept whose
+     * framing already exists for this owner would OVERWRITE the source (moving
+     * it to the target stream) rather than duplicating it.
+     */
+    forceNew?: boolean;
+  }
+): Promise<ConceptDoc> {
   const baseSlug = framingSlug(doc.framing);
   if (!baseSlug) throw new Error('framing produced an empty slug');
   const framing = doc.framing.trim();
@@ -193,7 +205,7 @@ export async function saveConcept(doc: {
       existing = null;
       break;
     }
-    if (found.framing.trim() === framing) {
+    if (!opts?.forceNew && found.framing.trim() === framing) {
       slug = candidate;
       existing = found;
       break;

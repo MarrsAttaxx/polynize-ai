@@ -44,5 +44,10 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/((?!api|_next/static|_next/image|favicon.ico).*)'],
+  // The trailing `.*\\..*` exclusion keeps static PUBLIC files (avatars, images,
+  // robots.txt: any path whose last segment has an extension) out of the
+  // middleware entirely: on pam.polynize.ai they must be served as-is, not
+  // rewritten to /console/<file> (which 404s, the broken-avatars bug).
+  // App routes never contain dots, so no page loses the rewrite/cache headers.
+  matcher: ['/((?!api|_next/static|_next/image|favicon.ico|.*\\..*).*)'],
 };

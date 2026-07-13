@@ -163,13 +163,19 @@ export default async function StreamPage({
               href={`/console/marketing/intake?stream=${stream}`}
               className={s.startConceptCta}
             >
-              + Start a concept
+              + Develop a concept
             </Link>
             <Link
               href={`/console/marketing/import?stream=${stream}`}
               className={s.importCta}
             >
               Import a concept
+            </Link>
+            <Link
+              href={`/console/marketing/library?stream=${stream}`}
+              className={s.importCta}
+            >
+              Concept library
             </Link>
           </div>
           {concepts.length === 0 ? (

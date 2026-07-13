@@ -23,6 +23,7 @@ export const STREAMS = [
  * an entry render an initial-letter circle instead.
  */
 export const STREAM_AVATARS: Record<string, string> = {
+  polynize: '/pam/avatars/polynize.png',
   marrs: '/pam/avatars/marrs.jpeg',
   shourov: '/pam/avatars/shourov.jpeg',
   patricia: '/pam/avatars/patricia.png',

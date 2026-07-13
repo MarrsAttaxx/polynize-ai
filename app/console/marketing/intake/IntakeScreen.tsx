@@ -25,7 +25,7 @@ const DRAFT_KEY_BASE = 'pam-intake-draft-v1';
 const OPENER: Msg = {
   role: 'assistant',
   content:
-    "I'm April. Let's find the one sharp idea worth making. In a sentence, what is the thing you believe about your work that most people get wrong?",
+    'Give me your idea for a core concept and we can shape it into something great together.',
 };
 
 export function IntakeScreen({
