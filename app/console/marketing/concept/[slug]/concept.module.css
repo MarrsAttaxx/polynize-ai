@@ -74,6 +74,11 @@
   border-color: var(--mint);
   background: rgba(105, 252, 203, 0.08);
 }
+.noConceptNote {
+  font-size: 13px;
+  color: var(--text-3);
+  line-height: 1.5;
+}
 .developBtn {
   font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
   font-size: 13px;

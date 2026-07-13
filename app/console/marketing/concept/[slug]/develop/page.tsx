@@ -71,13 +71,18 @@ export default async function ConceptDevelopPage({
                 href={`/console/marketing/concept/${slug}/create`}
                 className={s.developBtn}
               >
-                Create more content →
+                Create content →
               </Link>
               <Link href={`/console/marketing/concept/${slug}`} className={s.updateBtn}>
                 View core concept
               </Link>
             </>
-          ) : null}
+          ) : (
+            <span className={s.noConceptNote}>
+              This piece predates the concept bank, so there is no core concept to
+              create more content from.
+            </span>
+          )}
         </div>
       </div>
 
