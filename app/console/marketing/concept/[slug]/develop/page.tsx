@@ -35,10 +35,19 @@ export default async function ConceptDevelopPage({
     console.error('[concept.develop] concept read failed:', err);
   }
 
+  // Match the same grouping the stream page uses: concept-bank refs by their
+  // slug, plus non-bank refs by their tail and ref-less pieces by piece id, so
+  // EVERY in-development card (including pre-concept-bank pieces like the seed)
+  // lands on a hub that finds its pieces.
   let pieces: MarketingPiece[] = [];
   try {
     const ref = conceptKey(owner, slug);
-    pieces = (await listSavedPieces(owner)).filter((p) => p.concept_ref === ref);
+    pieces = (await listSavedPieces(owner)).filter((p) => {
+      if (p.concept_ref === ref) return true;
+      if (/core-concept-.+\.md$/.test(p.concept_ref ?? '')) return false;
+      const tail = p.concept_ref?.split('/').filter(Boolean).pop();
+      return tail === slug || p.piece_id === slug;
+    });
   } catch (err) {
     console.error('[concept.develop] pieces read failed:', err);
   }

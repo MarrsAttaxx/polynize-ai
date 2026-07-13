@@ -65,20 +65,23 @@ export default async function StreamPage({
   const pieces = [...byId.values()].filter((p) => (p.stream || DEFAULT_STREAM) === stream);
 
   // Group in-development pieces by their core concept: one card per concept,
-  // drilling into a hub that lists that concept's pieces. Pieces without a
-  // concept-bank ref (e.g. the seed) stay as individual cards.
-  const groups = new Map<string, MarketingPiece[]>();
-  const loose: MarketingPiece[] = [];
-  for (const p of pieces) {
+  // ALWAYS drilling into the development hub (even for a single piece — the hub
+  // is the standard landing, per Marrs 2026-07-13). Pieces without a concept-bank
+  // ref (e.g. the pre-concept-bank seed) group by their ref tail / piece id so
+  // they get a hub too.
+  const groupKeyOf = (p: MarketingPiece): string => {
     const m = p.concept_ref?.match(/core-concept-(.+)\.md$/);
-    if (m) {
-      if (!groups.has(m[1])) groups.set(m[1], []);
-      groups.get(m[1])!.push(p);
-    } else {
-      loose.push(p);
-    }
+    if (m) return m[1];
+    const tail = p.concept_ref?.split('/').filter(Boolean).pop();
+    return tail || p.piece_id;
+  };
+  const groups = new Map<string, MarketingPiece[]>();
+  for (const p of pieces) {
+    const k = groupKeyOf(p);
+    if (!groups.has(k)) groups.set(k, []);
+    groups.get(k)!.push(p);
   }
-  const devCount = groups.size + loose.length;
+  const devCount = groups.size;
 
   // Stream-home core assets (D20/D25): the brand voice every piece in this
   // stream is written in, and the template library it creates from. Degrade
@@ -210,6 +213,9 @@ export default async function StreamPage({
                     )
                   ),
                 ];
+                const conceptBacked = /core-concept-.+\.md$/.test(
+                  grouped[0].concept_ref ?? ''
+                );
                 return (
                   <Link
                     key={slug}
@@ -217,7 +223,8 @@ export default async function StreamPage({
                     className={`${l.card} ${s.onPanelCard}`}
                   >
                     <span className={l.cardEyebrow}>
-                      core concept · {grouped.length} piece{grouped.length === 1 ? '' : 's'}
+                      {conceptBacked ? 'core concept · ' : ''}
+                      {grouped.length} piece{grouped.length === 1 ? '' : 's'}
                     </span>
                     <span className={l.cardTitle}>{grouped[0].title}</span>
                     <span className={l.cardDesc}>{kinds.join(' · ')}</span>
@@ -227,22 +234,6 @@ export default async function StreamPage({
                   </Link>
                 );
               })}
-              {loose.map((p) => (
-                <Link
-                  key={p.piece_id}
-                  href={`/console/marketing/piece/${p.piece_id}`}
-                  className={`${l.card} ${s.onPanelCard}`}
-                >
-                  <span className={l.cardEyebrow}>
-                    {(p.format ?? '').replace(/_/g, ' ')} · {p.stage ?? 'draft'}
-                  </span>
-                  <span className={l.cardTitle}>{p.title}</span>
-                  <span className={l.cardDesc}>Open the production flow.</span>
-                  <span className={l.cardArrow} aria-hidden>
-                    →
-                  </span>
-                </Link>
-              ))}
             </div>
           )}
         </section>
