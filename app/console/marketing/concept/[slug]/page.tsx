@@ -4,8 +4,6 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { getCurrentUser } from '@/lib/console-auth';
 import { getConcept } from '@/lib/marketing/concept-store';
-import { listSavedPieces, type MarketingPiece } from '@/lib/marketing/piece-store';
-import { formatById } from '@/lib/marketing/output-plan';
 import { DeleteButton } from './DeleteButton';
 import { BackLink } from '@/app/console/marketing/_components/BackLink';
 import s from './concept.module.css';
@@ -50,17 +48,6 @@ export default async function ConceptPage({
     );
   }
 
-  // The concept's outputs (pieces created from it). Degrade to none on error so
-  // the doc still renders.
-  let outputs: MarketingPiece[] = [];
-  try {
-    outputs = (await listSavedPieces(user.email)).filter(
-      (p) => p.concept_ref === concept.concept_ref
-    );
-  } catch (err) {
-    console.error('[concept] outputs read failed:', err);
-  }
-
   return (
     <div className={s.root}>
       <header className={s.head}>
@@ -74,39 +61,10 @@ export default async function ConceptPage({
 
       <div className={s.developRow}>
         <Link href={`/console/marketing/concept/${slug}/create`} className={s.developBtn}>
-          {outputs.length ? 'Create more content →' : 'Create content →'}
+          Create content →
         </Link>
         <DeleteButton stream={concept.stream} />
       </div>
-
-      {outputs.length > 0 ? (
-        <section className={s.outputs}>
-          <h2 className={s.outputsTitle}>Outputs</h2>
-          <ul className={s.outputList}>
-            {outputs.map((p) => {
-              const fmt = formatById(p.format);
-              const kind = p.kind ?? fmt?.kind ?? 'video';
-              return (
-                <li key={p.piece_id}>
-                  <Link
-                    href={`/console/marketing/piece/${p.piece_id}`}
-                    className={s.outputItem}
-                  >
-                    <span className={`${s.outputKind} ${s[`kind_${kind}`] ?? ''}`}>
-                      {kind}
-                    </span>
-                    <span className={s.outputLabel}>
-                      {fmt?.label ?? p.format}
-                      {p.pillar ? <span className={s.outputPillar}> · {p.pillar}</span> : null}
-                    </span>
-                    <span className={s.outputStatus}>{p.status ?? 'draft'}</span>
-                  </Link>
-                </li>
-              );
-            })}
-          </ul>
-        </section>
-      ) : null}
 
       <article className={s.doc}>
         <ReactMarkdown remarkPlugins={[remarkGfm]}>{concept.body_md}</ReactMarkdown>

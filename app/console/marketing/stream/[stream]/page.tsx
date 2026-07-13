@@ -162,7 +162,7 @@ export default async function StreamPage({
                 <Link
                   key={c.concept_ref}
                   href={`/console/marketing/concept/${c.framing_slug}`}
-                  className={l.card}
+                  className={`${l.card} ${s.onPanelCard}`}
                 >
                   <span className={l.cardEyebrow}>concept</span>
                   <span className={l.cardTitle}>{c.title}</span>
@@ -189,7 +189,7 @@ export default async function StreamPage({
                 <Link
                   key={p.piece_id}
                   href={`/console/marketing/piece/${p.piece_id}`}
-                  className={l.card}
+                  className={`${l.card} ${s.onPanelCard}`}
                 >
                   <span className={l.cardEyebrow}>
                     {(p.format ?? '').replace(/_/g, ' ')} · {p.stage ?? 'draft'}

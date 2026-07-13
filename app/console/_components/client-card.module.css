@@ -641,18 +641,27 @@
 
 /* Stream setup: a bordered panel at the top grouping the assets to get right
    first (brand voice + content series), for clear top-down visual hierarchy. */
+/* Section panels: a filled, raised tactile surface with edge highlights (the
+   look the stream-setup section originally had), applied to every section for
+   visual hierarchy. The cards inside are one elevation tier up (--tac-surface-2
+   via .onPanelCard, and they carry their own raised shadow) so they still pop. */
 .setupPanel {
   margin: 2px 0 28px;
   padding: 16px 18px 18px;
-  border: 1px solid var(--tac-edge-dark, rgba(255, 255, 255, 0.1));
   border-radius: 16px;
+  background: var(--tac-surface);
+  box-shadow: var(--tac-shadow-raised);
 }
-/* Border-only section wrapper (visual hierarchy). Transparent so the cards inside
-   (which are --tac-surface) stand out against it. */
 .panel {
   padding: 18px 20px;
-  border: 1px solid var(--tac-edge-dark, rgba(255, 255, 255, 0.1));
   border-radius: 16px;
+  background: var(--tac-surface);
+  box-shadow: var(--tac-shadow-raised);
+}
+/* Bump a launcher card up an elevation tier when it sits inside a filled panel,
+   so it separates from the panel surface. */
+.onPanelCard {
+  background: var(--tac-surface-2);
 }
 .setupTitle {
   display: block;
