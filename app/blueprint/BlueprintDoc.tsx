@@ -24,6 +24,8 @@ function sevColor(sev: string): string {
   return sev === 'low' ? 'var(--mint)' : sev === 'mod' ? 'var(--amber)' : 'var(--coral)';
 }
 const ALLOC_CLASS: Record<string, string> = { human: 'alloc-human', hybrid: 'alloc-hybrid', agent: 'alloc-agent' };
+/** Dropdown accent classes, keyed by allocation (module-scoped in blueprint.module.css). */
+const EXPAND_CLASS: Record<string, string> = { human: 'aHuman', hybrid: 'aHybrid', agent: 'aAgent' };
 function isNotEnough(v: string): boolean {
   return v.trim().toLowerCase().startsWith('not enough information');
 }
@@ -284,16 +286,19 @@ function OverviewTab({ data }: { data: SalesBlueprint }) {
           <h2>Current Workflow</h2>
         </div>
         <p className={s.secNote}>{data.current_workflow.narrative}</p>
-        <div className={s.flow}>
+        <div className={s.wf}>
           {data.current_workflow.phases.map((ph, i) => (
-            <div key={i} className={s.phase}>
-              <div className={s.phaseName}>{ph.name}</div>
-              {ph.steps.map((st, j) => (
-                <div key={j} className={s.step}>
-                  <div className={s.stepLabel}>{st.label}</div>
-                  <div className={`${s.stepBar} ${s[`sev-${st.risk}`]}`} />
+            <div key={i} className={s.wfItem}>
+              <div className={s.wfCard}>
+                <div className={s.wfHead}>
+                  <span className={s.wfDot} style={{ background: sevColor(ph.risk) }} aria-hidden="true" />
+                  <span className={s.wfName}>{ph.name}</span>
                 </div>
-              ))}
+                <p className={s.wfSummary}>{ph.summary}</p>
+              </div>
+              {i < data.current_workflow.phases.length - 1 && (
+                <span className={s.wfArrow} aria-hidden="true">→</span>
+              )}
             </div>
           ))}
         </div>
@@ -371,7 +376,7 @@ function MapTab({ data, revealed }: { data: SalesBlueprint; revealed: number }) 
                     })}
                   </div>
                   {isOpen && (
-                    <div className={s.capExpand}>
+                    <div className={`${s.capExpand} ${s[EXPAND_CLASS[cap.allocation]]}`}>
                       {cap.detail && <p className={s.capDetailLine}>{cap.detail}</p>}
                       {cap.tasks.length > 0 && (
                         <ul className={s.taskList}>

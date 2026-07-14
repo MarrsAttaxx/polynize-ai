@@ -58,7 +58,7 @@ gap_question is the actual warm, specific line Marrs would say in the room to cl
 - build_plan: always give an indicative, illustrative approximation (this is shown to the client to convey what the plan would look like). Describe a phased approach in 3 to 5 short phases (for example: stabilise and centralise the data, then layer in agent capture, then open team-wide retrieval), grounded in the capabilities and allocations above. Frame it as indicative. Use relative sequencing and effort language ("early", "next", "once that is stable"); do not invent hard dates, dollar figures, headcounts, or vendor names the notes do not support.
 - outcomes: always give an indicative, illustrative view of the outcomes if the agent team is in place, tied to the bottleneck and "what good looks like" (for example: institutional knowledge retained through staff transitions, faster onboarding, one searchable source of truth). Qualitative and directional. Do not fabricate precise metrics, percentages, or dollar amounts the notes do not support; speak to the kind of change, not invented numbers.
 - what_good_looks_like: restate the client's target state in their own words.
-- current_workflow.phases: approximate the current process as 2 to 4 phases with a few steps each, each step tagged risk low / mod / high / maj (severity of that step leaking value today). Approximation is fine here; ground it in the walkthrough.
+- current_workflow.phases: describe the current process as a SEQUENCE of 3 to 5 stages that happen in order (like a workflow, one leading to the next). Each phase has: name (2 to 4 words for the stage), risk (low = this stage works well today, mod = shaky, high / maj = broken or where value leaks), and summary (one sentence describing what happens at this stage and where it chokes, in the client's language). Ground it in the walkthrough. Example phase: {"name": "Engagement", "risk": "high", "summary": "Outreach and cadence are in place but sent raw, run on defaults, or left to drift."}.
 
 ## RULES
 
@@ -76,7 +76,7 @@ gap_question is the actual warm, specific line Marrs would say in the room to cl
   "bottleneck": "<one sentence restating the core bottleneck in their words>",
   "current_workflow": {
     "narrative": "<2 to 3 sentences describing how the work runs today and where it leaks>",
-    "phases": [ { "name": "<phase>", "steps": [ { "label": "<step>", "risk": "low|mod|high|maj" } ] } ]
+    "phases": [ { "name": "<stage, 2 to 4 words>", "risk": "low|mod|high|maj", "summary": "<one sentence: what happens here and where it chokes>" } ]
   },
   "capabilities": [
     {
@@ -150,7 +150,7 @@ Return exactly:
   "blueprint": { <the FULL updated blueprint, same schema as the input> }
 }
 
-The blueprint object uses the identical schema as the input: client, session, purpose, bottleneck, current_workflow {narrative, phases[{name, steps[{label, risk}]}]}, capabilities[{id, name, cluster, allocation, detail, tasks[], current_level, benchmark_level, confidence, completeness, gap_question, transformation{move (train|deploy|hold), rationale}}], benchmark_summary, team_shape{id (1-8), why}, team_design{status, agents[{name, role, desc}]}, build_plan, outcomes, what_good_looks_like. Preserve the tasks array, transformation, and team_shape on every capability unless the request is about them.`;
+The blueprint object uses the identical schema as the input: client, session, purpose, bottleneck, current_workflow {narrative, phases[{name, risk (low|mod|high|maj), summary}]}, capabilities[{id, name, cluster, allocation, detail, tasks[], current_level, benchmark_level, confidence, completeness, gap_question, transformation{move (train|deploy|hold), rationale}}], benchmark_summary, team_shape{id (1-8), why}, team_design{status, agents[{name, role, desc}]}, build_plan, outcomes, what_good_looks_like. Preserve the tasks array, transformation, and team_shape on every capability unless the request is about them.`;
 
 export function buildSalesBlueprintReviseUserMessage(
   current: unknown,

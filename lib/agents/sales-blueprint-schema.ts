@@ -30,6 +30,11 @@ const WorkflowStep = z.object({
 
 const WorkflowPhase = z.object({
   name: z.string().catch('Phase'),
+  /** How well this stage works today: low = healthy, maj = badly broken / where value leaks. */
+  risk: Risk,
+  /** One sentence describing what happens at this stage and where it chokes. */
+  summary: z.string().catch(''),
+  /** Legacy per-step detail; retained for back-compat, not rendered in the sequence view. */
   steps: z.array(WorkflowStep).catch([]),
 });
 

@@ -437,10 +437,17 @@
   border-left: 2px solid var(--mint);
   background: rgba(105, 252, 203, 0.03);
 }
+/* Dropdown highlight matches the row's allocation: human coral, hybrid amber, agent mint. */
+.capExpand.aHuman { border-left-color: var(--coral); background: rgba(255, 122, 107, 0.05); }
+.capExpand.aHybrid { border-left-color: var(--amber); background: rgba(240, 184, 107, 0.05); }
+.capExpand.aAgent { border-left-color: var(--mint); background: rgba(105, 252, 203, 0.05); }
 .capDetailLine { font-size: 12.5px; color: var(--text-3); line-height: 1.5; margin: 8px 0 10px; }
 .taskList { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 7px; }
 .taskItem { display: flex; align-items: baseline; gap: 9px; font-size: 13px; color: var(--text-2); }
-.taskPlus { color: var(--mint); font-weight: 700; flex: none; }
+.taskPlus { font-weight: 700; flex: none; }
+.aHuman .taskPlus { color: var(--coral); }
+.aHybrid .taskPlus { color: var(--amber); }
+.aAgent .taskPlus { color: var(--mint); }
 .rname { display: flex; align-items: center; gap: 9px; font-size: 14px; color: var(--text); }
 .rid {
   font-size: 9.5px;
@@ -575,6 +582,23 @@
 .stepBar.sev-mod { background: var(--amber); }
 .stepBar.sev-high { background: var(--coral); }
 .stepBar.sev-maj { background: color-mix(in srgb, var(--coral) 78%, #fff); }
+
+/* Current Workflow as a sequence of stage cards with arrows */
+.wf { display: flex; align-items: stretch; overflow-x: auto; padding-bottom: 4px; }
+.wfItem { display: flex; align-items: stretch; flex: 1 1 0; min-width: 0; }
+.wfCard {
+  flex: 1 1 0;
+  min-width: 190px;
+  border: 1px solid var(--border-soft);
+  border-radius: 10px;
+  background: var(--surface);
+  padding: 16px 18px;
+}
+.wfHead { display: flex; align-items: center; gap: 9px; margin-bottom: 9px; }
+.wfDot { width: 9px; height: 9px; border-radius: 50%; flex: none; }
+.wfName { font-size: 14px; font-weight: 600; color: var(--text); }
+.wfSummary { font-size: 12.5px; color: var(--text-3); line-height: 1.5; margin: 0; }
+.wfArrow { flex: 0 0 36px; display: flex; align-items: center; justify-content: center; color: var(--mint); font-size: 18px; }
 
 /* Team design */
 .teamGrid { display: flex; gap: 12px; flex-wrap: wrap; }
