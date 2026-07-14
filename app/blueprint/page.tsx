@@ -245,7 +245,7 @@ export default function BlueprintPage() {
               className={s.textarea}
               value={payload}
               onChange={(e) => setPayload(e.target.value)}
-              placeholder={'CAPABILITY MAPPING INPUT\nClient: ...\n\nBOTTLENECK\n...'}
+              placeholder=""
               spellCheck={false}
             />
             <div className={s.inputFoot}>
@@ -303,7 +303,7 @@ export default function BlueprintPage() {
               className={s.qInput}
               value={value}
               autoFocus
-              placeholder={q.placeholder}
+              placeholder=""
               onChange={(e) => setValue(e.target.value)}
               onKeyDown={(e) => {
                 if (e.key === 'Enter') {
@@ -317,7 +317,7 @@ export default function BlueprintPage() {
               className={s.textarea}
               value={value}
               autoFocus
-              placeholder={q.placeholder}
+              placeholder=""
               spellCheck={false}
               onChange={(e) => setValue(e.target.value)}
             />
