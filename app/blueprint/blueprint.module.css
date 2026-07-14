@@ -168,6 +168,47 @@
   margin: 0 auto;
   padding: 44px 32px 96px;
 }
+.docTopbar { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+.shareWrap { position: relative; flex: none; padding-top: 6px; }
+.shareBtn {
+  appearance: none;
+  cursor: pointer;
+  background: rgba(105, 252, 203, 0.1);
+  border: 1px solid var(--border);
+  color: var(--mint);
+  font-weight: 600;
+  font-size: 13px;
+  border-radius: 10px;
+  padding: 9px 16px;
+  white-space: nowrap;
+}
+.shareBtn:hover:not(:disabled) { background: rgba(105, 252, 203, 0.18); }
+.shareBtn:disabled {
+  opacity: 0.55;
+  cursor: default;
+  color: var(--text-3);
+  border-color: var(--border-soft);
+  background: transparent;
+}
+.shareUrl {
+  position: absolute;
+  right: 0;
+  top: 48px;
+  z-index: 30;
+  background: var(--surface-2);
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+  padding: 8px 11px;
+  font-size: 11.5px;
+  color: var(--text-2);
+  font-family: ui-monospace, monospace;
+  white-space: nowrap;
+  max-width: 70vw;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.agentBot { position: absolute; top: 12px; right: 12px; color: var(--mint); opacity: 0.7; line-height: 0; }
+
 .docHead { margin-bottom: 8px; }
 .wm {
   font-size: 11px;
@@ -280,16 +321,52 @@
   color: var(--text-3);
   padding: 16px 20px 6px;
 }
-.cmapRow {
-  padding: 12px 20px;
-  min-height: 52px;
+.capWrap {
   border-top: 1px solid var(--border-soft);
   opacity: 0;
   transform: translateY(8px);
   transition: opacity 0.5s ease, transform 0.5s ease;
 }
-.cmapRow.lit { opacity: 1; transform: none; }
-.cmapRow.faded { opacity: 0.5; }
+.capWrap.lit { opacity: 1; transform: none; }
+.capWrap.faded { opacity: 0.5; }
+.cmapRow { padding: 10px 20px; min-height: 48px; }
+.rowToggle {
+  appearance: none;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-align: left;
+  color: var(--text);
+  font-size: 14px;
+  padding: 0;
+  width: 100%;
+  font-family: inherit;
+}
+.chev { color: var(--text-3); font-size: 13px; transition: transform 0.2s; flex: none; }
+.chevOpen { transform: rotate(180deg); }
+.rnameText { color: var(--text); }
+.gapPill {
+  font-size: 10px;
+  font-weight: 700;
+  color: #3a0f0f;
+  background: var(--coral);
+  border-radius: 5px;
+  padding: 2px 7px;
+  white-space: nowrap;
+}
+.capExpand {
+  padding: 2px 20px 14px 44px;
+  margin: 0 20px 10px;
+  border-left: 2px solid var(--mint);
+  background: rgba(105, 252, 203, 0.03);
+}
+.capDetailLine { font-size: 12.5px; color: var(--text-3); line-height: 1.5; margin: 8px 0 10px; }
+.taskList { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 7px; }
+.taskItem { display: flex; align-items: baseline; gap: 9px; font-size: 13px; color: var(--text-2); }
+.taskPlus { color: var(--mint); font-weight: 700; flex: none; }
 .rname { display: flex; align-items: center; gap: 9px; font-size: 14px; color: var(--text); }
 .rid {
   font-size: 9.5px;
@@ -428,6 +505,7 @@
 /* Team design */
 .teamGrid { display: flex; gap: 12px; flex-wrap: wrap; }
 .agentCard {
+  position: relative;
   flex: 1 1 180px;
   min-width: 180px;
   border: 1px solid var(--border-soft);
@@ -435,6 +513,7 @@
   background: var(--surface);
   padding: 16px;
 }
+.agentName { padding-right: 24px; }
 .agentName { font-size: 15px; font-weight: 600; }
 .agentRole { font-size: 11.5px; color: var(--mint); margin-top: 3px; }
 .agentDesc { font-size: 12px; color: var(--text-2); margin-top: 8px; line-height: 1.5; }

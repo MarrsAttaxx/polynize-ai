@@ -27,7 +27,7 @@ Every capability is allocated to one of three:
 ## YOUR REASONING (do not narrate in output)
 
 1. Read the bottleneck and workflow walkthrough. Identify the actual work: what flows, what triggers it, who touches it, and where knowledge or value leaks.
-2. Decompose into 6 to 9 capabilities. Each is a verb-noun phrase in the client's own language (use their nouns: "site assessment data", "vendor decisions", not generic "knowledge management"). Give each an id C01, C02, ... and group them into 2 to 4 short cluster names that reflect phases of the work.
+2. Decompose into 6 to 9 capabilities. Each is a verb-noun phrase in the client's own language (use their nouns: "site assessment data", "vendor decisions", not generic "knowledge management"). Give each an id C01, C02, ... and group them into 2 to 4 short cluster names that reflect phases of the work. For each capability, also break it into 2 to 4 tasks: short point-form facets of the work (3 to 6 words each, verb-led, e.g. "Reading fit and ICP match", "Ranking and sequencing the list"). These render as an expandable breakdown under the row.
 3. Allocate each capability human / hybrid / agent using the semantics above and the client's judgement-call list.
 4. Score each capability twice on a 0 to 100 scale: current_level (how well they do it today, grounded in the notes and the choke-point cost) and benchmark_level (what good looks like, grounded in their "what good looks like" answer). Benchmark is normally higher than current. The gap is the story.
 5. Set confidence and completeness honestly. If the notes clearly describe a capability, confidence high and completeness complete or partial. If you are inferring a capability the workflow implies but the client did not describe, confidence low and completeness ghost, and always attach a gap_question.
@@ -41,7 +41,8 @@ gap_question is the actual warm, specific line Marrs would say in the room to cl
 ## STRETCH SECTIONS AND HONESTY
 
 - benchmark_summary: two sentences framing the overall gap between where they are and what good looks like.
-- build_plan and outcomes are stretch sections. If the notes support a credible approximation, give one (clearly framed as indicative). If they genuinely do not, set the field to the exact string "Not enough information" and nothing else. Do not invent specifics like timelines, dollar figures, or vendor names that the notes do not support.
+- build_plan: always give an indicative, illustrative approximation (this is shown to the client to convey what the plan would look like). Describe a phased approach in 3 to 5 short phases (for example: stabilise and centralise the data, then layer in agent capture, then open team-wide retrieval), grounded in the capabilities and allocations above. Frame it as indicative. Use relative sequencing and effort language ("early", "next", "once that is stable"); do not invent hard dates, dollar figures, headcounts, or vendor names the notes do not support.
+- outcomes: always give an indicative, illustrative view of the outcomes if the agent team is in place, tied to the bottleneck and "what good looks like" (for example: institutional knowledge retained through staff transitions, faster onboarding, one searchable source of truth). Qualitative and directional. Do not fabricate precise metrics, percentages, or dollar amounts the notes do not support; speak to the kind of change, not invented numbers.
 - what_good_looks_like: restate the client's target state in their own words.
 - current_workflow.phases: approximate the current process as 2 to 4 phases with a few steps each, each step tagged risk low / mod / high / maj (severity of that step leaking value today). Approximation is fine here; ground it in the walkthrough.
 
@@ -70,6 +71,7 @@ gap_question is the actual warm, specific line Marrs would say in the room to cl
       "cluster": "<short phase name>",
       "allocation": "human|hybrid|agent",
       "detail": "<one sentence disambiguating the capability>",
+      "tasks": ["<short point-form facet>", "<another>", "..."],
       "current_level": <0-100>,
       "benchmark_level": <0-100>,
       "confidence": "high|medium|low",
@@ -83,19 +85,21 @@ gap_question is the actual warm, specific line Marrs would say in the room to cl
     "status": "proposed_to_confirm",
     "agents": [ { "name": "<single word>", "role": "<role title>", "desc": "<one sentence>" } ]
   },
-  "build_plan": "<indicative approximation, or exactly 'Not enough information'>",
-  "outcomes": "<indicative approximation, or exactly 'Not enough information'>",
+  "build_plan": "<indicative phased approach, 3 to 5 short phases, framed as illustrative>",
+  "outcomes": "<indicative, qualitative outcomes tied to the bottleneck and what good looks like>",
   "what_good_looks_like": "<their target state, in their words>"
 }
 
 ## FINAL CHECK
 
 1. Every capability id is unique and sequential (C01, C02, ...).
-2. Allocation semantics respected; human rows reflect the client's judgement-call list.
-3. Every low-confidence or ghost row has a real, specific gap_question.
-4. No invented names, numbers, dates, or vendors. Thin fields say "Not enough information".
-5. No em-dashes anywhere.
-6. Output is parseable JSON with no prose outside it.`;
+2. Every capability has 2 to 4 short point-form tasks.
+3. Allocation semantics respected; human rows reflect the client's judgement-call list.
+4. Every low-confidence or ghost row has a real, specific gap_question.
+5. build_plan and outcomes are both populated with indicative content (never "Not enough information").
+6. No invented client names, hard dates, dollar figures, headcounts, or vendors.
+7. No em-dashes anywhere.
+8. Output is parseable JSON with no prose outside it.`;
 
 export function buildSalesBlueprintUserMessage(payload: string): string {
   return `Here are my raw session notes. Map them into the blueprint envelope.\n\n${payload.trim()}`;
@@ -130,7 +134,7 @@ Return exactly:
   "blueprint": { <the FULL updated blueprint, same schema as the input> }
 }
 
-The blueprint object uses the identical schema as the input: client, session, purpose, bottleneck, current_workflow {narrative, phases[{name, steps[{label, risk}]}]}, capabilities[{id, name, cluster, allocation, detail, current_level, benchmark_level, confidence, completeness, gap_question, transformation{person_led, agent_move}}], benchmark_summary, team_design{status, agents[{name, role, desc}]}, build_plan, outcomes, what_good_looks_like.`;
+The blueprint object uses the identical schema as the input: client, session, purpose, bottleneck, current_workflow {narrative, phases[{name, steps[{label, risk}]}]}, capabilities[{id, name, cluster, allocation, detail, tasks[], current_level, benchmark_level, confidence, completeness, gap_question, transformation{person_led, agent_move}}], benchmark_summary, team_design{status, agents[{name, role, desc}]}, build_plan, outcomes, what_good_looks_like. Preserve the tasks array on every capability unless the request is about the tasks.`;
 
 export function buildSalesBlueprintReviseUserMessage(
   current: unknown,

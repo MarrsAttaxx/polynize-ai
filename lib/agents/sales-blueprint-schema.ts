@@ -39,6 +39,8 @@ const Capability = z.object({
   cluster: z.string().catch('Capabilities'),
   allocation: Allocation,
   detail: z.string().catch(''),
+  /** Point-form breakdown of what the capability involves; shown in the row dropdown. */
+  tasks: z.array(z.string()).catch([]),
   current_level: z.coerce.number().catch(40),
   benchmark_level: z.coerce.number().catch(85),
   confidence: Confidence,
