@@ -343,6 +343,19 @@ Format per entry: the decision, the context that forced it, the rationale, and t
 
 ---
 
+## D27 — The media library stores references (Box.com live links / public URLs), not binaries. Amends D2.
+
+**Decision (2026-07-14, with Marrs):** The per-stream media library stores **references** to files hosted on Box.com (or any public direct-download URL), **not uploaded binaries**. The console never handles the bytes: Box holds the file and serves a stable public "Direct Link", and Metricool fetches it by URL at publish time. A media asset is small JSON (`{ url, kind, label, stream, owner }`) that rides the existing bucket-or-interim dispatch, keyed per-stream at `pam/media-library/{stream}/{id}.json` (mirrors the template store). **This amends D2**, which had put heavy media as blobs in the private Lightsail bucket.
+
+- **Why Box, not the Lightsail bucket:** Metricool ingests media by *public URL*. The Lightsail bucket is **private and text-only** (no presigner installed, no binary put), and Vercel's ~4.5MB request-body cap rules out proxying a video upload through a route. Presigned GET URLs would work but **expire** (S3 max 7 days), which breaks posts scheduled further ahead. Box gives large-file upload via its native apps, a stable non-expiring Direct Link (`/shared/static/<hash>.<ext>`), and it is on Marrs's existing **1TB Business account** (2TB/file/month bandwidth; and Metricool downloads the file *once* to re-host on the platform, so shared-link bandwidth is a non-issue). Net effect: the whole binary-storage problem disappears.
+- **Data flow:** `piece.media` (asset ids) → `prepare` copies them onto each `CalendarEntry.media` → `publish.resolveMediaUrls(entry.stream, ids)` resolves to current public URLs → Metricool's `media` field (which the client already supported; it was hardcoded empty).
+- **v1 is paste-a-link:** add a Box Direct Link (or any public URL) in the stream's Media library; it becomes selectable on the piece screens and rides to the post. **Banked fast-follows:** in-console upload straight to Box (chunked API + downscoped token), and Box-folder auto-sync (a CCG service app listing a folder and auto-creating Direct Links).
+- **One empirical gate before trusting video:** Box Direct Links for large video can 302-redirect to `dl.boxcloud.com`; confirm Metricool follows it and ingests the video with one real test post before relying on it.
+
+**Consequence if violated:** routing media back through the private Lightsail bucket reintroduces the presigned-URL-expiry problem (breaks advance-scheduled posts) and the CORS + large-upload problems Box sidesteps; storing bytes in the console at all hits the Vercel body cap; keying the media library per-user instead of per-stream re-splits assets from the stream whose content needs them (violates D25).
+
+---
+
 ## How to add to this log
 
 When you make a decision that future-you (or a cold agent) might be tempted to undo, add an entry: the decision, the context that forced it, why, and the consequence of violating it. The bar for inclusion: *would someone seeing this cold reasonably think it's wrong or improvable, when it's actually deliberate?* If yes, it belongs here.
@@ -368,3 +381,4 @@ When you make a decision that future-you (or a cold agent) might be tempted to u
 | 2026-07-09 | D24 update: Metricool has no queue API, so "Add to queue" is console-side (per-stream ideal-time slots + timezone, next-slot append); timezone gotcha (Metricool defaults to Madrid, set brand tz to Sydney); Raph deferred (queue likely covers his near-term value). Step 2 fully built. |
 | 2026-07-11 | D25: Content Pillar Templates = the creative loop (concept + template → guided completion → queue); template carries the plan (default path; custom remains); per-stream template library + built-in starters; concepts become living master documents (+ Import door); media library per-stream (banked); Fireflies extraction postponed for client-data security (manual Claude-session extraction → Import; method in `concept-extraction.md`). |
 | 2026-07-13 | D26: April hook/curiosity-gap skills = canonical docs in repo + condensed injection into console prompts (+ hand to Master Agent Builder); "Content Pillar/Templates" → "Content Series" in UI (code identifiers unchanged); design principles: back button → previous screen, bordered-section visual hierarchy everywhere, cream light theme + dark toggle (--bg stays dark ink). |
+| 2026-07-14 | D27 (amends D2): per-stream media library stores references (Box.com live links / public URLs), not binaries — the console never handles bytes, Box serves the file, Metricool fetches by URL. Media store mirrors the template store (pam/media-library/{stream}/{id}.json); wired into piece production (piece.media → calendar_entries.media → publish resolves to URLs). v1 = paste a Box Direct Link; in-console upload + Box-folder auto-sync banked. Verify Metricool ingests a Box video Direct Link with one real post. |

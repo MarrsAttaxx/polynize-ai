@@ -41,6 +41,10 @@ export type CalendarEntry = {
   external_ref?: string;
   /** Deep link to the post in Metricool, set at schedule time. */
   metricool_url?: string;
+  /** Attached media asset ids (copied from the piece at prepare time), resolved to
+   *  public URLs and sent to Metricool at publish time. Optional; existing entries
+   *  stay valid (isValidEntry unchanged). Maps into 0009's variant jsonb. */
+  media?: string[];
   created_at: string;
   updated_at?: string;
 };

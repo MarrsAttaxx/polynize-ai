@@ -55,6 +55,10 @@ export type MarketingPiece = {
   provenance?: 'human_capture' | 'ai_generated' | 'hybrid';
   /** The text draft for non-video pieces (post copy). Video uses `script`. */
   body?: string;
+  /** Attached media asset ids from this stream's media library (D2 amended
+   *  2026-07-14). References into media-store; resolved to public URLs at publish
+   *  time. Optional so existing pieces stay valid (isValidPiece unchanged). */
+  media?: string[];
 };
 
 function keyFor(owner: string, pieceId: string): string {

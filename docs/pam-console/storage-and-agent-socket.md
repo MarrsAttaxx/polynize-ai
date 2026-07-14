@@ -36,6 +36,8 @@
 
 ## D2 — Two stores: Supabase (system-of-record) + the Lightsail bucket (media)
 
+> **AMENDED by D27 (2026-07-14) for the media library.** Heavy *marketing* media (the per-stream media library: photos, video) does **not** live as blobs in the Lightsail bucket. It is stored as **references** to files hosted on Box.com (or any public direct URL): the console keeps only small JSON metadata (`pam/media-library/{stream}/{id}.json`, via the same dispatch), Box serves the file, and Metricool fetches it by public URL at publish. Reason: Metricool needs a public, non-expiring URL, the bucket is private/text-only, and Vercel's body cap rules out proxying video. The `pam/media/{owner}/{piece}/...` blob path below still stands for *agent-produced* renders/masters that write direct via the job contract (D17); it is browser-uploaded marketing media that moved to Box. See `decisions.md` D27.
+
 No new patterns. Everything queryable is relational in Supabase (where we already are); everything heavy is a blob in the Lightsail bucket (S3-compatible — this *is* the spec's "agent-shared storage" bucket).
 
 The two stores map to **two distinct concerns** (confirmed with the PM):

@@ -7,6 +7,7 @@ import { SEED_PIECES } from '@/lib/marketing/seed';
 import { isStreamId, streamLabel, DEFAULT_STREAM } from '@/lib/marketing/streams';
 import { getBrandVoiceForStream } from '@/lib/marketing/brand-voice-store';
 import { listTemplates } from '@/lib/marketing/template-store';
+import { listMediaForStream } from '@/lib/marketing/media-store';
 import { formatById } from '@/lib/marketing/output-plan';
 import { BackLink } from '@/app/console/marketing/_components/BackLink';
 import s from '../../../_components/client-card.module.css';
@@ -101,6 +102,12 @@ export default async function StreamPage({
   } catch (err) {
     console.error('[marketing.stream] template list failed:', err);
   }
+  let mediaCount = 0;
+  try {
+    mediaCount = (await listMediaForStream(stream)).length;
+  } catch (err) {
+    console.error('[marketing.stream] media list failed:', err);
+  }
 
   return (
     <>
@@ -148,6 +155,21 @@ export default async function StreamPage({
               </span>
               <span className={s.bvDesc}>
                 The repeatable series this stream&rsquo;s content is made from. Manage them.
+              </span>
+            </Link>
+            <Link
+              href={`/console/marketing/stream/${stream}/media`}
+              className={`${s.brandVoiceCard} ${mediaCount > 0 ? s.bvSet : s.bvUnset}`}
+            >
+              <span className={s.bvHead}>
+                <span className={s.bvDot} aria-hidden />
+                <span className={s.bvTitle}>Media library</span>
+                <span className={s.bvState}>
+                  {mediaCount > 0 ? `${mediaCount} asset${mediaCount === 1 ? '' : 's'}` : 'Empty'}
+                </span>
+              </span>
+              <span className={s.bvDesc}>
+                The reusable footage and images this stream&rsquo;s posts are built from. Manage them.
               </span>
             </Link>
           </div>

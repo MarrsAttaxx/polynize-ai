@@ -9,6 +9,7 @@
  */
 
 import { saveEntry, type CalendarEntry } from './calendar-store';
+import { resolveMediaUrls } from './media-store';
 import { getBrandMap, getPostingSchedule } from './metricool-config-store';
 import { isMetricoolConfigured, schedulePost } from './metricool-client';
 import { metricoolNetwork, channelLabel } from './channels';
@@ -49,6 +50,15 @@ export async function publishEntry(owner: string, entry: CalendarEntry): Promise
 
   const schedule = (await getPostingSchedule())[entry.stream] ?? defaultStreamSchedule();
 
+  // Resolve attached media ids to current public URLs (Metricool fetches by URL).
+  // Degrade to a text-only post rather than failing if the lookup hiccups.
+  let media: string[] = [];
+  try {
+    media = await resolveMediaUrls(entry.stream, entry.media ?? []);
+  } catch (err) {
+    console.error('[publish] media resolve failed, posting without media:', err);
+  }
+
   let result;
   try {
     result = await schedulePost({
@@ -57,7 +67,7 @@ export async function publishEntry(owner: string, entry: CalendarEntry): Promise
       networks: [network],
       dateTime: toDateTime(entry.scheduled_at),
       timezone: schedule.timezone,
-      media: [],
+      media,
       draft: false,
     });
   } catch (e) {

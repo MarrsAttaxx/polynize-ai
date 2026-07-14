@@ -22,6 +22,7 @@ import type { MarketingPiece } from '@/lib/marketing/piece-store';
 import { ChatPanel } from './ChatPanel';
 import { StageRail } from './StageRail';
 import { PieceDeleteButton } from './PieceDeleteButton';
+import { MediaPicker } from './MediaPicker';
 import { BackLink } from '@/app/console/marketing/_components/BackLink';
 import s from './script.module.css';
 import c from './chat.module.css';
@@ -39,11 +40,13 @@ export function ScriptScreen({
   const [saveState, setSaveState] = useState<SaveState>('idle');
   const [chatBusy, setChatBusy] = useState(false);
   const [undo, setUndo] = useState<string | null>(null);
+  const [media, setMedia] = useState<string[]>(initial.media ?? []);
 
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   // `latest` is the single source of truth for what should be persisted; every
   // edit path writes it. The save loop always reconciles against it.
   const latest = useRef(initial.script);
+  const latestMedia = useRef<string[]>(initial.media ?? []);
   const inFlight = useRef(false);
 
   // Capture the state URL ONCE at mount. Deriving it inside save() at call time
@@ -73,13 +76,14 @@ export function ScriptScreen({
     try {
       for (;;) {
         const content = latest.current;
+        const mediaContent = latestMedia.current;
         setSaveState('saving');
         let ok = false;
         try {
           const res = await fetch(url, {
             method: 'PUT',
             headers: { 'content-type': 'application/json' },
-            body: JSON.stringify({ ...initial, script: content }),
+            body: JSON.stringify({ ...initial, script: content, media: mediaContent }),
           });
           ok = res.ok;
         } catch {
@@ -89,7 +93,8 @@ export function ScriptScreen({
           setSaveState('error');
           break;
         }
-        if (latest.current !== content) continue; // newer edit arrived mid-flight
+        // newer edit arrived mid-flight (script OR media) -> re-send the latest
+        if (latest.current !== content || latestMedia.current !== mediaContent) continue;
         setSaveState('saved');
         break;
       }
@@ -221,6 +226,17 @@ export function ScriptScreen({
               ? 'The chat is editing the script. The editor unlocks when it is done.'
               : 'Edits autosave. Use the chat to change the script by command, or open the teleprompter (own URL) to record.'}
           </p>
+          <MediaPicker
+            pieceId={initial.piece_id}
+            stream={initial.stream}
+            selected={media}
+            disabled={chatBusy}
+            onChange={(ids) => {
+              setMedia(ids);
+              latestMedia.current = ids;
+              void save();
+            }}
+          />
         </div>
 
         <ChatPanel

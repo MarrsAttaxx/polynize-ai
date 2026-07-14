@@ -15,6 +15,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { BackLink } from '@/app/console/marketing/_components/BackLink';
 import { PieceDeleteButton } from './PieceDeleteButton';
+import { MediaPicker } from './MediaPicker';
 import type { MarketingPiece } from '@/lib/marketing/piece-store';
 import s from './text.module.css';
 
@@ -33,12 +34,14 @@ export function TextOutputScreen({ initial }: { initial: MarketingPiece }) {
   const [preparing, setPreparing] = useState(false);
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [media, setMedia] = useState<string[]>(initial.media ?? []);
 
   const channelCount = initial.platforms?.length ?? 0;
 
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const latestBody = useRef(initial.body ?? '');
   const latestStatus = useRef(initial.status ?? 'draft');
+  const latestMedia = useRef<string[]>(initial.media ?? []);
   const inFlight = useRef(false);
 
   const stateUrlRef = useRef('');
@@ -55,6 +58,7 @@ export function TextOutputScreen({ initial }: { initial: MarketingPiece }) {
       for (;;) {
         const contentBody = latestBody.current;
         const contentStatus = latestStatus.current;
+        const contentMedia = latestMedia.current;
         setSaveState('saving');
         let ok = false;
         try {
@@ -66,6 +70,7 @@ export function TextOutputScreen({ initial }: { initial: MarketingPiece }) {
               script: '',
               body: contentBody,
               status: contentStatus,
+              media: contentMedia,
             }),
           });
           ok = res.ok;
@@ -76,8 +81,12 @@ export function TextOutputScreen({ initial }: { initial: MarketingPiece }) {
           setSaveState('error');
           break;
         }
-        if (latestBody.current !== contentBody || latestStatus.current !== contentStatus) {
-          continue; // a newer edit landed mid-flight
+        if (
+          latestBody.current !== contentBody ||
+          latestStatus.current !== contentStatus ||
+          latestMedia.current !== contentMedia
+        ) {
+          continue; // a newer edit landed mid-flight (body, status, OR media)
         }
         setSaveState('saved');
         break;
@@ -274,6 +283,16 @@ export function TextOutputScreen({ initial }: { initial: MarketingPiece }) {
         onChange={(e) => onEditBody(e.target.value)}
         onBlur={flush}
         aria-label="Post copy"
+      />
+      <MediaPicker
+        pieceId={initial.piece_id}
+        stream={initial.stream}
+        selected={media}
+        onChange={(ids) => {
+          setMedia(ids);
+          latestMedia.current = ids;
+          flush();
+        }}
       />
       <p className={s.hint}>
         {error ? (

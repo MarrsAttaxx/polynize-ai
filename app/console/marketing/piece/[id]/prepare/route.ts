@@ -128,7 +128,13 @@ export async function POST(
     for (const channel of channels) {
       const prior = existing.find((e) => e.channel === channel);
       const entry: CalendarEntry = prior
-        ? { ...prior, title: piece.title, post_copy: variants[channel], updated_at: now }
+        ? {
+            ...prior,
+            title: piece.title,
+            post_copy: variants[channel],
+            media: piece.media ?? [],
+            updated_at: now,
+          }
         : {
             entry_id: crypto.randomUUID(),
             owner,
@@ -137,6 +143,7 @@ export async function POST(
             title: piece.title,
             channel,
             post_copy: variants[channel],
+            media: piece.media ?? [],
             status: 'draft',
             created_at: now,
             updated_at: now,
