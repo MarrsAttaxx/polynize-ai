@@ -91,6 +91,80 @@
 .mapBtn:hover { filter: brightness(1.08); }
 .mapBtn:disabled { opacity: 0.5; cursor: not-allowed; }
 
+/* ---------- STEPPED QUESTIONNAIRE ---------- */
+.qTop { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.qCount {
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  color: var(--text-3);
+  font-family: var(--font-inter), monospace;
+  font-variant-numeric: tabular-nums;
+}
+.qProgress {
+  height: 3px;
+  border-radius: 3px;
+  background: var(--border-soft);
+  overflow: hidden;
+  margin-bottom: 30px;
+}
+.qProgressFill {
+  height: 100%;
+  background: var(--mint);
+  border-radius: 3px;
+  transition: width 0.35s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+.qTitle {
+  font-size: 30px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.12;
+  margin: 0 0 12px;
+}
+.qInput {
+  width: 100%;
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border-soft);
+  border-radius: 12px;
+  padding: 16px 18px;
+  font-size: 15px;
+  font-family: inherit;
+  transition: border-color 0.15s;
+  margin-top: 4px;
+}
+.qInput:focus { outline: none; border-color: var(--border); }
+.qInput::placeholder { color: var(--text-3); }
+.qNav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 22px;
+}
+.qNavLeft { display: flex; align-items: center; gap: 16px; }
+.qBack {
+  appearance: none;
+  background: transparent;
+  border: 1px solid var(--border-soft);
+  color: var(--text-2);
+  border-radius: 10px;
+  padding: 13px 18px;
+  font-size: 13px;
+  cursor: pointer;
+}
+.qBack:hover { border-color: var(--border); color: var(--text); }
+.pasteToggle {
+  appearance: none;
+  background: transparent;
+  border: none;
+  color: var(--text-3);
+  font-size: 12.5px;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.pasteToggle:hover { color: var(--text-2); }
+
 /* ---------- LOADING STATE ---------- */
 .loadStage {
   min-height: 100vh;

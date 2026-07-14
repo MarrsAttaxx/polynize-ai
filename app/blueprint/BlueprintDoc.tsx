@@ -187,7 +187,7 @@ export function BlueprintDoc({
         <div className={s.docHead}>
           <div className={s.wm}>polynize</div>
           <h1 className={s.h1}>
-            {data.client} <span className={s.org}>capability map</span>
+            {data.client} <span className={s.org}>Blueprint</span>
           </h1>
           {data.session && <div className={s.session}>{data.session}</div>}
         </div>
