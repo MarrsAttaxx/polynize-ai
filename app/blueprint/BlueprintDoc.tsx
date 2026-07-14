@@ -30,6 +30,72 @@ function isNotEnough(v: string): boolean {
 
 type ChatMsg = { role: 'user' | 'bot' | 'err' | 'working'; text: string };
 
+/* The 8 Cognitive Work Unit shapes (config/cwu-shapes.json). */
+const SHAPES: { id: number; label: string; name: string; sig: string }[] = [
+  { id: 1, label: 'Decision', name: 'Analysis and Judgment', sig: 'Parallel streams into a synthesis, then a human judgment call.' },
+  { id: 2, label: 'Pipeline', name: 'Pipeline and Conversion', sig: 'Sequential stages with the human at the key gates and the close.' },
+  { id: 3, label: 'Delivery', name: 'Execution and Delivery', sig: 'Spec, decompose, build, test, iterate. The human is the architect.' },
+  { id: 4, label: 'Command', name: 'Executive Leverage', sig: 'Agents expand the reach of one high-value human whose attention is scarce.' },
+  { id: 5, label: 'Relationships', name: 'Relationship Continuity', sig: 'Continuous monitoring, with the human at the high-value moments.' },
+  { id: 6, label: 'Service', name: 'High-Volume Operations', sig: 'Inverted: agents are primary execution, the human handles exceptions.' },
+  { id: 7, label: 'Creative', name: 'Creative Direction', sig: 'Human direction, agent generation, human curation, agent production.' },
+  { id: 8, label: 'Training', name: 'Learning and Capability', sig: 'Assessment, gaps, development, and cohort intelligence.' },
+];
+
+const MOVE_ORDER: Record<string, number> = { train: 0, deploy: 1, hold: 2 };
+const MOVE_CLASS: Record<string, string> = { train: 'moveTrain', deploy: 'moveDeploy', hold: 'moveHold' };
+/** Rail node shape follows allocation: human = circle, agent = square, hybrid = diamond. */
+const ALLOC_NODE: Record<string, string> = { human: 'nodeHuman', hybrid: 'nodeHybrid', agent: 'nodeAgent' };
+function uplift(cap: SalesBlueprint['capabilities'][number]): number {
+  return Math.max(0, cap.benchmark_level - cap.current_level);
+}
+
+function TabIcon({ k }: { k: TabKey }) {
+  const p = { width: 15, height: 15, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.7, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const, 'aria-hidden': true };
+  switch (k) {
+    case 'overview':
+      return (<svg {...p}><rect x="5" y="4" width="14" height="16" rx="2" /><path d="M8.5 9h7M8.5 13h7M8.5 17h4" /></svg>);
+    case 'map':
+      return (<svg {...p}><rect x="4" y="4" width="7" height="7" rx="1.5" /><rect x="13" y="4" width="7" height="7" rx="1.5" /><rect x="4" y="13" width="7" height="7" rx="1.5" /><rect x="13" y="13" width="7" height="7" rx="1.5" /></svg>);
+    case 'benchmarks':
+      return (<svg {...p}><path d="M5 20V11M12 20V5M19 20v-6" /></svg>);
+    case 'transformation':
+      return (<svg {...p}><circle cx="6" cy="6" r="2" /><circle cx="6" cy="18" r="2" /><path d="M6 8v8M10 6h9M10 18h9M10 12h6" /></svg>);
+    case 'team':
+      return (<svg {...p}><rect x="3.5" y="9.5" width="5" height="5" rx="1" /><circle cx="19" cy="12" r="2.6" /><path d="M8.5 12H16" /></svg>);
+    case 'build':
+      return (<svg {...p}><path d="M12 3l2 4 4 .6-3 2.9.7 4.3L12 12.9 8.6 14.8l.7-4.3-3-2.9L10 7z" /></svg>);
+    default:
+      return null;
+  }
+}
+
+function ShapeIcon({ id, active }: { id: number; active?: boolean }) {
+  const c = active ? 'var(--mint)' : 'var(--text-3)';
+  const p = { width: 26, height: 22, viewBox: '0 0 40 30', fill: 'none', stroke: c, strokeWidth: 1.6, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const, 'aria-hidden': true };
+  const sq = (x: number, y: number, s = 6) => <rect x={x} y={y} width={s} height={s} rx="1.4" />;
+  switch (id) {
+    case 1: // Decision: streams -> synthesis -> call
+      return (<svg {...p}>{sq(4, 3)}{sq(4, 12)}{sq(4, 21)}<path d="M10 6h7M10 15h7M10 24h7" /><circle cx="24" cy="15" r="4" /><path d="M28 15h7" /></svg>);
+    case 2: // Pipeline: boxes in a row -> circle
+      return (<svg {...p}>{sq(3, 12)}{sq(13, 12)}{sq(23, 12)}<path d="M9 15h4M19 15h4" /><circle cx="34" cy="15" r="3.4" /><path d="M29 15h1.5" /></svg>);
+    case 3: // Delivery: stacked -> out
+      return (<svg {...p}>{sq(5, 4)}{sq(5, 13)}{sq(5, 22)}<path d="M11 7l9 8M11 25l9-8" /><circle cx="24" cy="15" r="3.4" /></svg>);
+    case 4: // Command: hub and spokes
+      return (<svg {...p}><circle cx="20" cy="15" r="3.6" />{sq(4, 3)}{sq(30, 3)}{sq(4, 21)}{sq(30, 21)}<path d="M10 6l7 6M30 6l-7 6M10 24l7-6M30 24l-7-6" /></svg>);
+    case 5: // Relationships: diamonds around a node
+      return (<svg {...p}><circle cx="20" cy="15" r="3.4" /><path d="M20 4l3 3-3 3-3-3zM20 20l3 3-3 3-3-3zM8 12l3 3-3 3-3-3zM32 12l3 3-3 3-3-3z" /></svg>);
+    case 6: // Service: row of boxes into one node (inverted)
+      return (<svg {...p}>{sq(4, 4)}{sq(16, 4)}{sq(28, 4)}<path d="M7 10l10 8M19 10l0 8M31 10l-10 8" /><circle cx="20" cy="23" r="3.2" /></svg>);
+    case 7: // Creative: nodes -> circle -> node
+      return (<svg {...p}>{sq(3, 8)}{sq(3, 18)}<path d="M9 11l5 3M9 21l5-3" /><circle cx="19" cy="15" r="3.6" /><path d="M23 15h6" />{sq(30, 12)}</svg>);
+    case 8: // Training: chart up
+      return (<svg {...p}><path d="M5 24l8-7 6 4 9-11" /><path d="M24 10h5v5" /></svg>);
+    default:
+      return (<svg {...p}>{sq(16, 12)}</svg>);
+  }
+}
+
 /**
  * Full blueprint renderer + chat editor + persistence. Used by the create flow
  * (/blueprint) with initialData from a fresh generation, and by /blueprint/[id]
@@ -136,6 +202,7 @@ export function BlueprintDoc({
             className={`${s.tab} ${tab === t.key ? s.active : ''}`}
             onClick={() => setTab(t.key)}
           >
+            <span className={s.tabIcon}><TabIcon k={t.key} /></span>
             {t.label}
             {t.key === 'map' && hasGaps && <span className={s.tabDot} aria-hidden="true" />}
           </button>
@@ -383,29 +450,33 @@ function BenchmarksTab({ data }: { data: SalesBlueprint }) {
 function BenchmarkChart({ caps }: { caps: SalesBlueprint['capabilities'] }) {
   const n = caps.length;
   const step = 84;
-  const W = Math.max(560, n * step);
-  const H = 200;
-  const padT = 18;
-  const padB = 40;
-  const plotH = H - padT - padB;
+  const padX = 24;
+  const W = Math.max(560, n * step + padX * 2);
+  const H = 210;
+  const topY = 34; // the benchmark line = "what good looks like" ceiling
+  const baseY = 184;
+  const plotH = baseY - topY;
   const bw = 46;
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Current capability level against benchmark, by capability">
-      <line x1={0} y1={padT + plotH} x2={W} y2={padT + plotH} stroke="var(--border-soft)" strokeWidth={1} />
+    <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Current capability level against the benchmark, by capability">
+      {/* benchmark reference line + label */}
+      <line x1={padX} y1={topY} x2={W - padX} y2={topY} stroke="var(--text-2)" strokeWidth={1} strokeDasharray="5 4" opacity={0.75} />
+      <text x={padX} y={topY - 9} fontSize={10} letterSpacing="1.4" fill="var(--text-2)">BENCHMARK — WHAT GOOD LOOKS LIKE</text>
+      <line x1={padX} y1={baseY} x2={W - padX} y2={baseY} stroke="var(--border-soft)" strokeWidth={1} />
       {caps.map((c, i) => {
-        const cx = i * step + step / 2;
-        const gap = Math.max(0, c.benchmark_level - c.current_level);
-        const color = sevColor(severity(gap));
+        const cx = padX + i * step + step / 2;
+        const color = sevColor(severity(uplift(c)));
+        // Bar reaches the top line at the benchmark level; solid portion = current.
+        const benchH = (plotH * c.benchmark_level) / 100;
         const curH = (plotH * c.current_level) / 100;
-        const curY = padT + plotH - curH;
-        const benchY = padT + plotH - (plotH * c.benchmark_level) / 100;
         return (
           <g key={c.id}>
-            <rect x={cx - bw / 2} y={curY} width={bw} height={curH} rx={3} fill={color} fillOpacity={0.55} stroke={color} />
-            <line x1={cx - bw / 2 - 4} x2={cx + bw / 2 + 4} y1={benchY} y2={benchY} stroke="var(--text-2)" strokeWidth={1.4} strokeDasharray="5 3" />
-            <text x={cx} y={curY - 6} textAnchor="middle" fontSize={11} fill="var(--text-2)">{c.current_level}</text>
-            <text x={cx} y={H - 20} textAnchor="middle" fontSize={10} fill="var(--text-3)">{c.id}</text>
-            <text x={cx} y={H - 6} textAnchor="middle" fontSize={9} fill="var(--text-3)">target {c.benchmark_level}</text>
+            {/* faint gap portion up to benchmark */}
+            <rect x={cx - bw / 2} y={baseY - benchH} width={bw} height={benchH} rx={3} fill={color} fillOpacity={0.08} />
+            {/* solid current portion */}
+            <rect x={cx - bw / 2} y={baseY - curH} width={bw} height={curH} rx={3} fill={color} fillOpacity={0.55} stroke={color} strokeOpacity={0.85} />
+            <text x={cx} y={baseY - curH - 6} textAnchor="middle" fontSize={11} fill="var(--text-2)">{c.current_level}</text>
+            <text x={cx} y={baseY + 16} textAnchor="middle" fontSize={9.5} fill="var(--text-3)">{c.id}</text>
           </g>
         );
       })}
@@ -414,33 +485,51 @@ function BenchmarkChart({ caps }: { caps: SalesBlueprint['capabilities'] }) {
 }
 
 function TransformationTab({ data }: { data: SalesBlueprint }) {
+  // Sort: train first, then deploy (by uplift desc), then hold at the bottom.
+  const rows = [...data.capabilities].sort((a, b) => {
+    const m = MOVE_ORDER[a.transformation.move] - MOVE_ORDER[b.transformation.move];
+    if (m !== 0) return m;
+    return uplift(b) - uplift(a);
+  });
+  const firstHoldIdx = rows.findIndex((c) => c.transformation.move === 'hold');
+
   return (
     <section className={s.section}>
       <div className={s.sechead}>
         <span className={s.sn}>04</span>
         <h2>Transformation Plan</h2>
       </div>
+      <p className={s.secNote}>
+        The sequence: train the human judgment first, deploy the agent capabilities by impact, hold what is
+        already at the benchmark.
+      </p>
       <div className={s.panel}>
-        {data.capabilities.map((cap) => {
-          const agentEmpty = isNotEnough(cap.transformation.agent_move);
+        <div className={s.actHead}>
+          <span className={s.railSpacer} />
+          <span>Move</span>
+          <span>Capability</span>
+          <span>Rationale</span>
+          <span className={s.upliftHead}>Uplift</span>
+        </div>
+        {rows.map((cap, i) => {
+          const mv = cap.transformation.move;
+          const up = uplift(cap);
+          const upClass = mv === 'hold' ? 'sev-low' : `sev-${severity(up)}`;
           return (
-            <div key={cap.id} className={s.planRow}>
-              <div className={s.planCap}>
-                <span className={`${s.glyph} ${s[cap.allocation]}`} aria-hidden="true" />
-                {cap.name}
-              </div>
-              <div className={`${s.box} ${s.person}`}>
-                <span className={s.bl}>Person-led</span>
-                {cap.transformation.person_led}
-              </div>
-              {agentEmpty ? (
-                <div className={`${s.box} ${s.empty}`}>stays human</div>
-              ) : (
-                <div className={`${s.box} ${s.agent}`}>
-                  <span className={s.bl}>Agent move</span>
-                  {cap.transformation.agent_move}
-                </div>
+            <div key={cap.id}>
+              {i === firstHoldIdx && firstHoldIdx > 0 && (
+                <div className={s.actGroup}>Hold — already at the benchmark</div>
               )}
+              <div className={s.actRow}>
+                <span className={s.railCell}>
+                  <span className={s.railSeg} aria-hidden="true" />
+                  <span className={`${s.railNode} ${s[ALLOC_NODE[cap.allocation]]}`} aria-hidden="true" />
+                </span>
+                <span className={`${s.movePill} ${s[MOVE_CLASS[mv]]}`}>{mv}</span>
+                <span className={s.actCap}>{cap.name}</span>
+                <span className={s.actRat}>{cap.transformation.rationale}</span>
+                <span className={`${s.actUplift} ${s[upClass]}`}>+{up}</span>
+              </div>
             </div>
           );
         })}
@@ -450,6 +539,7 @@ function TransformationTab({ data }: { data: SalesBlueprint }) {
 }
 
 function TeamTab({ data }: { data: SalesBlueprint }) {
+  const shape = SHAPES.find((sh) => sh.id === data.team_shape.id) ?? SHAPES[1];
   return (
     <section className={s.section}>
       <div className={s.sechead}>
@@ -457,15 +547,42 @@ function TeamTab({ data }: { data: SalesBlueprint }) {
         <h2>Agentic Design</h2>
         <span className={s.tbc}>Proposed · to confirm</span>
       </div>
-      <div className={s.teamGrid}>
+      <p className={s.secNote}>
+        Agents are not one shape. The work has a shape, and the agents are designed around the human who owns
+        it. We match this unit to one of eight Cognitive Work Unit shapes, then compose the agents that fit it.
+      </p>
+
+      <div className={s.shapeSelector}>
+        {SHAPES.map((sh) => {
+          const on = sh.id === shape.id;
+          return (
+            <div key={sh.id} className={`${s.shapeChip} ${on ? s.shapeChipOn : ''}`}>
+              <ShapeIcon id={sh.id} active={on} />
+              <span className={s.shapeChipLabel}>{sh.label}</span>
+            </div>
+          );
+        })}
+      </div>
+
+      <div className={s.shapePanel}>
+        <div className={s.shapePanelHead}>
+          Team shape · <b>{shape.name}</b>
+        </div>
+        <p className={s.shapeSig}>{shape.sig}</p>
+        {data.team_shape.why && <p className={s.shapeWhy}>{data.team_shape.why}</p>}
+      </div>
+
+      <div className={s.teamList}>
         {data.team_design.agents.map((a, i) => (
-          <div key={i} className={s.agentCard}>
-            <span className={s.agentBot} aria-label="agent" title="Agent">
-              <BotIcon />
-            </span>
-            <div className={s.agentName}>{a.name}</div>
-            <div className={s.agentRole}>{a.role}</div>
-            <div className={s.agentDesc}>{a.desc}</div>
+          <div key={i} className={s.teamListRow}>
+            <span className={s.teamListTag}>agent · {i + 1}</span>
+            <span className={s.teamListBot} aria-hidden="true"><BotIcon /></span>
+            <div className={s.teamListBody}>
+              <div className={s.teamListName}>
+                {a.name} <span className={s.teamListRole}>{a.role}</span>
+              </div>
+              <div className={s.teamListDesc}>{a.desc}</div>
+            </div>
           </div>
         ))}
       </div>

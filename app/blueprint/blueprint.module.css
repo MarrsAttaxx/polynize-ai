@@ -564,6 +564,9 @@
 .tab {
   appearance: none;
   cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
   background: transparent;
   border: 1px solid var(--border-soft);
   color: var(--text-3);
@@ -575,6 +578,7 @@
   transition: color 0.15s, border-color 0.15s, background 0.15s;
   white-space: nowrap;
 }
+.tabIcon { display: inline-flex; opacity: 0.85; }
 .tab:hover { color: var(--text-2); border-color: var(--border); }
 .tab.active {
   color: var(--mint);
@@ -708,9 +712,132 @@
 /* keep the last section clear of the docked chat */
 .docPad { padding-bottom: 120px; }
 
+/* ---------- TRANSFORMATION PLAN (sequenced moves + rail) ---------- */
+.actHead,
+.actRow {
+  display: grid;
+  grid-template-columns: 44px 96px 1.3fr 2fr 58px;
+  gap: 14px;
+  align-items: center;
+}
+.actHead {
+  padding: 13px 20px;
+  border-bottom: 1px solid var(--border-soft);
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  font-weight: 600;
+}
+.railSpacer { display: block; }
+.upliftHead { text-align: right; }
+.actGroup {
+  padding: 14px 20px 6px 78px;
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  font-weight: 600;
+}
+.actRow {
+  padding: 0 20px;
+  min-height: 58px;
+  border-top: 1px solid var(--border-soft);
+}
+.railCell { position: relative; align-self: stretch; display: flex; align-items: center; justify-content: center; }
+.railSeg {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  transform: translateX(-50%);
+  background: var(--border-soft);
+}
+.railNode {
+  position: relative;
+  z-index: 1;
+  width: 15px;
+  height: 15px;
+  background: var(--bg);
+  border: 2px solid var(--rule, var(--text-3));
+  box-sizing: border-box;
+}
+.nodeHuman { border-radius: 50%; border-color: var(--coral); }
+.nodeAgent { border-radius: 3px; border-color: var(--mint); }
+.nodeHybrid { width: 12px; height: 12px; transform: rotate(45deg); border-radius: 2px; border-color: var(--amber); }
+.movePill {
+  justify-self: start;
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 4px 10px;
+  border-radius: 6px;
+  border: 1px solid;
+}
+.moveTrain { color: var(--mint); border-color: rgba(105, 252, 203, 0.5); background: rgba(105, 252, 203, 0.08); }
+.moveDeploy { color: var(--amber); border-color: rgba(240, 184, 107, 0.4); background: rgba(240, 184, 107, 0.06); }
+.moveHold { color: var(--text-3); border-color: var(--border-soft); background: transparent; }
+.actCap { font-size: 14px; color: var(--text); }
+.actRat { font-size: 12.5px; color: var(--text-3); line-height: 1.45; }
+.actUplift { text-align: right; font-size: 15px; font-weight: 700; font-variant-numeric: tabular-nums; }
+
+/* ---------- AGENTIC DESIGN (shape selector + detected shape) ---------- */
+.shapeSelector {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.shapeChip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 6px 10px;
+  border: 1px solid var(--border-soft);
+  border-radius: 10px;
+  background: var(--surface);
+  text-align: center;
+}
+.shapeChipOn { border-color: var(--border); background: rgba(105, 252, 203, 0.07); }
+.shapeChipLabel { font-size: 10.5px; color: var(--text-3); }
+.shapeChipOn .shapeChipLabel { color: var(--mint); }
+.shapePanel {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: rgba(105, 252, 203, 0.04);
+  padding: 18px 20px;
+  margin-bottom: 18px;
+}
+.shapePanelHead { font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-3); }
+.shapePanelHead b { color: var(--mint); font-weight: 700; }
+.shapeSig { font-size: 15px; color: var(--text); line-height: 1.5; margin: 10px 0 0; }
+.shapeWhy { font-size: 13px; color: var(--text-2); line-height: 1.55; margin: 10px 0 0; }
+.teamList { display: flex; flex-direction: column; gap: 8px; }
+.teamListRow {
+  display: grid;
+  grid-template-columns: 70px 22px 1fr;
+  gap: 12px;
+  align-items: start;
+  padding: 14px 18px;
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+  background: var(--surface);
+}
+.teamListTag { font-size: 9.5px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-3); padding-top: 3px; }
+.teamListBot { color: var(--mint); opacity: 0.75; line-height: 0; padding-top: 1px; }
+.teamListName { font-size: 14px; font-weight: 600; color: var(--text); }
+.teamListRole { font-size: 12px; font-weight: 400; color: var(--mint); margin-left: 8px; }
+.teamListDesc { font-size: 12.5px; color: var(--text-2); line-height: 1.5; margin-top: 5px; }
+
 @media (max-width: 680px) {
   .planRow { grid-template-columns: 1fr; }
   .benchRow { grid-template-columns: 1fr; }
   .cmapHead, .cmapRow { grid-template-columns: 1fr 48px 48px 48px; gap: 8px; }
   .chatDock { left: 10px; right: 10px; bottom: 10px; width: auto; }
+  .shapeSelector { grid-template-columns: repeat(4, 1fr); }
+  .actHead, .actRow { grid-template-columns: 30px 80px 1fr 50px; }
+  .actRat { display: none; }
 }

@@ -31,8 +31,22 @@ Every capability is allocated to one of three:
 3. Allocate each capability human / hybrid / agent using the semantics above and the client's judgement-call list.
 4. Score each capability twice on a 0 to 100 scale: current_level (how well they do it today, grounded in the notes and the choke-point cost) and benchmark_level (what good looks like, grounded in their "what good looks like" answer). Benchmark is normally higher than current. The gap is the story.
 5. Set confidence and completeness honestly. If the notes clearly describe a capability, confidence high and completeness complete or partial. If you are inferring a capability the workflow implies but the client did not describe, confidence low and completeness ghost, and always attach a gap_question.
-6. For each capability, write a transformation: person_led (what the human keeps owning) and agent_move (what an agent takes on). For human-allocated rows, agent_move can be a supporting move or "Not enough information" if none is warranted.
+6. For each capability, assign a transformation move and rationale. The move is one of:
+   - train: a human capability the person must develop (for example, learning to direct and review the agent layer). Use for human-allocated capabilities that are below benchmark.
+   - deploy: an agent or hybrid capability to stand up. Use for agent/hybrid capabilities that are below benchmark.
+   - hold: already at or near the benchmark (small gap), no action needed now.
+   The rationale is one short sentence on why this move and why now (sequencing, dependency, or impact), referencing the capability. Example: "Foundational. Until the rep can direct the agents, the rest of the layer stays idle."
 7. Propose a small agent team (1 to 4 agents plus, where it fits, one coordinating lead) that would cover the agent and hybrid capabilities. Team design is always proposed and to confirm.
+8. Identify which of the 8 Cognitive Work Unit shapes this unit most resembles, and give a one-line reason. The shapes:
+   1 Analysis and Judgment (parallel research streams feed a human judgment call)
+   2 Pipeline and Conversion (sequential stages, human closes; agents carry prep, outreach, follow-through)
+   3 Execution and Delivery (spec, decompose, build, test, iterate; human is architect)
+   4 Executive Leverage (one high-value human whose attention is the scarce resource; agents expand reach)
+   5 Relationship Continuity (continuous account maintenance; human at high-value moments)
+   6 High-Volume Operations (inverted, agents are primary execution, human handles exceptions)
+   7 Creative Direction (human direction, agent generation, human curation, agent production)
+   8 Learning and Capability Development (assessment, gaps, development, cohort intelligence)
+   Set team_shape.id to the best-fit number and team_shape.why to the reason.
 
 ## GAP QUESTIONS
 
@@ -77,10 +91,11 @@ gap_question is the actual warm, specific line Marrs would say in the room to cl
       "confidence": "high|medium|low",
       "completeness": "complete|partial|stub|ghost",
       "gap_question": "<the in-room question, or null>",
-      "transformation": { "person_led": "<what the human keeps>", "agent_move": "<what an agent takes on, or 'Not enough information'>" }
+      "transformation": { "move": "train|deploy|hold", "rationale": "<one sentence: why this move, why now>" }
     }
   ],
   "benchmark_summary": "<two sentences on the overall gap>",
+  "team_shape": { "id": <1-8>, "why": "<one line: why this shape fits the unit>" },
   "team_design": {
     "status": "proposed_to_confirm",
     "agents": [ { "name": "<single word>", "role": "<role title>", "desc": "<one sentence>" } ]
@@ -95,6 +110,7 @@ gap_question is the actual warm, specific line Marrs would say in the room to cl
 1. Every capability id is unique and sequential (C01, C02, ...).
 2. Every capability has 2 to 4 short point-form tasks.
 3. Allocation semantics respected; human rows reflect the client's judgement-call list.
+3b. Every capability has a transformation move (train, deploy, or hold) and a one-sentence rationale. team_shape.id is set (1-8).
 4. Every low-confidence or ghost row has a real, specific gap_question.
 5. build_plan and outcomes are both populated with indicative content (never "Not enough information").
 6. No invented client names, hard dates, dollar figures, headcounts, or vendors.
@@ -134,7 +150,7 @@ Return exactly:
   "blueprint": { <the FULL updated blueprint, same schema as the input> }
 }
 
-The blueprint object uses the identical schema as the input: client, session, purpose, bottleneck, current_workflow {narrative, phases[{name, steps[{label, risk}]}]}, capabilities[{id, name, cluster, allocation, detail, tasks[], current_level, benchmark_level, confidence, completeness, gap_question, transformation{person_led, agent_move}}], benchmark_summary, team_design{status, agents[{name, role, desc}]}, build_plan, outcomes, what_good_looks_like. Preserve the tasks array on every capability unless the request is about the tasks.`;
+The blueprint object uses the identical schema as the input: client, session, purpose, bottleneck, current_workflow {narrative, phases[{name, steps[{label, risk}]}]}, capabilities[{id, name, cluster, allocation, detail, tasks[], current_level, benchmark_level, confidence, completeness, gap_question, transformation{move (train|deploy|hold), rationale}}], benchmark_summary, team_shape{id (1-8), why}, team_design{status, agents[{name, role, desc}]}, build_plan, outcomes, what_good_looks_like. Preserve the tasks array, transformation, and team_shape on every capability unless the request is about them.`;
 
 export function buildSalesBlueprintReviseUserMessage(
   current: unknown,

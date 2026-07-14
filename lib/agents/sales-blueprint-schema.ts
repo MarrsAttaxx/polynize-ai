@@ -46,12 +46,18 @@ const Capability = z.object({
   confidence: Confidence,
   completeness: Completeness,
   gap_question: z.string().nullable().catch(null),
+  /**
+   * Transformation move for this capability in the sequenced plan:
+   *  - train:  a human capability to develop (the rep learns to direct the agents)
+   *  - deploy: an agent/hybrid capability to stand up
+   *  - hold:   already at the benchmark, no action
+   */
   transformation: z
     .object({
-      person_led: z.string().catch(''),
-      agent_move: z.string().catch('Not enough information'),
+      move: z.enum(['train', 'deploy', 'hold']).catch('deploy'),
+      rationale: z.string().catch(''),
     })
-    .catch({ person_led: '', agent_move: 'Not enough information' }),
+    .catch({ move: 'deploy', rationale: '' }),
 });
 
 const TeamAgent = z.object({
@@ -73,6 +79,17 @@ export const SalesBlueprintSchema = z.object({
     .catch({ narrative: '', phases: [] }),
   capabilities: z.array(Capability).catch([]),
   benchmark_summary: z.string().catch(''),
+  /**
+   * Which of the 8 Cognitive Work Unit shapes this unit most resembles (1-8).
+   * Drives the Agentic Design tab. `why` is a one-line justification. Defaults
+   * to Pipeline (2) if the model omits it.
+   */
+  team_shape: z
+    .object({
+      id: z.coerce.number().int().min(1).max(8).catch(2),
+      why: z.string().catch(''),
+    })
+    .catch({ id: 2, why: '' }),
   team_design: z
     .object({
       status: z.literal('proposed_to_confirm').catch('proposed_to_confirm'),
