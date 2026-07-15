@@ -10,7 +10,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import type { MediaAsset } from '@/lib/marketing/media-store';
+import type { MediaAsset, MediaKind } from '@/lib/marketing/media-store';
 import s from './media-picker.module.css';
 
 export function MediaPicker({
@@ -48,11 +48,23 @@ export function MediaPicker({
     };
   }, [stream, pieceId]);
 
-  const toggle = (id: string) => {
+  const toggle = (id: string, kind: MediaKind) => {
     if (disabled) return;
-    onChange(
-      selected.includes(id) ? selected.filter((x) => x !== id) : [...selected, id]
+    if (selected.includes(id)) {
+      onChange(selected.filter((x) => x !== id));
+      return;
+    }
+    // Metricool rejects a post that mixes media types or carries more than one
+    // video. So a video is EXCLUSIVE (picking one clears the rest); an image
+    // groups with other images but replaces a selected video.
+    if (kind === 'video') {
+      onChange([id]);
+      return;
+    }
+    const hasVideo = (assets ?? []).some(
+      (a) => selected.includes(a.media_id) && a.kind === 'video'
     );
+    onChange(hasVideo ? [id] : [...selected, id]);
   };
 
   const manageHref = `/console/marketing/stream/${stream}/media`;
@@ -86,7 +98,7 @@ export function MediaPicker({
                 key={m.media_id}
                 type="button"
                 className={`${s.tile} ${on ? s.on : ''}`}
-                onClick={() => toggle(m.media_id)}
+                onClick={() => toggle(m.media_id, m.kind)}
                 disabled={disabled}
                 aria-pressed={on}
                 title={m.label}
@@ -110,6 +122,12 @@ export function MediaPicker({
           })}
         </div>
       )}
+      {assets && assets.length > 0 ? (
+        <p className={s.constraint}>
+          One video on its own, or multiple images. Mixing types in one post
+          isn&rsquo;t allowed.
+        </p>
+      ) : null}
     </div>
   );
 }

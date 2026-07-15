@@ -10,12 +10,16 @@
 
 ---
 
-## P0 — critical path (test these first)
+## P0 — critical path
 
-- [ ] **Box video Direct Link → Metricool ingestion.** The one true unknown. Add a Box **Direct Link** to a *video* in a stream's Media library, attach it to a piece, prepare + schedule it, and confirm the Metricool post actually carries the video (not a broken/empty attachment). Box may 302-redirect video links to `dl.boxcloud.com`; if Metricool doesn't follow it, we switch the media path to Vercel Blob. *(Images are lower-risk; test one image too.)*
-- [ ] **The full spine end to end.** Concept → Create content → draft a post → approve → Prepare posts → the calendar shows one entry per channel → schedule/queue → it lands in Metricool on the right date and time.
-- [ ] **State persistence across reload.** Mid-edit on a piece (text and script), reload the page: the draft, status, and attached media survive. (CLAUDE.md testing priority #1.)
-- [ ] **Metricool posts at the correct local time** (not 1am). Confirms the Madrid→Sydney timezone fix still holds after all the changes.
+**✅ VERIFIED 2026-07-15 — all P0 passed.** Box video Direct Links ingest into Metricool cleanly; the full spine (concept → post → prepare → schedule → Metricool) works end to end; state survived reload; posts landed at the correct local time. One platform constraint surfaced and is now guarded (see below).
+
+- [x] **Box video Direct Link → Metricool ingestion.** ✅ Works — the gating unknown is resolved. Box video links reach Metricool with the video attached. (Vercel Blob fallback no longer needed.)
+- [x] **The full spine end to end.** ✅ Concept → Create content → draft → approve → Prepare → calendar → schedule → Metricool.
+- [x] **State persistence across reload.** ✅ Post text, status, and attached media survived.
+- [x] **Metricool posts at the correct local time.** ✅ No 1am regression.
+
+> **Finding → fixed:** Metricool rejects a post that **mixes media types** (image + video) or carries **more than one video**. The media picker now enforces this: a video is exclusive (selecting one clears the rest), images group only with images. So an impossible combination can't be built in the console. Multiple images (carousels) are still fine.
 
 ---
 
@@ -81,7 +85,7 @@
 
 ## Known open questions / risks
 
-- **Box video ingestion** (see P0) — the gating unknown for video publishing.
+- ~~**Box video ingestion**~~ — **RESOLVED 2026-07-15:** Box video Direct Links ingest into Metricool with the video attached. ✅
 - **AGENTS_S3_* in Vercel prod** — media metadata rides the interim Supabase store if S3 isn't configured, so the library works either way; but confirm which store it's actually using if we later expect S3.
 - **Per-stream media scoping** relies on app-level filtering (no RLS) — the tests above confirm A/B isolation holds.
 

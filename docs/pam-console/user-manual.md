@@ -111,7 +111,7 @@ Reusable photos and video per stream, at `Stream setup → Media library`.
 2. Open the file's **Share → Link Settings → copy the Direct Link** (the `/shared/static/…` one that ends in the file type — *not* the default `box.com/s/…` preview link).
 3. In the console's Media library, **paste the link**, leave type on **Auto** (it detects image vs video), add an optional label, **Add**.
 
-**Using media:** on any piece, the **media picker** shows that stream's library; click to attach. Attached media rides through **Prepare → calendar → Metricool** onto the real post.
+**Using media:** on any piece, the **media picker** shows that stream's library; click to attach. Attached media rides through **Prepare → calendar → Metricool** onto the real post. **One post = one video on its own, OR multiple images** — the picker enforces this because the platforms reject mixing media types or more than one video in a single post.
 
 **Delete** removes the reference from the library only; the Box file is untouched.
 
