@@ -96,15 +96,23 @@ export async function POST(
 
   let pieces;
   try {
-    pieces = await createOutputs(user.email, concept, [
-      {
-        format: fmt,
-        platforms: template.platforms,
-        icp: template.icp,
-        pillar: template.name,
-        template_ref: templateRef,
-      },
-    ]);
+    pieces = await createOutputs(
+      user.email,
+      concept,
+      [
+        {
+          format: fmt,
+          platforms: template.platforms,
+          icp: template.icp,
+          pillar: template.name,
+          template_ref: templateRef,
+        },
+      ],
+      // Each "Use this template" makes a fresh piece with a fresh draft, so it
+      // never silently reopens a prior piece's stale draft. Variations accumulate
+      // in the concept's dev hub (and can be deleted there).
+      { forceNew: true }
+    );
   } catch (err) {
     console.error('[concept.create] create failed:', err);
     return NextResponse.json({ error: 'could not create the piece' }, { status: 500 });

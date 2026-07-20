@@ -34,9 +34,16 @@ export type OutputSpec = {
 export async function createOutputs(
   owner: string,
   concept: ConceptDoc,
-  specs: OutputSpec[]
+  specs: OutputSpec[],
+  opts?: { forceNew?: boolean }
 ): Promise<CreatedOutput[]> {
-  const existing = await listSavedPieces(owner);
+  // forceNew skips the reuse check so every call creates a fresh piece. The
+  // template path ("Use this template") passes it: the user expects a NEW draft
+  // each time, and silent reuse of a prior piece made "it just gives me the same
+  // post" (the old stored draft, which the auto-draft then skips as already
+  // filled). The custom Output-plan path omits it and stays idempotent (re-running
+  // a fan-out never duplicates).
+  const existing = opts?.forceNew ? [] : await listSavedPieces(owner);
   const out: CreatedOutput[] = [];
 
   for (const spec of specs) {
