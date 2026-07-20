@@ -356,6 +356,20 @@ Format per entry: the decision, the context that forced it, the rationale, and t
 
 ---
 
+## D28 — Permissions layer (admin vs user): scoped, DEFERRED
+
+**Decision (2026-07-20, Marrs): capture the intended two-tier model now, build it later.** D4 deferred permissions; Marrs has now articulated the target model but chose to DEFER the build to keep momentum on the video module. Captured here so it is ready and not re-litigated. Nothing was built for it yet (the Move-concept and dev-group Delete controls shipped ungated; they become admin-only when this lands).
+
+- **Two tiers inside 'team':** admin (Marrs) and user (other team members). Determined by an admin-email allowlist (new env, e.g. `CONSOLE_ADMIN_EMAILS`, mirroring `CONSOLE_ALLOWED_EMAILS`). Safe default: if unset, everyone stays admin (today's behaviour), so nothing breaks before it is configured.
+- **Admin:** sees and accesses ALL streams; can move concepts, delete concepts, delete dev groups, and edit the global built-in series.
+- **User:** sees ONLY Polynize + their own stream (needs an email->stream map, mirroring `CONSOLE_CLIENT_EMAILS`); can create content, copy concepts into their own stream, and edit their own stream's assets; CANNOT move or delete core concepts, delete dev groups, or edit the global built-in series.
+- **Editing the built-in series is inherently admin + global.** The built-ins are shared code constants (`lib/marketing/template-library.ts`), so global editing needs an OVERRIDE STORE (persist admin edits that shadow the constants for all streams). Per-stream refine already exists (Copy to this stream -> edit; the stream copy shadows the built-in via the kept `library:{id}`). So global built-in editing ships WITH this layer.
+- **Enforcement is server-side, not just hidden UI:** every admin-only action's route must reject non-admins, and stream reads/writes must check the caller's visible streams. Hiding a button is not access control.
+
+**Consequence if violated:** shipping an admin-gated action's UI without the server-side gate leaks it to users; shipping global built-in editing ungated lets any user rewrite shared recipes for everyone (the exact reason it must be admin-only); keying user visibility per-user without the email->stream map has no source of truth.
+
+---
+
 ## How to add to this log
 
 When you make a decision that future-you (or a cold agent) might be tempted to undo, add an entry: the decision, the context that forced it, why, and the consequence of violating it. The bar for inclusion: *would someone seeing this cold reasonably think it's wrong or improvable, when it's actually deliberate?* If yes, it belongs here.
@@ -381,4 +395,5 @@ When you make a decision that future-you (or a cold agent) might be tempted to u
 | 2026-07-09 | D24 update: Metricool has no queue API, so "Add to queue" is console-side (per-stream ideal-time slots + timezone, next-slot append); timezone gotcha (Metricool defaults to Madrid, set brand tz to Sydney); Raph deferred (queue likely covers his near-term value). Step 2 fully built. |
 | 2026-07-11 | D25: Content Pillar Templates = the creative loop (concept + template → guided completion → queue); template carries the plan (default path; custom remains); per-stream template library + built-in starters; concepts become living master documents (+ Import door); media library per-stream (banked); Fireflies extraction postponed for client-data security (manual Claude-session extraction → Import; method in `concept-extraction.md`). |
 | 2026-07-13 | D26: April hook/curiosity-gap skills = canonical docs in repo + condensed injection into console prompts (+ hand to Master Agent Builder); "Content Pillar/Templates" → "Content Series" in UI (code identifiers unchanged); design principles: back button → previous screen, bordered-section visual hierarchy everywhere, cream light theme + dark toggle (--bg stays dark ink). |
+| 2026-07-20 | D28: permissions layer (admin vs user) SCOPED but DEFERRED — admin sees all + can move/delete concepts, delete groups, edit global built-in series; users see Polynize + own stream, can copy but not move/delete; editing built-in series needs a global override store; server-side enforcement required. Build with the auth layer, not piecemeal. |
 | 2026-07-14 | D27 (amends D2): per-stream media library stores references (Box.com live links / public URLs), not binaries — the console never handles bytes, Box serves the file, Metricool fetches by URL. Media store mirrors the template store (pam/media-library/{stream}/{id}.json); wired into piece production (piece.media → calendar_entries.media → publish resolves to URLs). v1 = paste a Box Direct Link; in-console upload + Box-folder auto-sync banked. Verify Metricool ingests a Box video Direct Link with one real post. |
