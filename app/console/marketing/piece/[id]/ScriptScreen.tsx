@@ -243,7 +243,7 @@ export function ScriptScreen({
                 type="button"
                 className={s.undoBtn}
                 onClick={revert}
-                disabled={chatBusy}
+                disabled={chatBusy || drafting}
               >
                 Undo
               </button>
@@ -287,6 +287,7 @@ export function ScriptScreen({
           conceptBody={conceptBody}
           onBusyChange={setChatBusy}
           onApply={applyChatEdit}
+          disabled={drafting}
         />
       </div>
     </div>

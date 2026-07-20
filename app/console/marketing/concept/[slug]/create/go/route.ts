@@ -21,6 +21,7 @@ import {
 } from '@/lib/marketing/create-outputs';
 import { getPiece, savePiece } from '@/lib/marketing/piece-store';
 import { draftTextBody, draftVideoScript } from '@/lib/marketing/draft';
+import { scaffoldScript } from '@/lib/marketing/concept-parse';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -110,12 +111,16 @@ export async function POST(
   }
 
   // Auto-draft the first version: mash the template recipe with the concept so
-  // the user lands on a real draft, not an empty body or a generic scaffold. Only
-  // for a freshly-created piece (never overwrite an existing one on a re-run). Best
+  // the user lands on a real draft, not an empty body or a generic scaffold. Best
   // effort: if the draft fails the piece is still created and the user can draft
   // manually on the piece screen, so a slow/absent LLM never blocks creation.
+  //
+  // Draft only when the target field is still UNTOUCHED. This never overwrites real
+  // content on a re-run, but it DOES recover a piece whose first attempt timed out
+  // after createOutputs saved it (idempotent re-run returns reused=true, yet the
+  // content was never written), instead of leaving it stuck on the bare scaffold.
   const created = pieces[0];
-  if (created && !created.reused) {
+  if (created) {
     try {
       const piece = await getPiece(user.email, created.pieceId);
       if (piece) {
@@ -123,11 +128,17 @@ export async function POST(
         // everything else → ScriptScreen (script). Drafting into the OTHER field
         // would make the draft invisible on the screen.
         if (piece.kind === 'text') {
-          const body = await draftTextBody(user.email, piece);
-          await savePiece(user.email, { ...piece, body });
+          if (!piece.body?.trim()) {
+            const body = await draftTextBody(user.email, piece);
+            await savePiece(user.email, { ...piece, body });
+          }
         } else {
-          const script = await draftVideoScript(user.email, piece);
-          await savePiece(user.email, { ...piece, script });
+          // "Untouched" = empty, or still exactly the scaffold createOutputs seeded.
+          const scaffold = scaffoldScript(concept.framing, concept.body_md);
+          if (!piece.script?.trim() || piece.script === scaffold) {
+            const script = await draftVideoScript(user.email, piece);
+            await savePiece(user.email, { ...piece, script });
+          }
         }
       }
     } catch (err) {

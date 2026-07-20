@@ -28,6 +28,7 @@ export function ChatPanel({
   conceptBody,
   onApply,
   onBusyChange,
+  disabled = false,
 }: {
   script: string;
   format?: string;
@@ -38,6 +39,10 @@ export function ChatPanel({
   onApply: (next: string) => void;
   /** Notifies the parent when a command is in flight, so it can lock the editor. */
   onBusyChange?: (busy: boolean) => void;
+  /** Locked from outside (e.g. a redraft is in flight): a chat command here would
+   *  race the redraft through the shared onApply and clobber it, so block sending
+   *  entirely while true. */
+  disabled?: boolean;
 }) {
   const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState('');
@@ -57,7 +62,7 @@ export function ChatPanel({
   const send = useCallback(
     async (instruction: string) => {
       const trimmed = instruction.trim();
-      if (!trimmed || sendingRef.current) return;
+      if (!trimmed || sendingRef.current || disabled) return;
       sendingRef.current = true;
       setSending(true);
       onBusyChange?.(true);
@@ -111,7 +116,7 @@ export function ChatPanel({
         });
       }
     },
-    [messages, sending, format, title, conceptBody, onApply, onBusyChange]
+    [messages, sending, format, title, conceptBody, onApply, onBusyChange, disabled]
   );
 
   // When the piece has a source concept, offer the draft-from-concept action first.
@@ -140,7 +145,7 @@ export function ChatPanel({
                   key={q}
                   type="button"
                   className={s.chip}
-                  disabled={sending}
+                  disabled={sending || disabled}
                   onClick={() => void send(q)}
                 >
                   {q}
@@ -174,9 +179,13 @@ export function ChatPanel({
           onChange={(e) => setInput(e.target.value)}
           placeholder="tighten beat 3, cut the intro, sharper hook…"
           aria-label="Chat command"
-          disabled={sending}
+          disabled={sending || disabled}
         />
-        <button className={s.send} type="submit" disabled={sending || !input.trim()}>
+        <button
+          className={s.send}
+          type="submit"
+          disabled={sending || disabled || !input.trim()}
+        >
           Send
         </button>
       </form>
