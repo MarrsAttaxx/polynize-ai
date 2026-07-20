@@ -60,6 +60,12 @@ The approved EDL is executed by Descript's MCP `prompt_project_agent` (a natural
 - **Watch:** `web.descript.com/{project_id}/{5-char-composition-short-id}`.
 - **Reframe / captions / thumbnail** (9:16, continuous captions, first-frame thumbnail) are the next agent steps on top of the locked cut, then the piece flows into the calendar + Metricool tail.
 
+### Learnings from the clip 1 review (2026-07-20, Marrs)
+
+- **Aspect ratio: check the SOURCE first, and have the agent REPORT it (never assume).** Target for shorts is 9:16 vertical. If the source is already 9:16, keep it as-is: do NOT reframe or crop. If the source is 16:9, convert to 9:16 with Descript's smart, speaker-tracking reframe (it follows the person), NOT a naive centre cover-fit, which can crop the speaker out of frame. (On clip 1 the agent center-cropped and also disagreed with Marrs about the source orientation, so the assembly prompt must force the agent to state the detected source aspect ratio and choose the rule explicitly.)
+- **Hook = the sharpest declarative line.** Marrs's pick for clip 1 was "You have to train for a skill. Schools don't train skills." over the softer soccer-field setup. Lead with the blunt claim.
+- **Operator review = a readable TEXT BLOCK, not an EDL.** When clips are shown for approval, present each as: the hook labelled at the top, then the body as flowing prose in play order (the words as they will be heard). The timecoded EDL is for the assembly engine only; keep it out of the human review view.
+
 ## Execution constraints (for the later assembly build)
 
 - **Descript is the cutting engine.** The transcript anchors are paragraph-level `[HH:MM:SS]` text spans (no per-word IDs exposed), so the EDL references text spans + timecodes; Descript maps them to the timeline, removes silences/filler, and assembles the cut. The agent proposes WHAT to cut; Descript does the cut.
@@ -78,7 +84,7 @@ The approved EDL is executed by Descript's MCP `prompt_project_agent` (a natural
 >
 > 1. Segment the transcript into thematic sections (one topic each). Boundaries are where the subject changes.
 > 2. Keep only sections that can stand alone and carry a strong idea (a contrarian take, a surprising number, a vivid stakes line, a concrete story, a reframe). Discard logistics, throat-clearing, and context-dependent chatter. Be selective: propose only genuinely strong clips, ranked strongest first.
-> 3. For each kept section, find THE hook: the single most arresting line, the one that stops a scroll. This becomes the clip's first line.
+> 3. For each kept section, find THE hook: the single most arresting line, the one that stops a scroll. Prefer a blunt, declarative claim (for example "Schools don't train skills") over a softer setup or lead-in line. This becomes the clip's first line.
 > 4. Build the clip as an edit decision list: hook first, then the supporting arc in an order that plays as one coherent thought, with silences, filler, false starts, and tangents removed. Tighten hard. Never pad with silence or filler to reach a length, and never add content the speaker did not say. Estimate the finished duration from the actual spoken length of the spans you keep (roughly 2.7 words per second); strong clips commonly land between 30 and 75 seconds, and shorter-but-tight beats longer-but-padded. The clip must make full sense to someone who never heard the episode, and it must end on the payoff, not a trailing aside.
 > 5. Use ONLY the speaker's real words. Select and order spans; never paraphrase or invent a line. Dropping a false start inside a sentence is fine; changing what they said is not.
 >
