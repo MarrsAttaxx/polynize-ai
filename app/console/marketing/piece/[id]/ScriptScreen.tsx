@@ -187,7 +187,11 @@ export function ScriptScreen({
       <StageRail pieceId={initial.piece_id} current="script" />
       <header className={s.head}>
         <div className={s.headLeft}>
-          <BackLink fallbackHref="/console/marketing" className={s.back} />
+          <BackLink
+            fallbackHref="/console/marketing"
+            className={s.back}
+            dashboardHref={`/console/marketing/stream/${initial.stream}`}
+          />
           <div className={s.titleWrap}>
             <span className={s.eyebrow}>
               {(initial.format ?? '').replace(/_/g, ' ')} · script

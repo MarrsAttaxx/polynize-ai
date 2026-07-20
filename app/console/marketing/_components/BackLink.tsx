@@ -15,10 +15,18 @@ export function BackLink({
   fallbackHref,
   label = 'Back',
   className,
+  dashboardHref = '/console/marketing',
 }: {
   fallbackHref: string;
   label?: string;
   className?: string;
+  /**
+   * Where "Dashboard" goes. Marrs's "dashboard" is the home of the stream you're
+   * in (the page you land on when you open a brand), so stream-scoped screens pass
+   * `/console/marketing/stream/{stream}`. Pages not inside a stream (calendar,
+   * metricool, import) keep the default all-brands marketing home.
+   */
+  dashboardHref?: string;
 }) {
   const router = useRouter();
 
@@ -50,11 +58,7 @@ export function BackLink({
       <a href={fallbackHref} onClick={onClick} className={className}>
         ← {label}
       </a>
-      <a
-        href="/console/marketing"
-        className={className}
-        title="Back to the marketing dashboard"
-      >
+      <a href={dashboardHref} className={className} title="Back to the dashboard">
         Dashboard
       </a>
     </span>

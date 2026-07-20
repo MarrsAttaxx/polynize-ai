@@ -56,6 +56,7 @@ export default async function ConceptPage({
           <BackLink
             fallbackHref={`/console/marketing/stream/${concept.stream}`}
             className={s.back}
+            dashboardHref={`/console/marketing/stream/${concept.stream}`}
           />
           <MoveConceptButton currentStream={concept.stream} />
         </div>

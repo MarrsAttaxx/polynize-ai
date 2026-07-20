@@ -40,7 +40,7 @@ export async function POST(
   let pieces;
   try {
     pieces = (await listSavedPieces(owner)).filter((p) =>
-      pieceInDevGroup(p, owner, slug)
+      pieceInDevGroup(p, slug)
     );
   } catch (err) {
     console.error('[dev.delete] piece list failed:', err);

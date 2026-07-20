@@ -50,7 +50,11 @@ export default async function TemplatesPage({
   return (
     <div className={s.root}>
       <header className={s.head}>
-        <BackLink fallbackHref={`/console/marketing/stream/${stream}`} className={s.back} />
+        <BackLink
+          fallbackHref={`/console/marketing/stream/${stream}`}
+          className={s.back}
+          dashboardHref={`/console/marketing/stream/${stream}`}
+        />
         <span className={s.eyebrow}>content templates · {streamLabel(stream)}</span>
         <h1 className={s.title}>Content templates</h1>
         <p className={s.sub}>

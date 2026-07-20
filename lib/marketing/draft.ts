@@ -161,7 +161,11 @@ async function generate(
       system:
         kind === 'video' ? scriptSystemPrompt(promptOpts) : textSystemPrompt(promptOpts),
       messages: [{ role: 'user', content: `${source}\n\n${ask}` }],
-      maxTokens: kind === 'video' ? 2400 : 1800,
+      // Generous ceiling: the model is a thinking model (Gemini 3.5 Flash), whose
+      // reasoning tokens count against max_tokens. At 1800 a heavy recipe prompt
+      // could spend most of the budget on reasoning and truncate the visible draft
+      // mid-sentence. These leave ample room for reasoning AND the full output.
+      maxTokens: kind === 'video' ? 6000 : 4000,
       temperature: 0.7,
       json: false,
       apiKey: process.env.APRIL_OPENROUTER_API_KEY,

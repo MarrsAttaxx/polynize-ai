@@ -65,7 +65,7 @@ export async function POST(
     // 2. Its pieces + their calendar entries, so the group stays together under
     //    the new stream (a piece left in the old stream would orphan its concept).
     const pieces = (await listSavedPieces(owner)).filter((p) =>
-      pieceInDevGroup(p, owner, slug)
+      pieceInDevGroup(p, slug)
     );
     for (const p of pieces) {
       await savePiece(owner, { ...p, stream: targetStream });

@@ -63,7 +63,11 @@ export default async function CreateFromConceptPage({
   return (
     <div className={s.root}>
       <header className={s.head}>
-        <BackLink fallbackHref={`/console/marketing/concept/${slug}`} className={s.back} />
+        <BackLink
+          fallbackHref={`/console/marketing/concept/${slug}`}
+          className={s.back}
+          dashboardHref={`/console/marketing/stream/${concept.stream}`}
+        />
         <span className={s.eyebrow}>create content · {concept.stream}</span>
         <h1 className={s.title}>Pick a content template</h1>
         <p className={s.sub}>

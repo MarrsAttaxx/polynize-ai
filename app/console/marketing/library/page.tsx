@@ -49,7 +49,11 @@ export default async function ConceptLibraryPage({
   return (
     <div className={s.root}>
       <header className={s.head}>
-        <BackLink fallbackHref={`/console/marketing/stream/${target}`} className={s.back} />
+        <BackLink
+          fallbackHref={`/console/marketing/stream/${target}`}
+          className={s.back}
+          dashboardHref={`/console/marketing/stream/${target}`}
+        />
         <span className={s.eyebrow}>concept library · importing into {streamLabel(target)}</span>
         <h1 className={s.title}>Concept library</h1>
         <p className={s.sub}>

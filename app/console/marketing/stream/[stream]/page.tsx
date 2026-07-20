@@ -9,6 +9,7 @@ import { getBrandVoiceForStream } from '@/lib/marketing/brand-voice-store';
 import { listTemplates } from '@/lib/marketing/template-store';
 import { listMediaForStream } from '@/lib/marketing/media-store';
 import { formatById } from '@/lib/marketing/output-plan';
+import { groupKeyOf } from '@/lib/marketing/dev-group';
 import { BackLink } from '@/app/console/marketing/_components/BackLink';
 import s from '../../../_components/client-card.module.css';
 import l from '../../../_components/launcher.module.css';
@@ -67,15 +68,9 @@ export default async function StreamPage({
 
   // Group in-development pieces by their core concept: one card per concept,
   // ALWAYS drilling into the development hub (even for a single piece — the hub
-  // is the standard landing, per Marrs 2026-07-13). Pieces without a concept-bank
-  // ref (e.g. the pre-concept-bank seed) group by their ref tail / piece id so
-  // they get a hub too.
-  const groupKeyOf = (p: MarketingPiece): string => {
-    const m = p.concept_ref?.match(/core-concept-(.+)\.md$/);
-    if (m) return m[1];
-    const tail = p.concept_ref?.split('/').filter(Boolean).pop();
-    return tail || p.piece_id;
-  };
+  // is the standard landing, per Marrs 2026-07-13). groupKeyOf is the SHARED
+  // predicate (lib/marketing/dev-group), so the hub and delete find exactly the
+  // pieces grouped here (see that file for the undeletable-card bug this fixes).
   const groups = new Map<string, MarketingPiece[]>();
   for (const p of pieces) {
     const k = groupKeyOf(p);
@@ -114,7 +109,11 @@ export default async function StreamPage({
       <div className={s.bgPattern} aria-hidden />
       <div className={s.dashboard}>
         <div className={s.header}>
-          <BackLink fallbackHref="/console/marketing" className={s.marketingBack} />
+          <BackLink
+            fallbackHref="/console/marketing"
+            className={s.marketingBack}
+            dashboardHref={`/console/marketing/stream/${stream}`}
+          />
           <h1 className={s.title}>{streamLabel(stream)}</h1>
         </div>
 

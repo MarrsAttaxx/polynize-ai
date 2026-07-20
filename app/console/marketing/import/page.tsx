@@ -29,7 +29,11 @@ export default async function ImportConceptPage({
   return (
     <div className={s.root}>
       <header className={s.head}>
-        <BackLink fallbackHref="/console/marketing" className={s.back} />
+        <BackLink
+          fallbackHref="/console/marketing"
+          className={s.back}
+          dashboardHref={`/console/marketing/stream/${initialStream}`}
+        />
         <span className={s.eyebrow}>import a concept</span>
         <h1 className={s.title}>Import a concept</h1>
         <p className={s.sub}>

@@ -198,7 +198,11 @@ export function TextOutputScreen({ initial }: { initial: MarketingPiece }) {
     <div className={s.root}>
       <header className={s.head}>
         <div className={s.headLeft}>
-          <BackLink fallbackHref="/console/marketing" className={s.back} />
+          <BackLink
+            fallbackHref="/console/marketing"
+            className={s.back}
+            dashboardHref={`/console/marketing/stream/${initial.stream}`}
+          />
           <div className={s.titleWrap}>
             <span className={s.eyebrow}>
               {(initial.format ?? '').replace(/_/g, ' ')} · post

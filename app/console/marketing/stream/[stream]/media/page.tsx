@@ -54,6 +54,7 @@ export default async function MediaPage({
         <BackLink
           fallbackHref={`/console/marketing/stream/${stream}`}
           className={s.back}
+          dashboardHref={`/console/marketing/stream/${stream}`}
         />
         <span className={s.eyebrow}>media library · {streamLabel(stream)}</span>
         <h1 className={s.title}>Media library</h1>

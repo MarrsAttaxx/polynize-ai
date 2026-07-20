@@ -51,7 +51,11 @@ export default async function BrandVoicePage({
   return (
     <div className={s.root}>
       <header className={s.head}>
-        <BackLink fallbackHref={`/console/marketing/stream/${stream}`} className={s.back} />
+        <BackLink
+          fallbackHref={`/console/marketing/stream/${stream}`}
+          className={s.back}
+          dashboardHref={`/console/marketing/stream/${stream}`}
+        />
         <span className={s.eyebrow}>brand voice · {streamLabel(stream)}</span>
         <h1 className={s.title}>Brand voice</h1>
         <p className={s.sub}>

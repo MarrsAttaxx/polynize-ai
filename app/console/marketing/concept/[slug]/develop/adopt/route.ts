@@ -39,7 +39,7 @@ export async function POST(
     }
 
     const group = (await listSavedPieces(owner)).filter((p) =>
-      pieceInDevGroup(p, owner, slug)
+      pieceInDevGroup(p, slug)
     );
     if (group.length === 0) {
       return NextResponse.json({ error: 'no pieces found for this group' }, { status: 404 });

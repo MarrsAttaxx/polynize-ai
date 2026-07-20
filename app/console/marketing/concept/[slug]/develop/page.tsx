@@ -43,7 +43,7 @@ export default async function ConceptDevelopPage({
   let pieces: MarketingPiece[] = [];
   try {
     pieces = (await listSavedPieces(owner)).filter((p) =>
-      pieceInDevGroup(p, owner, slug)
+      pieceInDevGroup(p, slug)
     );
   } catch (err) {
     console.error('[concept.develop] pieces read failed:', err);
@@ -56,7 +56,11 @@ export default async function ConceptDevelopPage({
     <div className={s.root}>
       <header className={s.head}>
         <div className={s.headTop}>
-          <BackLink fallbackHref={`/console/marketing/stream/${stream}`} className={s.back} />
+          <BackLink
+            fallbackHref={`/console/marketing/stream/${stream}`}
+            className={s.back}
+            dashboardHref={`/console/marketing/stream/${stream}`}
+          />
           <DevGroupDeleteButton stream={stream} count={pieces.length} title={title} />
         </div>
         <span className={s.eyebrow}>in development · {stream}</span>
