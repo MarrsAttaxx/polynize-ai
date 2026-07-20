@@ -235,6 +235,30 @@ export async function getConcept(owner: string, slug: string): Promise<ConceptDo
   return readConceptAt(conceptKey(owner, slug));
 }
 
+/**
+ * Move a concept to a different stream, IN PLACE (same owner + slug, so the key /
+ * concept_ref is unchanged and every piece that references it stays linked). Only
+ * the `stream` field changes. Returns the updated doc, or null if none exists.
+ * Deliberately bypasses saveConcept's slug-walk (which would risk writing a
+ * duplicate when the concept's slug differs from framingSlug(framing)).
+ */
+export async function moveConceptToStream(
+  owner: string,
+  slug: string,
+  targetStream: string
+): Promise<ConceptDoc | null> {
+  const key = conceptKey(owner, slug);
+  const existing = await readConceptAt(key);
+  if (!existing) return null;
+  const record: ConceptDoc = {
+    ...existing,
+    stream: targetStream,
+    updated_at: new Date().toISOString(),
+  };
+  await writeConceptAt(key, record);
+  return record;
+}
+
 /** Delete one concept for this owner by framing slug (idempotent). Owner-scoped. */
 export async function deleteConcept(owner: string, slug: string): Promise<void> {
   const key = conceptKey(owner, slug);

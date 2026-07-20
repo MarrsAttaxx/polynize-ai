@@ -7,6 +7,7 @@
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { revalidatePath } from 'next/cache';
 import { getCurrentUser } from '@/lib/console-auth';
 import { isStreamId } from '@/lib/marketing/streams';
 import { deleteTemplate } from '@/lib/marketing/template-store';
@@ -38,6 +39,7 @@ export async function POST(
 
   try {
     await deleteTemplate(stream, body.template_id);
+    revalidatePath(`/console/marketing/stream/${stream}`);
     return NextResponse.json({ ok: true });
   } catch (err) {
     console.error('[templates.delete] failed:', err);

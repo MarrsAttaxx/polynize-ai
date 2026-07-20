@@ -6,6 +6,7 @@
 
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
+import { revalidatePath } from 'next/cache';
 import { getCurrentUser } from '@/lib/console-auth';
 import { isStreamId } from '@/lib/marketing/streams';
 import { saveBrandVoiceForStream } from '@/lib/marketing/brand-voice-store';
@@ -44,6 +45,9 @@ export async function PUT(
 
   try {
     await saveBrandVoiceForStream(stream, md);
+    // Refresh the stream home so its Brand voice card reflects the new state
+    // without a manual reload.
+    revalidatePath(`/console/marketing/stream/${stream}`);
     return NextResponse.json({ ok: true });
   } catch (err) {
     console.error('[brand-voice.save] write failed:', err);

@@ -3,8 +3,10 @@
 /**
  * Delete an output draft (piece) from its own screen (top right). POSTs to
  * ./delete (which also removes the piece's calendar entries) and lands back on
- * the source concept if there is one, else the stream. Green outline at rest,
- * red on hover (destructive affordance).
+ * the source concept's DEVELOPMENT HUB if there is one, else the stream. (Landing
+ * on the concept doc page dead-ends when the group has no real concept doc, e.g.
+ * a pre-bank piece group, so we go to the hub, which always renders.) Green
+ * outline at rest, red on hover (destructive affordance).
  */
 
 import { useState } from 'react';
@@ -34,7 +36,7 @@ export function PieceDeleteButton({ stream }: { stream: string }) {
       }
       router.push(
         b?.conceptSlug
-          ? `/console/marketing/concept/${b.conceptSlug}`
+          ? `/console/marketing/concept/${b.conceptSlug}/develop`
           : `/console/marketing/stream/${stream}`
       );
     } catch {

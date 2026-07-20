@@ -8,6 +8,7 @@
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { revalidatePath } from 'next/cache';
 import { getCurrentUser } from '@/lib/console-auth';
 import { isStreamId } from '@/lib/marketing/streams';
 import {
@@ -103,5 +104,7 @@ export async function POST(
     console.error('[media.add] save failed:', err);
     return NextResponse.json({ error: 'could not save the media asset' }, { status: 500 });
   }
+  // Refresh the stream home so its Media library count updates without a reload.
+  revalidatePath(`/console/marketing/stream/${stream}`);
   return NextResponse.json({ ok: true, asset });
 }

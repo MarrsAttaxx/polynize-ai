@@ -7,6 +7,7 @@
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { revalidatePath } from 'next/cache';
 import { getCurrentUser } from '@/lib/console-auth';
 import { isStreamId } from '@/lib/marketing/streams';
 import { deleteMediaAsset } from '@/lib/marketing/media-store';
@@ -42,5 +43,6 @@ export async function POST(
     console.error('[media.delete] failed:', err);
     return NextResponse.json({ error: 'could not delete the media asset' }, { status: 500 });
   }
+  revalidatePath(`/console/marketing/stream/${stream}`);
   return NextResponse.json({ ok: true });
 }

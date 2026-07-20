@@ -1,0 +1,68 @@
+/* Subtle "Move concept" control in the concept header (top right). */
+
+.trigger {
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: var(--text-3);
+  background: transparent;
+  border: none;
+  padding: 4px 2px;
+  cursor: pointer;
+  letter-spacing: 0.02em;
+  transition: color var(--tac-transition);
+}
+.trigger:hover {
+  color: var(--mint);
+}
+
+.panel {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.select {
+  background: var(--tac-surface);
+  border: 1px solid var(--tac-edge-dark, rgba(255, 255, 255, 0.12));
+  border-radius: 8px;
+  padding: 6px 10px;
+  color: var(--text);
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 12px;
+}
+.go {
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: var(--bg, #0a0a0f);
+  background: var(--mint);
+  border: none;
+  border-radius: 8px;
+  padding: 6px 12px;
+  cursor: pointer;
+  transition: opacity var(--tac-transition);
+}
+.go:hover:not(:disabled) {
+  opacity: 0.9;
+}
+.go:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.cancel {
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: var(--text-3);
+  background: transparent;
+  border: none;
+  padding: 6px 4px;
+  cursor: pointer;
+}
+.cancel:hover:not(:disabled) {
+  color: var(--text-2);
+}
+.error {
+  flex-basis: 100%;
+  font-size: 12px;
+  color: var(--coral);
+  text-align: right;
+}

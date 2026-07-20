@@ -17,6 +17,7 @@ import {
 } from '@/lib/marketing/template-store';
 import { formatById } from '@/lib/marketing/output-plan';
 import { stripEmDashes } from '@/lib/em-dash';
+import { revalidatePath } from 'next/cache';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -112,6 +113,7 @@ export async function PUT(
 
   try {
     await saveTemplate(template);
+    revalidatePath(`/console/marketing/stream/${stream}`);
     return NextResponse.json({ ok: true, template });
   } catch (err) {
     console.error('[templates.save] write failed:', err);

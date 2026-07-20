@@ -14,6 +14,12 @@
   gap: 8px;
   margin-bottom: 20px;
 }
+.headTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
 .back {
   font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
   font-size: 12px;
