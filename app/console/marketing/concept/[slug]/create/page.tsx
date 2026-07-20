@@ -65,9 +65,9 @@ export default async function CreateFromConceptPage({
       <header className={s.head}>
         <BackLink fallbackHref={`/console/marketing/concept/${slug}`} className={s.back} />
         <span className={s.eyebrow}>create content · {concept.stream}</span>
-        <h1 className={s.title}>Pick a content series</h1>
+        <h1 className={s.title}>Pick a content template</h1>
         <p className={s.sub}>
-          A content series already knows its format, platforms, audience, and production
+          A content template already knows its format, platforms, audience, and production
           recipe; you bring the concept. Or{' '}
           <Link href={`/console/marketing/concept/${slug}/plan`} className={s.customLink}>
             plan a custom output →

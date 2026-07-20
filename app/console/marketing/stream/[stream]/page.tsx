@@ -144,7 +144,7 @@ export default async function StreamPage({
             >
               <span className={s.bvHead}>
                 <span className={s.bvDot} aria-hidden />
-                <span className={s.bvTitle}>Content series</span>
+                <span className={s.bvTitle}>Content templates</span>
                 <span className={s.bvState}>
                   {activeTemplates > 0
                     ? `${activeTemplates} active`
@@ -154,7 +154,7 @@ export default async function StreamPage({
                 </span>
               </span>
               <span className={s.bvDesc}>
-                The repeatable series this stream&rsquo;s content is made from. Manage them.
+                The repeatable templates this stream&rsquo;s content is made from. Manage them.
               </span>
             </Link>
             <Link

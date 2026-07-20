@@ -51,10 +51,10 @@ export default async function TemplatesPage({
     <div className={s.root}>
       <header className={s.head}>
         <BackLink fallbackHref={`/console/marketing/stream/${stream}`} className={s.back} />
-        <span className={s.eyebrow}>content series · {streamLabel(stream)}</span>
-        <h1 className={s.title}>Content series</h1>
+        <span className={s.eyebrow}>content templates · {streamLabel(stream)}</span>
+        <h1 className={s.title}>Content templates</h1>
         <p className={s.sub}>
-          A content series is a repeatable recipe for a run of posts: what you bring, what
+          A content template is a repeatable recipe for a run of posts: what you bring, what
           you get, and how it is made, plus the platforms and audience it serves. Refine
           them over time; keep the ones that work, retire the ones that flop.
         </p>

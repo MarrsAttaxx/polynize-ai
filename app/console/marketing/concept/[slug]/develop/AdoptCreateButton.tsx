@@ -3,7 +3,7 @@
 /**
  * "Create content" for a hub whose pieces predate the concept bank: one click
  * promotes the group into a real core concept (via ./adopt) and lands on the
- * series picker. After that, the hub is fully concept-backed.
+ * template picker. After that, the hub is fully concept-backed.
  */
 
 import { useState } from 'react';

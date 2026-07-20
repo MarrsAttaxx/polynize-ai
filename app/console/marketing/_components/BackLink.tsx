@@ -40,9 +40,23 @@ export function BackLink({
     }
   };
 
+  // Wrapped in one inline-flex span so the two links always sit side by side and
+  // as a single unit, whatever the parent layout is: the header rows are flex
+  // columns (where two bare anchors would stack vertically), but some are flex
+  // rows or plain blocks. alignSelf keeps it left-aligned in a column and is a
+  // harmless no-op elsewhere.
   return (
-    <a href={fallbackHref} onClick={onClick} className={className}>
-      ← {label}
-    </a>
+    <span style={{ display: 'inline-flex', gap: 14, alignSelf: 'flex-start' }}>
+      <a href={fallbackHref} onClick={onClick} className={className}>
+        ← {label}
+      </a>
+      <a
+        href="/console/marketing"
+        className={className}
+        title="Back to the marketing dashboard"
+      >
+        Dashboard
+      </a>
+    </span>
   );
 }

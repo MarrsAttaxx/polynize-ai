@@ -30,14 +30,6 @@ export type ImageModel = {
 
 export const IMAGE_MODELS: ImageModel[] = [
   {
-    id: 'flux-kontext',
-    label: 'FLUX Kontext',
-    blurb: 'Best all-rounder for general post images, and renders text on the image well.',
-    endpoint: 'flux-pro/kontext/max/text-to-image',
-    sizing: 'aspect_ratio',
-    goodForText: true,
-  },
-  {
     id: 'soul',
     label: 'Soul (photoreal)',
     blurb: 'Photoreal, aesthetic images of people. Attach a Soul ID for consistent shots of the same person.',
@@ -47,6 +39,11 @@ export const IMAGE_MODELS: ImageModel[] = [
     supportsReferenceImage: true,
     supportsStyle: true,
   },
+  // FLUX Kontext (general images + text-on-image) is intentionally NOT listed
+  // yet: `flux-pro/kontext/max/text-to-image` 404s against platform.higgsfield.ai
+  // (Soul's confirmed path is `/v1/text2image/soul`, so FLUX likely lives under a
+  // `/v1/...` route too). Re-add here with the verified endpoint once confirmed
+  // from Higgsfield's docs — the registry is the only thing that needs the change.
 ];
 
 export function imageModelById(id: string): ImageModel | undefined {

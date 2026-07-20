@@ -99,7 +99,7 @@ export function TemplatePicker({
               onClick={() => use(t, source)}
               disabled={busy !== null}
             >
-              {busy === key ? 'Creating…' : 'Use this series →'}
+              {busy === key ? 'Creating…' : 'Use this template →'}
             </button>
           ) : (
             <span className={s.comingNote}>
@@ -117,10 +117,10 @@ export function TemplatePicker({
       {error ? <p className={s.error}>{error}</p> : null}
 
       <section className={s.panel}>
-        <h2 className={s.groupTitle}>Your series</h2>
+        <h2 className={s.groupTitle}>Your templates</h2>
         {streamTemplates.length === 0 ? (
           <p className={s.emptyNote}>
-            No series in this stream yet.{' '}
+            No templates in this stream yet.{' '}
             <Link href={`/console/marketing/stream/${stream}/templates`} className={s.manageLink}>
               Create one →
             </Link>
@@ -132,14 +132,14 @@ export function TemplatePicker({
 
       {library.length > 0 ? (
         <section className={s.panel}>
-          <h2 className={s.groupTitle}>From the series library</h2>
+          <h2 className={s.groupTitle}>From the template library</h2>
           <div className={s.cards}>{library.map((t) => renderCard(t, 'library'))}</div>
         </section>
       ) : null}
 
       <p className={s.manageFoot}>
         <Link href={`/console/marketing/stream/${stream}/templates`} className={s.manageLink}>
-          Manage this stream&rsquo;s series →
+          Manage this stream&rsquo;s templates →
         </Link>
       </p>
     </div>

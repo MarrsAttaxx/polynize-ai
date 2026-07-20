@@ -82,7 +82,7 @@ export default async function ConceptDevelopPage({
               <AdoptCreateButton />
               <span className={s.noConceptNote}>
                 First use sets this up as a core concept (from the piece&rsquo;s script),
-                then opens the series picker.
+                then opens the template picker.
               </span>
             </>
           )}

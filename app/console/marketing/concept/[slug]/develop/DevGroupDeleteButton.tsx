@@ -26,10 +26,13 @@ export function DevGroupDeleteButton({
 
   const del = async () => {
     if (busy) return;
-    const msg =
-      count > 0
-        ? `Delete "${title}" and all ${count} piece${count === 1 ? '' : 's'} in it? This cannot be undone.`
-        : `Delete "${title}"? This cannot be undone.`;
+    if (count === 0) {
+      window.alert(
+        'There are no pieces in development here to delete. The core concept lives in Core concepts.'
+      );
+      return;
+    }
+    const msg = `Delete all ${count} piece${count === 1 ? '' : 's'} in development from "${title}"? The core concept itself is KEPT. This cannot be undone.`;
     if (!window.confirm(msg)) return;
     setBusy(true);
     setError(null);
@@ -59,7 +62,7 @@ export function DevGroupDeleteButton({
         onClick={del}
         disabled={busy}
       >
-        {busy ? 'Deleting…' : 'Delete'}
+        {busy ? 'Deleting…' : 'Delete pieces'}
       </button>
       {error ? <span className={s.groupDeleteError}>{error}</span> : null}
     </span>

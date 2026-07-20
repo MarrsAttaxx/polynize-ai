@@ -1,16 +1,16 @@
 /**
- * POST /console/marketing/concept/[slug]/develop/delete — delete an entire
- * in-development group: every piece in the group (and its calendar entries) plus
- * the concept doc itself, if one exists. This is the dev hub's "delete the whole
- * thing" action. Idempotent (a re-run finishes a partial delete). Team-scope
- * only; owner from the session. Returns the stream so the client can land home.
+ * POST /console/marketing/concept/[slug]/develop/delete — delete the in-development
+ * PIECES of a group (and their calendar entries). It deliberately does NOT delete
+ * the core concept doc: the concept lives on in Core concepts and has its own
+ * delete on the concept page. Idempotent. Team-scope only; owner from the session.
+ * Returns the stream so the client can land home.
  */
 
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { revalidatePath } from 'next/cache';
 import { getCurrentUser } from '@/lib/console-auth';
-import { getConcept, deleteConcept } from '@/lib/marketing/concept-store';
+import { getConcept } from '@/lib/marketing/concept-store';
 import { listSavedPieces, deletePiece } from '@/lib/marketing/piece-store';
 import { pieceInDevGroup } from '@/lib/marketing/dev-group';
 import { listEntriesForPiece, deleteEntry } from '@/lib/marketing/calendar-store';
@@ -55,8 +55,8 @@ export async function POST(
       for (const e of entries) await deleteEntry(owner, e.entry_id);
       await deletePiece(owner, p.piece_id);
     }
-    // Remove the concept doc too (idempotent, a no-op for a doc-less group).
-    await deleteConcept(owner, slug);
+    // The concept doc is intentionally kept (it has its own delete on the
+    // concept page); this action only clears the in-development pieces.
   } catch (err) {
     console.error('[dev.delete] delete failed:', err);
     return NextResponse.json(
