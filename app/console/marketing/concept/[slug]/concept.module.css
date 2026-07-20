@@ -20,6 +20,38 @@
   justify-content: space-between;
   gap: 12px;
 }
+
+/* Discrete "delete the whole group" control in the dev hub header. */
+.groupDeleteWrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.groupDeleteBtn {
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: var(--text-3);
+  background: transparent;
+  border: 1px solid var(--tac-edge-dark, rgba(255, 255, 255, 0.12));
+  border-radius: 8px;
+  padding: 5px 12px;
+  cursor: pointer;
+  transition: color var(--tac-transition), border-color var(--tac-transition),
+    background var(--tac-transition);
+}
+.groupDeleteBtn:hover:not(:disabled) {
+  color: var(--coral);
+  border-color: var(--coral);
+  background: rgba(255, 122, 107, 0.08);
+}
+.groupDeleteBtn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.groupDeleteError {
+  font-size: 12px;
+  color: var(--coral);
+}
 .back {
   font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
   font-size: 12px;

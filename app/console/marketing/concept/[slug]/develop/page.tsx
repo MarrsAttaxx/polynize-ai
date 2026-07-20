@@ -7,6 +7,7 @@ import { pieceInDevGroup } from '@/lib/marketing/dev-group';
 import { formatById } from '@/lib/marketing/output-plan';
 import { BackLink } from '@/app/console/marketing/_components/BackLink';
 import { AdoptCreateButton } from './AdoptCreateButton';
+import { DevGroupDeleteButton } from './DevGroupDeleteButton';
 import s from '../concept.module.css';
 
 export const dynamic = 'force-dynamic';
@@ -54,7 +55,10 @@ export default async function ConceptDevelopPage({
   return (
     <div className={s.root}>
       <header className={s.head}>
-        <BackLink fallbackHref={`/console/marketing/stream/${stream}`} className={s.back} />
+        <div className={s.headTop}>
+          <BackLink fallbackHref={`/console/marketing/stream/${stream}`} className={s.back} />
+          <DevGroupDeleteButton stream={stream} count={pieces.length} title={title} />
+        </div>
         <span className={s.eyebrow}>in development · {stream}</span>
         <h1 className={s.title}>{title}</h1>
       </header>
