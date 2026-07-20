@@ -39,6 +39,8 @@ export function ScriptScreen({
   const [script, setScript] = useState(initial.script);
   const [saveState, setSaveState] = useState<SaveState>('idle');
   const [chatBusy, setChatBusy] = useState(false);
+  const [drafting, setDrafting] = useState(false);
+  const [draftError, setDraftError] = useState<string | null>(null);
   const [undo, setUndo] = useState<string | null>(null);
   const [media, setMedia] = useState<string[]>(initial.media ?? []);
 
@@ -147,6 +149,30 @@ export function ScriptScreen({
     setUndo(null);
   }, [undo, scheduleSave]);
 
+  // Draft (or redraft) the whole script from the concept + template recipe, the
+  // video counterpart to the text screen's button. Applies through applyChatEdit
+  // so the pre-draft script is one-click undoable and the result autosaves.
+  const draft = async () => {
+    if (drafting || chatBusy) return;
+    setDrafting(true);
+    setDraftError(null);
+    try {
+      const url = window.location.pathname.replace(/\/+$/, '') + '/script-draft';
+      const res = await fetch(url, { method: 'POST' });
+      if (!res.ok) {
+        const b = (await res.json().catch(() => null)) as { error?: string } | null;
+        setDraftError(b?.error ?? 'Could not draft the script.');
+        return;
+      }
+      const { script: drafted } = (await res.json()) as { script: string };
+      applyChatEdit(drafted);
+    } catch {
+      setDraftError('Network error. Try again.');
+    } finally {
+      setDrafting(false);
+    }
+  };
+
   const saveLabel =
     saveState === 'saving'
       ? 'Saving…'
@@ -195,9 +221,24 @@ export function ScriptScreen({
 
       <div className={c.workspace}>
         <div className={s.editorCol}>
+          <div className={s.toolbar}>
+            <button
+              type="button"
+              className={s.draftBtn}
+              onClick={draft}
+              disabled={drafting || chatBusy}
+            >
+              {drafting
+                ? 'Drafting…'
+                : script.trim()
+                  ? 'Redraft from the concept'
+                  : 'Draft from the concept'}
+            </button>
+            {draftError ? <span className={s.draftError}>{draftError}</span> : null}
+          </div>
           {undo !== null ? (
             <div className={s.undoBar}>
-              <span>The chat rewrote the script.</span>
+              <span>The script was rewritten.</span>
               <button
                 type="button"
                 className={s.undoBtn}
@@ -212,7 +253,7 @@ export function ScriptScreen({
             className={s.script}
             value={script}
             spellCheck={false}
-            disabled={chatBusy}
+            disabled={chatBusy || drafting}
             onChange={(e) => {
               setScript(e.target.value);
               scheduleSave(e.target.value);

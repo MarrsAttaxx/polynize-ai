@@ -19,9 +19,13 @@ import {
   creationTarget,
   streamTemplateRef,
 } from '@/lib/marketing/create-outputs';
+import { getPiece, savePiece } from '@/lib/marketing/piece-store';
+import { draftTextBody, draftVideoScript } from '@/lib/marketing/draft';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
+// The auto-draft below adds one LLM call before the response; well within this.
+export const maxDuration = 60;
 
 const BodySchema = z.object({
   source: z.enum(['stream', 'library']),
@@ -89,8 +93,9 @@ export async function POST(
     );
   }
 
+  let pieces;
   try {
-    const pieces = await createOutputs(user.email, concept, [
+    pieces = await createOutputs(user.email, concept, [
       {
         format: fmt,
         platforms: template.platforms,
@@ -99,9 +104,36 @@ export async function POST(
         template_ref: templateRef,
       },
     ]);
-    return NextResponse.json({ pieces, target: creationTarget(pieces, slug) });
   } catch (err) {
     console.error('[concept.create] create failed:', err);
     return NextResponse.json({ error: 'could not create the piece' }, { status: 500 });
   }
+
+  // Auto-draft the first version: mash the template recipe with the concept so
+  // the user lands on a real draft, not an empty body or a generic scaffold. Only
+  // for a freshly-created piece (never overwrite an existing one on a re-run). Best
+  // effort: if the draft fails the piece is still created and the user can draft
+  // manually on the piece screen, so a slow/absent LLM never blocks creation.
+  const created = pieces[0];
+  if (created && !created.reused) {
+    try {
+      const piece = await getPiece(user.email, created.pieceId);
+      if (piece) {
+        // Match how the piece page renders: kind 'text' → TextOutputScreen (body),
+        // everything else → ScriptScreen (script). Drafting into the OTHER field
+        // would make the draft invisible on the screen.
+        if (piece.kind === 'text') {
+          const body = await draftTextBody(user.email, piece);
+          await savePiece(user.email, { ...piece, body });
+        } else {
+          const script = await draftVideoScript(user.email, piece);
+          await savePiece(user.email, { ...piece, script });
+        }
+      }
+    } catch (err) {
+      console.error('[concept.create] auto-draft failed (piece still created):', err);
+    }
+  }
+
+  return NextResponse.json({ pieces, target: creationTarget(pieces, slug) });
 }

@@ -1,23 +1,23 @@
 /**
- * POST /console/marketing/piece/[id]/text-draft — draft the post copy for a text
- * output (D23, the text module). April writes a full post from the concept +
- * script + ICP + brand voice + template recipe, in one call. The route loads the
- * piece server-side (never trusting the client for the source), returns the copy,
- * and the client applies it through the existing /state autosave, so there is a
- * single validated write path (same discipline as the Script screen chat).
+ * POST /console/marketing/piece/[id]/script-draft — draft the spoken script for a
+ * video output (D25). The video-screen counterpart to text-draft: April writes a
+ * full short-form script from the concept + ICP + brand voice + template recipe,
+ * so "Use this template" and the "Draft from the concept" button both produce a
+ * real script grounded in the concept, not the generic scaffold.
  *
- * The generation itself lives in lib/marketing/draft.ts, shared with the script
- * draft and the auto-draft on template creation. Team-scope only, session-authed.
+ * Loads the piece server-side, returns the script; the client applies it through
+ * the existing /state autosave (one validated write path). Team-scope only.
  */
 
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/console-auth';
 import { getPiece } from '@/lib/marketing/piece-store';
-import { draftTextBody, DraftError } from '@/lib/marketing/draft';
+import { draftVideoScript, DraftError } from '@/lib/marketing/draft';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
+export const maxDuration = 60;
 
 export async function POST(
   _req: NextRequest,
@@ -34,7 +34,7 @@ export async function POST(
   try {
     piece = await getPiece(owner, id);
   } catch (err) {
-    console.error('[text-draft] piece read failed:', err);
+    console.error('[script-draft] piece read failed:', err);
     return NextResponse.json({ error: 'could not read the piece' }, { status: 502 });
   }
   if (!piece) {
@@ -42,8 +42,8 @@ export async function POST(
   }
 
   try {
-    const body = await draftTextBody(owner, piece);
-    return NextResponse.json({ body });
+    const script = await draftVideoScript(owner, piece);
+    return NextResponse.json({ script });
   } catch (e) {
     if (e instanceof DraftError) {
       if (e.reason === 'no-concept') {
