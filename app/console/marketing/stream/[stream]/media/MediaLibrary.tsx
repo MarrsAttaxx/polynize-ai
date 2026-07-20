@@ -8,7 +8,7 @@
  * routes (/add, /delete) so it works on pam.polynize.ai and the console host.
  */
 
-import { useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
 import type { MediaAsset } from '@/lib/marketing/media-store';
 import s from './media.module.css';
 
@@ -25,6 +25,17 @@ export function MediaLibrary({
   const [kind, setKind] = useState<'auto' | 'image' | 'video'>('auto');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Ids deleted this session, so a server-list re-sync (below) never resurrects one
+  // whose delete is still committing server-side.
+  const deletedIds = useRef<Set<string>>(new Set());
+
+  // Re-sync from the server list when it changes (only fires on a server re-render,
+  // e.g. router.refresh() after the Generate panel saves an image — not on our own
+  // local add/delete, since those don't change the `initial` prop identity).
+  useEffect(() => {
+    setAssets(initial.filter((a) => !deletedIds.current.has(a.media_id)));
+  }, [initial]);
 
   const base = () => window.location.pathname.replace(/\/+$/, '');
 
@@ -70,11 +81,13 @@ export function MediaLibrary({
     )
       return;
     const removed = assets.find((m) => m.media_id === id);
+    deletedIds.current.add(id);
     setAssets((a) => a.filter((m) => m.media_id !== id));
     setError(null);
     // Re-insert ONLY this item on failure (functional updater), so a concurrent
     // delete of a different asset is never resurrected by a stale snapshot.
     const restore = () => {
+      deletedIds.current.delete(id);
       if (!removed) return;
       setAssets((a) => (a.some((m) => m.media_id === id) ? a : [removed, ...a]));
     };

@@ -27,14 +27,18 @@ export function isHiggsfieldConfigured(): boolean {
 }
 
 // Lazy singletons (reused across warm serverless invocations).
+// Cap polling under Vercel's serverless function ceiling (~300s) so a slow
+// generation surfaces as a clean timeout rather than the function being killed.
+const TIMING = { maxPollTime: 240_000, pollInterval: 3_000 };
+
 let v1Client: HiggsfieldClient | null = null;
 function v1(): HiggsfieldClient {
-  if (!v1Client) v1Client = new HiggsfieldClient(creds());
+  if (!v1Client) v1Client = new HiggsfieldClient({ ...creds(), ...TIMING });
   return v1Client;
 }
 let v2Client: ReturnType<typeof createHiggsfieldClient> | null = null;
 function v2() {
-  if (!v2Client) v2Client = createHiggsfieldClient(creds());
+  if (!v2Client) v2Client = createHiggsfieldClient({ ...creds(), ...TIMING });
   return v2Client;
 }
 
@@ -81,7 +85,12 @@ export async function generateImages(
   }
 }
 
-/** Train a reusable identity (Soul ID) from reference photo URLs. */
+/**
+ * Train a reusable identity (Soul ID) from reference photo URLs. Does NOT block on
+ * training (which can take minutes and would blow the poll/function cap): returns
+ * as soon as the identity is created; it keeps training server-side and shows as
+ * completed on a later list.
+ */
 export async function createSoulIdentity(name: string, imageUrls: string[]) {
   const soul = await v1().createSoulId(
     {
@@ -91,7 +100,7 @@ export async function createSoulIdentity(name: string, imageUrls: string[]) {
         image_url: u,
       })),
     },
-    true
+    false
   );
   return { id: soul.id, name: soul.name, status: soul.status };
 }

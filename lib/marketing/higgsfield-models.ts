@@ -53,13 +53,17 @@ export function imageModelById(id: string): ImageModel | undefined {
   return IMAGE_MODELS.find((m) => m.id === id);
 }
 
-/** Aspect-ratio options for `aspect_ratio` models (FLUX). */
-export const ASPECT_RATIOS = ['9:16', '1:1', '4:5', '16:9', '3:4'] as const;
+/** Aspect-ratio options for `aspect_ratio` models (FLUX Kontext's supported enum). */
+export const ASPECT_RATIOS = ['9:16', '1:1', '16:9', '4:3', '3:4'] as const;
 
-/** Size options for `width_and_height` models (Soul). Labelled for the UI. */
+/**
+ * Size options for `width_and_height` models (Soul). These MUST be values from
+ * Higgsfield's SoulSize allow-list (the API rejects anything else); see the SDK's
+ * SoulSize enum. 1152x2048 is a true 9:16.
+ */
 export const SOUL_SIZES: { id: string; label: string }[] = [
-  { id: '1080x1920', label: 'Vertical 9:16' },
+  { id: '1152x2048', label: 'Vertical 9:16' },
+  { id: '1536x2048', label: 'Portrait 3:4' },
   { id: '1536x1536', label: 'Square 1:1' },
-  { id: '1080x1350', label: 'Portrait 4:5' },
-  { id: '1920x1080', label: 'Landscape 16:9' },
+  { id: '2048x1152', label: 'Landscape 16:9' },
 ];
