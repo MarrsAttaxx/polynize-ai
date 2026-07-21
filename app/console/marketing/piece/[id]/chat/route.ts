@@ -1,14 +1,14 @@
 /**
- * POST /console/marketing/piece/[id]/chat — the Script screen's context chat (T4).
+ * POST /console/marketing/piece/[id]/chat — the on-screen context chat, shared by
+ * the Script screen (video) and the Text screen (posts). Interface-driving: the
+ * user issues a command ("tighten this line", "three sharper hooks", "cut the
+ * intro") and the model returns the FULL revised content plus a one-line note.
  *
- * Interface-driving: the user issues a command ("tighten this line", "three
- * sharper hooks", "cut the intro") and the model returns the FULL revised script
- * plus a one-line note. The route does NOT persist — it returns the new script
- * and the client applies it through the existing autosave (the /state route), so
- * there is a single validated write path.
- *
- * Team-scope only, session-authed. LLM via the provider abstraction (OpenRouter
- * default). Em-dashes are prohibited by the layer and reinforced in the prompt.
+ * The route does NOT persist. It returns the new content and the client applies it
+ * through the existing autosave (the /state route), so there is a single validated
+ * write path. `kind` selects the post vs script editing prompt; the piece's Content
+ * Template recipe (hook / structure / CTA) is resolved server-side and injected so
+ * edits honour the house style. Team-scope only. Em-dashes are prohibited.
  */
 
 import type { NextRequest } from 'next/server';
@@ -19,20 +19,19 @@ import { complete, type ChatMessage } from '@/lib/llm';
 import { stripEmDashes } from '@/lib/em-dash';
 import { getPiece } from '@/lib/marketing/piece-store';
 import { resolveTemplateRef } from '@/lib/marketing/create-outputs';
+import { recipeBlock, recipePartsFromTemplate } from '@/lib/marketing/draft';
 import { HOOK_GUIDANCE } from '@/lib/marketing/hook-guidance';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
-const MAX_SCRIPT_BYTES = 512 * 1024;
-// Raw request envelope cap (script up to 512K + instruction + bounded history).
-// Guards against buffering/parsing an oversized body before zod runs, matching
-// the sibling /state route's 413 guard.
+const MAX_CONTENT_BYTES = 512 * 1024;
 const MAX_BODY_BYTES = 1024 * 1024;
 
 const BodySchema = z.object({
   instruction: z.string().min(1).max(2000),
-  script: z.string().max(MAX_SCRIPT_BYTES),
+  content: z.string().max(MAX_CONTENT_BYTES),
+  kind: z.enum(['script', 'body']).optional(),
   format: z.string().max(120).optional(),
   title: z.string().max(300).optional(),
   concept: z.string().max(50_000).optional(),
@@ -48,25 +47,28 @@ const BodySchema = z.object({
 });
 
 function systemPrompt(
+  kind: 'script' | 'body',
   format?: string,
   title?: string,
   concept?: string,
-  recipe?: string
+  recipeBlockStr?: string
 ): string {
-  const kind = (format ?? 'short_form_video').replace(/_/g, ' ');
+  const isBody = kind === 'body';
+  const artifact = isBody ? 'post' : 'script';
+  const fmt = (format ?? (isBody ? 'post' : 'short_form_video')).replace(/_/g, ' ');
   const conceptBlock = concept
-    ? `\n\nThis script is being drafted from the concept below. Treat it as the source of truth for the thesis, the beats, the proof, and the register. When asked to "write the full script" or "draft from the concept", produce a complete ${kind} script grounded in it (do not invent facts it does not contain).\n\nCONCEPT:\n"""\n${concept}\n"""`
+    ? `\n\nThis ${artifact} is drawn from the concept below. Treat it as the source of truth for the thesis, the beats, the proof, and the register. When asked to "write the full ${artifact}" or "draft from the concept", produce a complete ${fmt} ${artifact} grounded in it (do not invent facts it does not contain).\n\nCONCEPT:\n"""\n${concept}\n"""`
     : '';
-  const recipeBlock = recipe
-    ? `\n\nThis piece follows a Content Pillar Template. Its production recipe is the house style for this script; follow it exactly:\n"""\n${recipe}\n"""`
-    : '';
-  return `You are April, Polynize's copy and voice specialist, editing a marketing script${
+  const structureRule = isBody
+    ? 'Keep it as clean post copy: no section labels unless the recipe explicitly asks for them.'
+    : "Preserve the script's structure and section labels (HOOK, BEAT 1, CTA, etc.) unless the command is explicitly about structure.";
+  return `You are April, Polynize's copy and voice specialist, editing a marketing ${artifact}${
     title ? ` titled "${title}"` : ''
-  } (format: ${kind}).${conceptBlock}${recipeBlock}
+  } (format: ${fmt}).${conceptBlock}${recipeBlockStr ?? ''}
 
 ${HOOK_GUIDANCE}
 
-The person you are helping is editing the script and will give you interface-driving commands, for example: "tighten this line", "give me three sharper hooks", "cut the intro", "make beat 3 punchier", "shorter". Your job is to act on the command and return the revised script.
+The person you are helping is editing the ${artifact} and will give you interface-driving commands, for example: "tighten this line", "give me three sharper hooks", "cut the intro", "make it punchier", "shorter". Your job is to act on the command and return the revised ${artifact}.
 
 Polynize voice:
 - Direct, contrarian, concrete. No hype, no filler, no corporate throat-clearing.
@@ -75,13 +77,13 @@ Polynize voice:
 - Never use em-dashes. Use commas, periods, or colons instead.
 
 Editing rules:
-- Return the FULL revised script every time you make a change, not a fragment.
-- Preserve the script's structure and section labels (HOOK, BEAT 1, CTA, etc.) unless the command is explicitly about structure.
-- Only change what the command asks for. Leave untouched sections exactly as they are.
-- If the command is a question or needs clarification, do not invent an edit: leave the script unchanged and answer in the message.
+- Return the FULL revised ${artifact} every time you make a change, not a fragment.
+- ${structureRule}
+- Only change what the command asks for. Leave untouched parts exactly as they are.
+- If the command is a question or needs clarification, do not invent an edit: leave the ${artifact} unchanged and answer in the message.
 
 Output valid JSON only, no markdown, no code fences:
-{"message": "<one short line describing what you changed, or your answer>", "script": "<the full revised script, or null if you made no change>"}`;
+{"message": "<one short line describing what you changed, or your answer>", "content": "<the full revised ${artifact}, or null if you made no change>"}`;
 }
 
 function parseJsonLoose(raw: string): unknown {
@@ -105,16 +107,16 @@ export async function POST(
   }
 
   // Template recipe (D25): resolved server-side from the piece so the pillar's
-  // house style shapes the script edits too. Degrades to none on any failure.
-  let recipe: string | undefined;
+  // house style (hook / structure / CTA) shapes the edits too. Degrades to none.
+  let recipeBlockStr = '';
   try {
     const piece = await getPiece(user.email, id);
     if (piece && typeof piece.template_ref === 'string' && piece.template_ref) {
       const template = await resolveTemplateRef(piece.template_ref);
-      recipe = template?.recipe || undefined;
+      if (template) recipeBlockStr = recipeBlock(recipePartsFromTemplate(template));
     }
   } catch {
-    recipe = undefined;
+    recipeBlockStr = '';
   }
 
   const rawBody = await req.text();
@@ -127,24 +129,26 @@ export async function POST(
   } catch {
     return NextResponse.json({ error: 'invalid request' }, { status: 400 });
   }
+  const kind = body.kind ?? 'script';
 
   const messages: ChatMessage[] = [
     ...(body.history ?? []),
     {
       role: 'user',
-      content: `CURRENT SCRIPT:\n"""\n${body.script}\n"""\n\nCOMMAND: ${body.instruction.trim()}`,
+      content: `CURRENT ${kind === 'body' ? 'POST' : 'SCRIPT'}:\n"""\n${body.content}\n"""\n\nCOMMAND: ${body.instruction.trim()}`,
     },
   ];
 
   let raw: string;
   try {
     raw = await complete({
-      system: systemPrompt(body.format, body.title, body.concept, recipe),
+      system: systemPrompt(kind, body.format, body.title, body.concept, recipeBlockStr),
       messages,
-      maxTokens: 4000,
+      maxTokens: 6000,
       temperature: 0.6,
-      // This is April editing copy (console-side, interface-driving per D3), so
-      // bill her key. Falls back to the console's OPENROUTER_API_KEY if unset.
+      // April editing copy (console-side, interface-driving per D3), so bill her
+      // key. Generous ceiling: the model is a thinking model whose reasoning tokens
+      // count against max_tokens (see the draft prompt notes).
       apiKey: process.env.APRIL_OPENROUTER_API_KEY,
     });
   } catch (e) {
@@ -157,17 +161,17 @@ export async function POST(
   }
 
   // Parse defensively. If the model did not return usable JSON, surface its text
-  // as a chat reply and DO NOT touch the script (script: null), so a bad parse
+  // as a chat reply and DO NOT touch the content (content: null), so a bad parse
   // can never wipe the user's work.
   let message = '';
-  let script: string | null = null;
+  let content: string | null = null;
   try {
     const json = parseJsonLoose(raw);
     if (json && typeof json === 'object') {
-      const c = json as { message?: unknown; script?: unknown };
+      const c = json as { message?: unknown; content?: unknown };
       if (typeof c.message === 'string') message = c.message.trim();
-      if (typeof c.script === 'string' && c.script.trim().length > 0) {
-        script = c.script;
+      if (typeof c.content === 'string' && c.content.trim().length > 0) {
+        content = c.content;
       }
     }
   } catch {
@@ -175,11 +179,11 @@ export async function POST(
   }
 
   if (!message) {
-    message = script ? 'Updated the script.' : 'I could not act on that. Try rephrasing the command.';
+    message = content ? 'Updated it.' : 'I could not act on that. Try rephrasing the command.';
   }
 
   return NextResponse.json({
     message: stripEmDashes(message),
-    script: script === null ? null : stripEmDashes(script),
+    content: content === null ? null : stripEmDashes(content),
   });
 }

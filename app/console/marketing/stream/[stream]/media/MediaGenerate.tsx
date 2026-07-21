@@ -36,12 +36,12 @@ export function MediaGenerate({
   const router = useRouter();
   const base = () => window.location.pathname.replace(/\/+$/, '');
 
-  const [modelId, setModelId] = useState(IMAGE_MODELS[0]?.id ?? 'flux-kontext');
+  const [modelId, setModelId] = useState(IMAGE_MODELS[0]?.id ?? 'soul');
   const model = imageModelById(modelId);
 
   const [prompt, setPrompt] = useState('');
   const [aspectRatio, setAspectRatio] = useState<string>(ASPECT_RATIOS[0]);
-  const [size, setSize] = useState<string>(SOUL_SIZES[0]?.id ?? '1080x1920');
+  const [size, setSize] = useState<string>(SOUL_SIZES[0]?.id ?? '1152x2048');
   const [soulId, setSoulId] = useState('');
   const [styleId, setStyleId] = useState('');
   const [referenceUrl, setReferenceUrl] = useState('');
@@ -157,6 +157,15 @@ export function MediaGenerate({
       prev.includes(url) ? prev.filter((u) => u !== url) : [...prev, url]
     );
 
+  // Jump to the "add media" form (in the library below) and focus its URL field,
+  // so "Add images" from the Soul setup has somewhere to go.
+  const goAddImage = () => {
+    const el = document.getElementById('media-add');
+    if (!el) return;
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    el.querySelector('input')?.focus({ preventScroll: true });
+  };
+
   const createSoul = async () => {
     if (!soulName.trim() || soulPhotos.length === 0 || creatingSoul) return;
     setCreatingSoul(true);
@@ -206,8 +215,12 @@ export function MediaGenerate({
     <section className={s.genPanel}>
       <h2 className={s.genTitle}>Generate with AI</h2>
       <p className={s.genNote}>
-        Describe what you want. April sharpens the prompt, then Higgsfield generates
-        it. Save the ones you like into this stream&rsquo;s library.
+        Describe the image you want in plain words. April rewrites it into a strong
+        image prompt, sends it to Higgsfield, and shows you the results; save the ones
+        you like into this stream&rsquo;s library. The Soul model makes photoreal images
+        of people: attach a Soul ID (a person you have trained) to get the same face
+        every time, or a one-off reference image for a looser likeness. More models,
+        including one for putting text on images, are coming.
       </p>
 
       <div className={s.genModels}>
@@ -358,7 +371,17 @@ export function MediaGenerate({
                 disabled={creatingSoul}
               />
               {images.length === 0 ? (
-                <p className={s.genNote}>No images in the library yet to train from.</p>
+                <div className={s.soulEmpty}>
+                  <p className={s.genNote}>
+                    No images in this stream&rsquo;s library yet. Add 10 to 20 good photos
+                    of the person to train from: varied angles, lighting, and
+                    expressions, a clear face, no sunglasses. One photo works but the
+                    likeness is weaker.
+                  </p>
+                  <button type="button" className={s.addImageBtn} onClick={goAddImage}>
+                    + Add images
+                  </button>
+                </div>
               ) : (
                 <div className={s.photoPick}>
                   {images.map((im) => (

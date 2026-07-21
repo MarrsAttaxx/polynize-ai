@@ -41,8 +41,17 @@ export type ContentTemplate = {
   /** What you bring / what you get — shown in the picker so expectations are set. */
   inputs?: string;
   outputs?: string;
-  /** The production recipe: agent instructions refined run over run (markdown). */
+  /** The recipe, split into the parts the draft prompt injects as named sections
+   *  so none gets buried: how to OPEN (hook_recipe, followed as an ordered
+   *  formula), the body STRUCTURE / beats (recipe), and how to CLOSE (cta_recipe,
+   *  which may say "no CTA"). All optional and backward compatible: a legacy
+   *  template that only has `recipe` still works (it injects as the structure). */
+  hook_recipe?: string;
   recipe?: string;
+  cta_recipe?: string;
+  /** Target length (words for text, minutes/seconds for video). Prefilled from the
+   *  format's industry default; injected into the draft prompt as a limit. */
+  length?: string;
   /** A link to (or description of) an example piece made from this template. */
   example?: string;
   created_at: string;

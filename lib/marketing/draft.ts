@@ -16,7 +16,7 @@
 import type { MarketingPiece } from './piece-store';
 import { getConcept } from './concept-store';
 import { getBrandVoiceForStream } from './brand-voice-store';
-import { icpLabel, formatById } from './output-plan';
+import { icpLabel, formatById, defaultLengthFor } from './output-plan';
 import { resolveTemplateRef } from './create-outputs';
 import { complete } from '@/lib/llm';
 import { stripEmDashes } from '@/lib/em-dash';
@@ -51,17 +51,45 @@ export async function conceptBodyForPiece(
   return '';
 }
 
-/** The piece's Content Template recipe, if any (degrades to none on any failure). */
-async function pieceRecipe(piece: MarketingPiece): Promise<string | undefined> {
+export type RecipeParts = {
+  hookRecipe?: string;
+  recipe?: string;
+  ctaRecipe?: string;
+  length?: string;
+};
+
+/** Map a resolved Content Template to the recipe parts the prompt blocks consume. */
+export function recipePartsFromTemplate(t: {
+  hook_recipe?: string;
+  recipe?: string;
+  cta_recipe?: string;
+  length?: string;
+}): RecipeParts {
+  return {
+    hookRecipe: t.hook_recipe || undefined,
+    recipe: t.recipe || undefined,
+    ctaRecipe: t.cta_recipe || undefined,
+    length: t.length || undefined,
+  };
+}
+
+type PromptOpts = {
+  formatLabel: string;
+  icp?: string;
+  brandVoice?: string;
+} & RecipeParts;
+
+/** The piece's Content Template recipe parts, if any (degrades to none on failure). */
+async function pieceTemplateParts(piece: MarketingPiece): Promise<RecipeParts> {
   if (typeof piece.template_ref === 'string' && piece.template_ref) {
     try {
       const t = await resolveTemplateRef(piece.template_ref);
-      return t?.recipe || undefined;
+      if (t) return recipePartsFromTemplate(t);
     } catch {
       /* degrade to no recipe */
     }
   }
-  return undefined;
+  return {};
 }
 
 function audienceBlock(icp?: string): string {
@@ -76,10 +104,35 @@ function voiceBlock(brandVoice?: string): string {
     : '';
 }
 
-function recipeBlock(recipe?: string): string {
-  return recipe
-    ? `\n\nThis piece follows a Content Template. Its production recipe is the house style for this piece; follow it exactly:\n"""\n${recipe}\n"""`
-    : '';
+export function recipeBlock(parts: RecipeParts): string {
+  const { hookRecipe, recipe, ctaRecipe, length } = parts;
+  const hasRecipe = !!(hookRecipe || recipe || ctaRecipe);
+  // No template recipe (e.g. a piece from the custom Output-plan path): do NOT
+  // claim "this piece follows a Content Template". Just hand over the length limit
+  // if there is one, under a neutral header.
+  if (!hasRecipe) {
+    return length ? `\n\nLENGTH (a limit, not a target to pad to): ${length}` : '';
+  }
+  const sections: string[] = [];
+  if (hookRecipe) {
+    sections.push(
+      `HOOK RECIPE (how to open this piece; follow it as an ordered formula, step by step):\n"""\n${hookRecipe}\n"""`
+    );
+  }
+  if (recipe) {
+    sections.push(`STRUCTURE (the body, its beats in order):\n"""\n${recipe}\n"""`);
+  }
+  if (ctaRecipe) {
+    sections.push(
+      `CTA RECIPE (how to close; if it says there is no CTA, do not add one):\n"""\n${ctaRecipe}\n"""`
+    );
+  }
+  if (length) {
+    sections.push(`LENGTH (a limit, not a target to pad to): ${length}`);
+  }
+  return `\n\nThis piece follows a Content Template. Its recipe is the binding house style; follow each part exactly:\n\n${sections.join(
+    '\n\n'
+  )}`;
 }
 
 const VOICE_AND_DASH = `Polynize voice:
@@ -88,12 +141,7 @@ const VOICE_AND_DASH = `Polynize voice:
 - No emoji. No hashtags unless the concept calls for them.
 - Never use em-dashes. Use commas, periods, or colons instead.`;
 
-function textSystemPrompt(opts: {
-  formatLabel: string;
-  icp?: string;
-  brandVoice?: string;
-  recipe?: string;
-}): string {
+function textSystemPrompt(opts: PromptOpts): string {
   return `You are April, Polynize's copy chief and voice specialist. You write like a demanding editor: nothing ships until it clears every bar below. Write one ${opts.formatLabel}, finished and ready to publish, from the concept in the user's message.
 
 Three materials go into this piece. Hold all three at once and let none crowd out the others:
@@ -101,7 +149,7 @@ Three materials go into this piece. Hold all three at once and let none crowd ou
 2. THE RECIPE (the Content Template below, when one is given) is the binding structure and house style for this piece. Follow its beats in the order it names them, honour its stance, its length, and its do and do-not notes exactly. Its structure wins over any default shape here. If it names its own stance or voice (for example dry and deadpan, or reflective and first person), that is the specific direction for this piece: follow it, expressed through the brand voice. If no recipe is given, use the strongest natural shape for a ${opts.formatLabel}.
 3. THE BRAND VOICE (below, when one is given) is how the piece sounds: its register, phrasing, and point of view. Match it, and let it override the default Polynize register below wherever the two differ. If none is given, write in the default Polynize register below.
 
-Precedence when they pull against each other: the concept governs what you may say, the recipe governs how the piece is built, the brand voice governs how it sounds. The hard constraints at the end override all three and are never traded away.${audienceBlock(opts.icp)}${voiceBlock(opts.brandVoice)}${recipeBlock(opts.recipe)}
+Precedence when they pull against each other: the concept governs what you may say, the recipe governs how the piece is built, the brand voice governs how it sounds. The hard constraints at the end override all three and are never traded away.${audienceBlock(opts.icp)}${voiceBlock(opts.brandVoice)}${recipeBlock(opts)}
 
 HOW TO FUSE THEM. A great draft is the recipe's structure carrying THIS concept's specific material in THIS voice, for the reader named above. The recipe alone is a hollow template. The concept alone is an info dump. Fill every beat the recipe names with something concrete from the concept, and make every line sound like the voice. A draft that nails one material by dropping another has failed.
 
@@ -123,12 +171,7 @@ Shape the recipe's beats into the natural prose of a ${opts.formatLabel}: use th
 This model reasons before it answers, so plan silently: find the sharpest hook material, map the recipe's beats onto the concept, settle the voice, then write. Before you output, reread once as the editor and fix any miss: the hook earns line two for a cold reader; every beat the recipe named is present and in order; every fact traces to the concept, with anything invented deleted; the voice holds; no banned phrase, filler, or emoji; it lands on a line worth remembering. Return only the finished copy.`;
 }
 
-function scriptSystemPrompt(opts: {
-  formatLabel: string;
-  icp?: string;
-  brandVoice?: string;
-  recipe?: string;
-}): string {
+function scriptSystemPrompt(opts: PromptOpts): string {
   return `You are April, Polynize's copy chief and voice specialist. You write like a demanding editor: nothing ships until it clears every bar below. Write one complete ${opts.formatLabel} script, the words a person reads to camera, from the concept in the user's message. Write what they say, not stage directions.
 
 Three materials go into this script. Hold all three at once and let none crowd out the others:
@@ -136,7 +179,7 @@ Three materials go into this script. Hold all three at once and let none crowd o
 2. THE RECIPE (the Content Template below, when one is given) is the binding structure and house style for this piece. Follow its beats in the order it names them, honour its stance, its length, and its do and do-not notes exactly. Its structure wins over any default shape here. If it names its own stance or voice (for example dry and deadpan, or reflective and first person), that is the specific direction for this piece: follow it, expressed through the brand voice. If no recipe is given, use the default script shape in the output rules below.
 3. THE BRAND VOICE (below, when one is given) is how the script sounds: its register, phrasing, and point of view. Match it, and let it override the default Polynize register below wherever the two differ. If none is given, write in the default Polynize register below.
 
-Precedence when they pull against each other: the concept governs what you may say, the recipe governs how the script is built, the brand voice governs how it sounds. The hard constraints at the end override all three and are never traded away.${audienceBlock(opts.icp)}${voiceBlock(opts.brandVoice)}${recipeBlock(opts.recipe)}
+Precedence when they pull against each other: the concept governs what you may say, the recipe governs how the script is built, the brand voice governs how it sounds. The hard constraints at the end override all three and are never traded away.${audienceBlock(opts.icp)}${voiceBlock(opts.brandVoice)}${recipeBlock(opts)}
 
 HOW TO FUSE THEM. A great script is the recipe's structure carrying THIS concept's specific material in THIS voice, for the reader named above, written for the mouth and the ear: short sentences, no subclauses that die on camera. The recipe alone is a hollow template. The concept alone is an info dump read aloud. Fill every beat the recipe names with something concrete from the concept. A script that nails one material by dropping another has failed.
 
@@ -176,8 +219,15 @@ async function generate(
 
   const formatLabel = formatById(piece.format)?.label ?? (kind === 'video' ? 'video' : 'post');
   const brandVoice = await getBrandVoiceForStream(piece.stream);
-  const recipe = await pieceRecipe(piece);
-  const promptOpts = { formatLabel, icp: icpLabel(piece.icp), brandVoice, recipe };
+  const parts = await pieceTemplateParts(piece);
+  const promptOpts: PromptOpts = {
+    formatLabel,
+    icp: icpLabel(piece.icp),
+    brandVoice,
+    ...parts,
+    // Always hand the model a length limit: the template's, else the format default.
+    length: parts.length || defaultLengthFor(piece.format) || undefined,
+  };
 
   // For text, if a script draft already exists, offer it as reference.
   const source =

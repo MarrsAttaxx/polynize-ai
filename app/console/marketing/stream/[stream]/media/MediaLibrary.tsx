@@ -9,6 +9,7 @@
  */
 
 import { useEffect, useRef, useState, type FormEvent } from 'react';
+import { useRouter } from 'next/navigation';
 import type { MediaAsset } from '@/lib/marketing/media-store';
 import s from './media.module.css';
 
@@ -19,6 +20,7 @@ export function MediaLibrary({
   stream: string;
   initial: MediaAsset[];
 }) {
+  const router = useRouter();
   const [assets, setAssets] = useState<MediaAsset[]>(initial);
   const [url, setUrl] = useState('');
   const [label, setLabel] = useState('');
@@ -66,6 +68,9 @@ export function MediaLibrary({
       setUrl('');
       setLabel('');
       setKind('auto');
+      // Re-render the server page so the sibling Generate panel (its Soul photo
+      // picker reads a server-rendered images prop) picks up the new asset.
+      router.refresh();
     } catch {
       setError('Network error. Try again.');
     } finally {
@@ -110,7 +115,7 @@ export function MediaLibrary({
 
   return (
     <div className={s.wrap}>
-      <form className={s.addForm} onSubmit={add}>
+      <form id="media-add" className={s.addForm} onSubmit={add}>
         <input
           className={s.urlInput}
           value={url}

@@ -1,11 +1,51 @@
 /* Text output screen — post copy for a non-video piece. */
 
 .root {
-  max-width: 760px;
+  max-width: 1180px;
   margin: 0 auto;
   padding-bottom: 80px;
   position: relative;
   z-index: 1;
+}
+
+.editorCol {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.undoBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+  padding: 9px 14px;
+  border-radius: 10px;
+  background: rgba(240, 184, 107, 0.08);
+  border: 1px solid rgba(240, 184, 107, 0.3);
+  font-size: 13px;
+  color: var(--text-2);
+}
+.undoBtn {
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: var(--amber);
+  background: transparent;
+  border: 1px solid rgba(240, 184, 107, 0.4);
+  border-radius: 8px;
+  padding: 5px 14px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background var(--tac-transition), border-color var(--tac-transition);
+}
+.undoBtn:hover:not(:disabled) {
+  background: rgba(240, 184, 107, 0.12);
+  border-color: var(--amber);
+}
+.undoBtn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
 }
 
 .head {

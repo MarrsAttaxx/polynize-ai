@@ -285,7 +285,8 @@ export function ScriptScreen({
         </div>
 
         <ChatPanel
-          script={script}
+          content={script}
+          kind="script"
           format={initial.format}
           title={initial.title}
           conceptBody={conceptBody}

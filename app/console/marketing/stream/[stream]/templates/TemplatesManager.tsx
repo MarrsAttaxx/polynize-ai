@@ -10,7 +10,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import type { ContentTemplate, TemplateStatus } from '@/lib/marketing/template-store';
 import type { LibraryTemplate } from '@/lib/marketing/template-library';
-import { FORMATS, ICP_ARCHETYPES, formatById } from '@/lib/marketing/output-plan';
+import { FORMATS, ICP_ARCHETYPES, formatById, defaultLengthFor } from '@/lib/marketing/output-plan';
 import { channelLabel } from '@/lib/marketing/channels';
 import s from './templates.module.css';
 
@@ -24,7 +24,10 @@ type Draft = {
   icp: string;
   inputs: string;
   outputs: string;
+  length: string;
+  hook_recipe: string;
   recipe: string;
+  cta_recipe: string;
   example: string;
 };
 
@@ -37,7 +40,10 @@ const BLANK: Draft = {
   icp: '',
   inputs: '',
   outputs: '',
+  length: defaultLengthFor('linkedin_text'),
+  hook_recipe: '',
   recipe: '',
+  cta_recipe: '',
   example: '',
 };
 
@@ -52,7 +58,11 @@ function toDraft(t: ContentTemplate): Draft {
     icp: t.icp ?? '',
     inputs: t.inputs ?? '',
     outputs: t.outputs ?? '',
+    // Prefill length from the format default for older templates that predate it.
+    length: t.length ?? defaultLengthFor(t.format),
+    hook_recipe: t.hook_recipe ?? '',
     recipe: t.recipe ?? '',
+    cta_recipe: t.cta_recipe ?? '',
     example: t.example ?? '',
   };
 }
@@ -82,7 +92,16 @@ export function TemplatesManager({
 
   const setFormat = (formatId: string) => {
     const channels = formatById(formatId)?.channels ?? [];
-    setDraft((d) => (d ? { ...d, format: formatId, platforms: channels.slice() } : d));
+    setDraft((d) => {
+      if (!d) return d;
+      // Refresh the suggested length to the new format's default, unless the user
+      // has typed a custom one (i.e. it differs from the old format's default).
+      const length =
+        !d.length.trim() || d.length === defaultLengthFor(d.format)
+          ? defaultLengthFor(formatId)
+          : d.length;
+      return { ...d, format: formatId, platforms: channels.slice(), length };
+    });
   };
 
   const togglePlatform = (c: string) =>
@@ -167,7 +186,10 @@ export function TemplatesManager({
       icp: t.icp ?? '',
       inputs: t.inputs ?? '',
       outputs: t.outputs ?? '',
+      length: t.length ?? defaultLengthFor(t.format),
+      hook_recipe: t.hook_recipe ?? '',
       recipe: t.recipe ?? '',
+      cta_recipe: t.cta_recipe ?? '',
       example: t.example ?? '',
     });
 
@@ -277,13 +299,53 @@ export function TemplatesManager({
               <input className={s.input} value={draft.outputs} onChange={(e) => set('outputs', e.target.value)} placeholder="e.g. a captioned short with a re-cut hook" />
             </label>
           </div>
+          <p className={s.recipeIntro}>
+            The recipe below is what the agent follows. Write each part as a direct
+            instruction, specific to this piece type. The concept supplies the facts
+            and the brand voice supplies the sound, so you only need to say what is
+            distinctive about how THIS template is built.
+          </p>
+          <label className={s.fieldWide}>
+            Length (a limit for the draft; prefilled by format, editable)
+            <input
+              className={s.input}
+              value={draft.length}
+              onChange={(e) => set('length', e.target.value)}
+              placeholder="e.g. 150 to 250 words, or 45 to 90 seconds"
+            />
+          </label>
+          <label className={s.fieldWide}>
+            Hook recipe (how to OPEN, as an ordered formula the agent follows)
+            <textarea
+              className={s.recipe}
+              value={draft.hook_recipe}
+              onChange={(e) => set('hook_recipe', e.target.value)}
+              placeholder={
+                'e.g.\nLine 1: state the belief the reader already holds, as if you agree.\nLine 2: flip it in under 12 words.'
+              }
+            />
+          </label>
+          <label className={s.fieldWide}>
+            Structure recipe (the BODY: its beats, in order)
+            <textarea
+              className={s.recipe}
+              value={draft.recipe}
+              onChange={(e) => set('recipe', e.target.value)}
+              placeholder="e.g. 2 to 3 short paragraphs grounding the flip in the concept's proof. One idea per line break."
+            />
+          </label>
+          <label className={s.fieldWide}>
+            CTA recipe (how to CLOSE; write &ldquo;no CTA&rdquo; to end on the point)
+            <textarea
+              className={s.recipe}
+              value={draft.cta_recipe}
+              onChange={(e) => set('cta_recipe', e.target.value)}
+              placeholder="e.g. One line on what the reader can now do. A challenge, not a summary."
+            />
+          </label>
           <label className={s.fieldWide}>
             Example (link or description of a piece made this way)
             <input className={s.input} value={draft.example} onChange={(e) => set('example', e.target.value)} placeholder="Optional" />
-          </label>
-          <label className={s.fieldWide}>
-            Production recipe (the agents follow this; refine it run over run)
-            <textarea className={s.recipe} value={draft.recipe} onChange={(e) => set('recipe', e.target.value)} placeholder="Structure, register, rules, steps." />
           </label>
 
           <div className={s.editorActions}>

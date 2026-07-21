@@ -16,8 +16,10 @@ import { useRouter } from 'next/navigation';
 import { BackLink } from '@/app/console/marketing/_components/BackLink';
 import { PieceDeleteButton } from './PieceDeleteButton';
 import { MediaPicker } from './MediaPicker';
+import { ChatPanel } from './ChatPanel';
 import type { MarketingPiece } from '@/lib/marketing/piece-store';
 import s from './text.module.css';
+import c from './chat.module.css';
 
 type SaveState = 'idle' | 'saving' | 'saved' | 'error';
 
@@ -25,12 +27,20 @@ function channelLabel(id: string): string {
   return id.charAt(0).toUpperCase() + id.slice(1);
 }
 
-export function TextOutputScreen({ initial }: { initial: MarketingPiece }) {
+export function TextOutputScreen({
+  initial,
+  conceptBody,
+}: {
+  initial: MarketingPiece;
+  conceptBody?: string;
+}) {
   const router = useRouter();
   const [body, setBody] = useState(initial.body ?? '');
   const [status, setStatus] = useState(initial.status ?? 'draft');
   const [saveState, setSaveState] = useState<SaveState>('idle');
   const [drafting, setDrafting] = useState(false);
+  const [chatBusy, setChatBusy] = useState(false);
+  const [undo, setUndo] = useState<string | null>(null);
   const [preparing, setPreparing] = useState(false);
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -121,6 +131,24 @@ export function TextOutputScreen({ initial }: { initial: MarketingPiece }) {
     setBody(next);
     latestBody.current = next;
     scheduleSave();
+    if (undo !== null) setUndo(null); // a manual edit ends the undo window
+  };
+
+  // Apply a chat rewrite: snapshot the pre-edit body for one-click undo, then set
+  // and autosave (the single validated write path).
+  const applyChatEdit = (next: string) => {
+    setUndo(latestBody.current);
+    setBody(next);
+    latestBody.current = next;
+    scheduleSave();
+  };
+
+  const revert = () => {
+    if (undo === null) return;
+    setBody(undo);
+    latestBody.current = undo;
+    scheduleSave();
+    setUndo(null);
   };
 
   const setStatusNow = (next: string) => {
@@ -130,7 +158,7 @@ export function TextOutputScreen({ initial }: { initial: MarketingPiece }) {
   };
 
   const draft = async () => {
-    if (drafting) return;
+    if (drafting || chatBusy) return;
     setDrafting(true);
     setError(null);
     try {
@@ -143,9 +171,10 @@ export function TextOutputScreen({ initial }: { initial: MarketingPiece }) {
         return;
       }
       const { body: drafted } = (await res.json()) as { body: string };
-      setBody(drafted);
-      latestBody.current = drafted;
-      flush();
+      // Route through applyChatEdit so a redraft is one-click undoable AND the undo
+      // snapshot is refreshed (a stale snapshot from a prior chat edit would make
+      // Undo jump two edits back, silently discarding the redraft).
+      applyChatEdit(drafted);
     } catch {
       setError('Network error. Try again.');
     } finally {
@@ -238,73 +267,109 @@ export function TextOutputScreen({ initial }: { initial: MarketingPiece }) {
         </div>
       ) : null}
 
-      <div className={s.toolbar}>
-        <button type="button" className={s.draftBtn} onClick={draft} disabled={drafting}>
-          {drafting
-            ? 'Drafting…'
-            : body.trim()
-              ? 'Redraft from the concept'
-              : 'Draft from the concept'}
-        </button>
-        <button type="button" className={s.ghostBtn} onClick={copy} disabled={!body.trim()}>
-          {copied ? 'Copied ✓' : 'Copy post'}
-        </button>
-        {approved ? (
-          <>
-            <span className={s.approvedTag}>Approved ✓</span>
-            <button type="button" className={s.ghostBtn} onClick={() => setStatusNow('draft')}>
-              Reopen
+      <div className={c.workspace}>
+        <div className={s.editorCol}>
+          <div className={s.toolbar}>
+            <button
+              type="button"
+              className={s.draftBtn}
+              onClick={draft}
+              disabled={drafting || chatBusy}
+            >
+              {drafting
+                ? 'Drafting…'
+                : body.trim()
+                  ? 'Redraft from the concept'
+                  : 'Draft from the concept'}
             </button>
-            {channelCount > 0 ? (
+            <button type="button" className={s.ghostBtn} onClick={copy} disabled={!body.trim()}>
+              {copied ? 'Copied ✓' : 'Copy post'}
+            </button>
+            {approved ? (
+              <>
+                <span className={s.approvedTag}>Approved ✓</span>
+                <button type="button" className={s.ghostBtn} onClick={() => setStatusNow('draft')}>
+                  Reopen
+                </button>
+                {channelCount > 0 ? (
+                  <button
+                    type="button"
+                    className={s.draftBtn}
+                    onClick={prepare}
+                    disabled={preparing}
+                  >
+                    {preparing
+                      ? 'Preparing…'
+                      : `Prepare posts for ${channelCount} channel${channelCount === 1 ? '' : 's'} →`}
+                  </button>
+                ) : null}
+              </>
+            ) : (
               <button
                 type="button"
-                className={s.draftBtn}
-                onClick={prepare}
-                disabled={preparing}
+                className={s.approveBtn}
+                onClick={() => setStatusNow('approved')}
+                disabled={!body.trim()}
               >
-                {preparing
-                  ? 'Preparing…'
-                  : `Prepare posts for ${channelCount} channel${channelCount === 1 ? '' : 's'} →`}
+                Mark approved
               </button>
-            ) : null}
-          </>
-        ) : (
-          <button
-            type="button"
-            className={s.approveBtn}
-            onClick={() => setStatusNow('approved')}
-            disabled={!body.trim()}
-          >
-            Mark approved
-          </button>
-        )}
-      </div>
+            )}
+          </div>
 
-      <textarea
-        className={s.body}
-        value={body}
-        placeholder="Draft from the concept, or write the post here. Edits autosave."
-        onChange={(e) => onEditBody(e.target.value)}
-        onBlur={flush}
-        aria-label="Post copy"
-      />
-      <MediaPicker
-        pieceId={initial.piece_id}
-        stream={initial.stream}
-        selected={media}
-        onChange={(ids) => {
-          setMedia(ids);
-          latestMedia.current = ids;
-          flush();
-        }}
-      />
-      <p className={s.hint}>
-        {error ? (
-          <span className={s.error}>{error}</span>
-        ) : (
-          'Copy the post to publish it for now. Scheduling to your channels arrives with the publish step.'
-        )}
-      </p>
+          {undo !== null ? (
+            <div className={s.undoBar}>
+              <span>The post was rewritten.</span>
+              <button
+                type="button"
+                className={s.undoBtn}
+                onClick={revert}
+                disabled={chatBusy || drafting}
+              >
+                Undo
+              </button>
+            </div>
+          ) : null}
+
+          <textarea
+            className={s.body}
+            value={body}
+            placeholder="Draft from the concept, or write the post here. Edits autosave."
+            onChange={(e) => onEditBody(e.target.value)}
+            onBlur={flush}
+            disabled={chatBusy || drafting}
+            aria-label="Post copy"
+          />
+          <MediaPicker
+            pieceId={initial.piece_id}
+            stream={initial.stream}
+            selected={media}
+            disabled={chatBusy}
+            onChange={(ids) => {
+              setMedia(ids);
+              latestMedia.current = ids;
+              flush();
+            }}
+          />
+          <p className={s.hint}>
+            {error ? (
+              <span className={s.error}>{error}</span>
+            ) : (
+              'Copy the post to publish it for now. Scheduling to your channels arrives with the publish step.'
+            )}
+          </p>
+        </div>
+
+        <ChatPanel
+          content={body}
+          kind="body"
+          format={initial.format}
+          title={initial.title}
+          conceptBody={conceptBody}
+          onBusyChange={setChatBusy}
+          onApply={applyChatEdit}
+          disabled={drafting}
+        />
+      </div>
     </div>
   );
 }

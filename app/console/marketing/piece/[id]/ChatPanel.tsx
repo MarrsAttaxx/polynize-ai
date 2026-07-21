@@ -1,12 +1,12 @@
 'use client';
 
 /**
- * Context chat on the Script screen (T4). Interface-driving: a command here
- * ("tighten this line", "three sharper hooks", "cut the intro") rewrites the
- * script in place. The panel POSTs the CURRENT script + the command to ./chat,
- * shows the assistant's note, and when a revised script comes back it hands it
- * to the parent via onApply, which updates the editor and autosaves (the single
- * validated write path — this panel never persists directly).
+ * Context chat, shared by the Script screen (video) and the Text screen (posts).
+ * Interface-driving: a command here ("tighten this line", "three sharper hooks",
+ * "cut the intro") rewrites the content in place. The panel POSTs the CURRENT
+ * content + the command to ./chat, shows the assistant's note, and when revised
+ * content comes back it hands it to the parent via onApply, which updates the
+ * editor and autosaves (the single validated write path).
  */
 
 import { useCallback, useRef, useState } from 'react';
@@ -22,7 +22,8 @@ const QUICK_ACTIONS = [
 ] as const;
 
 export function ChatPanel({
-  script,
+  content,
+  kind = 'script',
   format,
   title,
   conceptBody,
@@ -30,20 +31,22 @@ export function ChatPanel({
   onBusyChange,
   disabled = false,
 }: {
-  script: string;
+  content: string;
+  /** 'script' (video) or 'body' (post) — picks the editing prompt + the noun. */
+  kind?: 'script' | 'body';
   format?: string;
   title?: string;
   /** The source concept doc, if this piece was developed from one — lets April
-   *  draft/refine the script grounded in the full concept, not just the scaffold. */
+   *  draft/refine grounded in the full concept, not just what is on screen. */
   conceptBody?: string;
   onApply: (next: string) => void;
   /** Notifies the parent when a command is in flight, so it can lock the editor. */
   onBusyChange?: (busy: boolean) => void;
   /** Locked from outside (e.g. a redraft is in flight): a chat command here would
-   *  race the redraft through the shared onApply and clobber it, so block sending
-   *  entirely while true. */
+   *  race that through the shared onApply and clobber it, so block sending. */
   disabled?: boolean;
 }) {
+  const noun = kind === 'body' ? 'post' : 'script';
   const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState('');
   const [sending, setSending] = useState(false);
@@ -54,10 +57,10 @@ export function ChatPanel({
   const sendingRef = useRef(false);
   const scrollRef = useRef<HTMLDivElement | null>(null);
 
-  // Always read the latest script at send time via a ref, so a command acts on
+  // Always read the latest content at send time via a ref, so a command acts on
   // whatever is in the editor right now (including untyped-then-typed edits).
-  const scriptRef = useRef(script);
-  scriptRef.current = script;
+  const contentRef = useRef(content);
+  contentRef.current = content;
 
   const send = useCallback(
     async (instruction: string) => {
@@ -77,7 +80,8 @@ export function ChatPanel({
           headers: { 'content-type': 'application/json' },
           body: JSON.stringify({
             instruction: trimmed,
-            script: scriptRef.current,
+            content: contentRef.current,
+            kind,
             format,
             title,
             concept: conceptBody,
@@ -85,20 +89,20 @@ export function ChatPanel({
           }),
         });
         if (!res.ok) {
-          const body = (await res.json().catch(() => null)) as { error?: string } | null;
+          const b = (await res.json().catch(() => null)) as { error?: string } | null;
           setMessages((m) => [
             ...m,
             {
               role: 'assistant',
-              content: body?.error ?? 'Something went wrong. Try again.',
+              content: b?.error ?? 'Something went wrong. Try again.',
             },
           ]);
           return;
         }
-        const data = (await res.json()) as { message: string; script: string | null };
+        const data = (await res.json()) as { message: string; content: string | null };
         setMessages((m) => [...m, { role: 'assistant', content: data.message }]);
-        if (data.script !== null && data.script !== scriptRef.current) {
-          onApply(data.script);
+        if (data.content !== null && data.content !== contentRef.current) {
+          onApply(data.content);
         }
       } catch {
         setMessages((m) => [
@@ -116,22 +120,22 @@ export function ChatPanel({
         });
       }
     },
-    [messages, sending, format, title, conceptBody, onApply, onBusyChange, disabled]
+    [messages, sending, kind, format, title, conceptBody, onApply, onBusyChange, disabled]
   );
 
   // When the piece has a source concept, offer the draft-from-concept action first.
   const quickActions = conceptBody
-    ? ['Write the full script from the concept', ...QUICK_ACTIONS]
+    ? [`Write the full ${noun} from the concept`, ...QUICK_ACTIONS]
     : QUICK_ACTIONS;
 
   return (
-    <aside className={s.panel} aria-label="Script chat">
+    <aside className={s.panel} aria-label={`${noun} chat`}>
       <div className={s.head}>
         <span className={s.eyebrow}>context chat</span>
         <p className={s.blurb}>
           {conceptBody
-            ? 'April has the concept. Ask her to draft the script, or change it in place.'
-            : 'Tell it what to change. It edits the script in place.'}
+            ? `April has the concept. Ask her to draft the ${noun}, or change it in place.`
+            : `Tell it what to change. It edits the ${noun} in place.`}
         </p>
       </div>
 
@@ -177,7 +181,7 @@ export function ChatPanel({
           className={s.input}
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          placeholder="tighten beat 3, cut the intro, sharper hook…"
+          placeholder="tighten this line, cut the intro, sharper hook…"
           aria-label="Chat command"
           disabled={sending || disabled}
         />

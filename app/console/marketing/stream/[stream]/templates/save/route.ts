@@ -34,7 +34,10 @@ const BodySchema = z.object({
   icp: z.string().max(60).optional(),
   inputs: z.string().max(600).optional(),
   outputs: z.string().max(600).optional(),
+  length: z.string().max(400).optional(),
+  hook_recipe: z.string().max(8000).optional(),
   recipe: z.string().max(20_000).optional(),
+  cta_recipe: z.string().max(8000).optional(),
   example: z.string().max(600).optional(),
 });
 
@@ -105,7 +108,10 @@ export async function PUT(
     icp: body.icp || undefined,
     inputs: body.inputs ? stripEmDashes(body.inputs.trim()) : undefined,
     outputs: body.outputs ? stripEmDashes(body.outputs.trim()) : undefined,
+    length: body.length ? stripEmDashes(body.length.trim()) : undefined,
+    hook_recipe: body.hook_recipe ? stripEmDashes(body.hook_recipe.trim()) : undefined,
     recipe: body.recipe ? stripEmDashes(body.recipe.trim()) : undefined,
+    cta_recipe: body.cta_recipe ? stripEmDashes(body.cta_recipe.trim()) : undefined,
     example: body.example ? stripEmDashes(body.example.trim()) : undefined,
     created_at: existing?.created_at ?? now,
     updated_at: now,

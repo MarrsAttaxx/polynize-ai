@@ -52,16 +52,10 @@ export default async function MarketingPiecePage({
     );
   }
 
-  // Non-video pieces (text) open on the text output screen; it drafts from the
-  // concept server-side, so no concept body is threaded through here.
-  const kind = piece.kind ?? kindOf(piece.format);
-  if (kind === 'text') {
-    return <TextOutputScreen initial={piece} />;
-  }
-
   // If this piece was developed from a concept, load the concept body so the chat
-  // (April) can draft/refine the script grounded in the full concept, not just the
-  // visible scaffold. Only resolves S3-style concept refs; degrades to undefined.
+  // (April) can draft/refine grounded in the full concept, not just what is on
+  // screen. Both screens use it. Only resolves S3-style concept refs; degrades to
+  // undefined.
   let conceptBody: string | undefined;
   if (piece.concept_ref) {
     const m = piece.concept_ref.match(/core-concept-(.+)\.md$/);
@@ -75,5 +69,11 @@ export default async function MarketingPiecePage({
     }
   }
 
+  // Non-video pieces (text) open on the text output screen; video on the script
+  // screen. Both carry the on-screen April chat.
+  const kind = piece.kind ?? kindOf(piece.format);
+  if (kind === 'text') {
+    return <TextOutputScreen initial={piece} conceptBody={conceptBody} />;
+  }
   return <ScriptScreen initial={piece} conceptBody={conceptBody} />;
 }

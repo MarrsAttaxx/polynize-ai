@@ -80,6 +80,11 @@ export function TemplatePicker({
           Makes: <strong>{fmt?.label ?? t.format}</strong>
           {t.platforms.length ? <> → {t.platforms.map(channelLabel).join(', ')}</> : null}
         </p>
+        {t.length ? (
+          <p className={s.cardIo}>
+            <span className={s.ioLabel}>Length:</span> {t.length}
+          </p>
+        ) : null}
         {t.inputs ? (
           <p className={s.cardIo}>
             <span className={s.ioLabel}>You bring:</span> {t.inputs}

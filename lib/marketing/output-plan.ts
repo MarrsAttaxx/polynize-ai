@@ -22,6 +22,10 @@ export type FormatDef = {
   module: ModuleStatus;
   /** Candidate channels (platforms) this format can publish to. */
   channels: string[];
+  /** Industry-standard length target, used to prefill a template's Length field
+   *  and injected into the draft prompt so the model knows its limits. Human copy
+   *  (words for text, minutes/seconds for video), editable per template. */
+  defaultLength: string;
 };
 
 /**
@@ -36,6 +40,7 @@ export const FORMATS: FormatDef[] = [
     kind: 'text',
     module: 'built',
     channels: ['linkedin'],
+    defaultLength: 'A standard in-depth post is 150 to 250 words. A quick post is 50 to 100 words. Keep it tight; cut any line that does not earn its place.',
   },
   {
     id: 'short_form_video',
@@ -43,6 +48,7 @@ export const FORMATS: FormatDef[] = [
     kind: 'video',
     module: 'built',
     channels: ['instagram', 'tiktok', 'youtube', 'linkedin'],
+    defaultLength: 'Aim for 45 to 90 seconds spoken (roughly 120 to 220 words). Never over 3 minutes.',
   },
   {
     id: 'medium_video',
@@ -50,6 +56,7 @@ export const FORMATS: FormatDef[] = [
     kind: 'video',
     module: 'coming',
     channels: ['youtube'],
+    defaultLength: '3 to 5 minutes spoken (roughly 450 to 750 words).',
   },
   {
     id: 'long_form_text',
@@ -57,6 +64,7 @@ export const FORMATS: FormatDef[] = [
     kind: 'text',
     module: 'coming',
     channels: ['linkedin'],
+    defaultLength: '500 to 900 words.',
   },
   {
     id: 'pdf_carousel',
@@ -64,6 +72,7 @@ export const FORMATS: FormatDef[] = [
     kind: 'image',
     module: 'coming',
     channels: ['linkedin'],
+    defaultLength: '6 to 10 slides, one idea per slide, a few words each.',
   },
   {
     id: 'image_carousel',
@@ -71,6 +80,7 @@ export const FORMATS: FormatDef[] = [
     kind: 'image',
     module: 'coming',
     channels: ['instagram'],
+    defaultLength: '5 to 8 slides, one idea per slide.',
   },
   {
     id: 'single_image',
@@ -78,6 +88,7 @@ export const FORMATS: FormatDef[] = [
     kind: 'image',
     module: 'coming',
     channels: ['instagram', 'linkedin'],
+    defaultLength: 'One image plus a caption of 40 to 120 words.',
   },
   {
     id: 'newsletter',
@@ -85,6 +96,7 @@ export const FORMATS: FormatDef[] = [
     kind: 'text',
     module: 'coming',
     channels: ['newsletter'],
+    defaultLength: '500 to 1200 words.',
   },
   {
     id: 'long_form_written',
@@ -92,11 +104,17 @@ export const FORMATS: FormatDef[] = [
     kind: 'text',
     module: 'coming',
     channels: ['substack'],
+    defaultLength: '800 to 1500 words.',
   },
 ];
 
 export function formatById(id: string): FormatDef | undefined {
   return FORMATS.find((f) => f.id === id);
+}
+
+/** The industry-standard length target for a format, for prefilling a template. */
+export function defaultLengthFor(formatId: string): string {
+  return formatById(formatId)?.defaultLength ?? '';
 }
 
 /** The kind for a format id, defaulting to video (the legacy piece shape). */

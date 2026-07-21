@@ -24,13 +24,17 @@ export const LIBRARY_TEMPLATES: LibraryTemplate[] = [
     platforms: ['linkedin'],
     inputs: 'A core concept (nothing else).',
     outputs: 'One LinkedIn post in the stream voice, ready to queue.',
-    recipe: [
-      'Open with the tension or objection the reader already feels, stated plainly. No throat-clearing.',
-      'First line must earn the second: a contrarian or surprising claim, under 12 words if possible.',
-      'Middle: 2-3 short paragraphs grounding the claim in the concept\'s proof or story. Concrete over abstract.',
-      'Land on agency, not reassurance: what the reader can now see or do differently.',
-      'Line breaks between thoughts. No hashtags unless the concept demands one. No emoji.',
+    hook_recipe: [
+      'Line 1: state the belief or objection the reader already holds, plainly, as if you agree with it.',
+      'Line 2: flip it. A contrarian or surprising claim, under 12 words, that earns the next line.',
     ].join('\n'),
+    recipe: [
+      '2 to 3 short paragraphs grounding the flip in the concept\'s actual proof or story. Concrete over abstract.',
+      'One idea per line break. No hashtags unless the concept demands one. No emoji.',
+    ].join('\n'),
+    cta_recipe:
+      'Land on agency, not reassurance: one line on what the reader can now see or do differently. A challenge or a question, never a summary.',
+    length: 'A standard in-depth post is 150 to 250 words. Cut any line that does not earn its place.',
     example: 'See the "Strip the AI out first" LinkedIn post.',
   },
   {
@@ -43,12 +47,17 @@ export const LIBRARY_TEMPLATES: LibraryTemplate[] = [
     platforms: ['instagram', 'tiktok', 'youtube', 'linkedin'],
     inputs: 'A core concept; you record the script on camera.',
     outputs: 'A teleprompter-ready script (recording and edit follow the video pipeline).',
-    recipe: [
-      'Structure: HOOK, then 3-5 BEATS, then CTA, then one final emphasis line (the last line always gets punched in the edit, so write one worth punching).',
-      'Hook states the objection or surprise out loud, then flips it.',
-      'Beats are spoken language: short sentences, no subclauses that die on camera.',
-      'CTA is one action. Close with a single emphatic line after it.',
+    hook_recipe: [
+      'Spoken hook (first breath): state the objection or surprise out loud, then flip it.',
+      'On-screen text hook: a different, punchier line that stops the scroll, in different words from the spoken hook.',
     ].join('\n'),
+    recipe: [
+      '3 to 5 BEATS in spoken language: short sentences, no subclauses that die on camera.',
+      'Each beat carries one concrete point from the concept.',
+    ].join('\n'),
+    cta_recipe:
+      'One clear action, then a single emphatic final line worth punching (the last line always gets the emphasis in the edit).',
+    length: 'Aim for 45 to 90 seconds spoken (roughly 120 to 220 words). Never over 3 minutes.',
   },
 ];
 
