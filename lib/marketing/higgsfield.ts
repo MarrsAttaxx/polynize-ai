@@ -106,12 +106,16 @@ export async function generateImages(
       .filter((u): u is string => Boolean(u));
     return { status: res.status, urls, requestId: res.request_id };
   } catch (err) {
+    const msg = err instanceof Error ? err.message : 'generation error';
     console.error('[higgsfield.generate] failed:', err);
-    return {
-      status: 'error',
-      urls: [],
-      error: err instanceof Error ? err.message : 'generation error',
-    };
+    // "Unavailable model" is a Higgsfield account/plan gate (the generation model
+    // is not enabled on the API key), NOT a bad request. Surface it clearly so the
+    // user knows it is an account action, not a console bug. (Soul ID setup works
+    // on a different, ungated endpoint, so it can succeed while this is gated.)
+    const friendly = /unavailable model/i.test(msg)
+      ? 'Higgsfield has not enabled this image model on your account yet. Soul text-to-image generation needs model access on your Higgsfield plan or API key (this is separate from Soul ID setup, which is why that worked). Enable it in your Higgsfield account or ask Higgsfield to turn it on, then try again.'
+      : msg;
+    return { status: 'error', urls: [], error: friendly };
   }
 }
 
