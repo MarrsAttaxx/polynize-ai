@@ -59,36 +59,12 @@ export async function generateImages(
   input: Record<string, unknown>
 ): Promise<GenerateResult> {
   try {
-    // `/v1/` generation endpoints (e.g. Soul, /v1/text2image/soul) take the input
-    // wrapped as { params } and return a JobSet polled via /v1/job-sets/{id}. The
-    // v2 `subscribe` client sends the body FLAT (no params wrapper) and is only for
-    // the newer v2 endpoints, so a v1 endpoint via v2 fails with "body.params:
-    // Field required". Route by path: v1 endpoints go through the v1 client's
-    // generate(), which wraps { params } correctly.
-    if (endpoint.startsWith('/v1/')) {
-      const jobSet = await v1().generate(endpoint, input, { withPolling: true });
-      if (jobSet.isNsfw) {
-        return {
-          status: 'nsfw',
-          urls: [],
-          requestId: jobSet.id,
-          error: 'The result was flagged and not returned. Try a different prompt.',
-        };
-      }
-      const urls = (jobSet.jobs ?? [])
-        .map((j) => j.results?.raw?.url ?? j.results?.min?.url)
-        .filter((u): u is string => Boolean(u));
-      if (urls.length === 0) {
-        return {
-          status: jobSet.isFailed || jobSet.isCanceled ? 'failed' : 'completed',
-          urls: [],
-          requestId: jobSet.id,
-          error: 'Generation failed.',
-        };
-      }
-      return { status: 'completed', urls, requestId: jobSet.id };
-    }
-
+    // The current Higgsfield generation endpoints (e.g. /higgsfield-ai/soul/standard)
+    // take the input FLAT (top-level prompt, width_and_height, ...) and are polled
+    // via /requests/{id}/status, which is exactly what the v2 subscribe client does.
+    // (The old /v1/text2image/soul endpoint is retired; it wanted a { params }
+    // wrapper. Confirmed against prod: the flat body on the new endpoint returns a
+    // completed image.)
     const res = await v2().subscribe(endpoint, { input, withPolling: true });
     if (res.status === 'nsfw') {
       return {

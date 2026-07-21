@@ -33,7 +33,9 @@ export const IMAGE_MODELS: ImageModel[] = [
     id: 'soul',
     label: 'Soul (photoreal)',
     blurb: 'Photoreal, aesthetic images of people. Attach a Soul ID for consistent shots of the same person.',
-    endpoint: '/v1/text2image/soul',
+    // The current generation endpoint (the old /v1/text2image/soul is retired and
+    // returns "Unavailable model"). Flat body, polled via /requests/{id}/status.
+    endpoint: '/higgsfield-ai/soul/standard',
     sizing: 'width_and_height',
     supportsSoulId: true,
     supportsReferenceImage: true,
