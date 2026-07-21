@@ -3,7 +3,6 @@ import { redirect } from 'next/navigation';
 import { getCurrentUser } from '@/lib/console-auth';
 import { getPiece, type MarketingPiece } from '@/lib/marketing/piece-store';
 import { getConcept } from '@/lib/marketing/concept-store';
-import { SEED_PIECES } from '@/lib/marketing/seed';
 import { kindOf } from '@/lib/marketing/output-plan';
 import { ScriptScreen } from './ScriptScreen';
 import { TextOutputScreen } from './TextOutputScreen';
@@ -31,16 +30,14 @@ export default async function MarketingPiecePage({
 
   const owner = user.email;
   // Degrade gracefully: if storage is unreachable (e.g. the Supabase project is
-  // paused), fall back to the seed so the screen still loads instead of the
-  // whole page 500-ing. Autosave surfaces its own error until storage is back.
-  let saved: MarketingPiece | null = null;
+  // paused), the piece reads as null and the screen shows "not found" instead of
+  // the whole page 500-ing.
+  let piece: MarketingPiece | null = null;
   try {
-    saved = await getPiece(owner, id);
+    piece = await getPiece(owner, id);
   } catch (err) {
-    console.error('[marketing] piece read failed, using seed:', err);
+    console.error('[marketing] piece read failed:', err);
   }
-  const seed = SEED_PIECES[id];
-  const piece: MarketingPiece | null = saved ?? (seed ? { ...seed, owner } : null);
 
   if (!piece) {
     return (

@@ -1,7 +1,6 @@
 import { redirect } from 'next/navigation';
 import { getCurrentUser } from '@/lib/console-auth';
 import { getPiece, type MarketingPiece } from '@/lib/marketing/piece-store';
-import { SEED_PIECES } from '@/lib/marketing/seed';
 import { Teleprompter } from './Teleprompter';
 
 export const dynamic = 'force-dynamic';
@@ -31,14 +30,12 @@ export default async function TeleprompterPage({
   }
 
   const owner = user.email;
-  let saved: MarketingPiece | null = null;
+  let piece: MarketingPiece | null = null;
   try {
-    saved = await getPiece(owner, id);
+    piece = await getPiece(owner, id);
   } catch (err) {
-    console.error('[teleprompter] piece read failed, using seed:', err);
+    console.error('[teleprompter] piece read failed:', err);
   }
-  const seed = SEED_PIECES[id];
-  const piece: MarketingPiece | null = saved ?? (seed ? { ...seed, owner } : null);
   if (!piece) return null;
 
   return (

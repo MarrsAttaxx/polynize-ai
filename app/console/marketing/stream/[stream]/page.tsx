@@ -3,7 +3,6 @@ import { redirect } from 'next/navigation';
 import { getCurrentUser } from '@/lib/console-auth';
 import { listSavedPieces, type MarketingPiece } from '@/lib/marketing/piece-store';
 import { listConcepts, type ConceptDoc } from '@/lib/marketing/concept-store';
-import { SEED_PIECES } from '@/lib/marketing/seed';
 import { isStreamId, streamLabel, DEFAULT_STREAM } from '@/lib/marketing/streams';
 import { getBrandVoiceForStream } from '@/lib/marketing/brand-voice-store';
 import { listTemplates } from '@/lib/marketing/template-store';
@@ -56,9 +55,6 @@ export default async function StreamPage({
   }
 
   const byId = new Map<string, MarketingPiece>();
-  for (const seed of Object.values(SEED_PIECES)) {
-    byId.set(seed.piece_id, { ...seed, owner: user.email });
-  }
   try {
     for (const p of await listSavedPieces(user.email)) byId.set(p.piece_id, p);
   } catch (err) {
