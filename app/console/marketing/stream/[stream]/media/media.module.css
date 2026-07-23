@@ -500,3 +500,48 @@
   text-transform: uppercase;
   color: var(--text-3);
 }
+
+/* Visual placement picker: click an anchor dot on the actual image. */
+.placeBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 12px;
+}
+.placeWrap {
+  position: relative;
+  display: inline-block;
+  max-width: 260px;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid var(--tac-edge-dark, rgba(255, 255, 255, 0.12));
+}
+.placeImg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.placeGrid {
+  position: absolute;
+  inset: 0;
+}
+.placeDot {
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.9);
+  background: rgba(10, 10, 15, 0.45);
+  cursor: pointer;
+  padding: 0;
+  transition: background var(--tac-transition), border-color var(--tac-transition);
+}
+.placeDot:hover {
+  background: rgba(105, 252, 203, 0.5);
+}
+.placeDotOn {
+  background: var(--mint);
+  border-color: var(--mint);
+  box-shadow: 0 0 0 3px rgba(105, 252, 203, 0.35);
+}

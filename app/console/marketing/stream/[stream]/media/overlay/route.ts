@@ -26,6 +26,8 @@ const BodySchema = z.object({
   imageUrl: z.string().url().max(2000),
   text: z.string().trim().min(1).max(1000),
   position: z.enum(['top', 'upper', 'centre', 'lower', 'bottom']).optional(),
+  hAlign: z.enum(['left', 'centre', 'right']).optional(),
+  size: z.enum(['small', 'medium', 'large']).optional(),
   baseColor: brandHex.optional(),
   highlightColor: brandHex.optional(),
 });
@@ -60,6 +62,8 @@ export async function POST(
   const res = await renderAndHostOverlay(body.imageUrl, {
     text: body.text.trim(),
     position: body.position ?? 'centre',
+    hAlign: body.hAlign ?? 'centre',
+    size: body.size ?? 'medium',
     baseColor: body.baseColor ?? '#ffffff',
     highlightColor: body.highlightColor ?? '#69fccb',
   });

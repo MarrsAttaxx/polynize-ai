@@ -15,12 +15,20 @@ import imageSizeFrom from 'image-size';
 import { uploadReferenceImage } from './higgsfield';
 
 export type OverlayPosition = 'top' | 'upper' | 'centre' | 'lower' | 'bottom';
+export type OverlayHAlign = 'left' | 'centre' | 'right';
+export type OverlaySize = 'small' | 'medium' | 'large';
 export type OverlayOpts = {
   text: string;
   position: OverlayPosition;
+  hAlign: OverlayHAlign;
+  size: OverlaySize;
   baseColor: string;
   highlightColor: string;
 };
+
+const SIZE_FRAC: Record<OverlaySize, number> = { small: 0.065, medium: 0.09, large: 0.115 };
+const hAlignFlex = (h: OverlayHAlign): 'flex-start' | 'center' | 'flex-end' =>
+  h === 'left' ? 'flex-start' : h === 'right' ? 'flex-end' : 'center';
 
 export type OverlayResult = { url?: string; error?: string };
 
@@ -102,9 +110,10 @@ export async function renderAndHostOverlay(
   }
 
   const lines = opts.text.split('\n').map(parseLine);
-  const fontSize = Math.round(width * 0.09);
+  const fontSize = Math.round(width * (SIZE_FRAC[opts.size] ?? SIZE_FRAC.medium));
   const gap = Math.round(fontSize * 0.28);
   const L = layoutFor(opts.position);
+  const hAlign = hAlignFlex(opts.hAlign);
   const hpad = Math.round(width * 0.06);
 
   let png: ArrayBuffer;
@@ -129,7 +138,7 @@ export async function renderAndHostOverlay(
             display: 'flex',
             flexDirection: 'column',
             justifyContent: L.justify,
-            alignItems: 'center',
+            alignItems: hAlign,
             paddingLeft: hpad,
             paddingRight: hpad,
             paddingTop: Math.round(height * L.padTopFrac),
@@ -142,7 +151,7 @@ export async function renderAndHostOverlay(
               style={{
                 display: 'flex',
                 flexWrap: 'wrap',
-                justifyContent: 'center',
+                justifyContent: hAlign,
                 width: '100%',
                 fontFamily: 'Space Grotesk',
                 fontWeight: 700,

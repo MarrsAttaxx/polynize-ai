@@ -2,11 +2,13 @@
 
 /**
  * Add brand-standard TEXT to a library image, rendered deterministically (not by
- * an AI model) so the font, colours, position and highlight are exact and identical
- * every time. Pick an image, type the words (wrap *words* in asterisks to highlight
- * them, use line breaks to control wrapping), choose a position, and the fixed
- * Space Grotesk font + your colours are composited on precisely. Save back to the
- * library. For restyles/background changes use the AI "Edit an image" panel instead.
+ * an AI model) so the font, colours, size and placement are exact and identical
+ * every time. Pick an image, type the words (wrap *words* in asterisks to
+ * highlight them, line breaks control wrapping), click WHERE the text goes on the
+ * image itself (placement reads differently per aspect ratio, so it's visual),
+ * pick a size, and Space Grotesk + your brand colours are composited on precisely.
+ * Save back to the library. For restyles/background changes use the AI "Edit an
+ * image" panel instead.
  */
 
 import { useState } from 'react';
@@ -16,12 +18,26 @@ import { BRAND_COLORS } from '@/lib/marketing/brand-colors';
 import s from './media.module.css';
 
 type Position = 'top' | 'upper' | 'centre' | 'lower' | 'bottom';
-const POSITIONS: { id: Position; label: string }[] = [
-  { id: 'top', label: 'Top' },
-  { id: 'upper', label: 'Upper' },
-  { id: 'centre', label: 'Centre' },
-  { id: 'lower', label: 'Lower' },
-  { id: 'bottom', label: 'Bottom' },
+type HAlign = 'left' | 'centre' | 'right';
+type Size = 'small' | 'medium' | 'large';
+
+// Anchor coordinates (percent of the preview) roughly matching the render's anchors.
+const H_ANCHORS: { id: HAlign; x: number }[] = [
+  { id: 'left', x: 16 },
+  { id: 'centre', x: 50 },
+  { id: 'right', x: 84 },
+];
+const V_ANCHORS: { id: Position; y: number }[] = [
+  { id: 'top', y: 9 },
+  { id: 'upper', y: 27 },
+  { id: 'centre', y: 50 },
+  { id: 'lower', y: 73 },
+  { id: 'bottom', y: 91 },
+];
+const SIZES: { id: Size; label: string }[] = [
+  { id: 'small', label: 'Small' },
+  { id: 'medium', label: 'Medium' },
+  { id: 'large', label: 'Large' },
 ];
 
 export function MediaTextOverlay({
@@ -37,6 +53,8 @@ export function MediaTextOverlay({
   const [sourceUrl, setSourceUrl] = useState('');
   const [text, setText] = useState('');
   const [position, setPosition] = useState<Position>('centre');
+  const [hAlign, setHAlign] = useState<HAlign>('centre');
+  const [size, setSize] = useState<Size>('medium');
   const [baseColor, setBaseColor] = useState('#ffffff');
   const [highlightColor, setHighlightColor] = useState('#69fccb');
   const [busy, setBusy] = useState(false);
@@ -62,7 +80,15 @@ export function MediaTextOverlay({
       const res = await fetch(base() + '/overlay', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ imageUrl: sourceUrl, text: text.trim(), position, baseColor, highlightColor }),
+        body: JSON.stringify({
+          imageUrl: sourceUrl,
+          text: text.trim(),
+          position,
+          hAlign,
+          size,
+          baseColor,
+          highlightColor,
+        }),
       });
       const b = (await res.json().catch(() => null)) as { url?: string; error?: string } | null;
       if (!res.ok || !b?.url) {
@@ -106,9 +132,9 @@ export function MediaTextOverlay({
       <h2 className={s.genTitle}>Add text to an image (brand-standard)</h2>
       <p className={s.genNote}>
         Renders text onto a library image exactly, in Space Grotesk, every time (this
-        is rendered in code, not by an AI model, so the font, colour, and placement
-        are precise). Wrap <strong>*words*</strong> in asterisks to highlight them, and
-        use line breaks to control wrapping.
+        is rendered in code, not by an AI model, so the font, colour, size and
+        placement are precise). Wrap <strong>*words*</strong> in asterisks to
+        highlight them, and use line breaks to control wrapping.
       </p>
 
       {images.length === 0 ? (
@@ -148,17 +174,47 @@ export function MediaTextOverlay({
             disabled={busy}
           />
 
+          {sourceUrl ? (
+            <div className={s.placeBlock}>
+              <span className={s.refLabel}>Placement (click where the text goes)</span>
+              <div className={s.placeWrap}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={sourceUrl} alt="selected" className={s.placeImg} />
+                <div className={s.placeGrid}>
+                  {V_ANCHORS.flatMap((v) =>
+                    H_ANCHORS.map((h) => {
+                      const on = position === v.id && hAlign === h.id;
+                      return (
+                        <button
+                          key={`${v.id}-${h.id}`}
+                          type="button"
+                          className={`${s.placeDot} ${on ? s.placeDotOn : ''}`}
+                          style={{ left: `${h.x}%`, top: `${v.y}%` }}
+                          onClick={() => {
+                            setPosition(v.id);
+                            setHAlign(h.id);
+                          }}
+                          aria-label={`${v.id} ${h.id}`}
+                          title={`${v.id} ${h.id}`}
+                          disabled={busy}
+                        />
+                      );
+                    })
+                  )}
+                </div>
+              </div>
+            </div>
+          ) : (
+            <p className={s.genNote}>Select an image above to place the text.</p>
+          )}
+
           <div className={s.genControls}>
             <label className={s.genField}>
-              <span>Position</span>
-              <select
-                value={position}
-                onChange={(e) => setPosition(e.target.value as Position)}
-                disabled={busy}
-              >
-                {POSITIONS.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.label}
+              <span>Size</span>
+              <select value={size} onChange={(e) => setSize(e.target.value as Size)} disabled={busy}>
+                {SIZES.map((z) => (
+                  <option key={z.id} value={z.id}>
+                    {z.label}
                   </option>
                 ))}
               </select>
@@ -202,7 +258,6 @@ export function MediaTextOverlay({
               {busy ? 'Rendering…' : 'Add text'}
             </button>
           </div>
-          {!sourceUrl ? <p className={s.genNote}>Select an image above first.</p> : null}
         </>
       )}
 
