@@ -12,19 +12,22 @@ import { getCurrentUser } from '@/lib/console-auth';
 import { isStreamId } from '@/lib/marketing/streams';
 import { isHiggsfieldConfigured } from '@/lib/marketing/higgsfield';
 import { renderAndHostOverlay } from '@/lib/marketing/text-overlay';
+import { BRAND_HEXES } from '@/lib/marketing/brand-colors';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 export const maxDuration = 60;
 
-const HEX = /^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/;
+// Colours are restricted to the Polynize palette (validated against the shared set)
+// so overlays can never go off-brand, even if the client sends something else.
+const brandHex = z.string().refine((v) => BRAND_HEXES.has(v), 'not a brand colour');
 
 const BodySchema = z.object({
   imageUrl: z.string().url().max(2000),
   text: z.string().trim().min(1).max(1000),
-  position: z.enum(['top', 'centre', 'bottom']).optional(),
-  baseColor: z.string().regex(HEX).optional(),
-  highlightColor: z.string().regex(HEX).optional(),
+  position: z.enum(['top', 'upper', 'centre', 'lower', 'bottom']).optional(),
+  baseColor: brandHex.optional(),
+  highlightColor: brandHex.optional(),
 });
 
 export async function POST(

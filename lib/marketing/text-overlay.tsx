@@ -14,7 +14,7 @@ import { ImageResponse } from 'next/og';
 import imageSizeFrom from 'image-size';
 import { uploadReferenceImage } from './higgsfield';
 
-export type OverlayPosition = 'top' | 'centre' | 'bottom';
+export type OverlayPosition = 'top' | 'upper' | 'centre' | 'lower' | 'bottom';
 export type OverlayOpts = {
   text: string;
   position: OverlayPosition;
@@ -54,8 +54,27 @@ function parseLine(line: string): Seg[] {
   return segs.length ? segs : [{ text: line, highlight: false }];
 }
 
-const justifyFor = (p: OverlayPosition): 'flex-start' | 'center' | 'flex-end' =>
-  p === 'top' ? 'flex-start' : p === 'bottom' ? 'flex-end' : 'center';
+type VLayout = { justify: 'flex-start' | 'center' | 'flex-end'; padTopFrac: number; padBottomFrac: number };
+/**
+ * Vertical placement of the text block. Five anchors: hard top/bottom, the upper
+ * and lower thirds, and centre. Achieved with justifyContent plus a top/bottom
+ * padding fraction of the canvas height (Satori has no reliable transform).
+ */
+function layoutFor(p: OverlayPosition): VLayout {
+  switch (p) {
+    case 'top':
+      return { justify: 'flex-start', padTopFrac: 0.06, padBottomFrac: 0.06 };
+    case 'upper':
+      return { justify: 'flex-start', padTopFrac: 0.22, padBottomFrac: 0.06 };
+    case 'lower':
+      return { justify: 'flex-end', padTopFrac: 0.06, padBottomFrac: 0.22 };
+    case 'bottom':
+      return { justify: 'flex-end', padTopFrac: 0.06, padBottomFrac: 0.06 };
+    case 'centre':
+    default:
+      return { justify: 'center', padTopFrac: 0.06, padBottomFrac: 0.06 };
+  }
+}
 
 export async function renderAndHostOverlay(
   imageUrl: string,
@@ -85,6 +104,8 @@ export async function renderAndHostOverlay(
   const lines = opts.text.split('\n').map(parseLine);
   const fontSize = Math.round(width * 0.09);
   const gap = Math.round(fontSize * 0.28);
+  const L = layoutFor(opts.position);
+  const hpad = Math.round(width * 0.06);
 
   let png: ArrayBuffer;
   try {
@@ -107,9 +128,12 @@ export async function renderAndHostOverlay(
             height,
             display: 'flex',
             flexDirection: 'column',
-            justifyContent: justifyFor(opts.position),
+            justifyContent: L.justify,
             alignItems: 'center',
-            padding: Math.round(width * 0.06),
+            paddingLeft: hpad,
+            paddingRight: hpad,
+            paddingTop: Math.round(height * L.padTopFrac),
+            paddingBottom: Math.round(height * L.padBottomFrac),
           }}
         >
           {lines.map((segs, i) => (

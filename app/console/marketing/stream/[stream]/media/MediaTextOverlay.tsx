@@ -12,13 +12,17 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import type { MediaAsset } from '@/lib/marketing/media-store';
+import { BRAND_COLORS } from '@/lib/marketing/brand-colors';
 import s from './media.module.css';
 
-const POSITIONS = [
+type Position = 'top' | 'upper' | 'centre' | 'lower' | 'bottom';
+const POSITIONS: { id: Position; label: string }[] = [
   { id: 'top', label: 'Top' },
+  { id: 'upper', label: 'Upper' },
   { id: 'centre', label: 'Centre' },
+  { id: 'lower', label: 'Lower' },
   { id: 'bottom', label: 'Bottom' },
-] as const;
+];
 
 export function MediaTextOverlay({
   stream: _stream,
@@ -32,7 +36,7 @@ export function MediaTextOverlay({
 
   const [sourceUrl, setSourceUrl] = useState('');
   const [text, setText] = useState('');
-  const [position, setPosition] = useState<'top' | 'centre' | 'bottom'>('centre');
+  const [position, setPosition] = useState<Position>('centre');
   const [baseColor, setBaseColor] = useState('#ffffff');
   const [highlightColor, setHighlightColor] = useState('#69fccb');
   const [busy, setBusy] = useState(false);
@@ -149,7 +153,7 @@ export function MediaTextOverlay({
               <span>Position</span>
               <select
                 value={position}
-                onChange={(e) => setPosition(e.target.value as 'top' | 'centre' | 'bottom')}
+                onChange={(e) => setPosition(e.target.value as Position)}
                 disabled={busy}
               >
                 {POSITIONS.map((p) => (
@@ -161,23 +165,33 @@ export function MediaTextOverlay({
             </label>
             <label className={s.genField}>
               <span>Text colour</span>
-              <input
-                type="color"
+              <select
                 value={baseColor}
                 onChange={(e) => setBaseColor(e.target.value)}
                 disabled={busy}
                 aria-label="Text colour"
-              />
+              >
+                {BRAND_COLORS.map((c) => (
+                  <option key={c.id} value={c.hex}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
             </label>
             <label className={s.genField}>
               <span>Highlight colour</span>
-              <input
-                type="color"
+              <select
                 value={highlightColor}
                 onChange={(e) => setHighlightColor(e.target.value)}
                 disabled={busy}
                 aria-label="Highlight colour"
-              />
+              >
+                {BRAND_COLORS.map((c) => (
+                  <option key={c.id} value={c.hex}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
             </label>
             <button
               type="button"
