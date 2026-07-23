@@ -5,6 +5,7 @@ import { isStreamId, streamLabel } from '@/lib/marketing/streams';
 import { listMediaForStream, type MediaAsset } from '@/lib/marketing/media-store';
 import { MediaLibrary } from './MediaLibrary';
 import { MediaGenerate } from './MediaGenerate';
+import { MediaEdit } from './MediaEdit';
 import { BackLink } from '@/app/console/marketing/_components/BackLink';
 import s from './media.module.css';
 
@@ -65,6 +66,10 @@ export default async function MediaPage({
         </p>
       </header>
       <MediaGenerate
+        stream={stream}
+        images={initial.filter((m) => m.kind === 'image')}
+      />
+      <MediaEdit
         stream={stream}
         images={initial.filter((m) => m.kind === 'image')}
       />
