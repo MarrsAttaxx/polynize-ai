@@ -6,6 +6,7 @@ import { listMediaForStream, type MediaAsset } from '@/lib/marketing/media-store
 import { MediaLibrary } from './MediaLibrary';
 import { MediaGenerate } from './MediaGenerate';
 import { MediaEdit } from './MediaEdit';
+import { MediaTextOverlay } from './MediaTextOverlay';
 import { BackLink } from '@/app/console/marketing/_components/BackLink';
 import s from './media.module.css';
 
@@ -70,6 +71,10 @@ export default async function MediaPage({
         images={initial.filter((m) => m.kind === 'image')}
       />
       <MediaEdit
+        stream={stream}
+        images={initial.filter((m) => m.kind === 'image')}
+      />
+      <MediaTextOverlay
         stream={stream}
         images={initial.filter((m) => m.kind === 'image')}
       />

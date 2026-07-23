@@ -20,6 +20,7 @@
     "@octokit/rest": "^22.0.1",
     "@supabase/supabase-js": "^2.45.0",
     "@vercel/functions": "^3.5.0",
+    "image-size": "^1.2.1",
     "jose": "^6.2.3",
     "next": "^15.1.0",
     "react": "^19.0.0",
