@@ -40,12 +40,23 @@ export async function POST(
     return NextResponse.json({ error: 'unknown stream' }, { status: 400 });
   }
 
-  let body: z.infer<typeof BodySchema>;
-  try {
-    body = BodySchema.parse(await req.json());
-  } catch {
-    return NextResponse.json({ error: 'invalid request' }, { status: 400 });
+  const raw = await req.json().catch(() => null);
+  const result = BodySchema.safeParse(raw);
+  if (!result.success) {
+    // Say WHICH field failed so the user can act (the old generic "invalid
+    // request" hid the real cause, usually pasting image data / a data: URI, or a
+    // very long link, into the URL field).
+    const issue = result.error.issues[0];
+    const field = issue?.path[0];
+    const msg =
+      field === 'url'
+        ? 'That link is not usable. Paste a direct URL to the file (under 2000 characters), not image data or a data: URI.'
+        : field === 'label'
+          ? 'The label is too long (max 200 characters).'
+          : 'Paste a direct media URL and try again.';
+    return NextResponse.json({ error: msg }, { status: 400 });
   }
+  const body = result.data;
 
   // Must be a fetchable http(s) URL (Metricool pulls media by URL).
   let parsed: URL;
