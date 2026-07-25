@@ -77,6 +77,9 @@ type PromptOpts = {
   formatLabel: string;
   icp?: string;
   brandVoice?: string;
+  /** The format's physical output shape (D29), e.g. the two-track touchscreen
+   *  formats. Replaces the default script shape when present. */
+  scriptShape?: string;
 } & RecipeParts;
 
 /** The piece's Content Template recipe parts, if any (degrades to none on failure). */
@@ -196,9 +199,16 @@ Hard constraints, never overridden by any recipe or voice:
 - Never use the em-dash character (U+2014). Use a comma, a period, or a colon instead.
 - Output ONLY the script, meaning the labels and the spoken lines (plus the ON-SCREEN TEXT line for short-form): no preamble, no "here is your script", no notes on your reasoning, no markdown code fences.
 
-Output shape. Structure the script with plain labels on their own lines, the spoken words beneath each. If the recipe defines the beats, use its labels and its beats in order and honour its own ending, including whether it has a call to action, since some recipes end on the puncture with no CTA. If no recipe is given, use HOOK, then BEAT 1, BEAT 2, and so on for each movement, then CTA. Either way, end on one sharp line worth punching, because the last line always gets the emphasis in the edit. If this is a short-form video, prepend one line labelled ON-SCREEN TEXT holding the first-frame caption that stops the scroll: this is the one non-spoken line, and its words must differ from the spoken hook, which deepens or twists it. Longer video needs only the spoken hook.
+${
+    opts.scriptShape ??
+    `Output shape. Structure the script with plain labels on their own lines, the spoken words beneath each. If the recipe defines the beats, use its labels and its beats in order and honour its own ending, including whether it has a call to action, since some recipes end on the puncture with no CTA. If no recipe is given, use HOOK, then BEAT 1, BEAT 2, and so on for each movement, then CTA. Either way, end on one sharp line worth punching, because the last line always gets the emphasis in the edit. If this is a short-form video, prepend one line labelled ON-SCREEN TEXT holding the first-frame caption that stops the scroll: this is the one non-spoken line, and its words must differ from the spoken hook, which deepens or twists it. Longer video needs only the spoken hook.`
+  }
 
-This model reasons before it answers, so plan silently: find the sharpest hook material, map the recipe's beats onto the concept, settle the voice, then write. Before you output, reread once as the editor and fix any miss: the spoken hook stops a cold viewer and earns the next line, and for short-form there is a separate on-screen text hook in different words; every beat the recipe named is present, in order, with its own ending honoured; every fact traces to the concept, with anything invented deleted; the voice holds and reads cleanly aloud; no banned phrase, filler, or emoji; it ends on a line worth punching. Return only the finished script.`;
+This model reasons before it answers, so plan silently: find the sharpest hook material, map the recipe's beats onto the concept, settle the voice, then write. Before you output, reread once as the editor and fix any miss: the spoken hook stops a cold viewer and earns the next line, and for short-form there is a separate on-screen text hook in different words; every beat the recipe named is present, in order, with its own ending honoured; every fact traces to the concept, with anything invented deleted; the voice holds and reads cleanly aloud; no banned phrase, filler, or emoji; it ends on a line worth punching.${
+    opts.scriptShape
+      ? ' Also check the output shape above is followed exactly: every beat has its labelled tracks, and each SCREEN line is one bold representational idea plus a touch that reinforces the spoken line, never a bullet slide.'
+      : ''
+  } Return only the finished script.`;
 }
 
 /** Strip stray code fences / wrapping the model sometimes adds, then em-dashes. */
@@ -217,13 +227,16 @@ async function generate(
   const conceptBody = await conceptBodyForPiece(owner, piece);
   if (!conceptBody.trim()) throw new DraftError('no-concept');
 
-  const formatLabel = formatById(piece.format)?.label ?? (kind === 'video' ? 'video' : 'post');
+  const fmt = formatById(piece.format);
+  const formatLabel = fmt?.label ?? (kind === 'video' ? 'video' : 'post');
   const brandVoice = await getBrandVoiceForStream(piece.stream);
   const parts = await pieceTemplateParts(piece);
   const promptOpts: PromptOpts = {
     formatLabel,
     icp: icpLabel(piece.icp),
     brandVoice,
+    // Two-track / capture-specific shape for the touchscreen hero formats (D29).
+    scriptShape: fmt?.scriptShape,
     ...parts,
     // Always hand the model a length limit: the template's, else the format default.
     length: parts.length || defaultLengthFor(piece.format) || undefined,

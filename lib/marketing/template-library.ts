@@ -59,6 +59,60 @@ export const LIBRARY_TEMPLATES: LibraryTemplate[] = [
       'One clear action, then a single emphatic final line worth punching (the last line always gets the emphasis in the edit).',
     length: 'Aim for 45 to 90 seconds spoken (roughly 120 to 220 words). Never over 3 minutes.',
   },
+  {
+    // The 9:16 hero (D29): one idea, made visual on the touchscreen, in one setup.
+    template_id: 'touchscreen-concept-flip',
+    name: 'Concept flip (split-screen short)',
+    description:
+      'The 9:16 hero format: one counter-intuitive idea, proved on the touchscreen. You up top, the screen below, the visual turning as you talk.',
+    status: 'active',
+    format: 'split_screen_short',
+    platforms: ['instagram', 'tiktok', 'youtube', 'linkedin'],
+    inputs: 'A core concept with one sharp idea (and a number or a real moment if it has one).',
+    outputs:
+      'A two-track script: the words to camera plus the screen brief per beat (what is shown, what the touch does).',
+    hook_recipe: [
+      'Spoken hook: name the belief the viewer already holds, flatly, as if you agree. Under 12 words.',
+      'On-screen text hook: the flip, in different words from the spoken hook, so the two together open a gap.',
+      'Screen at the hook: the belief written as ONE bold word or phrase, nothing else on the screen yet.',
+    ].join('\n'),
+    recipe: [
+      '3 to 4 beats, one idea each, and the screen changes on every beat.',
+      'Beat 1 flips the belief with a single sharp claim; the touch breaks the hook visual apart to match the flip.',
+      'Middle beats prove the flip with the concept\'s own example or number; the screen shows that number or a simple two-part diagram, revealed by touch, never a bullet list.',
+      'Last beat lands what the viewer can now see differently; the screen resolves to the one phrase you want remembered.',
+    ].join('\n'),
+    cta_recipe:
+      'One line on what to do or notice next, not a summary. Then one short emphatic line worth punching, with the screen holding the final phrase.',
+    length:
+      'Aim for 45 to 75 seconds spoken (roughly 120 to 190 words). Never over 90 seconds.',
+  },
+  {
+    // The 16:9 hero (D29): depth, told through the screen.
+    template_id: 'touchscreen-walkthrough',
+    name: 'Walkthrough (screen-record long)',
+    description:
+      'The 16:9 hero format: open to camera, then work the idea through on the screen with your head in the corner. For depth and authority.',
+    status: 'active',
+    format: 'screen_record_long',
+    platforms: ['youtube', 'linkedin'],
+    inputs: 'A core concept with enough substance to develop over several minutes.',
+    outputs:
+      'A two-track script: the full-screen intro, then each screen section with its spoken lines and screen brief.',
+    hook_recipe: [
+      'Intro, full screen to camera, no screen visual: open on the problem the viewer is living with, in one or two lines.',
+      'Then state plainly what they will be able to do or see by the end. No preamble about yourself, no "in this video".',
+    ].join('\n'),
+    recipe: [
+      '3 to 5 sections, each one step of the argument, each with its own screen visual.',
+      'Build the visual cumulatively across sections: the screen should assemble into one picture by the end rather than resetting each time.',
+      'Ground every section in the concept\'s own material. Mark "SHOT: overhead" on the one or two sections where the physical touch is the point.',
+      'Say the thing others hedge on: this format earns authority by being specific.',
+    ].join('\n'),
+    cta_recipe:
+      'Close by pointing at the single next step, then one sharp final line worth punching, with the assembled screen visual held on screen.',
+    length: 'Aim for 4 to 8 minutes spoken (roughly 600 to 1200 words).',
+  },
 ];
 
 export function getLibraryTemplate(id: string): LibraryTemplate | undefined {
