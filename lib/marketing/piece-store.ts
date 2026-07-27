@@ -55,6 +55,14 @@ export type MarketingPiece = {
   provenance?: 'human_capture' | 'ai_generated' | 'hybrid';
   /** The text draft for non-video pieces (post copy). Video uses `script`. */
   body?: string;
+  /**
+   * The TREATMENT: the pre-record screen plan for the touchscreen formats (D29
+   * amended). Per beat, what is on the touchscreen and what the touch does. Kept
+   * SEPARATE from `script` because the script is read off the teleprompter and must
+   * stay spoken-only, while this is the brief the animation build works from.
+   * Shares the script's beat labels. Absent for formats that do not need one.
+   */
+  treatment?: string;
   /** Attached media asset ids from this stream's media library (D2 amended
    *  2026-07-14). References into media-store; resolved to public URLs at publish
    *  time. Optional so existing pieces stay valid (isValidPiece unchanged). */

@@ -144,8 +144,13 @@ export async function POST(
           // "Untouched" = empty, or still exactly the scaffold createOutputs seeded.
           const scaffold = scaffoldScript(concept.framing, concept.body_md);
           if (!piece.script?.trim() || piece.script === scaffold) {
-            const script = await draftVideoScript(user.email, piece);
-            await savePiece(user.email, { ...piece, script });
+            // Two-track formats also get their TREATMENT (screen plan) here (D29).
+            const { script, treatment } = await draftVideoScript(user.email, piece);
+            await savePiece(user.email, {
+              ...piece,
+              script,
+              ...(treatment ? { treatment } : {}),
+            });
           }
         }
       }

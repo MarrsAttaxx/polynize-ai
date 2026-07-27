@@ -27,26 +27,48 @@ export type FormatDef = {
    *  (words for text, minutes/seconds for video), editable per template. */
   defaultLength: string;
   /**
-   * The PHYSICAL output shape of the script for this format (D29): the capture
-   * setup and the labelled tracks the script must produce. This is a property of
-   * the FORMAT (how it is shot and assembled), separate from a template's recipe
-   * (its editorial structure). When present it replaces the default script shape
-   * in the draft prompt, so a two-track format gets a two-track script.
+   * The PHYSICAL output shape for this format (D29): its capture setup and the
+   * artifacts it must produce. A property of the FORMAT (how it is shot and
+   * assembled), separate from a template's recipe (its editorial structure). When
+   * present it replaces the default script shape in the draft prompt.
    */
   scriptShape?: string;
+  /**
+   * This format produces a separate TREATMENT (the pre-record screen plan) as well
+   * as the script (D29, amended). The script stays SPOKEN-ONLY so it can be read
+   * straight off the teleprompter; the visuals live in the treatment, which is the
+   * brief the animation build works from. Drives the two-section draft contract and
+   * the Treatment stage.
+   */
+  twoTrack?: boolean;
 };
 
 /**
- * The two-track shape shared by the touchscreen formats (D29). The visuals live on
- * the 32in touchscreen and are captured in-camera, so the script must brief the
- * SCREEN as well as the words: each beat carries what is on the screen and what the
- * touch does. That SCREEN track is the brief the animation build works from.
+ * What makes a good touchscreen visual (D29). Shared by the touchscreen formats and
+ * injected into the TREATMENT half of the draft, since the screen is a PRE-RECORD
+ * dependency: it has to be built before the shoot because the presenter touches it
+ * live on camera. It is a prop, not post-production.
  */
-const SCREEN_TRACK_RULES = `Every beat carries TWO labelled lines, in this order:
-- "SPOKEN:" the exact words said to camera.
-- "SCREEN:" what is on the touchscreen for that beat, then the touch interaction and the transition out of it, in one or two sentences.
+const SCREEN_RULES = `Screen visuals are REPRESENTATIONAL, not detailed: one big bold idea per beat (a word, a number, a simple shape or diagram), readable in a thumbnail. Never a slide of bullet points, never small text, never a screenshot of an interface. Each touch does one legible thing that reinforces the point being spoken (reveal, split, collapse, snap into place, wipe away). The screen must never say something the spoken line contradicts.`;
 
-Screen visuals are REPRESENTATIONAL, not detailed: one big bold idea per beat (a word, a number, a simple shape or diagram), readable in a thumbnail. Never a slide of bullet points, never small text, never a screenshot of an interface. Each touch does one legible thing that reinforces the point being spoken (reveal, split, collapse, snap into place, wipe away). The screen must never say something the spoken line contradicts.`;
+/**
+ * The two-artifact output contract. The SCRIPT is what the presenter reads on the
+ * teleprompter, so it must contain nothing but beat labels and spoken words; every
+ * visual instruction belongs in the TREATMENT. Both are generated in ONE pass so
+ * they are coherent by construction, and share beat labels so they cannot drift.
+ */
+const TWO_ARTIFACT_CONTRACT = `Return BOTH artifacts, in this order, each introduced by its delimiter alone on its own line:
+
+===SCRIPT===
+The spoken script ONLY: the beat labels, and under each the exact words said to camera. This is read off a teleprompter, so it must contain no visual notes, no screen descriptions, no stage directions, no shot marks. Nothing that is not spoken aloud.
+
+===TREATMENT===
+The screen plan. Repeat each beat label from the script exactly, and under it:
+- "SCREEN:" what is on the touchscreen for that beat.
+- "TOUCH:" the interaction, and the transition out of it.
+${SCREEN_RULES}
+
+The beat labels in the TREATMENT must match the SCRIPT exactly, so the two stay in lockstep.`;
 
 /**
  * The channel-agnostic format catalogue (the swappable-middle registry). Only
@@ -70,13 +92,14 @@ export const FORMATS: FormatDef[] = [
     channels: ['instagram', 'tiktok', 'youtube', 'linkedin'],
     defaultLength:
       'Aim for 45 to 75 seconds spoken (roughly 120 to 190 words). Never over 90 seconds.',
+    twoTrack: true,
     scriptShape: `Output shape. This is the SPLIT-SCREEN 9:16 hero format. One studio setup, two angles: the TOP half of the frame is a mid front shot of the presenter to camera, the BOTTOM half is a bird's-eye view of a 32in touchscreen the presenter is touching. Both halves are on screen the whole time, so the words and the screen move together.
 
-${SCREEN_TRACK_RULES}
+Use plain beat labels on their own lines: HOOK, then the beats, then the close. If the recipe defines its own beats, use its labels and its order and honour its own ending, including whether it has a call to action. End on one sharp spoken line worth punching. Keep it fast: one idea per beat, and the screen changes on every beat so the frame never sits still.
 
-Structure it with plain labels on their own lines. Start with one line labelled "ON-SCREEN TEXT" holding the first-frame caption that stops the scroll (the one non-spoken line, in different words from the spoken hook). Then HOOK, then the beats, then the close. If the recipe defines its own beats, use its labels and its order and honour its own ending, including whether it has a call to action. End on one sharp line worth punching.
+${TWO_ARTIFACT_CONTRACT}
 
-Keep it fast: one idea per beat, and the screen changes on every beat so the frame never sits still.`,
+In the TREATMENT, before the first beat, add one line labelled "ON-SCREEN TEXT:" holding the first-frame caption that stops the scroll. It is never spoken, and its words differ from the spoken hook so the two together open a gap.`,
   },
   {
     id: 'screen_record_long',
@@ -86,17 +109,14 @@ Keep it fast: one idea per beat, and the screen changes on every beat so the fra
     channels: ['youtube', 'linkedin'],
     defaultLength:
       'Aim for 4 to 8 minutes spoken (roughly 600 to 1200 words).',
+    twoTrack: true,
     scriptShape: `Output shape. This is the SCREEN-RECORD 16:9 hero format. Same studio setup as the split-screen short, but the touchscreen is captured as a clean SCREEN RECORDING for fidelity. It opens FULL SCREEN on the presenter to camera introducing the piece, then switches to the screen recording with the presenter's head in a small circle (picture in picture) for the body, cutting to the bird's-eye overhead angle occasionally when the physical touch is the point.
 
-${SCREEN_TRACK_RULES}
+Use plain beat labels on their own lines. The first is "INTRO (full screen)": the presenter to camera with no screen visual yet, and it must earn the next minute (the promise of the piece, not a preamble about themselves). Then the body sections, each labelled, then the close. If the recipe defines its own beats, use its labels and its order and honour its own ending. End on one sharp spoken line worth punching. This format has room to breathe: develop each section properly rather than rushing, but never pad.
 
-Structure it with plain labels on their own lines:
-- "INTRO (full screen)" first: the presenter to camera, no screen visual yet. Spoken only, and it must earn the next minute: the promise of the piece, not a preamble about themselves.
-- Then the body sections, each labelled, each with SPOKEN and SCREEN lines. Add "SHOT: overhead" on a section where the touch itself should be seen.
-- Then the close.
-If the recipe defines its own beats, use its labels and its order and honour its own ending. End on one sharp line worth punching.
+${TWO_ARTIFACT_CONTRACT}
 
-This format has room to breathe: develop each section properly rather than rushing, but never pad.`,
+In the TREATMENT, the INTRO beat has no screen visual (say so). Build the screen visual CUMULATIVELY across the body beats, so it assembles into one picture by the end rather than resetting each beat. Add "SHOT: overhead" to the one or two beats where the physical touch is the point.`,
   },
   {
     id: 'short_form_video',

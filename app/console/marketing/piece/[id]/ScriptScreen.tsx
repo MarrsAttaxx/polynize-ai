@@ -49,6 +49,9 @@ export function ScriptScreen({
   // edit path writes it. The save loop always reconciles against it.
   const latest = useRef(initial.script);
   const latestMedia = useRef<string[]>(initial.media ?? []);
+  // The TREATMENT (screen plan, D29) rides along on the autosave so a redraft's new
+  // treatment is persisted with its script. Edited on its own Treatment stage.
+  const latestTreatment = useRef<string | undefined>(initial.treatment);
   const inFlight = useRef(false);
 
   // Capture the state URL ONCE at mount. Deriving it inside save() at call time
@@ -85,7 +88,12 @@ export function ScriptScreen({
           const res = await fetch(url, {
             method: 'PUT',
             headers: { 'content-type': 'application/json' },
-            body: JSON.stringify({ ...initial, script: content, media: mediaContent }),
+            body: JSON.stringify({
+              ...initial,
+              script: content,
+              media: mediaContent,
+              treatment: latestTreatment.current,
+            }),
           });
           ok = res.ok;
         } catch {
@@ -164,7 +172,13 @@ export function ScriptScreen({
         setDraftError(b?.error ?? 'Could not draft the script.');
         return;
       }
-      const { script: drafted } = (await res.json()) as { script: string };
+      const { script: drafted, treatment } = (await res.json()) as {
+        script: string;
+        treatment: string | null;
+      };
+      // Capture the regenerated treatment BEFORE applying, so the autosave the
+      // apply triggers writes the script and its matching screen plan together.
+      if (treatment) latestTreatment.current = treatment;
       applyChatEdit(drafted);
     } catch {
       setDraftError('Network error. Try again.');

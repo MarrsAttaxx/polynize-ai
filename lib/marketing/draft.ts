@@ -211,6 +211,25 @@ This model reasons before it answers, so plan silently: find the sharpest hook m
   } Return only the finished script.`;
 }
 
+/**
+ * Split a two-artifact draft into the spoken script and the treatment (D29). The
+ * prompt asks for `===SCRIPT===` / `===TREATMENT===` delimiters. If the treatment
+ * delimiter is missing (a model slip, or a single-artifact format) everything is
+ * treated as script, so the piece is never left empty.
+ */
+export function splitScriptAndTreatment(raw: string): {
+  script: string;
+  treatment?: string;
+} {
+  const m = raw.split(/^[=\s]*={2,}\s*TREATMENT\s*={2,}[=\s]*$/im);
+  const head = (m[0] ?? raw)
+    // Drop a leading ===SCRIPT=== delimiter if present.
+    .replace(/^[=\s]*={2,}\s*SCRIPT\s*={2,}[=\s]*$/im, '')
+    .trim();
+  const treatment = m.length > 1 ? m.slice(1).join('\n').trim() : '';
+  return { script: head, treatment: treatment || undefined };
+}
+
 /** Strip stray code fences / wrapping the model sometimes adds, then em-dashes. */
 function cleanOutput(raw: string): string {
   let body = raw.trim();
@@ -282,7 +301,21 @@ export function draftTextBody(owner: string, piece: MarketingPiece): Promise<str
   return generate(owner, piece, 'text');
 }
 
-/** Draft the spoken script for a video piece. Throws DraftError on failure. */
-export function draftVideoScript(owner: string, piece: MarketingPiece): Promise<string> {
-  return generate(owner, piece, 'video');
+/**
+ * Draft a video piece: the spoken script, plus the TREATMENT (screen plan) for the
+ * two-track touchscreen formats (D29). Both come from ONE generation so they are
+ * coherent and share beat labels. `treatment` is undefined for single-artifact
+ * formats. Throws DraftError on failure.
+ */
+export async function draftVideoScript(
+  owner: string,
+  piece: MarketingPiece
+): Promise<{ script: string; treatment?: string }> {
+  const raw = await generate(owner, piece, 'video');
+  if (!formatById(piece.format)?.twoTrack) return { script: raw };
+  const { script, treatment } = splitScriptAndTreatment(raw);
+  // A treatment-less result would silently lose the screen plan, so fall back to
+  // the whole draft as the script rather than dropping content.
+  if (!script) return { script: raw };
+  return { script, treatment };
 }

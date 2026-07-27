@@ -26,7 +26,16 @@ export const SHORT_FORM_STAGES: MiddleStage[] = [
     built: true,
     href: (id) => `/console/marketing/piece/${id}`,
   },
-  { id: 'treatment_map', label: 'Treatment map', role: 'hybrid', built: false },
+  {
+    // PRE-RECORD (D29 amended): the screen plan that must be BUILT before the shoot,
+    // because the presenter touches it live on camera. Distinct from the post-record
+    // `treatment` stage below (overlays/execution on the footage).
+    id: 'treatment_map',
+    label: 'Treatment',
+    role: 'hybrid',
+    built: true,
+    href: (id) => `/console/marketing/piece/${id}/treatment`,
+  },
   {
     id: 'record',
     label: 'Record',
