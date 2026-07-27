@@ -98,7 +98,7 @@ ${BUILD_SYSTEM}
 
 STATES
 Then, for each beat label in the script, repeat the label EXACTLY and give these lines. Be concrete and visual on every one: a vague brief produces a weak build.
-- "COMPOSITION:" what is on screen and where it sits, at what scale, inside the safe area. Name the arrangement (three standing pillars, one centred word, two facing blocks, a single number).
+- "COMPOSITION:" what is on screen and where it sits, at what scale, in the frame. Name the arrangement (three standing pillars, one centred word, two facing blocks, a single number).
 - "TYPE:" the exact words on screen, in quotes. Write "none" when the moment is purely visual: a state carrying no text at all is often stronger, especially the opening.
 - "COLOUR:" which brand colour carries which element, and what that colour is doing (problem, tension, proof, resolution).
 - "MATERIAL:" the depth and surface treatment for each element (flat, raised card, emphasised, carved into a recessed well), honouring the upper-left light. Texture is welcome: grain, pixelation, a rough or eroded edge, a glow.
@@ -142,7 +142,7 @@ Use plain beat labels on their own lines: HOOK, then the beats, then the close. 
 Output the SPOKEN SCRIPT ONLY: the beat labels, and under each the exact words said to camera. It is read off a teleprompter, so it carries no visual notes, no screen descriptions, no stage directions and no shot marks. The screen is planned separately, from this script.`,
     screenPromptShape: `Before the first beat, add one line labelled "ON-SCREEN TEXT:" holding the first-frame caption that stops the scroll, or write "none" if the opening is purely visual. It is never spoken, and if used its words differ from the spoken hook so the two together open a gap.
 
-SAFE AREA for this format, state it in the DESIGN SYSTEM section: the touchscreen appears in the BOTTOM HALF of a 1080x1920 delivery frame, which is a 1080x960 box, very close to square (9:8). The page is built on a 16:9 screen but only a centred, near-square region survives the crop, so EVERYTHING important must sit inside a centred 9:8 safe area with nothing meaningful within 12 percent of the left or right edge. Composition is therefore centre-weighted and vertical, never a wide horizontal band across the screen.`,
+FRAMING for this format, state it in the DESIGN SYSTEM section: the bird's-eye camera captures the WHOLE 32in display, so the full 16:9 screen is in shot and the entire screen is usable. Compose edge to edge; there is no crop to design around. The one real constraint is SCALE: the screen occupies the lower portion of a vertical 9:16 video watched on a phone, so everything has to read at roughly half the height of a phone screen. Type is huge, strokes are heavy, and a state never carries more than one idea. If it would not be legible as a thumbnail, it is too small.`,
   },
   {
     id: 'screen_record_long',
@@ -160,7 +160,7 @@ Use plain beat labels on their own lines. The first is "INTRO (full screen)": th
 Output the SPOKEN SCRIPT ONLY: the beat labels, and under each the exact words said to camera. It is read off a teleprompter, so it carries no visual notes, no screen descriptions, no stage directions and no shot marks. The screen is planned separately, from this script.`,
     screenPromptShape: `The INTRO beat has no screen visual; say so. Build the screen visual CUMULATIVELY across the body beats, so it assembles into one picture by the end rather than resetting each beat. Add "SHOT: overhead" to the one or two beats where the physical touch is the point.
 
-SAFE AREA for this format, state it in the DESIGN SYSTEM section: the screen recording fills the full 16:9 frame, so the whole width is usable and the composition can be wide. Keep the bottom-right corner clear for the presenter's picture-in-picture circle, and keep the bottom edge strip clear of composition so the operator cue stays out of the way.`,
+FRAMING for this format, state it in the DESIGN SYSTEM section: the screen recording fills the full 16:9 frame at full fidelity, so the whole screen is usable and the composition can be wide and detailed (this format can carry more than the short can). Keep the bottom-right corner clear for the presenter's picture-in-picture circle, and keep the bottom edge strip clear of composition so the operator cue stays out of the way.`,
   },
   {
     id: 'short_form_video',
