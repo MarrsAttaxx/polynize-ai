@@ -49,9 +49,28 @@ export type FormatDef = {
  * dependency: it has to be built before the shoot because the presenter touches it
  * live on camera. It is a prop, not post-production.
  */
-const SCREEN_RULES = `Screen visuals are REPRESENTATIONAL, not detailed: one big bold idea per beat (a word, a number, a simple shape or diagram), readable in a thumbnail. Never a slide of bullet points, never small text, never a screenshot of an interface. Each touch does one legible thing that reinforces the point being spoken (reveal, split, collapse, snap into place, wipe away). The screen must never say something the spoken line contradicts.
+const SCREEN_RULES = `Screen visuals are REPRESENTATIONAL, not detailed: one big bold idea per state (a word, a number, a simple shape or diagram), readable in a thumbnail. Never a slide of bullet points, never small text, never a screenshot of an interface. Each touch does one legible thing that reinforces the point being spoken (reveal, split, collapse, snap into place, wipe away). The screen must never say something the spoken line contradicts.
 
 Any number or phrase shown on screen is lifted VERBATIM from the concept. Never convert, round, or derive one: if the concept says "a full day", the screen says A FULL DAY, not 24 HOURS. A figure the concept does not state does not go on the screen.`;
+
+/**
+ * The design system carried INTO the animator's brief. The animation is built as a
+ * self-contained HTML page (the animator works in a separate session without repo
+ * access), so the brief must state the tokens and the depth rules rather than point
+ * at them. Mirrors app/tactile.css + TACTILE_DESIGN_LANGUAGE.md and globals.css.
+ */
+const BUILD_SYSTEM = `BUILD BRIEF (emit this section once, before the states)
+State what is being built: ONE self-contained HTML page (inline CSS + JS, no external assets or fonts beyond a Google Fonts link for Space Grotesk), run fullscreen on a 32in touchscreen in a dark studio, with one STATE per beat advanced by the operator's touch. No scrolling, no browser chrome, no cursor. Say how many states there are.
+
+DESIGN SYSTEM (emit this section once, verbatim values, so the build is on-brand)
+- Type: Space Grotesk 700 for everything on screen. Huge. One idea fills the frame. Uppercase for short declaratives.
+- Palette: ink #0a0a0f (deepest), tactile bg #161620, raised surface #1c1c27, recessed well #0f0f17, cream text #f4ece4, mint #69fccb (the accent and the "agent/resolution" colour), coral #ff7a6b (the human/problem colour), amber #f0b86b (hybrid/tension), gold #f0e1b6 (numbers and proof).
+- Depth is the house style ("tactile"): objects sit ON the surface as raised cards or are carved INTO it as recessed wells. ONE fixed light source, upper-left: a 1px top/left highlight rgba(255,255,255,0.07) inset and a 1px bottom/right shadow rgba(0,0,0,0.55) inset, plus a soft cast shadow down-right. Only three elevations exist: flat, raised, emphasised. Do not invent more.
+- Motion is decisive, never soft: elements cut, snap, slide, crack, collapse, or wipe. NO crossfades, NO dissolves, no slow opacity ramps. Fast easing (120 to 260ms). Motion always carries meaning, never decoration.
+- Nothing decorative: no emoji, no icon libraries, no gradients beyond the mint button gradient, no stock imagery.
+
+OPERATOR STRIP (emit this section once)
+The page renders the operator's next-gesture cue as a single short line pinned to the BOTTOM EDGE of the page, outside the composition. It must be legible to the presenter standing over the screen but effectively invisible on camera: small (about 14px), letter-spaced, uppercase, in cream at 6 to 8 percent opacity on the dark substrate, with no background panel or border. It updates per state and never animates.`;
 
 /**
  * The two-artifact output contract. The SCRIPT is what the presenter reads on the
@@ -65,12 +84,23 @@ const TWO_ARTIFACT_CONTRACT = `Return BOTH artifacts, in this order, each introd
 The spoken script ONLY: the beat labels, and under each the exact words said to camera. This is read off a teleprompter, so it must contain no visual notes, no screen descriptions, no stage directions, no shot marks. Nothing that is not spoken aloud.
 
 ===TREATMENT===
-The screen plan. Repeat each beat label from the script exactly, and under it:
-- "SCREEN:" what is on the touchscreen for that beat.
-- "TOUCH:" the interaction, and the transition out of it.
+A BUILD BRIEF for the animator who will code the touchscreen page. It is handed to someone with no other context, so it must be complete and specific enough to build from without asking a question. Open with the three sections below, then the states.
+
+${BUILD_SYSTEM}
+
+STATES
+Then, for each beat, repeat the beat label from the script EXACTLY, and under it these six lines. Be concrete and visual on every one: a vague brief produces a weak build.
+- "COMPOSITION:" what is on screen and where it sits, at what scale, inside the safe area. Name the arrangement (one centred word, two facing blocks, a vertical stack, a single number).
+- "TYPE:" the exact words on screen, in quotes, verbatim from the concept, with the hierarchy (which words are huge, which are secondary).
+- "COLOUR:" which brand colour carries which element, and what that colour is doing (problem, tension, proof, resolution).
+- "MATERIAL:" the depth treatment for each element (flat, raised card, emphasised, or carved into a recessed well), honouring the upper-left light.
+- "MOTION:" what happens on entry and how the state resolves. Decisive movement, no crossfades, and it must mirror the meaning of the spoken line for this beat.
+- "GESTURE:" the exact touch the operator performs (single tap, drag left, pinch in, double tap), where on the screen, and what it triggers.
+- "CUE:" the short operator line for the bottom strip, in quotes, telling the presenter the gesture for this state. Four words or fewer, uppercase, for example "TAP CENTRE TO SPLIT".
+
 ${SCREEN_RULES}
 
-The beat labels in the TREATMENT must match the SCRIPT exactly, so the two stay in lockstep.`;
+The beat labels in the TREATMENT must match the SCRIPT exactly, so the two stay in lockstep. Build the visual language cumulatively: recurring elements keep their colour and their material across states so the page reads as one designed system, not a series of unrelated slides.`;
 
 /**
  * The channel-agnostic format catalogue (the swappable-middle registry). Only
@@ -101,7 +131,9 @@ Use plain beat labels on their own lines: HOOK, then the beats, then the close. 
 
 ${TWO_ARTIFACT_CONTRACT}
 
-In the TREATMENT, before the first beat, add one line labelled "ON-SCREEN TEXT:" holding the first-frame caption that stops the scroll. It is never spoken, and its words differ from the spoken hook so the two together open a gap.`,
+In the TREATMENT, before the first beat, add one line labelled "ON-SCREEN TEXT:" holding the first-frame caption that stops the scroll. It is never spoken, and its words differ from the spoken hook so the two together open a gap.
+
+SAFE AREA for this format, state it in the DESIGN SYSTEM section: the touchscreen appears in the BOTTOM HALF of a 1080x1920 delivery frame, which is a 1080x960 box, very close to square (9:8). The page is built on a 16:9 screen but only a centred, near-square region survives the crop, so EVERYTHING important must sit inside a centred 9:8 safe area with nothing meaningful within 12 percent of the left or right edge. Composition is therefore centre-weighted and vertical, never a wide horizontal band across the screen.`,
   },
   {
     id: 'screen_record_long',
@@ -118,7 +150,9 @@ Use plain beat labels on their own lines. The first is "INTRO (full screen)": th
 
 ${TWO_ARTIFACT_CONTRACT}
 
-In the TREATMENT, the INTRO beat has no screen visual (say so). Build the screen visual CUMULATIVELY across the body beats, so it assembles into one picture by the end rather than resetting each beat. Add "SHOT: overhead" to the one or two beats where the physical touch is the point.`,
+In the TREATMENT, the INTRO beat has no screen visual (say so). Build the screen visual CUMULATIVELY across the body beats, so it assembles into one picture by the end rather than resetting each beat. Add "SHOT: overhead" to the one or two beats where the physical touch is the point.
+
+SAFE AREA for this format, state it in the DESIGN SYSTEM section: the screen recording fills the full 16:9 frame, so the whole width is usable and the composition can be wide. Keep the bottom-right corner clear for the presenter's picture-in-picture circle, and keep the bottom edge strip clear of composition so the operator cue stays out of the way.`,
   },
   {
     id: 'short_form_video',

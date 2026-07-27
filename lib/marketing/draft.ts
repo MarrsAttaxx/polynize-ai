@@ -279,7 +279,10 @@ async function generate(
       // reasons harder (measured ~2000-2300 reasoning tokens for text, ~2000 for
       // video on a representative fixture), so these leave ample room for reasoning
       // AND the full output on rich concepts, well clear of mid-sentence truncation.
-      maxTokens: kind === 'video' ? 8000 : 6000,
+      // Video now returns TWO artifacts in one pass (script + the animator's build
+      // brief, which is long and per-state), on top of ~2000-2300 reasoning tokens,
+      // so the video ceiling is generous. max_tokens is a cap, not a target.
+      maxTokens: kind === 'video' ? 16000 : 6000,
       temperature: 0.7,
       json: false,
       apiKey: process.env.APRIL_OPENROUTER_API_KEY,
