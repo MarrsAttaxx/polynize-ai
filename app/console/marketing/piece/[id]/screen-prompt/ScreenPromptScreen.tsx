@@ -1,12 +1,17 @@
 'use client';
 
 /**
- * The Treatment stage (D29 amended): the PRE-RECORD screen plan for a touchscreen
- * piece. Per beat, what is on the 32in touchscreen and what the touch does. This is
- * deliberately a SEPARATE artifact from the script: the script is read straight off
- * the teleprompter and must stay spoken-only, while this is the brief the animation
- * build works from, and it must exist BEFORE the shoot because the screen is touched
+ * The SCREEN PROMPT stage (D29 amended): the PRE-RECORD plan for what the 32in
+ * touchscreen does. It prompts twice over, which is where the name comes from: it
+ * cues the presenter's gestures during the take, and it is the build brief the
+ * animator codes the HTML page from. Deliberately a SEPARATE artifact from the
+ * script: the script is read straight off the teleprompter and must stay
+ * spoken-only, while this must exist BEFORE the shoot because the screen is touched
  * live on camera (a prop, not post-production).
+ *
+ * Stored on `piece.treatment` — the code identifier keeps the original name so
+ * already-drafted pieces are not orphaned (same display-only rename pattern as D26's
+ * series/templates).
  *
  * Autosave mirrors the Script screen: debounced (1s) + flushed on blur + flushed on
  * unmount, and SERIALIZED (one PUT in flight, latest content coalesced) so a slow
@@ -23,7 +28,7 @@ import s from '../script.module.css';
 
 type SaveState = 'idle' | 'saving' | 'saved' | 'error';
 
-export function TreatmentScreen({ initial }: { initial: MarketingPiece }) {
+export function ScreenPromptScreen({ initial }: { initial: MarketingPiece }) {
   const [treatment, setTreatment] = useState(initial.treatment ?? '');
   const [saveState, setSaveState] = useState<SaveState>('idle');
   const [copied, setCopied] = useState(false);
@@ -37,7 +42,8 @@ export function TreatmentScreen({ initial }: { initial: MarketingPiece }) {
   const stateUrlRef = useRef('');
   useEffect(() => {
     stateUrlRef.current =
-      window.location.pathname.replace(/\/treatment\/?$/, '').replace(/\/+$/, '') + '/state';
+      window.location.pathname.replace(/\/screen-prompt\/?$/, '').replace(/\/+$/, '') +
+      '/state';
   }, []);
 
   const save = useCallback(async () => {
@@ -126,7 +132,7 @@ export function TreatmentScreen({ initial }: { initial: MarketingPiece }) {
           />
           <div className={s.titleWrap}>
             <span className={s.eyebrow}>
-              {(initial.format ?? '').replace(/_/g, ' ')} · treatment
+              {(initial.format ?? '').replace(/_/g, ' ')} · screen prompt
             </span>
             <h1 className={s.title}>{initial.title}</h1>
           </div>
@@ -172,13 +178,14 @@ export function TreatmentScreen({ initial }: { initial: MarketingPiece }) {
           onChange={(e) => onEdit(e.target.value)}
           onBlur={flush}
           placeholder={
-            'The screen plan, beat by beat. Generated with the script when you draft it, and editable here.\n\nHOOK\nSCREEN: the one bold idea on the touchscreen.\nTOUCH: what your touch does, and how it transitions out.'
+            'Generated with the script when you draft it, and editable here.\n\nBUILD BRIEF / DESIGN SYSTEM / OPERATOR STRIP, then one state per beat:\n\nHOOK\n- COMPOSITION: what is on screen and where\n- TYPE: the exact words\n- COLOUR: which brand colour, doing what\n- MATERIAL: raised card, recessed well, emphasised\n- MOTION: how it enters and resolves\n- GESTURE: the touch you perform\n- CUE: your faint on-screen reminder'
           }
-          aria-label="Treatment"
+          aria-label="Screen prompt"
         />
         <p className={s.hint}>
-          This is the screen plan the animation build works from, and it has to exist
-          before you record (you touch it live on camera). It shares the
+          The build brief your animator codes the touchscreen page from, and the
+          gesture cues that prompt you through the take. It has to exist before you
+          record, because you touch the screen live on camera. It shares the
           script&rsquo;s beat labels, so keep them matching. Edits autosave. Redrafting
           the script regenerates this too.
         </p>

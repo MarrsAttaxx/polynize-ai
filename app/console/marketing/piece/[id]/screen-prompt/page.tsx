@@ -2,17 +2,17 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { getCurrentUser } from '@/lib/console-auth';
 import { getPiece, type MarketingPiece } from '@/lib/marketing/piece-store';
-import { TreatmentScreen } from './TreatmentScreen';
+import { ScreenPromptScreen } from './ScreenPromptScreen';
 import s from '../script.module.css';
 
 export const dynamic = 'force-dynamic';
 
 /**
- * The Treatment stage for a piece (D29 amended): the PRE-RECORD screen plan, its own
- * stage between Script and Record because it is a real gate (the screen has to be
- * built before the shoot). Team-scope only; owner from the session.
+ * The Screen Prompt stage for a piece (D29 amended): the PRE-RECORD plan for what the
+ * touchscreen does, its own stage between Script and Record because it is a real gate
+ * (the screen has to be built before the shoot). Team-scope only; owner from session.
  */
-export default async function PieceTreatmentPage({
+export default async function PieceScreenPromptPage({
   params,
 }: {
   params: Promise<{ id: string }>;
@@ -28,7 +28,7 @@ export default async function PieceTreatmentPage({
   try {
     piece = await getPiece(user.email, id);
   } catch (err) {
-    console.error('[treatment] piece read failed:', err);
+    console.error('[screen-prompt] piece read failed:', err);
   }
 
   if (!piece) {
@@ -46,5 +46,5 @@ export default async function PieceTreatmentPage({
     );
   }
 
-  return <TreatmentScreen initial={piece} />;
+  return <ScreenPromptScreen initial={piece} />;
 }

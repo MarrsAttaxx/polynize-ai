@@ -34,18 +34,19 @@ export type FormatDef = {
    */
   scriptShape?: string;
   /**
-   * This format produces a separate TREATMENT (the pre-record screen plan) as well
+   * This format produces a separate SCREEN PROMPT (the pre-record screen plan) as well
    * as the script (D29, amended). The script stays SPOKEN-ONLY so it can be read
-   * straight off the teleprompter; the visuals live in the treatment, which is the
-   * brief the animation build works from. Drives the two-section draft contract and
-   * the Treatment stage.
+   * straight off the teleprompter; the visuals live in the Screen Prompt, which is
+   * the brief the animation build works from. Drives the two-section draft contract
+   * and the Screen Prompt stage. (Stored on `piece.treatment`: the code identifier
+   * keeps the original name so already-drafted pieces are not orphaned.)
    */
   twoTrack?: boolean;
 };
 
 /**
  * What makes a good touchscreen visual (D29). Shared by the touchscreen formats and
- * injected into the TREATMENT half of the draft, since the screen is a PRE-RECORD
+ * injected into the SCREEN PROMPT half of the draft, since the screen is a PRE-RECORD
  * dependency: it has to be built before the shoot because the presenter touches it
  * live on camera. It is a prop, not post-production.
  */
@@ -75,7 +76,7 @@ The page renders the operator's next-gesture cue as a single short line pinned t
 /**
  * The two-artifact output contract. The SCRIPT is what the presenter reads on the
  * teleprompter, so it must contain nothing but beat labels and spoken words; every
- * visual instruction belongs in the TREATMENT. Both are generated in ONE pass so
+ * visual instruction belongs in the SCREEN PROMPT. Both are generated in ONE pass so
  * they are coherent by construction, and share beat labels so they cannot drift.
  */
 const TWO_ARTIFACT_CONTRACT = `Return BOTH artifacts, in this order, each introduced by its delimiter alone on its own line:
@@ -83,7 +84,7 @@ const TWO_ARTIFACT_CONTRACT = `Return BOTH artifacts, in this order, each introd
 ===SCRIPT===
 The spoken script ONLY: the beat labels, and under each the exact words said to camera. This is read off a teleprompter, so it must contain no visual notes, no screen descriptions, no stage directions, no shot marks. Nothing that is not spoken aloud.
 
-===TREATMENT===
+===SCREEN PROMPT===
 A BUILD BRIEF for the animator who will code the touchscreen page. It is handed to someone with no other context, so it must be complete and specific enough to build from without asking a question. Open with the three sections below, then the states.
 
 ${BUILD_SYSTEM}
@@ -100,7 +101,7 @@ Then, for each beat, repeat the beat label from the script EXACTLY, and under it
 
 ${SCREEN_RULES}
 
-The beat labels in the TREATMENT must match the SCRIPT exactly, so the two stay in lockstep. Build the visual language cumulatively: recurring elements keep their colour and their material across states so the page reads as one designed system, not a series of unrelated slides.`;
+The beat labels in the SCREEN PROMPT must match the SCRIPT exactly, so the two stay in lockstep. Build the visual language cumulatively: recurring elements keep their colour and their material across states so the page reads as one designed system, not a series of unrelated slides.`;
 
 /**
  * The channel-agnostic format catalogue (the swappable-middle registry). Only
@@ -131,7 +132,7 @@ Use plain beat labels on their own lines: HOOK, then the beats, then the close. 
 
 ${TWO_ARTIFACT_CONTRACT}
 
-In the TREATMENT, before the first beat, add one line labelled "ON-SCREEN TEXT:" holding the first-frame caption that stops the scroll. It is never spoken, and its words differ from the spoken hook so the two together open a gap.
+In the SCREEN PROMPT, before the first beat, add one line labelled "ON-SCREEN TEXT:" holding the first-frame caption that stops the scroll. It is never spoken, and its words differ from the spoken hook so the two together open a gap.
 
 SAFE AREA for this format, state it in the DESIGN SYSTEM section: the touchscreen appears in the BOTTOM HALF of a 1080x1920 delivery frame, which is a 1080x960 box, very close to square (9:8). The page is built on a 16:9 screen but only a centred, near-square region survives the crop, so EVERYTHING important must sit inside a centred 9:8 safe area with nothing meaningful within 12 percent of the left or right edge. Composition is therefore centre-weighted and vertical, never a wide horizontal band across the screen.`,
   },
@@ -150,7 +151,7 @@ Use plain beat labels on their own lines. The first is "INTRO (full screen)": th
 
 ${TWO_ARTIFACT_CONTRACT}
 
-In the TREATMENT, the INTRO beat has no screen visual (say so). Build the screen visual CUMULATIVELY across the body beats, so it assembles into one picture by the end rather than resetting each beat. Add "SHOT: overhead" to the one or two beats where the physical touch is the point.
+In the SCREEN PROMPT, the INTRO beat has no screen visual (say so). Build the screen visual CUMULATIVELY across the body beats, so it assembles into one picture by the end rather than resetting each beat. Add "SHOT: overhead" to the one or two beats where the physical touch is the point.
 
 SAFE AREA for this format, state it in the DESIGN SYSTEM section: the screen recording fills the full 16:9 frame, so the whole width is usable and the composition can be wide. Keep the bottom-right corner clear for the presenter's picture-in-picture circle, and keep the bottom edge strip clear of composition so the operator cue stays out of the way.`,
   },
