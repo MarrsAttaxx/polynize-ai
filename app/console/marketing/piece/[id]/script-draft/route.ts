@@ -42,10 +42,8 @@ export async function POST(
   }
 
   try {
-    // Two-track formats return the TREATMENT (screen plan) alongside the spoken
-    // script (D29); the client applies the script and persists the treatment.
-    const { script, treatment } = await draftVideoScript(owner, piece);
-    return NextResponse.json({ script, treatment: treatment ?? null });
+    const script = await draftVideoScript(owner, piece);
+    return NextResponse.json({ script });
   } catch (e) {
     if (e instanceof DraftError) {
       if (e.reason === 'no-concept') {

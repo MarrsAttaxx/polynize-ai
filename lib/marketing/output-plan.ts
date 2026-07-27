@@ -42,6 +42,13 @@ export type FormatDef = {
    * keeps the original name so already-drafted pieces are not orphaned.)
    */
   twoTrack?: boolean;
+  /**
+   * Format-specific guidance for the SCREEN PROMPT generation (safe area, opening
+   * caption, shot marks). Appended to the shared SCREEN_PROMPT_BRIEF. Separate from
+   * `scriptShape` because the screen prompt is generated on its own stage, from the
+   * locked script plus the operator's direction, not in the same pass as the script.
+   */
+  screenPromptShape?: string;
 };
 
 /**
@@ -79,29 +86,31 @@ The page renders the operator's next-gesture cue as a single short line pinned t
  * visual instruction belongs in the SCREEN PROMPT. Both are generated in ONE pass so
  * they are coherent by construction, and share beat labels so they cannot drift.
  */
-const TWO_ARTIFACT_CONTRACT = `Return BOTH artifacts, in this order, each introduced by its delimiter alone on its own line:
+export const SCREEN_PROMPT_BRIEF = `You are writing the SCREEN PROMPT: the build brief for the animator who will code the touchscreen page, and the gesture cues that prompt the presenter through the take. It is handed to someone with no other context, so it must be complete enough to build from without asking a question.
 
-===SCRIPT===
-The spoken script ONLY: the beat labels, and under each the exact words said to camera. This is read off a teleprompter, so it must contain no visual notes, no screen descriptions, no stage directions, no shot marks. Nothing that is not spoken aloud.
+It is built FROM THE LOCKED SCRIPT you are given. Work through that script beat by beat: for each beat label in it, design the screen moment that carries THAT spoken line. Never invent beats the script does not have, never skip one, and never reorder them. The screen is what the words are talking about.
 
-===SCREEN PROMPT===
-A BUILD BRIEF for the animator who will code the touchscreen page. It is handed to someone with no other context, so it must be complete and specific enough to build from without asking a question. Open with the three sections below, then the states.
+Where the operator has given direction, that direction WINS. It is their creative intent for this piece; build it, do not water it down or substitute your own idea. Fill in only what they left open.
+
+Open with the three sections below, then the states.
 
 ${BUILD_SYSTEM}
 
 STATES
-Then, for each beat, repeat the beat label from the script EXACTLY, and under it these six lines. Be concrete and visual on every one: a vague brief produces a weak build.
-- "COMPOSITION:" what is on screen and where it sits, at what scale, inside the safe area. Name the arrangement (one centred word, two facing blocks, a vertical stack, a single number).
-- "TYPE:" the exact words on screen, in quotes, verbatim from the concept, with the hierarchy (which words are huge, which are secondary).
+Then, for each beat label in the script, repeat the label EXACTLY and give these lines. Be concrete and visual on every one: a vague brief produces a weak build.
+- "COMPOSITION:" what is on screen and where it sits, at what scale, inside the safe area. Name the arrangement (three standing pillars, one centred word, two facing blocks, a single number).
+- "TYPE:" the exact words on screen, in quotes. Write "none" when the moment is purely visual: a state carrying no text at all is often stronger, especially the opening.
 - "COLOUR:" which brand colour carries which element, and what that colour is doing (problem, tension, proof, resolution).
-- "MATERIAL:" the depth treatment for each element (flat, raised card, emphasised, or carved into a recessed well), honouring the upper-left light.
+- "MATERIAL:" the depth and surface treatment for each element (flat, raised card, emphasised, carved into a recessed well), honouring the upper-left light. Texture is welcome: grain, pixelation, a rough or eroded edge, a glow.
 - "MOTION:" what happens on entry and how the state resolves. Decisive movement, no crossfades, and it must mirror the meaning of the spoken line for this beat.
-- "GESTURE:" the exact touch the operator performs (single tap, drag left, pinch in, double tap), where on the screen, and what it triggers.
+- "GESTURE:" the exact touch the presenter performs (single tap, drag left, pinch in, double tap), where on the screen, and what it triggers.
 - "CUE:" the short operator line for the bottom strip, in quotes, telling the presenter the gesture for this state. Four words or fewer, uppercase, for example "TAP CENTRE TO SPLIT".
 
 ${SCREEN_RULES}
 
-The beat labels in the SCREEN PROMPT must match the SCRIPT exactly, so the two stay in lockstep. Build the visual language cumulatively: recurring elements keep their colour and their material across states so the page reads as one designed system, not a series of unrelated slides.`;
+Recurring elements keep their colour and their material across states, so the page reads as one designed system rather than a series of unrelated slides, and the visual builds as the argument builds.
+
+Output the brief ONLY: no preamble, no closing commentary, no markdown code fences.`;
 
 /**
  * The channel-agnostic format catalogue (the swappable-middle registry). Only
@@ -130,9 +139,8 @@ export const FORMATS: FormatDef[] = [
 
 Use plain beat labels on their own lines: HOOK, then the beats, then the close. If the recipe defines its own beats, use its labels and its order and honour its own ending, including whether it has a call to action. End on one sharp spoken line worth punching. Keep it fast: one idea per beat, and the screen changes on every beat so the frame never sits still.
 
-${TWO_ARTIFACT_CONTRACT}
-
-In the SCREEN PROMPT, before the first beat, add one line labelled "ON-SCREEN TEXT:" holding the first-frame caption that stops the scroll. It is never spoken, and its words differ from the spoken hook so the two together open a gap.
+Output the SPOKEN SCRIPT ONLY: the beat labels, and under each the exact words said to camera. It is read off a teleprompter, so it carries no visual notes, no screen descriptions, no stage directions and no shot marks. The screen is planned separately, from this script.`,
+    screenPromptShape: `Before the first beat, add one line labelled "ON-SCREEN TEXT:" holding the first-frame caption that stops the scroll, or write "none" if the opening is purely visual. It is never spoken, and if used its words differ from the spoken hook so the two together open a gap.
 
 SAFE AREA for this format, state it in the DESIGN SYSTEM section: the touchscreen appears in the BOTTOM HALF of a 1080x1920 delivery frame, which is a 1080x960 box, very close to square (9:8). The page is built on a 16:9 screen but only a centred, near-square region survives the crop, so EVERYTHING important must sit inside a centred 9:8 safe area with nothing meaningful within 12 percent of the left or right edge. Composition is therefore centre-weighted and vertical, never a wide horizontal band across the screen.`,
   },
@@ -149,9 +157,8 @@ SAFE AREA for this format, state it in the DESIGN SYSTEM section: the touchscree
 
 Use plain beat labels on their own lines. The first is "INTRO (full screen)": the presenter to camera with no screen visual yet, and it must earn the next minute (the promise of the piece, not a preamble about themselves). Then the body sections, each labelled, then the close. If the recipe defines its own beats, use its labels and its order and honour its own ending. End on one sharp spoken line worth punching. This format has room to breathe: develop each section properly rather than rushing, but never pad.
 
-${TWO_ARTIFACT_CONTRACT}
-
-In the SCREEN PROMPT, the INTRO beat has no screen visual (say so). Build the screen visual CUMULATIVELY across the body beats, so it assembles into one picture by the end rather than resetting each beat. Add "SHOT: overhead" to the one or two beats where the physical touch is the point.
+Output the SPOKEN SCRIPT ONLY: the beat labels, and under each the exact words said to camera. It is read off a teleprompter, so it carries no visual notes, no screen descriptions, no stage directions and no shot marks. The screen is planned separately, from this script.`,
+    screenPromptShape: `The INTRO beat has no screen visual; say so. Build the screen visual CUMULATIVELY across the body beats, so it assembles into one picture by the end rather than resetting each beat. Add "SHOT: overhead" to the one or two beats where the physical touch is the point.
 
 SAFE AREA for this format, state it in the DESIGN SYSTEM section: the screen recording fills the full 16:9 frame, so the whole width is usable and the composition can be wide. Keep the bottom-right corner clear for the presenter's picture-in-picture circle, and keep the bottom edge strip clear of composition so the operator cue stays out of the way.`,
   },

@@ -49,8 +49,9 @@ export function ScriptScreen({
   // edit path writes it. The save loop always reconciles against it.
   const latest = useRef(initial.script);
   const latestMedia = useRef<string[]>(initial.media ?? []);
-  // The TREATMENT (screen plan, D29) rides along on the autosave so a redraft's new
-  // treatment is persisted with its script. Edited on its own Treatment stage.
+  // The SCREEN PROMPT rides along on the autosave purely to PRESERVE it: this screen
+  // PUTs the whole piece, so without carrying it a script save would wipe the screen
+  // plan. It is authored on its own Screen Prompt stage, never from here.
   const latestTreatment = useRef<string | undefined>(initial.treatment);
   const inFlight = useRef(false);
 
@@ -172,13 +173,7 @@ export function ScriptScreen({
         setDraftError(b?.error ?? 'Could not draft the script.');
         return;
       }
-      const { script: drafted, treatment } = (await res.json()) as {
-        script: string;
-        treatment: string | null;
-      };
-      // Capture the regenerated treatment BEFORE applying, so the autosave the
-      // apply triggers writes the script and its matching screen plan together.
-      if (treatment) latestTreatment.current = treatment;
+      const { script: drafted } = (await res.json()) as { script: string };
       applyChatEdit(drafted);
     } catch {
       setDraftError('Network error. Try again.');

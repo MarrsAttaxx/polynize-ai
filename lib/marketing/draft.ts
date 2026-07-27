@@ -211,28 +211,6 @@ This model reasons before it answers, so plan silently: find the sharpest hook m
   } Return only the finished script.`;
 }
 
-/**
- * Split a two-artifact draft into the spoken script and the SCREEN PROMPT (D29).
- * The prompt asks for `===SCRIPT===` / `===SCREEN PROMPT===` delimiters; the legacy
- * `===TREATMENT===` spelling is still accepted so a draft in flight during the
- * rename cannot lose its screen plan. If neither delimiter is present, everything is
- * treated as script, so the piece is never left empty.
- */
-export function splitScriptAndScreenPrompt(raw: string): {
-  script: string;
-  treatment?: string;
-} {
-  const m = raw.split(
-    /^[=\s]*={2,}\s*(?:SCREEN[ _-]?PROMPT|TREATMENT)\s*={2,}[=\s]*$/im
-  );
-  const head = (m[0] ?? raw)
-    // Drop a leading ===SCRIPT=== delimiter if present.
-    .replace(/^[=\s]*={2,}\s*SCRIPT\s*={2,}[=\s]*$/im, '')
-    .trim();
-  const treatment = m.length > 1 ? m.slice(1).join('\n').trim() : '';
-  return { script: head, treatment: treatment || undefined };
-}
-
 /** Strip stray code fences / wrapping the model sometimes adds, then em-dashes. */
 function cleanOutput(raw: string): string {
   let body = raw.trim();
@@ -308,20 +286,10 @@ export function draftTextBody(owner: string, piece: MarketingPiece): Promise<str
 }
 
 /**
- * Draft a video piece: the spoken script, plus the TREATMENT (screen plan) for the
- * two-track touchscreen formats (D29). Both come from ONE generation so they are
- * coherent and share beat labels. `treatment` is undefined for single-artifact
- * formats. Throws DraftError on failure.
+ * Draft the SPOKEN script for a video piece. Script only: the SCREEN PROMPT is
+ * generated separately on its own stage, from this locked script plus the operator's
+ * direction (see lib/marketing/screen-prompt.ts). Throws DraftError on failure.
  */
-export async function draftVideoScript(
-  owner: string,
-  piece: MarketingPiece
-): Promise<{ script: string; treatment?: string }> {
-  const raw = await generate(owner, piece, 'video');
-  if (!formatById(piece.format)?.twoTrack) return { script: raw };
-  const { script, treatment } = splitScriptAndScreenPrompt(raw);
-  // A treatment-less result would silently lose the screen plan, so fall back to
-  // the whole draft as the script rather than dropping content.
-  if (!script) return { script: raw };
-  return { script, treatment };
+export function draftVideoScript(owner: string, piece: MarketingPiece): Promise<string> {
+  return generate(owner, piece, 'video');
 }
