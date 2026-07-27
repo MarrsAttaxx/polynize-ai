@@ -49,7 +49,9 @@ export type FormatDef = {
  * dependency: it has to be built before the shoot because the presenter touches it
  * live on camera. It is a prop, not post-production.
  */
-const SCREEN_RULES = `Screen visuals are REPRESENTATIONAL, not detailed: one big bold idea per beat (a word, a number, a simple shape or diagram), readable in a thumbnail. Never a slide of bullet points, never small text, never a screenshot of an interface. Each touch does one legible thing that reinforces the point being spoken (reveal, split, collapse, snap into place, wipe away). The screen must never say something the spoken line contradicts.`;
+const SCREEN_RULES = `Screen visuals are REPRESENTATIONAL, not detailed: one big bold idea per beat (a word, a number, a simple shape or diagram), readable in a thumbnail. Never a slide of bullet points, never small text, never a screenshot of an interface. Each touch does one legible thing that reinforces the point being spoken (reveal, split, collapse, snap into place, wipe away). The screen must never say something the spoken line contradicts.
+
+Any number or phrase shown on screen is lifted VERBATIM from the concept. Never convert, round, or derive one: if the concept says "a full day", the screen says A FULL DAY, not 24 HOURS. A figure the concept does not state does not go on the screen.`;
 
 /**
  * The two-artifact output contract. The SCRIPT is what the presenter reads on the
