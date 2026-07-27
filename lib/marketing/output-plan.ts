@@ -142,7 +142,10 @@ Use plain beat labels on their own lines: HOOK, then the beats, then the close. 
 Output the SPOKEN SCRIPT ONLY: the beat labels, and under each the exact words said to camera. It is read off a teleprompter, so it carries no visual notes, no screen descriptions, no stage directions and no shot marks. The screen is planned separately, from this script.`,
     screenPromptShape: `Before the first beat, add one line labelled "ON-SCREEN TEXT:" holding the first-frame caption that stops the scroll, or write "none" if the opening is purely visual. It is never spoken, and if used its words differ from the spoken hook so the two together open a gap.
 
-FRAMING for this format, state it in the DESIGN SYSTEM section: the bird's-eye camera captures the WHOLE 32in display, so the full 16:9 screen is in shot and the entire screen is usable. Compose edge to edge; there is no crop to design around. The one real constraint is SCALE: the screen occupies the lower portion of a vertical 9:16 video watched on a phone, so everything has to read at roughly half the height of a phone screen. Type is huge, strokes are heavy, and a state never carries more than one idea. If it would not be legible as a thumbnail, it is too small.`,
+FRAMING for this format, state it in the DESIGN SYSTEM section. These are measured from the real rig, so design to them:
+- The bird's-eye camera captures the WHOLE 32in display, so the full 16:9 screen is in shot and every part of it is usable. Compose edge to edge; there is no crop to design around.
+- SCALE is the real constraint. The display lands in the upper part of the lower half of a vertical video watched on a phone, so it reads at roughly a quarter of the phone's height. Type is huge, strokes are heavy, and a state never carries more than one idea. If it would not be legible as a thumbnail, it is too small.
+- The presenter's HAND enters from the RIGHT and rests over the right and lower-right of the display while they talk. Keep the payoff (the key word, the number, the resolution) LEFT of centre and high on the screen, and put the touch target on the right where the hand already is. Never place the thing the viewer must read under the hand.`,
   },
   {
     id: 'screen_record_long',
