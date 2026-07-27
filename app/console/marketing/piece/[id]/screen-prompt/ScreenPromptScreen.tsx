@@ -45,6 +45,9 @@ export function ScreenPromptScreen({ initial }: { initial: MarketingPiece }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [building, setBuilding] = useState(false);
+  const [deckUrl, setDeckUrl] = useState<string | null>(null);
+  const [deckStates, setDeckStates] = useState<number | null>(null);
 
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const latest = useRef(initial.treatment ?? '');
@@ -164,6 +167,35 @@ export function ScreenPromptScreen({ initial }: { initial: MarketingPiece }) {
     }
   };
 
+  // Build the actual touchscreen deck in-house (D29): April composes its states from
+  // the script + this screen prompt + the direction, and it is served at an unlisted
+  // URL the studio machine opens. No external animator handoff.
+  const buildDeck = async () => {
+    if (building || !hasScript) return;
+    setBuilding(true);
+    setError(null);
+    try {
+      const res = await fetch(baseUrlRef.current + '/screen-prompt/deck', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ direction: direction.trim() }),
+      });
+      const b = (await res.json().catch(() => null)) as
+        | { url?: string; states?: number; error?: string }
+        | null;
+      if (!res.ok || !b?.url) {
+        setError(b?.error ?? 'Could not build the deck.');
+        return;
+      }
+      setDeckUrl(b.url);
+      setDeckStates(b.states ?? null);
+    } catch {
+      setError('Network error. Try again.');
+    } finally {
+      setBuilding(false);
+    }
+  };
+
   const saveLabel =
     saveState === 'saving'
       ? 'Saving…'
@@ -230,14 +262,40 @@ export function ScreenPromptScreen({ initial }: { initial: MarketingPiece }) {
             </button>
             <button
               type="button"
+              className={s.draftBtn}
+              onClick={buildDeck}
+              disabled={building || !hasScript}
+              title="Build the touchscreen deck and put it on a URL you can open in the studio"
+            >
+              {building ? 'Building the deck…' : '▶ Build the deck'}
+            </button>
+            <button
+              type="button"
               className={s.undoBtn}
               onClick={copy}
               disabled={!prompt.trim()}
             >
-              {copied ? 'Copied ✓' : 'Copy for the animator'}
+              {copied ? 'Copied ✓' : 'Copy the brief'}
             </button>
             {error ? <span className={s.draftError}>{error}</span> : null}
           </div>
+
+          {deckUrl ? (
+            <div className={s.undoBar}>
+              <span>
+                Deck built{deckStates ? ` (${deckStates} states)` : ''}. Open this on the
+                studio machine and go fullscreen.
+              </span>
+              <a
+                href={deckUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={s.undoBtn}
+              >
+                Open deck ↗
+              </a>
+            </div>
+          ) : null}
 
           <textarea
             className={s.script}
