@@ -43,9 +43,16 @@ export type SceneNode = {
   /** The name on the object, e.g. "AI ADDICTS". */
   label: string;
   colour: SceneColour;
-  /** The one line that appears when this node is opened. */
-  line?: string;
-  /** Up to four facts, revealed one touch at a time. */
+  /**
+   * Up to four facts, revealed one touch at a time.
+   *
+   * There is deliberately NO prose on an open node. The sentence that used to sit here
+   * is what the presenter SAYS, so putting it on screen made the audience read what
+   * they were being told, and it was the only variable-length thing on the panel, which
+   * is what crowded the facts (Marrs: "we don't need it, that's what's on the script").
+   * With it gone the panel holds only fixed-size elements, so it fits by construction
+   * and the facts can be much bigger.
+   */
   facts: SceneFact[];
 };
 
@@ -69,9 +76,13 @@ export const SCENE_VOCABULARY = `A SCENE is not a slide deck and has no slides, 
 - NODES: two to four objects sitting on the board, side by side. Each node has
   - a LABEL, the name on the object (two or three words, uppercase)
   - a COLOUR ROLE: "coral" the problem, "amber" the tension, "gold" the proof, "mint" the resolution
-  - a LINE, the one sentence that appears when the presenter opens that node
   - FACTS: up to four, each a LABEL (what it is, e.g. "RISK PROFILE") and a VALUE (what
     it says, e.g. "HIGH"). The presenter touches a fact to reveal its value on camera.
+    A label is at most three words and a value at most two: they are read at a glance
+    from across a room, not sentences.
+
+NEVER put a sentence on a node. Whatever explains it is what the presenter SAYS, and it
+lives in the script. The screen carries only the name and the numbers.
 - CLOSE: the single line worth remembering, raised over the board at the end.
 
 The presenter opens any node by touching it, reveals its facts in any order, closes it
@@ -94,11 +105,10 @@ const ENGINE_CSS = `
      --t-floor, ever. Everything else is a deliberate multiple of it, so the hierarchy
      survives at any viewport instead of collapsing into one middling size. */
   --t-floor:   min(clamp(15px,2.5vw,42px),4.6vh);
-  --t-fact:    var(--t-floor);                      /* the waiting label: at the floor */
-  --t-value:   min(clamp(20px,3.5vw,58px),6.5vh);   /* the payoff, bigger than its label */
+  --t-fact:    min(clamp(17px,2.9vw,48px),5.4vh);   /* the waiting label, above the floor */
+  --t-value:   min(clamp(25px,4.3vw,74px),8vh);     /* the payoff, the biggest thing here */
   --t-name:    min(clamp(19px,3.1vw,52px),5.8vh);   /* an object's name on the board */
-  --t-title:   min(clamp(23px,3.9vw,66px),7.2vh);   /* the open panel's title */
-  --t-line:    min(clamp(25px,4.3vw,74px),8vh);     /* the open panel's sentence */
+  --t-title:   min(clamp(24px,4vw,68px),7.4vh);     /* the open panel's title */
   --t-concept: min(clamp(40px,8.2vw,150px),13.5vh); /* the board headline, exaggerated */
 }
 html,body{height:100%;overflow:hidden;background:var(--ink);cursor:none;touch-action:none}
@@ -202,14 +212,11 @@ body{font-family:'Space Grotesk',system-ui,sans-serif;font-weight:700;color:var(
 .body{display:none;flex:1 1 auto;min-height:0;width:100%;
   flex-direction:column;justify-content:center;gap:2.2vh;padding:1vh 1% 0}
 #scene.open .node.on .body{display:flex}
-.line{color:var(--cream);font-size:var(--t-line);line-height:1.08;
-  letter-spacing:-.01em;text-align:left}
-
 /* FACTS. A label sits there waiting; the value arrives on touch as a hard wipe, never
    a fade, per the standing no-fades rule. */
-.facts{display:flex;flex-direction:column;gap:1.1vh;width:100%}
+.facts{display:flex;flex-direction:column;gap:1.6vh;width:100%}
 .fact{display:flex;align-items:baseline;justify-content:space-between;gap:2vw;
-  border-top:1px solid rgba(244,236,228,.14);padding-top:1vh}
+  border-top:1px solid rgba(244,236,228,.14);padding-top:1.5vh}
 /* The label and the value are both fully legible; the hierarchy between them comes
    from weight, colour and size, not from shrinking the label to nothing. */
 .fact .k{font-family:var(--mono);font-weight:400;color:var(--cream);opacity:.72;
@@ -316,26 +323,26 @@ const ENGINE_JS = `
     }
   }
 
-  /* A node's line is the only variable-length thing on the panel: a long sentence wraps
-     to five lines and pushes the facts off the bottom. Marrs set an absolute type floor
-     (the fact VALUES are the smallest anything may ever be), so the panel cannot simply
-     be scaled down. What it CAN do is spend the line's own headroom: the line sits well
-     above the floor, so it shrinks toward it until the facts fit, and stops there.
-     Fixed-size elements are never touched, and nothing ever goes below the floor. */
+  /* With the prose gone the panel is all fixed-size elements and fits by construction,
+     so this is a backstop rather than a layout mechanism: it only earns its keep when a
+     node carries four facts whose labels are long enough to wrap. It spends the LABELS'
+     headroom (they sit above the floor) and stops at the floor, which Marrs set as the
+     smallest anything may ever be. Values and titles are never touched. If it hits the
+     floor and still does not fit, the copy is too long, not the layout. */
   var floorEl=document.getElementById('floor');
   function fitPanel(n){
-    var line=n.querySelector('.line');
-    if(!line) return;
-    line.style.fontSize='';
     var facts=n.querySelectorAll('.fact');
-    var last=facts.length ? facts[facts.length-1] : line;
+    if(!facts.length) return;
+    var keys=n.querySelectorAll('.fact .k');
+    [].forEach.call(keys,function(k){ k.style.fontSize=''; });
+    var last=facts[facts.length-1];
     var limit=n.getBoundingClientRect().bottom-parseFloat(getComputedStyle(n).paddingBottom);
     var floorPx=parseFloat(getComputedStyle(floorEl).fontSize)||14;
-    var size=parseFloat(getComputedStyle(line).fontSize);
+    var size=parseFloat(getComputedStyle(keys[0]).fontSize);
     var guard=0;
     while(last.getBoundingClientRect().bottom>limit && size>floorPx+0.5 && guard++<24){
       size=Math.max(floorPx, size*0.94);
-      line.style.fontSize=size+'px';
+      [].forEach.call(keys,function(k){ k.style.fontSize=size+'px'; });
     }
   }
   /* Measured after the panel has finished growing, or the limit would be the box it is
@@ -468,7 +475,6 @@ export function renderScene(scene: Scene): string {
         .join('');
       return `<div class="node ${colour}">
   <div class="body">
-    ${n.line ? `<div class="line">${esc(n.line)}</div>` : ''}
     ${facts ? `<div class="facts">${facts}</div>` : ''}
   </div>
   <div class="name">${esc(n.label)}</div>

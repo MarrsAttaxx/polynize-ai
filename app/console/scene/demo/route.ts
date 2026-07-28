@@ -22,7 +22,6 @@ const DEMO: Scene = {
     {
       label: 'AI Addicts',
       colour: 'coral',
-      line: 'They outsource the thinking, then lose the ability to do it.',
       facts: [
         { label: 'Risk profile', value: 'High' },
         { label: 'Cognitive trend', value: 'Declining' },
@@ -32,7 +31,6 @@ const DEMO: Scene = {
     {
       label: 'AI Illiterate',
       colour: 'amber',
-      line: 'They refuse the tools, and the work moves without them.',
       facts: [
         { label: 'Risk profile', value: 'Medium' },
         { label: 'Cognitive trend', value: 'Flat' },
@@ -42,7 +40,6 @@ const DEMO: Scene = {
     {
       label: 'AI Amplified',
       colour: 'mint',
-      line: 'They build the thinking first, then multiply it.',
       facts: [
         { label: 'Risk profile', value: 'Low' },
         { label: 'Cognitive trend', value: 'Compounding' },
