@@ -6,19 +6,22 @@
  * The design goal is that the viewer reads an INTELLIGENT INTERFACE being operated,
  * not a person clicking through slides. Two things deliver that:
  *
- * 1. STEPS WITHIN A STATE. Elements carry data-step and are revealed one gesture at a
- *    time, so a touch always causes a specific, motivated reveal. Only when a state's
- *    steps are spent does the next gesture move to the next state. This is what makes
- *    the touching purposeful rather than decorative.
- * 2. A GESTURE LANGUAGE with fixed meanings, so the audience learns to read it:
- *      TAP         reveal the next thing / commit
- *      DOUBLE TAP  lock on, drill in (brackets close, telemetry prints)
- *      SWIPE LEFT  advance, push the current frame out
+ * 1. LESS IS MORE (Marrs). One state is ONE talking point, for one beat of the script.
+ *    The drama belongs in the TRANSITION between beats, not in a stack of little
+ *    reveals, so a state is usually one composed picture. data-step exists for the
+ *    occasional two-part beat (a claim, then its proof) and is used sparingly.
+ * 2. A GESTURE LANGUAGE where each gesture triggers its own FIGURE animation, drawn on
+ *    a canvas between beats. The figures are cymatics and Lissajous curves, which is a
+ *    motif with meaning here and not just decoration: a Chladni pattern is literally
+ *    invisible structure made visible in a vibrating medium, which is the thesis these
+ *    pieces argue about work.
+ *      TAP         a plain cut, the quiet advance
+ *      DOUBLE TAP  a reticle snaps shut: lock on, commit to a conclusion
+ *      SWIPE LEFT  a Lissajous curve sweeps the frame: advance
  *      SWIPE RIGHT go back
- *      SWIPE UP    elevate, raise detail from below
- *      SWIPE DOWN  collapse, dismiss detail
- *    The exit animation is chosen BY the gesture, so the motion always matches the
- *    hand: a swipe left pushes left, a swipe up lifts.
+ *      SWIPE UP/DOWN  the plate resonates, a Chladni pattern reorganises: a structural shift
+ *      PINCH       concentric rings pull in: narrow to a detail
+ *    The exit motion is also chosen BY the gesture, so the frame moves with the hand.
  *
  * Everything that makes a deck look like Polynize lives here (blueprint substrate,
  * tactile depth, HUD chrome, type scale, motion, the operator cue strip) and a piece
@@ -35,7 +38,8 @@ export type DeckGesture =
   | 'swipe-left'
   | 'swipe-right'
   | 'swipe-up'
-  | 'swipe-down';
+  | 'swipe-down'
+  | 'pinch';
 
 export type DeckState = {
   /** Beat label from the script, so the deck and the script stay in lockstep. */
@@ -75,17 +79,18 @@ Modifiers (add to any element)
 - "glow" pulsing emphasis · "grain" dithered texture · "big" / "small" scale
 - "focus" the engine snaps HUD corner brackets around it
 
-REVEALS (this is what makes the touching purposeful)
-Give elements data-step="1", data-step="2" … and they stay hidden until the operator
-reaches that step. Anything without data-step is present from the start. Each TAP
-advances one step, so build each state as a sequence of motivated reveals rather than
-one finished picture.
+LESS IS MORE. One state is ONE talking point, for one beat of the script. Do not
+punctuate every sentence: the drama belongs in the TRANSITION between beats, not in a
+stack of little reveals. A state is usually a single composed picture.
+
+Optional second beat within a state: give an element data-step="1" and it stays hidden
+until one TAP reveals it. Use this sparingly, at most once in a state, and only when
+the spoken line genuinely lands in two parts (a claim, then its proof).
 
 Example
 <div class="stack">
   <div class="word coral">AI ADDICTED</div>
   <div class="meter coral" data-step="1" data-level="high">HIGH RISK</div>
-  <div class="hud" data-step="2">ONE UPSIDE: THEY KNOW THE TOOLS</div>
 </div>`;
 
 const ENGINE_CSS = `
@@ -205,6 +210,10 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:1;
 @keyframes outDown{to{opacity:0;transform:translateY(12vh) scale(.96)}}
 @keyframes outIn{to{opacity:0;transform:scale(1.12)}}
 
+/* The figure field: cymatics and Lissajous curves, drawn between beats. This is where
+   the drama lives, so the states themselves can stay calm. */
+#fx{position:fixed;inset:0;z-index:5;pointer-events:none;opacity:0}
+
 /* Targeting reticle: follows the touch so the audience sees the interface respond. */
 #reticle{position:fixed;z-index:7;width:76px;height:76px;margin:-38px 0 0 -38px;pointer-events:none;opacity:0;
   border:1px solid rgba(105,252,203,.6);border-radius:50%}
@@ -225,19 +234,91 @@ const ENGINE_JS = `
   var states=[].slice.call(document.querySelectorAll('.state'));
   var meta=JSON.parse(document.getElementById('meta').textContent);
   var cue=document.getElementById('cue'), ret=document.getElementById('reticle'),
-      sweep=document.getElementById('sweep'), stage=document.getElementById('stage');
-  var i=0, step=0;
+      sweep=document.getElementById('sweep'), stage=document.getElementById('stage'),
+      fx=document.getElementById('fx'), ctx=fx.getContext('2d');
+  var i=0, step=0, busy=false;
   var EXIT={'swipe-left':'out-left','swipe-right':'out-right','swipe-up':'out-up',
-            'swipe-down':'out-down','tap':'out-in','double-tap':'out-in'};
+            'swipe-down':'out-down','tap':'out-in','double-tap':'out-in','pinch':'out-in'};
   var LABEL={'tap':'TAP','double-tap':'DOUBLE TAP','swipe-left':'SWIPE LEFT',
-             'swipe-right':'SWIPE RIGHT','swipe-up':'SWIPE UP','swipe-down':'SWIPE DOWN'};
+             'swipe-right':'SWIPE RIGHT','swipe-up':'SWIPE UP','swipe-down':'SWIPE DOWN','pinch':'PINCH'};
+  // Each gesture gets its own figure, so the audience learns to read the motion.
+  var FIGURE={'swipe-left':'lissajous','swipe-right':'lissajous','swipe-up':'chladni',
+              'swipe-down':'chladni','pinch':'rings','double-tap':'lock','tap':'cut'};
+
+  function size(){ var d=devicePixelRatio||1; fx.width=innerWidth*d; fx.height=innerHeight*d;
+    fx.style.width=innerWidth+'px'; fx.style.height=innerHeight+'px'; ctx.setTransform(d,0,0,d,0,0); }
+  addEventListener('resize',size); size();
+
+  /* Lissajous: x=sin(at+d), y=sin(bt). The curve draws itself on, then off. */
+  function lissajous(p,W,H){
+    var cx=W/2, cy=H/2, R=Math.min(W,H)*0.36;
+    var a=3, b=2, d=p*Math.PI*1.4;
+    var draw=p<.5 ? p/.5 : 1, fade=p<.5 ? 1 : 1-(p-.5)/.5;
+    ctx.strokeStyle='rgba(105,252,203,'+(0.85*fade)+')'; ctx.lineWidth=2;
+    ctx.shadowColor='rgba(105,252,203,.9)'; ctx.shadowBlur=18;
+    ctx.beginPath();
+    var N=Math.floor(700*draw);
+    for(var k=0;k<=N;k++){ var t=k/700*Math.PI*2;
+      var x=cx+R*1.35*Math.sin(a*t+d), y=cy+R*Math.sin(b*t);
+      k?ctx.lineTo(x,y):ctx.moveTo(x,y); }
+    ctx.stroke(); ctx.shadowBlur=0;
+  }
+  /* Chladni: nodal lines of a vibrating plate. The pattern reorganises as (n,m) shift,
+     which is the "structure becoming visible" motif. */
+  function chladni(p,W,H){
+    // Blend two INTEGER resonances rather than sliding the frequency: integer (n,m)
+    // give the symmetric nodal figures cymatics is recognised by, and cross-fading
+    // between two of them reads as the plate re-resonating into a new mode.
+    var fade=Math.sin(p*Math.PI), w=p;
+    var n1=3,m1=5, n2=6,m2=8;
+    var step=Math.max(5,Math.round(Math.min(W,H)/150));
+    ctx.fillStyle='rgba(105,252,203,'+(0.95*fade)+')';
+    function f(n,m,u,v){
+      return Math.cos(n*Math.PI*u)*Math.cos(m*Math.PI*v)-Math.cos(m*Math.PI*u)*Math.cos(n*Math.PI*v);
+    }
+    for(var x=0;x<W;x+=step){ for(var y=0;y<H;y+=step){
+      var u=x/W, v=y/H;
+      var val=(1-w)*f(n1,m1,u,v)+w*f(n2,m2,u,v);
+      if(Math.abs(val)<0.045){ var s=1.4+1.4*fade; ctx.fillRect(x-s/2,y-s/2,s,s); }
+    }}
+  }
+  /* Concentric rings for pinch: the frame pulling in or pushing out. */
+  function rings(p,W,H){
+    var cx=W/2, cy=H/2, fade=Math.sin(p*Math.PI);
+    ctx.strokeStyle='rgba(105,252,203,'+(0.7*fade)+')'; ctx.lineWidth=1.5;
+    for(var k=0;k<6;k++){ var r=(((p+k/6)%1))*Math.max(W,H)*0.6;
+      ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2); ctx.stroke(); }
+  }
+  /* Lock: a square reticle snapping shut on the centre. */
+  function lock(p,W,H){
+    var cx=W/2, cy=H/2, fade=Math.sin(p*Math.PI), s=Math.min(W,H)*(0.5-0.28*p);
+    ctx.strokeStyle='rgba(105,252,203,'+(0.9*fade)+')'; ctx.lineWidth=2;
+    var c=s*0.22;
+    [[-1,-1],[1,-1],[-1,1],[1,1]].forEach(function(q){
+      var x=cx+q[0]*s, y=cy+q[1]*s;
+      ctx.beginPath(); ctx.moveTo(x-q[0]*c,y); ctx.lineTo(x,y); ctx.lineTo(x,y-q[1]*c); ctx.stroke();
+    });
+  }
+  var FIGS={lissajous:lissajous,chladni:chladni,rings:rings,lock:lock};
+
+  function play(kind,swapAt,done){
+    var fn=FIGS[kind], dur=fn?620:180, t0=performance.now(), swapped=false;
+    fx.style.opacity=1;
+    (function frame(now){
+      var p=Math.min(1,(now-t0)/dur);
+      ctx.clearRect(0,0,innerWidth,innerHeight);
+      if(fn) fn(p,innerWidth,innerHeight);
+      if(!swapped && p>=0.42){ swapped=true; swapAt(); }
+      if(p<1) requestAnimationFrame(frame);
+      else { ctx.clearRect(0,0,innerWidth,innerHeight); fx.style.opacity=0; busy=false; done&&done(); }
+    })(t0);
+  }
 
   function steps(n){ return [].slice.call(states[n].querySelectorAll('[data-step]')); }
   function maxStep(n){ return steps(n).reduce(function(m,e){ return Math.max(m,+e.dataset.step||0); },0); }
   function paint(){
     var m=maxStep(i), ex=meta[i].exit||'tap';
-    var txt = step<m ? LABEL['tap']+' TO REVEAL' : LABEL[ex]+' TO ADVANCE';
-    cue.textContent=txt+'   '+(i+1)+'/'+states.length;
+    cue.textContent=(step<m?'TAP TO REVEAL':LABEL[ex]+' TO ADVANCE')+'   '+(i+1)+'/'+states.length;
   }
   function render(){
     steps(i).forEach(function(e){ e.classList.toggle('shown',(+e.dataset.step||0)<=step); });
@@ -251,24 +332,25 @@ const ENGINE_JS = `
     render();
   }
   function go(n,g){
-    if(n<0||n>=states.length) return;
+    if(n<0||n>=states.length||busy) return;
+    busy=true;
     var cls=EXIT[g]||'out-in', cur=states[i];
     cur.classList.add(cls);
-    setTimeout(function(){ cur.classList.remove(cls); enter(n); },230);
+    play(FIGURE[g]||'cut', function(){ cur.classList.remove(cls); enter(n); });
   }
   function act(g,x,y){
+    if(busy) return;
     if(x!=null){ ret.style.left=x+'px'; ret.style.top=y+'px';
       ret.classList.remove('hit'); void ret.offsetWidth; ret.classList.add('hit'); }
     var m=maxStep(i), ex=meta[i].exit||'tap';
-    // A tap reveals the next step first; the state only advances once they are spent.
     if(g==='tap' && step<m){ step++; render(); return; }
     if(g==='swipe-right'){ go(i-1,'swipe-right'); return; }
-    if(g===ex || g==='tap' || g==='swipe-left'){ go(i+1,g); return; }
     if(g==='swipe-down' && step>0){ step--; render(); return; }
+    go(i+1,g);
   }
 
-  // Gesture recogniser: tap, double tap, and the four swipes, from touch or mouse.
-  var sx=0,sy=0,st=0,lastTap=0,pending=null;
+  // Gestures: tap, double tap, pinch, and the four swipes.
+  var sx=0,sy=0,st=0,lastTap=0,pending=null,pinch0=0;
   function down(x,y){ sx=x; sy=y; st=Date.now(); }
   function up(x,y){
     var dx=x-sx, dy=y-sy, dt=Date.now()-st, ax=Math.abs(dx), ay=Math.abs(dy);
@@ -280,19 +362,27 @@ const ENGINE_JS = `
     var now=Date.now();
     if(now-lastTap<280){ clearTimeout(pending); pending=null; lastTap=0; act('double-tap',x,y); return; }
     lastTap=now;
-    // Hold a single tap briefly so a second one can promote it to a double tap.
     pending=setTimeout(function(){ pending=null; act('tap',x,y); },250);
   }
-  window.addEventListener('touchstart',function(e){ var t=e.touches[0]; down(t.clientX,t.clientY); },{passive:true});
-  window.addEventListener('touchend',function(e){ var t=e.changedTouches[0]; up(t.clientX,t.clientY); },{passive:true});
-  window.addEventListener('mousedown',function(e){ down(e.clientX,e.clientY); });
-  window.addEventListener('mouseup',function(e){ up(e.clientX,e.clientY); });
-  window.addEventListener('keydown',function(e){
+  function dist(t){ var a=t[0],b=t[1];
+    return Math.hypot(a.clientX-b.clientX, a.clientY-b.clientY); }
+  addEventListener('touchstart',function(e){
+    if(e.touches.length===2){ pinch0=dist(e.touches); clearTimeout(pending); pending=null; return; }
+    var t=e.touches[0]; down(t.clientX,t.clientY);
+  },{passive:true});
+  addEventListener('touchend',function(e){
+    if(pinch0 && e.touches.length<2){ pinch0=0; act('pinch',innerWidth/2,innerHeight/2); return; }
+    var t=e.changedTouches[0]; up(t.clientX,t.clientY);
+  },{passive:true});
+  addEventListener('mousedown',function(e){ down(e.clientX,e.clientY); });
+  addEventListener('mouseup',function(e){ up(e.clientX,e.clientY); });
+  addEventListener('keydown',function(e){
     var k=e.key;
     if(k==='ArrowRight'||k===' '||k==='Enter') act('tap');
     else if(k==='ArrowLeft') act('swipe-right');
     else if(k==='ArrowUp') act('swipe-up');
     else if(k==='ArrowDown') act('swipe-down');
+    else if(k==='p') act('pinch');
     else if(k==='Home') enter(0);
   });
   stage.classList.add('boot');
@@ -322,6 +412,7 @@ export function renderDeck(deck: Deck): string {
 <style>${ENGINE_CSS}</style>
 </head><body>
 <div id="sweep"></div>
+<canvas id="fx"></canvas>
 <div id="stage">
 ${states}
 </div>
