@@ -404,6 +404,42 @@ Format per entry: the decision, the context that forced it, the rationale, and t
 
 **Consequence if violated:** reverting to one shared recording reintroduces the compromise this replaces (a take that serves neither format well); generating and compositing graphics per piece instead of capturing the screen puts the bottleneck back into post and kills the volume this setup exists to produce; putting the format's capture shape into template recipes (instead of `scriptShape`) means every template has to restate the rig and they drift; **putting screen directions back into `piece.script` makes the teleprompter unreadable** (the presenter reads them aloud), and generating the treatment in a second, separate call lets the two artifacts drift out of lockstep.
 
+## D30 — The console BUILDS the touchscreen deck in-house, on an unlisted URL. Replaces D29's animator handoff
+
+**Decision (2026-07-21 to 2026-07-27, Marrs):** The Screen Prompt no longer briefs an external animator. **The console builds the deck itself** and serves it at an unlisted URL the studio machine opens and performs to camera. D29's Screen Prompt stage survives; what it produces changed, from a prose brief handed to a person to a plan the engine realises.
+
+The trigger was pure friction. Marrs: *"I'm having trouble with the process of handing off the animator prompt to the external chat, can we just create the animation file inside this interface somehow instead?"* The handoff cost a round trip per revision, and the first one came back *"a bit simple"* because a brief can only describe a house style, never enforce one.
+
+**The engine owns the look; April only decides content.** [`lib/marketing/deck.ts`](../lib/marketing/deck.ts) holds the entire house style and exports a small class vocabulary (`DECK_VOCABULARY`) that the generation prompt is written against. April picks content, sequence and gesture choreography and nothing else, so **a generated deck is on-brand by construction**. This is the same principle as the deterministic text overlay (D29 change log, 2026-07-21): precise, repeatable visual standards are a render, never a prompt.
+
+- **The store holds STATES, not HTML.** [`deck-store.ts`](../lib/marketing/deck-store.ts) persists the state list at `pam/decks/{pieceId}.json`, and the route renders it through the current engine on every request. Improving the house style therefore upgrades every deck already built, with no regeneration and no LLM spend.
+- **Keyed by PIECE ID ALONE**, unlike every other store in PAM, which is owner-scoped. It has to be: the URL is unauthenticated, so there is no owner to scope by at read time.
+- **The URL is deliberately UNAUTHENTICATED** ([`app/console/deck/[id]/route.ts`](../app/console/deck/[id]/route.ts)), Marrs's explicit call: *"let's just make it an unlisted link."* The studio machine opens it and performs, with no console login in the shot. The id is a uuid so the link is unguessable, and a deck is pre-publication marketing material. Being a **Route Handler** it bypasses the `/console` layout's sign-in gate, which is what makes this possible inside the console tree at all. `cache-control: no-store`, because the performer may reload mid-shoot.
+
+**The house style is an OSCILLOSCOPE** (Marrs, after developing the direction with April: *"we went with an oscilloscope vibe, make it feel a little oscilloscopic, full screen, like it's feeling vintage"*): a graticule with a brighter centre cross, phosphor persistence trailing the figures, CRT glass curvature and vignette, and corner telemetry readouts (`X-Y 1.00 V/DIV`, `TIME 5 MS/DIV`) so a number on screen reads as instrument output rather than a caption. This replaced the earlier crosshatch-blueprint substrate.
+
+**The animation language is CYMATICS and LISSAJOUS figures**, Marrs's direction, and it carries meaning rather than decoration: a Chladni pattern is what a surface does when it is driven at a new frequency, which is exactly what a gesture does to the deck. Each gesture triggers its own figure, so the transitions ARE the gesture language:
+
+| Gesture | Figure | Meaning |
+|---|---|---|
+| tap | hard cut | the quiet advance |
+| double-tap | a reticle snaps shut | committing to a conclusion |
+| swipe-left / right | a Lissajous curve sweeps the frame | advance / go back |
+| swipe-up / down | the plate resonates, a Chladni pattern reorganises | a structural shift |
+| pinch | concentric rings pull in | narrowing to a detail |
+
+**"Less is more"** (Marrs): the flash lives in the transitions and the hand, not in the states. A state is one idea, huge type, no bullet list.
+
+**A deck is FOUR to SIX states, enforced in CODE and not only in the prompt.** The first real deck came back at **26 pages** because my own instruction said one state per beat and never skip. Marrs: *"the first pass is just way overcomplicated."* The prompt now asks for the four to six turning points the argument actually pivots on, and `generateDeck` additionally slices to `MAX_STATES = 6`. A prompt rule is a preference; a slice is a guarantee.
+
+**The plan is SLIDE CARDS, not prose** (Marrs: the prose brief was *"too, too difficult to read"*). The Screen Prompt stage is two columns: the script split into its sections on the left, and on the right a card per slide carrying **the only two things a human decides, what is on screen and what it says**. Add, edit, reorder, delete by hand, or ask April for a set. Everything technical stays hidden and is applied by the engine. Slides persist as JSON on `piece.slides` ([`lib/marketing/slides.ts`](../lib/marketing/slides.ts)) and are **authoritative over the prose brief** when they exist; `piece.treatment` remains the fallback so older pieces still build. The prose BUILD BRIEF / DESIGN SYSTEM / OPERATOR STRIP preamble that D29 specified was written for the animator and is now vestigial: the engine already knows all of it, and printing it only made the panel unreadable.
+
+**Deck content must never leave the display** (2026-07-27). Marrs shot a deck whose headline was clipped off the top and whose pillars ran past the bottom. The cause was a composition sized from WIDTH (`aspect-ratio` on a width-driven flex child), so a wide screen produced a pillar taller than the viewport. Two rules now: **every dimension that can grow is capped against viewport HEIGHT as well as width**, and the engine **measures each state after render and scales it down if it would still overrun**. The measurement is belt and braces on purpose, because deck content is generated and its size cannot be predicted, and anything spilling off the display ruins a take. Related: a state's label always renders in cream, with the pillar's tint carrying the semantic colour, since a coral label on a coral-washed pillar vanishes on camera.
+
+**Consequence if violated:** going back to an external handoff reintroduces a round trip per revision and a house style that can only be described and never enforced; storing rendered HTML instead of states freezes every existing deck at the engine version that built it; scoping the store by owner or putting the deck behind the sign-in gate breaks the unlisted URL, which is the whole delivery mechanism; letting the state cap live only in the prompt returns the 26-page deck; and letting a layout size itself from width alone puts content off the edge of the screen, which is only discovered when a take is already ruined.
+
+---
+
 ---
 
 ## How to add to this log
@@ -416,6 +452,7 @@ When you make a decision that future-you (or a cold agent) might be tempted to u
 
 | Date | Change |
 |---|---|
+| 2026-07-27 | D30: the console BUILDS the touchscreen deck in-house (`lib/marketing/deck.ts` engine + `deck-generate.ts` + `deck-store.ts` + the unlisted `/console/deck/[id]` Route Handler), replacing D29's external animator handoff. Oscilloscope house style; cymatics/Lissajous figure per gesture; 4-6 states capped in code after a 26-page first pass; the Screen Prompt plan became SLIDE CARDS (visual + text per card, authoritative over the prose brief). Viewport rule added after a clipped deck: cap against viewport HEIGHT, and measure-and-scale each state after render. |
 | 2026-06-05 | Initial decision log: D1–D14 captured from the build history. |
 | 2026-06-18 | D15: PAM → marketing engine; mapping/blueprinting to Cognitive Studio; Newkind/reMYnd/Roxbury repos hard-deleted (SOC 2 + off-boarding); EverStock retained. |
 | 2026-07-03 | D16: April interviews in-console (SOC 2, minimise Slack); T5 reframed as the intake screen; agent connection is transport-abstract. See `pam-console/agent-socket-contract.md`. |
