@@ -8,7 +8,7 @@ import s from './blueprint.module.css';
 type Stage = 'input' | 'loading' | 'done' | 'error';
 
 const LOADING_MESSAGES: { from: number; text: string }[] = [
-  { from: 0, text: 'reading the session notes' },
+  { from: 0, text: 'reading your answers' },
   { from: 8000, text: 'identifying capabilities' },
   { from: 18000, text: 'allocating human, hybrid, agent' },
   { from: 30000, text: 'scoring against what good looks like' },
@@ -16,7 +16,15 @@ const LOADING_MESSAGES: { from: number; text: string }[] = [
   { from: 55000, text: 'assembling your blueprint' },
 ];
 
-type QKey = 'business' | 'bottleneck' | 'workflow' | 'choke' | 'info' | 'judgement' | 'good';
+type QKey =
+  | 'business'
+  | 'bottleneck'
+  | 'workflow'
+  | 'choke'
+  | 'info'
+  | 'judgement'
+  | 'good'
+  | 'email';
 type Question = {
   key: QKey;
   label: string;
@@ -30,8 +38,8 @@ const QUESTIONS: Question[] = [
   {
     key: 'business',
     label: "What's the business?",
-    sub: 'The client or company this blueprint is for.',
-    placeholder: 'e.g. Extent Heritage',
+    sub: 'The company this blueprint is for.',
+    placeholder: '',
     type: 'input',
     required: true,
   },
@@ -78,6 +86,14 @@ const QUESTIONS: Question[] = [
     placeholder: 'If this bottleneck disappeared, what would you actually see?',
     type: 'textarea',
   },
+  {
+    key: 'email',
+    label: 'Where should we send your blueprint?',
+    sub: 'We will not share it. Your blueprint appears on the next screen.',
+    placeholder: '',
+    type: 'input',
+    required: true,
+  },
 ];
 
 const EMPTY: Record<QKey, string> = {
@@ -88,6 +104,7 @@ const EMPTY: Record<QKey, string> = {
   info: '',
   judgement: '',
   good: '',
+  email: '',
 };
 
 function assemblePayload(a: Record<QKey, string>): string {
@@ -186,7 +203,11 @@ export default function BlueprintPage() {
   if (stage === 'done' && data) {
     return (
       <div className={s.wrap}>
-        <BlueprintDoc initialData={data} onRestart={restart} />
+        <BlueprintDoc
+          initialData={data}
+          lead={{ email: answers.email.trim(), business: answers.business.trim() }}
+          onRestart={restart}
+        />
       </div>
     );
   }
@@ -237,9 +258,9 @@ export default function BlueprintPage() {
         <div className={s.inputStage}>
           <div className={s.inputCard}>
             <div className={s.eyebrow}>Polynize · capability mapping</div>
-            <h1 className={s.inputTitle}>Paste the session notes.</h1>
+            <h1 className={s.inputTitle}>Paste your notes.</h1>
             <p className={s.inputSub}>
-              Drop the raw working-session notes for the client and map them straight through.
+              Already have the detail written down? Drop it in and map it straight through.
             </p>
             <textarea
               className={s.textarea}

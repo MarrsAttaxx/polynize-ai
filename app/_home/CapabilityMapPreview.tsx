@@ -5,27 +5,36 @@ import s from './home.module.css';
 
 type Allocation = 'human' | 'hybrid' | 'agent';
 
-type Row = { fn: string; alloc: Allocation };
+/** Sequenced move for each capability, mirroring the blueprint's Transformation tab. */
+type Move = 'train' | 'deploy' | 'hold';
+
+type Row = { fn: string; alloc: Allocation; move: Move };
 
 const ROWS: Row[] = [
-  { fn: 'Initial deal sourcing & qualification', alloc: 'agent' },
-  { fn: 'Market sizing & trend analysis', alloc: 'agent' },
-  { fn: 'Comparable transaction research', alloc: 'agent' },
-  { fn: 'Financial modelling first-pass', alloc: 'hybrid' },
-  { fn: 'Competitive landscape mapping', alloc: 'agent' },
-  { fn: 'Legal document review & flagging', alloc: 'hybrid' },
-  { fn: 'Compliance & regulatory verification', alloc: 'agent' },
-  { fn: 'Risk assessment & synthesis', alloc: 'hybrid' },
-  { fn: 'Investment thesis & recommendation', alloc: 'human' },
-  { fn: 'Final valuation & pricing decision', alloc: 'human' },
+  { fn: 'Initial deal sourcing & qualification', alloc: 'agent', move: 'deploy' },
+  { fn: 'Market sizing & trend analysis', alloc: 'agent', move: 'deploy' },
+  { fn: 'Comparable transaction research', alloc: 'agent', move: 'hold' },
+  { fn: 'Financial modelling first-pass', alloc: 'hybrid', move: 'deploy' },
+  { fn: 'Competitive landscape mapping', alloc: 'agent', move: 'deploy' },
+  { fn: 'Legal document review & flagging', alloc: 'hybrid', move: 'train' },
+  { fn: 'Compliance & regulatory verification', alloc: 'agent', move: 'hold' },
+  { fn: 'Risk assessment & synthesis', alloc: 'hybrid', move: 'deploy' },
+  { fn: 'Investment thesis & recommendation', alloc: 'human', move: 'train' },
+  { fn: 'Final valuation & pricing decision', alloc: 'human', move: 'train' },
 ];
+
+const MOVE_CLASS: Record<Move, string> = {
+  train: 'dcMoveTrain',
+  deploy: 'dcMoveDeploy',
+  hold: 'dcMoveHold',
+};
 
 const PCT = { human: 20, hybrid: 30, agent: 50 } as const;
 
 const META = {
   bottleneck: 'Investment research & due diligence',
   business: 'Boutique investment advisory, 8 people',
-  outcome: 'Recommendations in days, partner time on judgment calls',
+  outcome: 'Recommendations in days, with partner time spent on judgment',
 };
 
 /**
@@ -67,11 +76,10 @@ export function CapabilityMapPreview() {
       <div className={s.dcMapFrame}>
         <div className={s.dcMapStrip} />
 
+        {/* Deliberately not attributed to a named customer: the moves and totals
+            below are illustrative, so they must not read as a real client's data. */}
         <div className={s.dcMapIdent}>
-          <div className={s.dcMapIdentAv}>
-            <img src="/assets/aj-milne.jpg" alt="AJ Milne" />
-          </div>
-          <div className={s.dcMapIdentText}>AJ&apos;s team capability map.</div>
+          <div className={s.dcMapIdentText}>Sample capability blueprint.</div>
         </div>
 
         <div className={s.dcMapMeta}>
@@ -84,7 +92,7 @@ export function CapabilityMapPreview() {
             <div className={s.dcMapMetaV}>{META.business}</div>
           </div>
           <div>
-            <div className={s.dcMapMetaK}>Outcome</div>
+            <div className={s.dcMapMetaK}>What good looks like</div>
             <div className={s.dcMapMetaV}>{META.outcome}</div>
           </div>
         </div>
@@ -104,17 +112,11 @@ export function CapabilityMapPreview() {
               <span className={`${s.dot} ${s.dotMint}`} />
               Agent
             </div>
-            <div className={s.dcMapThMeta}>Owner</div>
+            <div className={s.dcMapThMeta}>Next move</div>
           </div>
 
           {ROWS.map((r, i) => {
             const on = i < revealCount;
-            const owner =
-              r.alloc === 'human'
-                ? 'You'
-                : r.alloc === 'hybrid'
-                  ? 'You + agent'
-                  : 'Agent team';
             return (
               <div key={i} className={`${s.dcMapTr} ${on ? s.dcMapTrOn : ''}`} role="row">
                 <div className={s.dcMapFn}>
@@ -124,7 +126,9 @@ export function CapabilityMapPreview() {
                 <Cell active={r.alloc === 'human' && on} tone="coral" />
                 <Cell active={r.alloc === 'hybrid' && on} tone="amber" />
                 <Cell active={r.alloc === 'agent' && on} tone="mint" />
-                <div className={`${s.dcMapOwner} ${on ? s.dcMapOwnerOn : ''}`}>{owner}</div>
+                <div className={`${s.dcMapOwner} ${on ? s.dcMapOwnerOn : ''}`}>
+                  <span className={`${s.dcMove} ${s[MOVE_CLASS[r.move]]}`}>{r.move}</span>
+                </div>
               </div>
             );
           })}
@@ -132,12 +136,13 @@ export function CapabilityMapPreview() {
 
         <div className={s.dcMapFoot}>
           <div className={s.dcMapTotals}>
-            <Total tone="coral" pct={PCT.human} label="stays human" />
+            <Total tone="coral" pct={PCT.human} label="human led" />
             <Total tone="amber" pct={PCT.hybrid} label="hybrid" />
-            <Total tone="mint" pct={PCT.agent} label="agent-executable" />
+            <Total tone="mint" pct={PCT.agent} label="agent run" />
           </div>
           <div className={s.dcMapFootNote}>
-            Sample map for a premium auction house. Yours will look different.
+            Sample blueprint. Allocations and moves are illustrative. Yours will map your own
+            capabilities.
           </div>
         </div>
       </div>

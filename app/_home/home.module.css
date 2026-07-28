@@ -1055,3 +1055,32 @@
   margin: 56px auto 0;
   max-width: 720px;
 }
+
+/* ---------- Next-move pill (capability blueprint preview) ----------
+   Mirrors the move pills in app/blueprint/blueprint.module.css so the
+   homepage preview and the delivered blueprint read as the same object. */
+.dcMove {
+  display: inline-block;
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 3px 9px;
+  border-radius: 6px;
+  border: 1px solid;
+}
+.dcMoveTrain {
+  color: var(--mint);
+  border-color: rgba(105, 252, 203, 0.5);
+  background: rgba(105, 252, 203, 0.08);
+}
+.dcMoveDeploy {
+  color: var(--amber);
+  border-color: rgba(240, 184, 107, 0.4);
+  background: rgba(240, 184, 107, 0.06);
+}
+.dcMoveHold {
+  color: var(--text-3);
+  border-color: var(--border-soft);
+  background: transparent;
+}

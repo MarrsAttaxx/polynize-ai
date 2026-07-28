@@ -9,12 +9,12 @@ export default function BlueprintNotFound() {
           Blueprint not found<span className={s.mint}>.</span>
         </h1>
         <p className={s.finalLede}>
-          That link may have expired or been mistyped. Build your own in five minutes — answer
-          eleven questions and we will send you the full blueprint.
+          That link may have expired or been mistyped. Build your own: answer eight questions and
+          see every capability scored against what good looks like.
         </p>
         <div className={s.ctas}>
-          <Link className={`${s.cta} ${s.ctaPrimary}`} href="/agents">
-            map_my_business →
+          <Link className={`${s.cta} ${s.ctaPrimary}`} href="/blueprint">
+            build_my_blueprint →
           </Link>
           <Link className={`${s.cta} ${s.ctaSecondary}`} href="/">
             ← back to home

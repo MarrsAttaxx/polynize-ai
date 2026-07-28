@@ -27,11 +27,11 @@ export function FinalCTA({ payload }: { payload: BlueprintPayload }) {
         </TrackedLink>
         <TrackedLink
           className={`${s.cta} ${s.ctaSecondary}`}
-          href="/agents"
+          href="/blueprint"
           event="cta_click"
-          eventProps={{ surface: 'blueprint_final_cta', label: 'edit_my_answers' }}
+          eventProps={{ surface: 'blueprint_final_cta', label: 'build_blueprint' }}
         >
-          ← edit my answers
+          + build a new blueprint
         </TrackedLink>
       </div>
       <div className={s.finalReset}>

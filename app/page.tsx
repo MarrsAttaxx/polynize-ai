@@ -15,11 +15,14 @@ const INSTAGRAM_URL = 'https://www.instagram.com/polynize.ai';
 // inherits the canonical Polynize meta. No per-page override here.
 
 /**
- * Homepage — Direction C, ported verbatim from
- * design_handoff/designs/Homepage_v2.html. Section order, copy, classnames,
- * and DOM structure follow the design's DirC component tree exactly. Only
- * non-design additions: the TrackedLink wrapper around every CTA so analytics
- * keep firing, and resolved hrefs in place of the design's `#` placeholders.
+ * Homepage. Structure and classnames still come from the Direction C port of
+ * design_handoff/designs/Homepage_v2.html, but the narrative was rewritten to
+ * the polynize.io positioning: "Humans, amplified", capability benchmarked
+ * against what good looks like, powered by capability engineering.
+ *
+ * Every CTA drives /blueprint (the capability blueprint flow). The old /agents
+ * flow is retired behind a redirect in next.config.mjs. The four How steps map
+ * one to one onto the blueprint's tabs so the promise matches the artifact.
  */
 export default function HomePage() {
   return (
@@ -38,6 +41,8 @@ export default function HomePage() {
         <DirCAjQuoteResult />
         {/* How we work and the rest of the page continue from here */}
         <DirCHow />
+        {/* The emotional core of the narrative: why we train before we deploy */}
+        <DirCValues />
         <DirCPodcast />
         <DirCFinal />
         <DirCFooter />
@@ -80,36 +85,37 @@ function DirCHero() {
   return (
     <section className={s.dcHero}>
       <h1 className={s.dcH1}>
-        Map your business problem
+        Humans,
         <br />
-        <span className={s.dcMintEmph}>into an agent team.</span>
+        <span className={s.dcMintEmph}>amplified.</span>
       </h1>
       <p className={s.dcLede}>
-        We take the one thing choking your business, map it into capabilities, and design a small
-        team of agents to handle the parts a person doesn&apos;t need to. What stays human, what
-        becomes hybrid, what an agent can run end&#8209;to&#8209;end, colour&#8209;coded, in a
-        single map.
+        We build the human capability that makes an AI economy work. Tell us where your business
+        chokes. You get every capability inside it scored against what good looks like, and a plan
+        that trains your people first, then deploys the agents around them.
       </p>
 
+      {/* The benchmark triad: the new thesis in one glance, and the same numbers
+          the blueprint's Benchmarks tab returns for real. */}
       <div className={`${s.dcEquation} ${s.reveal}`}>
         <div className={`${s.dcEqCard} ${s.dcEqCardGold}`}>
-          <div className={s.dcEqNum}>1</div>
+          <div className={s.dcEqNum}>41</div>
           <div className={s.dcEqMeta}>
-            <div className={s.dcEqLabel}>Human</div>
+            <div className={s.dcEqLabel}>Today</div>
           </div>
         </div>
-        <div className={s.dcEqPlus}>+</div>
+        <div className={s.dcEqPlus}>→</div>
         <div className={`${s.dcEqCard} ${s.dcEqCardMint}`}>
-          <div className={s.dcEqNum}>4</div>
+          <div className={s.dcEqNum}>85</div>
           <div className={s.dcEqMeta}>
-            <div className={s.dcEqLabel}>Agents</div>
+            <div className={s.dcEqLabel}>Benchmark</div>
           </div>
         </div>
         <div className={s.dcEqPlus}>=</div>
         <div className={`${s.dcEqCard} ${s.dcEqCardOut}`}>
-          <div className={s.dcEqNum}>5×</div>
+          <div className={s.dcEqNum}>+44</div>
           <div className={s.dcEqMeta}>
-            <div className={s.dcEqLabel}>Throughput</div>
+            <div className={s.dcEqLabel}>Uplift</div>
           </div>
         </div>
       </div>
@@ -117,11 +123,11 @@ function DirCHero() {
       <div className={s.dcCtaRow}>
         <TrackedLink
           className={`${s.dcBtn} ${s.dcBtnPrimary}`}
-          href="/agents"
+          href="/blueprint"
           event="cta_click"
-          eventProps={{ surface: 'home_hero', label: 'map_your_bottleneck' }}
+          eventProps={{ surface: 'home_hero', label: 'build_blueprint' }}
         >
-          Map Your Bottleneck <span className={s.dcArr}>→</span>
+          Build your blueprint <span className={s.dcArr}>→</span>
         </TrackedLink>
         <TrackedLink
           className={`${s.dcBtn} ${s.dcBtnSecondary}`}
@@ -143,15 +149,15 @@ function DirCMapHero() {
   return (
     <section className={s.dcMapHero}>
       <div className={s.dcSectionHead}>
-        <div className={s.dcSectionEyebrow}>The capability map</div>
+        <div className={s.dcSectionEyebrow}>What you get</div>
         <h2 className={s.dcH2}>
-          Map your business
+          Your business, mapped
           <br />
-          <span className={s.dcMintEmph}>bottlenecks.</span>
+          <span className={s.dcMintEmph}>into capabilities.</span>
         </h2>
         <p className={s.dcSectionLede}>
-          Every row is a real capability inside the work that&apos;s choking you. One map. No
-          ambiguity about who does what.
+          Every capability inside the work that is choking you, allocated human, hybrid or agent,
+          scored against what good looks like, and sequenced into what to train and what to deploy.
         </p>
       </div>
 
@@ -159,18 +165,18 @@ function DirCMapHero() {
 
       <div className={s.dcMidCta}>
         <div className={s.dcMidCtaText}>
-          <div className={s.dcMidCtaTitle}>Get your capability map.</div>
+          <div className={s.dcMidCtaTitle}>Get your capability blueprint.</div>
           <div className={s.dcMidCtaSub}>
-            A capability map of your real bottleneck, in days, not weeks.
+            Eight questions about the work. A blueprint you can share with your team.
           </div>
         </div>
         <TrackedLink
           className={`${s.dcBtn} ${s.dcBtnPrimary}`}
-          href="/agents"
+          href="/blueprint"
           event="cta_click"
-          eventProps={{ surface: 'home_mid_cta', label: 'map_your_bottleneck' }}
+          eventProps={{ surface: 'home_mid_cta', label: 'build_blueprint' }}
         >
-          Map Your Bottleneck <span className={s.dcArr}>→</span>
+          Build your blueprint <span className={s.dcArr}>→</span>
         </TrackedLink>
       </div>
     </section>
@@ -185,13 +191,15 @@ function DirCAjQuoteProblem() {
   return (
     <section className={s.dcSection}>
       <div className={s.dcSectionHead}>
-        <div className={s.dcSectionEyebrow}>How we work</div>
+        <div className={s.dcSectionEyebrow}>Proof</div>
         <h2 className={s.dcH2}>
-          A Real Customer <span className={s.dcMintEmph}>Journey</span>
+          A real customer <span className={s.dcMintEmph}>journey.</span>
         </h2>
         <p className={s.dcSectionLede}>
-          This is how we mapped, modelled and rectified Optio Capitals real capability
-          bottleneck.
+          Optio Capital is a boutique investment advisory. Every deal demanded weeks of groundwork
+          before capital could move. We mapped the work into capabilities, benchmarked each one
+          against what good looks like, trained the judgment that had to stay with AJ, then built
+          the agents around him.
         </p>
       </div>
 
@@ -222,8 +230,8 @@ function DirCAjTeam() {
           at <span className={s.dcMintEmph}>Optio Capital.</span>
         </h2>
         <p className={s.dcSectionLede}>
-          One human at the centre, holding the judgment calls. A small team of agents picking up
-          the parts a person doesn&apos;t need to. This is what we built for AJ.
+          One human at the centre, amplified. AJ still owns every judgment call that matters. The
+          agents carry the groundwork around him so his attention lands where it counts.
         </p>
       </div>
 
@@ -293,30 +301,35 @@ function AjQuoteCard({ body }: { body: React.ReactNode }) {
 
 /* ---------- How we work ---------- */
 
+/**
+ * The four steps map one to one onto the tabs of the blueprint the CTA produces
+ * (Capability Map, Benchmarks, Transformation, Agentic Design), so the promise
+ * on this page matches the artifact the visitor actually receives.
+ */
 const HOW_STEPS = [
   {
     n: '01',
     t: 'Map',
     icon: 'map' as const,
-    d: 'We sit with you and map your bottleneck into the capabilities inside it. Every one gets allocated: human, hybrid, or agent.',
+    d: 'We break the work into the capabilities inside it, and allocate every one of them: human, hybrid, or agent.',
   },
   {
     n: '02',
-    t: 'Model',
+    t: 'Benchmark',
     icon: 'model' as const,
-    d: 'We model the cognition each capability needs and build a comprehensive cognitive model of the work. That model gets installed into your agents.',
+    d: 'We score each capability as it runs today against what good looks like, so the gap is measured rather than argued about.',
   },
   {
     n: '03',
-    t: 'Build',
+    t: 'Train',
     icon: 'build' as const,
-    d: 'We design and engineer the agent team. Connectors, handoffs, human touchpoints. First agent live in 48 hours, on average.',
+    d: 'We lift the human capability first. The judgment calls, the direction setting, the work that only your people can do.',
   },
   {
     n: '04',
-    t: 'Operate',
+    t: 'Deploy',
     icon: 'operate' as const,
-    d: 'We run the team alongside you and tune it as the work shifts. You stay the accountable human at the centre. We carry the rest.',
+    d: 'We build the agent team around the trained human, run it alongside you, and tune it as the work shifts.',
   },
 ];
 
@@ -324,12 +337,17 @@ function DirCHow() {
   return (
     <section className={s.dcSection}>
       <div className={s.dcSectionHead}>
-        <div className={s.dcSectionEyebrow}>How we work</div>
+        <div className={s.dcSectionEyebrow}>Powered by capability engineering</div>
         <h2 className={s.dcH2}>
-          From a problem you can name
+          Map. Benchmark.
           <br />
-          to a team that solves it.
+          Train. <span className={s.dcMintEmph}>Deploy.</span>
         </h2>
+        <p className={s.dcSectionLede}>
+          Capability engineering came out of five years of R&amp;D across machine learning,
+          cognitive science, reinforcement learning and software engineering. It builds the fast
+          feedback loops that uplift human and AI performance together.
+        </p>
       </div>
 
       <div className={s.dcHowGrid}>
@@ -396,6 +414,45 @@ function HowIcon({ kind }: { kind: 'map' | 'model' | 'build' | 'operate' }) {
       <path d="M10 14 6 20l4-1.5M18 14l4 6-4-1.5" />
       <path d="M14 20v4" />
     </svg>
+  );
+}
+
+/* ---------- Values ---------- */
+
+const VALUES = [
+  { k: 'Uplift', v: 'People get the opportunity to increase their capabilities.' },
+  { k: 'Transparency', v: 'People see their own capability on a level playing field.' },
+  { k: 'Augmentation', v: 'People are augmented by AI to achieve more and thrive.' },
+];
+
+function DirCValues() {
+  return (
+    <section className={s.dcSection}>
+      <div className={s.dcSectionHead}>
+        <div className={s.dcSectionEyebrow}>What we believe</div>
+        <h2 className={s.dcH2}>
+          We build AI for people.
+          <br />
+          <span className={s.dcMintEmph}>Not to replace them.</span>
+        </h2>
+        <p className={s.dcSectionLede}>
+          Most AI plans start by asking what can be automated. Ours starts by asking what has to get
+          better. The human capability is trained first, and the agents are deployed around it
+          second. That order is the whole difference.
+        </p>
+      </div>
+
+      {/* Reuses the key/value strip from the map frame: a three-up that reads
+          differently from the two card grids already on the page. */}
+      <div className={s.dcMapMeta}>
+        {VALUES.map((val) => (
+          <div key={val.k}>
+            <div className={s.dcMapMetaK}>{val.k}</div>
+            <div className={s.dcMapMetaV}>{val.v}</div>
+          </div>
+        ))}
+      </div>
+    </section>
   );
 }
 
@@ -484,22 +541,22 @@ function DirCFinal() {
         <div className={s.dcFinalStrip} />
         <div className={s.dcSectionEyebrow}>Ready when you are</div>
         <h2 className={s.dcFinalTitle}>
-          Map your bottleneck
+          See the gap between
           <br />
-          in 5 minutes.
+          now and good.
         </h2>
         <p className={s.dcFinalLede}>
-          Once you see your bottleneck mapped this way, you can&apos;t unsee it. Five minutes will
-          show you something you&apos;ve never seen before.
+          Eight questions about the work that is choking you. What comes back is every capability
+          inside it, mapped, benchmarked, and sequenced into what to train and what to deploy.
         </p>
         <div className={s.dcCtaRow} style={{ justifyContent: 'center' }}>
           <TrackedLink
             className={`${s.dcBtn} ${s.dcBtnPrimary}`}
-            href="/agents"
+            href="/blueprint"
             event="cta_click"
-            eventProps={{ surface: 'home_final_cta', label: 'map_your_bottleneck' }}
+            eventProps={{ surface: 'home_final_cta', label: 'build_blueprint' }}
           >
-            Map Your Bottleneck <span className={s.dcArr}>→</span>
+            Build your blueprint <span className={s.dcArr}>→</span>
           </TrackedLink>
           <TrackedLink
             className={`${s.dcBtn} ${s.dcBtnSecondary}`}
@@ -532,8 +589,8 @@ function DirCFooter() {
             </span>
           </Link>
           <p className={s.dcFooterBlurb}>
-            The agentic arm of polynize. We map the bottleneck choking your business and design
-            the agent team to solve it.
+            The agentic arm of polynize. We build the human capability that makes an AI economy
+            work, and the agents that amplify it.
           </p>
         </div>
         <div className={s.dcFooterCols}>

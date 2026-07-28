@@ -29,11 +29,11 @@ const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://polynize.ai';
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: 'Polynize | AI Agent Teams for Your Business',
+    default: 'Polynize | Humans, Amplified',
     template: '%s · Polynize',
   },
   description:
-    'Polynize designs and deploys AI agent teams for small and mid-sized businesses. Map the bottleneck choking your business and we build the team to solve it.',
+    'Polynize builds the human capability that makes an AI economy work. Map the work that is choking your business, see every capability scored against what good looks like, and get the plan that trains your people first and deploys the agents around them.',
   icons: {
     icon: [
       { url: '/favicon.ico', sizes: 'any' },
@@ -46,9 +46,9 @@ export const metadata: Metadata = {
     type: 'website',
     url: SITE_URL,
     siteName: 'Polynize',
-    title: 'Polynize | AI Agent Teams for Your Business',
+    title: 'Polynize | Humans, Amplified',
     description:
-      'Map the bottleneck choking your business. We design and deploy the AI agent team to solve it.',
+      'Every capability benchmarked against what good looks like. We train your people first, then deploy the agents around them.',
     images: [
       {
         url: '/favicon-192x192.png',
@@ -60,9 +60,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary',
-    title: 'Polynize | AI Agent Teams for Your Business',
+    title: 'Polynize | Humans, Amplified',
     description:
-      'Map the bottleneck choking your business. We design and deploy the AI agent team to solve it.',
+      'Every capability benchmarked against what good looks like. We train your people first, then deploy the agents around them.',
     images: ['/favicon-192x192.png'],
   },
 };

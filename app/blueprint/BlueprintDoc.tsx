@@ -107,10 +107,13 @@ function ShapeIcon({ id, active }: { id: number; active?: boolean }) {
 export function BlueprintDoc({
   initialData,
   initialId,
+  lead,
   onRestart,
 }: {
   initialData: SalesBlueprint;
   initialId?: string;
+  /** Captured at intake on the public funnel. Absent on the shared /blueprint/[id] view. */
+  lead?: { email: string; business: string };
   onRestart?: () => void;
 }) {
   const [data, setData] = useState<SalesBlueprint>(initialData);
@@ -130,7 +133,12 @@ export function BlueprintDoc({
       const res = await fetch('/api/blueprint-map/save', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: blueprintId ?? undefined, data: next }),
+        body: JSON.stringify({
+          id: blueprintId ?? undefined,
+          data: next,
+          email: lead?.email || undefined,
+          business: lead?.business || undefined,
+        }),
       });
       const j = (await res.json()) as { ok: boolean; id?: string };
       if (j.ok && j.id) {
@@ -697,7 +705,7 @@ function ChatDock({ data, onApply }: { data: SalesBlueprint; onApply: (d: SalesB
           {messages.length === 0 && (
             <div className={s.chatEmpty}>
               Tell me what to change and I will update the map live. Try:{' '}
-              <code>make Historical site assessment retrieval an agent</code> or{' '}
+              <code>move the second capability to hybrid</code> or{' '}
               <code>reword the purpose to emphasise security</code>.
             </div>
           )}

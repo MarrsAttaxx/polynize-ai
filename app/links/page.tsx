@@ -36,12 +36,12 @@ type LinkCard = {
 
 const GET_STARTED: LinkCard[] = [
   {
-    href: '/agents',
+    href: '/blueprint',
     featured: true,
     tag: { label: 'recommended', mint: true },
-    meta: '5 min · free',
-    title: 'Map your business',
-    desc: 'Answer 11 questions. See your heat map. Meet your agent team.',
+    meta: 'free',
+    title: 'Build your blueprint',
+    desc: 'Answer eight questions. See every capability benchmarked against what good looks like.',
     icon: (
       <svg viewBox="0 0 24 24">
         <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
