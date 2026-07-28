@@ -1,88 +1,87 @@
 'use client';
 
 /**
- * The SCREEN PROMPT stage (D29, revised 2026-07-21 after Marrs's first real pass).
+ * The SCREEN PROMPT stage (D31). It edits the SCENE the presenter operates on the
+ * touchscreen: one board of objects they open, reveal and close on camera.
  *
- * It used to render a prose build brief that opened with BUILD BRIEF / DESIGN SYSTEM /
- * OPERATOR STRIP boilerplate. That existed for an external animator; the console builds
- * the deck itself now, so the engine already knows all of it and printing it only made
- * the panel unreadable. "Hide the rest of the system prompt, all I want is slide 1
- * description, slide 2 description, slide 3 description."
+ * It used to edit slide cards, because the screen used to be a deck. Under D31 the screen
+ * is an interface built from DATA, and that changes what this page is for. The engine owns
+ * every pixel and every behaviour, so there is nothing here about layout, size, motion or
+ * gestures. What is left is only the words and the meaning:
  *
- * So the stage is now two columns:
- *  - LEFT  the script, split into its sections, for reference: this section needs that
- *          slide.
- *  - RIGHT the plan as SLIDE CARDS. Each card is the only two things a human decides:
- *          what is on screen, and what it says. Add, edit, reorder and delete by hand,
- *          or ask April to propose the set. Everything technical (classes, colour
- *          roles, depth, gestures, the figure transitions) stays hidden and is applied
- *          by the engine when the deck is built.
+ *   - the CONCEPT over the board
+ *   - the OBJECTS on it, each with a name, a colour role, and its facts
+ *   - the CLOSE, broken where the punch should land
  *
- * Slides persist as JSON on `piece.slides` through the existing /state autosave.
+ * The important consequence: changing a word is TYPING, not asking April to regenerate.
+ * Under the old model a small fix meant a rebuild that re-decided every state, which is
+ * what made minor edits feel impossible. April is here to propose a scene from the script
+ * and to refine one on request; she is never in the way of an edit.
  *
- * Below both columns, once a deck exists, sits THE BUILT DECK: the states as chips, a
- * live preview of the selected one, and a line to tell April what to change about THAT
- * STATE ALONE. Rebuilding re-decides every state, so it was impossible to fix one
- * slide without disturbing the others; this is the surgical path.
+ * Scenes persist through their own endpoint (`screen-prompt/scene`), not `piece.slides`.
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import type { MarketingPiece } from '@/lib/marketing/piece-store';
-import { parseSlides, serializeSlides, scriptSections, type Slide } from '@/lib/marketing/slides';
+import { scriptSections } from '@/lib/marketing/slides';
 import { StageRail } from '../StageRail';
 import { BackLink } from '@/app/console/marketing/_components/BackLink';
 import s from '../script.module.css';
 import d from './slides.module.css';
 
 type SaveState = 'idle' | 'saving' | 'saved' | 'error';
+type Colour = 'coral' | 'amber' | 'gold' | 'mint';
+type Fact = { label: string; value: string };
+type Node = { label: string; colour: Colour; facts: Fact[] };
+type Scene = { title?: string; concept: string; nodes: Node[]; close?: string };
 
-type DeckStateInfo = { label: string; cue: string };
+const MAX_NODES = 4;
+const MAX_FACTS = 4;
+
+/** The colour ROLES, named by what they MEAN rather than by what they look like. */
+const COLOURS: { id: Colour; role: string }[] = [
+  { id: 'coral', role: 'problem' },
+  { id: 'amber', role: 'tension' },
+  { id: 'gold', role: 'proof' },
+  { id: 'mint', role: 'resolution' },
+];
+
+const emptyNode = (i: number): Node => ({
+  label: '',
+  colour: COLOURS[i % COLOURS.length].id,
+  facts: [{ label: '', value: '' }],
+});
 
 export function ScreenPromptScreen({
   initial,
-  deckStates,
+  scene: initialScene,
 }: {
   initial: MarketingPiece;
-  deckStates: DeckStateInfo[] | null;
+  scene: Scene | null;
 }) {
-  const [slides, setSlides] = useState<Slide[]>(() => parseSlides(initial.slides));
+  const [scene, setScene] = useState<Scene | null>(initialScene);
   const [saveState, setSaveState] = useState<SaveState>('idle');
   const [direction, setDirection] = useState('');
-  const [note, setNote] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const [building, setBuilding] = useState(false);
+  const [note, setNote] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [deckUrl, setDeckUrl] = useState<string | null>(
-    deckStates?.length ? `/console/deck/${initial.piece_id}` : null
-  );
-  const [built, setBuilt] = useState<DeckStateInfo[]>(deckStates ?? []);
-  const [sel, setSel] = useState(0);
-  const [tweak, setTweak] = useState('');
-  const [revising, setRevising] = useState(false);
-  // Bumped on every change so the preview iframe reloads instead of serving its cache.
+  const [sel, setSel] = useState(-1);
   const [previewV, setPreviewV] = useState(0);
-  // Deck feedback is kept separate from the slide-planning feedback: they sit in
-  // different parts of the page, and a note appearing far from the button that caused
-  // it reads as unrelated.
-  const [deckNote, setDeckNote] = useState<string | null>(null);
-  const [deckError, setDeckError] = useState<string | null>(null);
 
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const latest = useRef<Slide[]>(slides);
+  const latest = useRef<Scene | null>(initialScene);
   const inFlight = useRef(false);
   const script = (initial.script ?? '').trim();
   const hasScript = Boolean(script);
   const sections = scriptSections(script);
+  const sceneUrl = `/console/scene/${initial.piece_id}`;
 
-  const stateUrlRef = useRef('');
   const baseUrlRef = useRef('');
   useEffect(() => {
-    const base = window.location.pathname
+    baseUrlRef.current = window.location.pathname
       .replace(/\/screen-prompt\/?$/, '')
       .replace(/\/+$/, '');
-    baseUrlRef.current = base;
-    stateUrlRef.current = base + '/state';
   }, []);
 
   // Serialized autosave: one PUT in flight, latest content coalesced.
@@ -92,13 +91,14 @@ export function ScreenPromptScreen({
     try {
       for (;;) {
         const content = latest.current;
+        if (!content) break;
         setSaveState('saving');
         let ok = false;
         try {
-          const res = await fetch(stateUrlRef.current, {
+          const res = await fetch(baseUrlRef.current + '/screen-prompt/scene', {
             method: 'PUT',
             headers: { 'content-type': 'application/json' },
-            body: JSON.stringify({ ...initial, slides: serializeSlides(content) }),
+            body: JSON.stringify(content),
           });
           ok = res.ok;
         } catch {
@@ -110,16 +110,18 @@ export function ScreenPromptScreen({
         }
         if (latest.current !== content) continue;
         setSaveState('saved');
+        // The preview IS the real page, so it only tells the truth once the save lands.
+        setPreviewV((v) => v + 1);
         break;
       }
     } finally {
       inFlight.current = false;
     }
-  }, [initial]);
+  }, []);
 
   const commit = useCallback(
-    (next: Slide[]) => {
-      setSlides(next);
+    (next: Scene) => {
+      setScene(next);
       latest.current = next;
       setSaveState('saving');
       if (timer.current) clearTimeout(timer.current);
@@ -142,38 +144,71 @@ export function ScreenPromptScreen({
   flushRef.current = flush;
   useEffect(() => () => flushRef.current(), []);
 
-  const setField = (i: number, field: keyof Slide, value: string) =>
-    commit(slides.map((sl, k) => (k === i ? { ...sl, [field]: value } : sl)));
-  const addSlide = () => commit([...slides, { visual: '', text: '' }]);
-  const removeSlide = (i: number) => commit(slides.filter((_, k) => k !== i));
-  const move = (i: number, dir: -1 | 1) => {
+  // ---- edits: all direct, none of them cost an LLM call ----
+  const patch = (p: Partial<Scene>) => {
+    if (!scene) return;
+    commit({ ...scene, ...p });
+  };
+  const patchNode = (i: number, p: Partial<Node>) => {
+    if (!scene) return;
+    commit({ ...scene, nodes: scene.nodes.map((n, k) => (k === i ? { ...n, ...p } : n)) });
+  };
+  const patchFact = (i: number, j: number, p: Partial<Fact>) => {
+    if (!scene) return;
+    patchNode(i, { facts: scene.nodes[i].facts.map((f, k) => (k === j ? { ...f, ...p } : f)) });
+  };
+  const addFact = (i: number) => {
+    if (!scene || scene.nodes[i].facts.length >= MAX_FACTS) return;
+    patchNode(i, { facts: [...scene.nodes[i].facts, { label: '', value: '' }] });
+  };
+  const removeFact = (i: number, j: number) => {
+    if (!scene) return;
+    patchNode(i, { facts: scene.nodes[i].facts.filter((_, k) => k !== j) });
+  };
+  const addNode = () => {
+    if (!scene || scene.nodes.length >= MAX_NODES) return;
+    commit({ ...scene, nodes: [...scene.nodes, emptyNode(scene.nodes.length)] });
+  };
+  const removeNode = (i: number) => {
+    if (!scene || scene.nodes.length < 2) return;
+    const nodes = scene.nodes.filter((_, k) => k !== i);
+    commit({ ...scene, nodes });
+    setSel((k) => (k >= nodes.length ? nodes.length - 1 : k));
+  };
+  const moveNode = (i: number, dir: -1 | 1) => {
+    if (!scene) return;
     const j = i + dir;
-    if (j < 0 || j >= slides.length) return;
-    const next = slides.slice();
-    [next[i], next[j]] = [next[j], next[i]];
-    commit(next);
+    if (j < 0 || j >= scene.nodes.length) return;
+    const nodes = scene.nodes.slice();
+    [nodes[i], nodes[j]] = [nodes[j], nodes[i]];
+    commit({ ...scene, nodes });
   };
 
-  const propose = async () => {
+  const ask = async () => {
     if (busy || !hasScript) return;
     setBusy(true);
     setError(null);
+    flush();
     try {
-      const res = await fetch(baseUrlRef.current + '/screen-prompt/slides', {
+      const res = await fetch(baseUrlRef.current + '/screen-prompt/scene', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ direction: direction.trim(), current: slides }),
+        body: JSON.stringify({ direction: direction.trim() }),
       });
       const b = (await res.json().catch(() => null)) as
-        | { slides?: Slide[]; note?: string; error?: string }
+        | { scene?: Scene; note?: string; error?: string }
         | null;
-      if (!res.ok || !b?.slides?.length) {
-        setError(b?.error ?? 'Could not plan the slides.');
+      if (!res.ok || !b?.scene) {
+        setError(b?.error ?? 'Could not build the scene.');
         return;
       }
-      commit(b.slides);
+      setScene(b.scene);
+      latest.current = b.scene;
       setNote(b.note ?? null);
       setDirection('');
+      setSel(-1);
+      setSaveState('saved');
+      setPreviewV((v) => v + 1);
     } catch {
       setError('Network error. Try again.');
     } finally {
@@ -181,93 +216,12 @@ export function ScreenPromptScreen({
     }
   };
 
-  const buildDeck = async () => {
-    if (building || !hasScript) return;
-    setBuilding(true);
-    setDeckError(null);
-    flush();
-    try {
-      const res = await fetch(baseUrlRef.current + '/screen-prompt/deck', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ direction: direction.trim() }),
-      });
-      const b = (await res.json().catch(() => null)) as
-        | { url?: string; states?: DeckStateInfo[]; note?: string; error?: string }
-        | null;
-      if (!res.ok || !b?.url) {
-        setDeckError(b?.error ?? 'Could not build the deck.');
-        return;
-      }
-      setDeckUrl(b.url);
-      setBuilt(b.states ?? []);
-      setSel(0);
-      setPreviewV((v) => v + 1);
-      setDeckNote(b.note ?? `Built the deck in ${b.states?.length ?? 0} states.`);
-    } catch {
-      setDeckError('Network error. Try again.');
-    } finally {
-      setBuilding(false);
-    }
-  };
-
-  // One state, one instruction. Every other state is written back untouched.
-  const reviseState = async () => {
-    const instruction = tweak.trim();
-    if (revising || !instruction || !built[sel]) return;
-    setRevising(true);
-    setDeckError(null);
-    try {
-      const res = await fetch(baseUrlRef.current + '/screen-prompt/deck/revise', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ index: sel, instruction }),
-      });
-      const b = (await res.json().catch(() => null)) as
-        | { states?: DeckStateInfo[]; note?: string; error?: string }
-        | null;
-      if (!res.ok || !b?.states) {
-        setDeckError(b?.error ?? 'Could not change that state.');
-        return;
-      }
-      setBuilt(b.states);
-      setDeckNote(b.note ?? null);
-      setTweak('');
-      setPreviewV((v) => v + 1);
-    } catch {
-      setDeckError('Network error. Try again.');
-    } finally {
-      setRevising(false);
-    }
-  };
-
-  const removeState = async () => {
-    if (revising || !built[sel]) return;
-    setRevising(true);
-    setDeckError(null);
-    try {
-      const res = await fetch(baseUrlRef.current + '/screen-prompt/deck/revise', {
-        method: 'DELETE',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ index: sel }),
-      });
-      const b = (await res.json().catch(() => null)) as
-        | { states?: DeckStateInfo[]; note?: string; error?: string }
-        | null;
-      if (!res.ok || !b?.states) {
-        setDeckError(b?.error ?? 'Could not remove that state.');
-        return;
-      }
-      setBuilt(b.states);
-      setSel((i) => Math.max(0, Math.min(i, b.states!.length - 1)));
-      setDeckNote(b.note ?? null);
-      setPreviewV((v) => v + 1);
-    } catch {
-      setDeckError('Network error. Try again.');
-    } finally {
-      setRevising(false);
-    }
-  };
+  const startBlank = () =>
+    commit({
+      concept: initial.title,
+      nodes: [emptyNode(0), emptyNode(1), emptyNode(2)],
+      close: '',
+    });
 
   const saveLabel =
     saveState === 'saving'
@@ -277,6 +231,8 @@ export function ScreenPromptScreen({
         : saveState === 'error'
           ? 'Save failed'
           : '';
+
+  const nodes = scene?.nodes ?? [];
 
   return (
     <div className={s.root}>
@@ -319,7 +275,7 @@ export function ScreenPromptScreen({
         <section className={d.scriptCol}>
           <h2 className={d.colTitle}>The script</h2>
           {sections.length === 0 ? (
-            <p className={d.empty}>Write the script first. The slides are planned from it.</p>
+            <p className={d.empty}>Write the script first. The scene is built from it.</p>
           ) : (
             sections.map((sec, i) => (
               <div key={i} className={d.section}>
@@ -332,129 +288,210 @@ export function ScreenPromptScreen({
 
         <section className={d.slideCol}>
           <div className={d.colHead}>
-            <h2 className={d.colTitle}>Slides</h2>
-            <span className={d.count}>
-              {slides.length}/6{slides.length > 6 ? ' (too many)' : ''}
-            </span>
+            <h2 className={d.colTitle}>The scene</h2>
+            {scene ? (
+              <span className={d.count}>
+                {nodes.length}/{MAX_NODES} objects
+              </span>
+            ) : null}
           </div>
 
-          {slides.length === 0 ? (
+          {!scene ? (
             <p className={d.empty}>
-              No slides yet. Add one, or tell April what you want below and let her
-              propose the set.
+              Nothing on the screen yet. Tell April what you want and she will build it from
+              the script, or start one by hand.
             </p>
           ) : (
-            slides.map((sl, i) => (
-              <article key={i} className={d.card}>
-                <div className={d.cardHead}>
-                  <span className={d.cardNum}>Slide {i + 1}</span>
-                  <div className={d.cardActions}>
-                    <button type="button" onClick={() => move(i, -1)} disabled={i === 0} title="Move up">
-                      ↑
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => move(i, 1)}
-                      disabled={i === slides.length - 1}
-                      title="Move down"
-                    >
-                      ↓
-                    </button>
-                    <button type="button" onClick={() => removeSlide(i)} title="Delete slide">
-                      ✕
-                    </button>
-                  </div>
-                </div>
-                <label className={d.field}>
-                  <span>Visual</span>
-                  <textarea
-                    value={sl.visual}
-                    onChange={(e) => setField(i, 'visual', e.target.value)}
-                    onBlur={flush}
-                    placeholder="e.g. Three pillars side by side"
-                    rows={2}
-                  />
-                </label>
-                <label className={d.field}>
-                  <span>Text on screen</span>
-                  <textarea
-                    value={sl.text}
-                    onChange={(e) => setField(i, 'text', e.target.value)}
-                    onBlur={flush}
-                    placeholder="e.g. THREE POST-AI HUMAN CLASSES (leave empty for a purely visual slide)"
-                    rows={2}
-                  />
-                </label>
-              </article>
-            ))
-          )}
+            <>
+              <label className={d.field}>
+                <span>The concept, over the whole board</span>
+                <textarea
+                  value={scene.concept}
+                  onChange={(e) => patch({ concept: e.target.value })}
+                  onBlur={flush}
+                  placeholder="e.g. Three divergent classes"
+                  rows={1}
+                />
+              </label>
 
-          <button type="button" className={d.addBtn} onClick={addSlide}>
-            + Add a slide
-          </button>
+              {nodes.map((n, i) => (
+                <article key={i} className={d.card}>
+                  <div className={d.cardHead}>
+                    <span className={d.cardNum}>Object {i + 1}</span>
+                    <div className={d.cardActions}>
+                      <button
+                        type="button"
+                        onClick={() => moveNode(i, -1)}
+                        disabled={i === 0}
+                        title="Move left"
+                      >
+                        ↑
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => moveNode(i, 1)}
+                        disabled={i === nodes.length - 1}
+                        title="Move right"
+                      >
+                        ↓
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => removeNode(i)}
+                        disabled={nodes.length < 2}
+                        title="Remove this object"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  </div>
+
+                  <label className={d.field}>
+                    <span>Name</span>
+                    <textarea
+                      value={n.label}
+                      onChange={(e) => patchNode(i, { label: e.target.value })}
+                      onBlur={flush}
+                      placeholder="e.g. AI Addicts"
+                      rows={1}
+                    />
+                  </label>
+
+                  <div className={d.field}>
+                    <span>What it means</span>
+                    <div className={d.swatches}>
+                      {COLOURS.map((c) => (
+                        <button
+                          key={c.id}
+                          type="button"
+                          className={`${d.swatch} ${d[c.id]} ${
+                            n.colour === c.id ? d.swatchOn : ''
+                          }`}
+                          onClick={() => patchNode(i, { colour: c.id })}
+                        >
+                          {c.role}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className={d.field}>
+                    <span>
+                      Facts, revealed one touch at a time ({n.facts.length}/{MAX_FACTS})
+                    </span>
+                    {n.facts.map((f, j) => (
+                      <div key={j} className={d.factRow}>
+                        <input
+                          className={d.factK}
+                          value={f.label}
+                          onChange={(e) => patchFact(i, j, { label: e.target.value })}
+                          onBlur={flush}
+                          placeholder="Risk profile"
+                          aria-label="Fact label"
+                        />
+                        <input
+                          className={d.factV}
+                          value={f.value}
+                          onChange={(e) => patchFact(i, j, { value: e.target.value })}
+                          onBlur={flush}
+                          placeholder="High"
+                          aria-label="Fact value"
+                        />
+                        <button
+                          type="button"
+                          className={d.factX}
+                          onClick={() => removeFact(i, j)}
+                          title="Remove this fact"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    ))}
+                    {n.facts.length < MAX_FACTS ? (
+                      <button type="button" className={d.addBtn} onClick={() => addFact(i)}>
+                        + Add a fact
+                      </button>
+                    ) : null}
+                  </div>
+                </article>
+              ))}
+
+              {nodes.length < MAX_NODES ? (
+                <button type="button" className={d.addBtn} onClick={addNode}>
+                  + Add an object
+                </button>
+              ) : null}
+
+              <label className={d.field}>
+                <span>The closing line. Break it where the punch should land</span>
+                <textarea
+                  value={scene.close ?? ''}
+                  onChange={(e) => patch({ close: e.target.value })}
+                  onBlur={flush}
+                  placeholder={'Build a human\nthen amplify with AI'}
+                  rows={2}
+                />
+              </label>
+            </>
+          )}
 
           <div className={d.aprilBox}>
             <input
               className={d.aprilInput}
               value={direction}
               onChange={(e) => setDirection(e.target.value)}
-              placeholder="Tell April what you want, e.g. open on three pillars, no text"
+              placeholder={
+                scene
+                  ? 'Tell April what to change, e.g. make the third one the payoff'
+                  : 'Tell April what you want on screen'
+              }
               aria-label="Direction for April"
               disabled={busy || !hasScript}
               onKeyDown={(e) => {
                 if (e.key === 'Enter') {
                   e.preventDefault();
-                  void propose();
+                  void ask();
                 }
               }}
             />
             <button
               type="button"
               className={d.aprilBtn}
-              onClick={propose}
+              onClick={ask}
               disabled={busy || !hasScript}
             >
-              {busy ? 'Planning…' : slides.length ? 'Ask April to revise' : 'Ask April to plan'}
+              {busy ? 'Building…' : scene ? 'Ask April to revise' : 'Ask April to build it'}
             </button>
           </div>
+          {!scene ? (
+            <button type="button" className={d.addBtn} onClick={startBlank}>
+              + Start one by hand
+            </button>
+          ) : null}
           {note ? <p className={d.note}>April: {note}</p> : null}
           {error ? <p className={d.error}>{error}</p> : null}
-
-          <div className={d.buildRow}>
-            <button
-              type="button"
-              className={d.buildBtn}
-              onClick={buildDeck}
-              disabled={building || !hasScript || slides.length === 0}
-            >
-              {building
-                ? 'Building the deck…'
-                : built.length
-                  ? '▶ Rebuild the whole deck'
-                  : '▶ Build the deck'}
-            </button>
-            {built.length ? (
-              <span className={d.rebuildWarn}>
-                Rebuilding re-decides every state. To change one, use the deck below.
-              </span>
-            ) : null}
-          </div>
         </section>
       </div>
 
-      {built.length ? (
+      {scene && nodes.length ? (
         <section className={d.deckPanel}>
           <div className={d.colHead}>
-            <h2 className={d.colTitle}>The built deck</h2>
-            {deckUrl ? (
-              <a href={deckUrl} target="_blank" rel="noopener noreferrer" className={d.openLink}>
-                Open the deck ↗
-              </a>
-            ) : null}
+            <h2 className={d.colTitle}>On the touchscreen</h2>
+            <a href={sceneUrl} target="_blank" rel="noopener noreferrer" className={d.openLink}>
+              Open the scene ↗
+            </a>
           </div>
 
           <div className={d.chips}>
-            {built.map((st, i) => (
+            <button
+              type="button"
+              className={`${d.chip} ${sel === -1 ? d.chipOn : ''}`}
+              onClick={() => setSel(-1)}
+            >
+              <span className={d.chipNum}>◻</span>
+              the board
+            </button>
+            {nodes.map((n, i) => (
               <button
                 key={i}
                 type="button"
@@ -462,7 +499,7 @@ export function ScreenPromptScreen({
                 onClick={() => setSel(i)}
               >
                 <span className={d.chipNum}>{i + 1}</span>
-                {st.label || 'state'}
+                {n.label || 'unnamed'}
               </button>
             ))}
           </div>
@@ -471,54 +508,13 @@ export function ScreenPromptScreen({
             <iframe
               key={`${sel}-${previewV}`}
               className={d.preview}
-              src={`/console/deck/${initial.piece_id}?state=${sel}&v=${previewV}`}
-              title={`State ${sel + 1} preview`}
+              src={sel >= 0 ? `${sceneUrl}?node=${sel}&v=${previewV}` : `${sceneUrl}?v=${previewV}`}
+              title={sel >= 0 ? `Object ${sel + 1}` : 'The board'}
             />
-          </div>
-
-          <div className={d.aprilBox}>
-            <input
-              className={d.aprilInput}
-              value={tweak}
-              onChange={(e) => setTweak(e.target.value)}
-              placeholder={`Change state ${sel + 1}, e.g. drop the other pillars' names`}
-              aria-label={`What to change about state ${sel + 1}`}
-              disabled={revising}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  e.preventDefault();
-                  void reviseState();
-                }
-              }}
-            />
-            <button
-              type="button"
-              className={d.aprilBtn}
-              onClick={reviseState}
-              disabled={revising || !tweak.trim()}
-            >
-              {revising ? 'Changing…' : 'Change this state'}
-            </button>
-            <button
-              type="button"
-              className={d.removeBtn}
-              onClick={removeState}
-              disabled={revising || built.length < 2}
-              title="Remove this state from the deck"
-            >
-              Remove
-            </button>
           </div>
           <p className={d.hint}>
-            Only this state changes. The rest of the deck is left exactly as it is.
+            The live page, not a mock-up. Touch it here the way you will on the screen.
           </p>
-          {deckNote ? <p className={d.note}>April: {deckNote}</p> : null}
-          {deckError ? <p className={d.error}>{deckError}</p> : null}
-        </section>
-      ) : deckNote || deckError ? (
-        <section className={d.deckPanel}>
-          {deckNote ? <p className={d.note}>April: {deckNote}</p> : null}
-          {deckError ? <p className={d.error}>{deckError}</p> : null}
         </section>
       ) : null}
     </div>

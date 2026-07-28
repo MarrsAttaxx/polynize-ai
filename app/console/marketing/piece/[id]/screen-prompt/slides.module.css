@@ -352,3 +352,93 @@
   color: var(--text-3);
   line-height: 1.45;
 }
+
+/* Scene editor: colour ROLES, chosen by meaning rather than by looking at a swatch. */
+.swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.swatch {
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  background: transparent;
+  border: 1px solid var(--tac-edge-dark, rgba(255, 255, 255, 0.12));
+  border-radius: 8px;
+  padding: 7px 11px;
+  cursor: pointer;
+  opacity: 0.5;
+  transition:
+    opacity var(--tac-transition),
+    border-color var(--tac-transition);
+}
+.swatch:hover {
+  opacity: 0.85;
+}
+.swatchOn {
+  opacity: 1;
+  border-color: currentColor;
+}
+.coral {
+  color: var(--coral);
+}
+.amber {
+  color: var(--amber);
+}
+.gold {
+  color: var(--gold, #f0e1b6);
+}
+.mint {
+  color: var(--mint);
+}
+
+/* A fact is a label that waits and a value that lands, so the row is edited as a pair. */
+.factRow {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.factK,
+.factV {
+  min-width: 0;
+  font-size: 14px;
+  color: var(--text);
+  background: var(--tac-inset, #0f0f17);
+  border: 1px solid var(--tac-edge-dark, rgba(255, 255, 255, 0.1));
+  border-radius: 8px;
+  padding: 8px 10px;
+}
+.factK {
+  flex: 1 1 58%;
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 13px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.factV {
+  flex: 1 1 42%;
+  font-weight: 600;
+}
+.factK:focus,
+.factV:focus {
+  outline: none;
+  border-color: rgba(105, 252, 203, 0.5);
+}
+.factX {
+  flex: 0 0 auto;
+  background: transparent;
+  border: 1px solid var(--tac-edge-dark, rgba(255, 255, 255, 0.12));
+  border-radius: 7px;
+  color: var(--text-3);
+  width: 28px;
+  height: 28px;
+  cursor: pointer;
+  font-size: 11px;
+  line-height: 1;
+}
+.factX:hover {
+  color: var(--coral);
+  border-color: rgba(255, 122, 107, 0.45);
+}
