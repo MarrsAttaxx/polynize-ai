@@ -63,6 +63,12 @@ export type MarketingPiece = {
    * Shares the script's beat labels. Absent for formats that do not need one.
    */
   treatment?: string;
+  /**
+   * The SLIDES plan as JSON (see lib/marketing/slides.ts): a short list of
+   * `{visual, text}` cards, which is what the operator actually edits. Supersedes the
+   * prose `treatment` brief, which is kept only so older pieces are not orphaned.
+   */
+  slides?: string;
   /** Attached media asset ids from this stream's media library (D2 amended
    *  2026-07-14). References into media-store; resolved to public URLs at publish
    *  time. Optional so existing pieces stay valid (isValidPiece unchanged). */

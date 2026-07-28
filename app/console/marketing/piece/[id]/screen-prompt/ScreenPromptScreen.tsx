@@ -1,58 +1,53 @@
 'use client';
 
 /**
- * The SCREEN PROMPT stage (D29 amended): the PRE-RECORD plan for what the 32in
- * touchscreen does. It prompts twice over, which is where the name comes from: its
- * cues prompt the presenter's gestures during the take, and it is the build brief the
- * animator codes the HTML page from.
+ * The SCREEN PROMPT stage (D29, revised 2026-07-21 after Marrs's first real pass).
  *
- * It starts BLANK and is generated ON DEMAND from the LOCKED SCRIPT plus the
- * operator's direction, because the screen design is a creative decision the operator
- * owns: auto-generating it with the script produced briefs that were generic and only
- * loosely tied to the words. Talk to April on the right ("three pillars, pixelated, no
- * text on the opening, a risk meter in the header"), hit Generate, and the brief is
- * built from the script and that direction. Regenerate refines rather than restarts,
- * since the current brief and the earlier turns are sent along.
+ * It used to render a prose build brief that opened with BUILD BRIEF / DESIGN SYSTEM /
+ * OPERATOR STRIP boilerplate. That existed for an external animator; the console builds
+ * the deck itself now, so the engine already knows all of it and printing it only made
+ * the panel unreadable. "Hide the rest of the system prompt, all I want is slide 1
+ * description, slide 2 description, slide 3 description."
  *
- * Stored on `piece.treatment` (the code identifier keeps its original name so pieces
- * drafted before the rename are not orphaned). Autosave mirrors the Script screen:
- * debounced, flushed on blur and unmount, and serialized so a slow write can never
- * overwrite a newer edit.
+ * So the stage is now two columns:
+ *  - LEFT  the script, split into its sections, for reference: this section needs that
+ *          slide.
+ *  - RIGHT the plan as SLIDE CARDS. Each card is the only two things a human decides:
+ *          what is on screen, and what it says. Add, edit, reorder and delete by hand,
+ *          or ask April to propose the set. Everything technical (classes, colour
+ *          roles, depth, gestures, the figure transitions) stays hidden and is applied
+ *          by the engine when the deck is built.
+ *
+ * Slides persist as JSON on `piece.slides` through the existing /state autosave.
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import type { MarketingPiece } from '@/lib/marketing/piece-store';
+import { parseSlides, serializeSlides, scriptSections, type Slide } from '@/lib/marketing/slides';
 import { StageRail } from '../StageRail';
 import { BackLink } from '@/app/console/marketing/_components/BackLink';
 import s from '../script.module.css';
-import c from '../chat.module.css';
+import d from './slides.module.css';
 
 type SaveState = 'idle' | 'saving' | 'saved' | 'error';
-type Turn = { role: 'user' | 'assistant'; content: string };
-
-const IDEAS = [
-  'Keep the opening purely visual, no text',
-  'Use a recurring risk meter in the header',
-  'Build one object across the whole piece',
-];
 
 export function ScreenPromptScreen({ initial }: { initial: MarketingPiece }) {
-  const [prompt, setPrompt] = useState(initial.treatment ?? '');
+  const [slides, setSlides] = useState<Slide[]>(() => parseSlides(initial.slides));
   const [saveState, setSaveState] = useState<SaveState>('idle');
   const [direction, setDirection] = useState('');
-  const [history, setHistory] = useState<Turn[]>([]);
+  const [note, setNote] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [copied, setCopied] = useState(false);
   const [building, setBuilding] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [deckUrl, setDeckUrl] = useState<string | null>(null);
-  const [deckStates, setDeckStates] = useState<number | null>(null);
 
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const latest = useRef(initial.treatment ?? '');
+  const latest = useRef<Slide[]>(slides);
   const inFlight = useRef(false);
-  const hasScript = Boolean((initial.script ?? '').trim());
+  const script = (initial.script ?? '').trim();
+  const hasScript = Boolean(script);
+  const sections = scriptSections(script);
 
   const stateUrlRef = useRef('');
   const baseUrlRef = useRef('');
@@ -64,6 +59,7 @@ export function ScreenPromptScreen({ initial }: { initial: MarketingPiece }) {
     stateUrlRef.current = base + '/state';
   }, []);
 
+  // Serialized autosave: one PUT in flight, latest content coalesced.
   const save = useCallback(async () => {
     if (inFlight.current) return;
     inFlight.current = true;
@@ -76,7 +72,7 @@ export function ScreenPromptScreen({ initial }: { initial: MarketingPiece }) {
           const res = await fetch(stateUrlRef.current, {
             method: 'PUT',
             headers: { 'content-type': 'application/json' },
-            body: JSON.stringify({ ...initial, treatment: content }),
+            body: JSON.stringify({ ...initial, slides: serializeSlides(content) }),
           });
           ok = res.ok;
         } catch {
@@ -86,7 +82,7 @@ export function ScreenPromptScreen({ initial }: { initial: MarketingPiece }) {
           setSaveState('error');
           break;
         }
-        if (latest.current !== content) continue; // newer edit landed mid-flight
+        if (latest.current !== content) continue;
         setSaveState('saved');
         break;
       }
@@ -95,20 +91,19 @@ export function ScreenPromptScreen({ initial }: { initial: MarketingPiece }) {
     }
   }, [initial]);
 
-  const scheduleSave = useCallback(() => {
-    setSaveState('saving');
-    if (timer.current) clearTimeout(timer.current);
-    timer.current = setTimeout(() => {
-      timer.current = null;
-      void save();
-    }, 1000);
-  }, [save]);
-
-  const onEdit = (next: string) => {
-    setPrompt(next);
-    latest.current = next;
-    scheduleSave();
-  };
+  const commit = useCallback(
+    (next: Slide[]) => {
+      setSlides(next);
+      latest.current = next;
+      setSaveState('saving');
+      if (timer.current) clearTimeout(timer.current);
+      timer.current = setTimeout(() => {
+        timer.current = null;
+        void save();
+      }, 900);
+    },
+    [save]
+  );
 
   const flush = useCallback(() => {
     if (timer.current) {
@@ -117,41 +112,42 @@ export function ScreenPromptScreen({ initial }: { initial: MarketingPiece }) {
       void save();
     }
   }, [save]);
-
   const flushRef = useRef(flush);
   flushRef.current = flush;
   useEffect(() => () => flushRef.current(), []);
 
-  const generate = async () => {
+  const setField = (i: number, field: keyof Slide, value: string) =>
+    commit(slides.map((sl, k) => (k === i ? { ...sl, [field]: value } : sl)));
+  const addSlide = () => commit([...slides, { visual: '', text: '' }]);
+  const removeSlide = (i: number) => commit(slides.filter((_, k) => k !== i));
+  const move = (i: number, dir: -1 | 1) => {
+    const j = i + dir;
+    if (j < 0 || j >= slides.length) return;
+    const next = slides.slice();
+    [next[i], next[j]] = [next[j], next[i]];
+    commit(next);
+  };
+
+  const propose = async () => {
     if (busy || !hasScript) return;
     setBusy(true);
     setError(null);
-    const said = direction.trim();
     try {
-      const res = await fetch(baseUrlRef.current + '/screen-prompt/generate', {
+      const res = await fetch(baseUrlRef.current + '/screen-prompt/slides', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ direction: said, history }),
+        body: JSON.stringify({ direction: direction.trim(), current: slides }),
       });
       const b = (await res.json().catch(() => null)) as
-        | { screenPrompt?: string; note?: string; error?: string }
+        | { slides?: Slide[]; note?: string; error?: string }
         | null;
-      if (!res.ok || !b?.screenPrompt) {
-        setError(b?.error ?? 'Could not generate the screen prompt.');
+      if (!res.ok || !b?.slides?.length) {
+        setError(b?.error ?? 'Could not plan the slides.');
         return;
       }
-      setPrompt(b.screenPrompt);
-      latest.current = b.screenPrompt;
-      // Keep the exchange so a follow-up refines instead of starting over. April's
-      // turn is her short note, not the whole artifact: the artifact goes in the
-      // editor, and a wall of text in the transcript is why she read as silent.
-      setHistory((h) => [
-        ...h,
-        { role: 'user', content: said || '(no direction given)' },
-        { role: 'assistant', content: b.note || 'Rewrote the screen prompt.' },
-      ]);
+      commit(b.slides);
+      setNote(b.note ?? null);
       setDirection('');
-      flush();
     } catch {
       setError('Network error. Try again.');
     } finally {
@@ -159,29 +155,16 @@ export function ScreenPromptScreen({ initial }: { initial: MarketingPiece }) {
     }
   };
 
-  const copy = async () => {
-    try {
-      await navigator.clipboard.writeText(prompt);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1600);
-    } catch {
-      /* clipboard blocked; the textarea is selectable */
-    }
-  };
-
-  // Build the actual touchscreen deck in-house (D29): April composes its states from
-  // the script + this screen prompt + the direction, and it is served at an unlisted
-  // URL the studio machine opens. No external animator handoff.
   const buildDeck = async () => {
     if (building || !hasScript) return;
     setBuilding(true);
     setError(null);
-    const said = direction.trim();
+    flush();
     try {
       const res = await fetch(baseUrlRef.current + '/screen-prompt/deck', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ direction: said }),
+        body: JSON.stringify({ direction: direction.trim() }),
       });
       const b = (await res.json().catch(() => null)) as
         | { url?: string; states?: number; note?: string; error?: string }
@@ -191,16 +174,7 @@ export function ScreenPromptScreen({ initial }: { initial: MarketingPiece }) {
         return;
       }
       setDeckUrl(b.url);
-      setDeckStates(b.states ?? null);
-      setHistory((h) => [
-        ...h,
-        { role: 'user', content: said || 'Build the deck.' },
-        {
-          role: 'assistant',
-          content: b.note || `Built the deck in ${b.states ?? 0} states.`,
-        },
-      ]);
-      setDirection('');
+      setNote(b.note ?? `Built the deck in ${b.states ?? 0} states.`);
     } catch {
       setError('Network error. Try again.');
     } finally {
@@ -235,10 +209,7 @@ export function ScreenPromptScreen({ initial }: { initial: MarketingPiece }) {
           </div>
         </div>
         <div className={s.headRight}>
-          <Link
-            href={`/console/marketing/piece/${initial.piece_id}`}
-            className={s.prompterLink}
-          >
+          <Link href={`/console/marketing/piece/${initial.piece_id}`} className={s.prompterLink}>
             ← Script
           </Link>
           <span
@@ -257,152 +228,127 @@ export function ScreenPromptScreen({ initial }: { initial: MarketingPiece }) {
         </div>
       </header>
 
-      <div className={c.workspace}>
-        <div className={s.editorCol}>
-          <div className={s.toolbar}>
+      <div className={d.cols}>
+        <section className={d.scriptCol}>
+          <h2 className={d.colTitle}>The script</h2>
+          {sections.length === 0 ? (
+            <p className={d.empty}>Write the script first. The slides are planned from it.</p>
+          ) : (
+            sections.map((sec, i) => (
+              <div key={i} className={d.section}>
+                {sec.label ? <span className={d.sectionLabel}>{sec.label}</span> : null}
+                <p className={d.sectionBody}>{sec.body}</p>
+              </div>
+            ))
+          )}
+        </section>
+
+        <section className={d.slideCol}>
+          <div className={d.colHead}>
+            <h2 className={d.colTitle}>Slides</h2>
+            <span className={d.count}>
+              {slides.length}/6{slides.length > 6 ? ' (too many)' : ''}
+            </span>
+          </div>
+
+          {slides.length === 0 ? (
+            <p className={d.empty}>
+              No slides yet. Add one, or tell April what you want below and let her
+              propose the set.
+            </p>
+          ) : (
+            slides.map((sl, i) => (
+              <article key={i} className={d.card}>
+                <div className={d.cardHead}>
+                  <span className={d.cardNum}>Slide {i + 1}</span>
+                  <div className={d.cardActions}>
+                    <button type="button" onClick={() => move(i, -1)} disabled={i === 0} title="Move up">
+                      ↑
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => move(i, 1)}
+                      disabled={i === slides.length - 1}
+                      title="Move down"
+                    >
+                      ↓
+                    </button>
+                    <button type="button" onClick={() => removeSlide(i)} title="Delete slide">
+                      ✕
+                    </button>
+                  </div>
+                </div>
+                <label className={d.field}>
+                  <span>Visual</span>
+                  <textarea
+                    value={sl.visual}
+                    onChange={(e) => setField(i, 'visual', e.target.value)}
+                    onBlur={flush}
+                    placeholder="e.g. Three pillars side by side"
+                    rows={2}
+                  />
+                </label>
+                <label className={d.field}>
+                  <span>Text on screen</span>
+                  <textarea
+                    value={sl.text}
+                    onChange={(e) => setField(i, 'text', e.target.value)}
+                    onBlur={flush}
+                    placeholder="e.g. THREE POST-AI HUMAN CLASSES (leave empty for a purely visual slide)"
+                    rows={2}
+                  />
+                </label>
+              </article>
+            ))
+          )}
+
+          <button type="button" className={d.addBtn} onClick={addSlide}>
+            + Add a slide
+          </button>
+
+          <div className={d.aprilBox}>
+            <input
+              className={d.aprilInput}
+              value={direction}
+              onChange={(e) => setDirection(e.target.value)}
+              placeholder="Tell April what you want, e.g. open on three pillars, no text"
+              aria-label="Direction for April"
+              disabled={busy || !hasScript}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  void propose();
+                }
+              }}
+            />
             <button
               type="button"
-              className={s.draftBtn}
-              onClick={generate}
+              className={d.aprilBtn}
+              onClick={propose}
               disabled={busy || !hasScript}
             >
-              {busy
-                ? 'Generating…'
-                : prompt.trim()
-                  ? 'Regenerate from script'
-                  : 'Generate from script'}
+              {busy ? 'Planning…' : slides.length ? 'Ask April to revise' : 'Ask April to plan'}
             </button>
+          </div>
+          {note ? <p className={d.note}>April: {note}</p> : null}
+          {error ? <p className={d.error}>{error}</p> : null}
+
+          <div className={d.buildRow}>
             <button
               type="button"
-              className={s.draftBtn}
+              className={d.buildBtn}
               onClick={buildDeck}
-              disabled={building || !hasScript}
-              title="Build the touchscreen deck and put it on a URL you can open in the studio"
+              disabled={building || !hasScript || slides.length === 0}
             >
               {building ? 'Building the deck…' : '▶ Build the deck'}
             </button>
-            <button
-              type="button"
-              className={s.undoBtn}
-              onClick={copy}
-              disabled={!prompt.trim()}
-            >
-              {copied ? 'Copied ✓' : 'Copy the brief'}
-            </button>
-            {error ? <span className={s.draftError}>{error}</span> : null}
-          </div>
-
-          {deckUrl ? (
-            <div className={s.undoBar}>
-              <span>
-                Deck built{deckStates ? ` (${deckStates} states)` : ''}. Open this on the
-                studio machine and go fullscreen.
-              </span>
-              <a
-                href={deckUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className={s.undoBtn}
-              >
+            {deckUrl ? (
+              <a href={deckUrl} target="_blank" rel="noopener noreferrer" className={d.openLink}>
                 Open deck ↗
               </a>
-            </div>
-          ) : null}
-
-          <textarea
-            className={s.script}
-            value={prompt}
-            spellCheck={false}
-            disabled={busy}
-            onChange={(e) => onEdit(e.target.value)}
-            onBlur={flush}
-            placeholder={
-              hasScript
-                ? 'Empty until you generate it.\n\nTell April on the right what you want the screen to do, then hit Generate from script. You get a build brief for the animator (design system, safe area, and one state per beat with composition, type, colour, material, motion, gesture and your operator cue) which you can then edit here.'
-                : 'Write the script first. The screen prompt is built from it, beat by beat.'
-            }
-            aria-label="Screen prompt"
-          />
-          <p className={s.hint}>
-            The build brief your animator codes the touchscreen page from, and the
-            gesture cues that prompt you through the take. It has to exist before you
-            record, because you touch the screen live on camera. Edits autosave.
-          </p>
-        </div>
-
-        <aside className={c.panel} aria-label="Screen direction">
-          <div className={c.head}>
-            <span className={c.eyebrow}>screen direction</span>
-            <p className={c.blurb}>
-              Describe what you want on screen, in your own words. April builds the
-              brief from your direction plus the script. Regenerating keeps the
-              conversation, so you can refine it a step at a time.
-            </p>
-          </div>
-
-          <div className={c.transcript}>
-            {history.length === 0 ? (
-              <div className={c.empty}>
-                <p>
-                  For example: three pillars, pixelated, no text at the open. Tap one
-                  and it sharpens and moves to centre. A risk meter in the header.
-                </p>
-                <div className={c.quick}>
-                  {IDEAS.map((q) => (
-                    <button
-                      key={q}
-                      type="button"
-                      className={c.chip}
-                      disabled={busy}
-                      onClick={() => setDirection((d) => (d ? `${d}. ${q}` : q))}
-                    >
-                      {q}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            ) : (
-              history.map((h, i) => (
-                <div
-                  key={i}
-                  className={`${c.msg} ${h.role === 'user' ? c.user : c.assistant}`}
-                >
-                  {h.content}
-                </div>
-              ))
-            )}
-            {busy ? (
-              <div className={`${c.msg} ${c.assistant} ${c.thinking}`}>
-                Designing the screen…
-              </div>
             ) : null}
           </div>
-
-          <form
-            className={c.composer}
-            onSubmit={(e) => {
-              e.preventDefault();
-              void generate();
-            }}
-          >
-            <input
-              className={c.input}
-              value={direction}
-              onChange={(e) => setDirection(e.target.value)}
-              placeholder="what should the screen do?"
-              aria-label="Screen direction"
-              disabled={busy || !hasScript}
-            />
-            <button
-              className={c.send}
-              type="submit"
-              disabled={busy || !hasScript}
-              title={hasScript ? undefined : 'Write the script first'}
-            >
-              {prompt.trim() ? 'Redo' : 'Build'}
-            </button>
-          </form>
-        </aside>
+        </section>
       </div>
     </div>
   );

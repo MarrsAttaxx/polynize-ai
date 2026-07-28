@@ -15,6 +15,7 @@ import { DECK_VOCABULARY } from './deck';
 import { getBrandVoiceForStream } from './brand-voice-store';
 import { formatById } from './output-plan';
 import { conceptBodyForPiece, DraftError } from './draft';
+import { parseSlides } from './slides';
 import { complete } from '@/lib/llm';
 import { stripEmDashes } from '@/lib/em-dash';
 
@@ -80,6 +81,22 @@ export async function generateDeck(
   const brandVoice = await getBrandVoiceForStream(piece.stream);
   const conceptBody = await conceptBodyForPiece(owner, piece);
 
+  // The operator's SLIDE CARDS are the authority when they exist: they are what was
+  // reviewed and approved on the Screen Prompt stage, so the deck realises them rather
+  // than re-deciding the plan. Older pieces fall back to the prose brief.
+  const slides = parseSlides(piece.slides);
+  const slideLines = slides
+    .map(
+      (sl, i) =>
+        `SLIDE ${i + 1}\n  ON SCREEN: ${sl.visual}\n  WORDS: ${sl.text || '(none, purely visual)'}`
+    )
+    .join('\n');
+  const slidePlan = slides.length
+    ? `THE APPROVED SLIDES (build EXACTLY these, one state each, in order; do not add, drop or reorder any):\n"""\n${slideLines}\n"""`
+    : piece.treatment?.trim()
+      ? `THE AGREED SCREEN PROMPT (the plan for the screen; follow it):\n"""\n${piece.treatment}\n"""`
+      : '';
+
   const parts = [
     conceptBody.trim()
       ? `CONCEPT (the source of every fact and figure):\n"""\n${conceptBody}\n"""`
@@ -88,9 +105,7 @@ export async function generateDeck(
     brandVoice
       ? `BRAND VOICE (the tone the words on screen carry):\n"""\n${brandVoice}\n"""`
       : '',
-    piece.treatment?.trim()
-      ? `THE AGREED SCREEN PROMPT (the plan for the screen; follow it):\n"""\n${piece.treatment}\n"""`
-      : '',
+    slidePlan,
     direction.trim()
       ? `THE OPERATOR'S DIRECTION (their creative intent; follow it):\n"""\n${direction.trim()}\n"""`
       : '',
