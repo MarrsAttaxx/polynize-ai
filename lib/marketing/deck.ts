@@ -401,9 +401,14 @@ const ENGINE_JS = `
       || [].slice.call(st.children).filter(function(c){ return !/\bcorner\b/.test(c.className); })[0]);
     if(!inner) return;
     inner.style.transform='none';
-    var cs=getComputedStyle(stage);
-    var availH=stage.clientHeight-parseFloat(cs.paddingTop)-parseFloat(cs.paddingBottom);
-    var availW=stage.clientWidth-parseFloat(cs.paddingLeft)-parseFloat(cs.paddingRight);
+    /* Measure against the SCREEN, not the layout padding. The padding is a design
+       preference the composition may encroach on; shrinking type is a last resort for
+       content that would genuinely leave the display. Measuring the padded box instead
+       scaled a hero state to 92% purely to protect a margin, which costs presence on
+       camera for nothing. A small guard keeps content off the literal bezel. */
+    var guardH=stage.clientHeight*0.02, guardW=stage.clientWidth*0.02;
+    var availH=stage.clientHeight-guardH*2;
+    var availW=stage.clientWidth-guardW*2;
     var h=inner.scrollHeight, w=inner.scrollWidth;
     if(!h||!w) return;
     var k=Math.min(1, availH/h, availW/w);
