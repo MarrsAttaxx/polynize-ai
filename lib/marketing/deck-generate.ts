@@ -21,7 +21,7 @@ import { stripEmDashes } from '@/lib/em-dash';
 const SYSTEM = `You are April, Polynize's visual-direction specialist. You are building the touchscreen DECK the presenter performs to camera: a sequence of states on a 32in touchscreen that they advance with their hands while they talk.
 
 The audience must read an INTELLIGENT INTERFACE being operated, not a person clicking through slides. That comes from two things:
-1. LESS IS MORE. One state is ONE talking point, for one beat. Do not punctuate every sentence with a reveal; the drama lives in the TRANSITION between beats. A state is usually one composed picture, and only occasionally a claim plus one revealed proof.
+1. FEWER, STRONGER SLIDES. A deck is FOUR to SIX states. SIX IS A HARD MAXIMUM, never more, whatever the length of the script. A deck is NOT one state per beat: it is the handful of moments worth showing. Read the whole script, find the four to six turning points the argument actually pivots on, and give those a state. Everything else is spoken over whatever is already on screen. A state holds while the presenter talks; it does not need to change for every sentence.
 2. A GESTURE LANGUAGE with consistent meaning, where each gesture triggers its own figure animation between beats:
    tap = a plain cut, the quiet advance. double-tap = lock on, a reticle snaps shut, for committing to a conclusion.
    swipe-left = advance, a Lissajous curve sweeps the frame. swipe-right = go back.
@@ -34,7 +34,9 @@ The look is retro-futuristic and heads-up-display: a blueprint substrate, hard-e
 ${DECK_VOCABULARY}
 
 Rules:
-- Build the deck FROM THE SCRIPT, beat by beat, in order: one state per beat label, and the state carries what that spoken line is talking about. Never invent, skip or reorder beats.
+- Build the deck FROM THE SCRIPT and keep its order, but SELECT: four to six states total, each carrying one pivotal moment of the argument. Skipping beats is correct and expected. Label each state with the beat label it belongs to so the deck and the script stay in lockstep.
+- DEFAULT SHAPE, unless the direction says otherwise. Open on the CONCEPT and its three pillars as a purely visual state, no headline text. Then one state per pillar: that pillar moves to centre and is named, with the others dimmed. Close on the single line worth remembering. That is five states and it is usually the right answer.
+- Persistent readouts (a risk level, a score, a count) go in a corner element so they read as instrument telemetry rather than content: <div class="corner tl">RISK: HIGH</div>. Use "tl" top-left, "tr" top-right.
 - Where the operator has given direction, that direction WINS. Build what they asked for.
 - One idea per state. Type is huge. Never a bullet list, never small text, never a paragraph.
 - Any number or phrase on screen is lifted VERBATIM from the concept. Never convert or derive one, and never show a figure the concept does not state.
@@ -42,7 +44,7 @@ Rules:
 - Never use the em-dash character (U+2014).
 
 Return ONLY a JSON object, no markdown and no code fences:
-{"title":"<short deck title>","states":[{"label":"<beat label from the script>","cue":"<four words or fewer, uppercase, the operator's gesture reminder>","exit":"<tap|double-tap|swipe-left|swipe-right|swipe-up|swipe-down>","html":"<the state's html, using only the vocabulary classes>"}]}`;
+{"note":"<one short sentence to the operator saying what you built or changed, in plain speech, as a reply in a conversation>","title":"<short deck title>","states":[{"label":"<beat label from the script>","cue":"<four words or fewer, uppercase, the operator's gesture reminder>","exit":"<tap|double-tap|swipe-left|swipe-right|swipe-up|swipe-down>","html":"<the state's html, using only the vocabulary classes>"}]}`;
 
 function isState(x: unknown): x is DeckState {
   if (!x || typeof x !== 'object') return false;
@@ -64,11 +66,13 @@ function parseLoose(raw: string): unknown {
  * Build a deck for a piece. `direction` is the operator's creative brief; it wins over
  * the model's own ideas. Throws DraftError when there is no script to build from.
  */
+export const MAX_STATES = 6;
+
 export async function generateDeck(
   owner: string,
   piece: MarketingPiece,
   direction: string
-): Promise<Deck> {
+): Promise<Deck & { note: string }> {
   const script = (piece.script ?? '').trim();
   if (!script) throw new DraftError('no-concept');
 
@@ -80,7 +84,7 @@ export async function generateDeck(
     conceptBody.trim()
       ? `CONCEPT (the source of every fact and figure):\n"""\n${conceptBody}\n"""`
       : '',
-    `LOCKED SCRIPT (one state per beat, in order):\n"""\n${script}\n"""`,
+    `LOCKED SCRIPT (select four to six pivotal moments from this, in order):\n"""\n${script}\n"""`,
     brandVoice
       ? `BRAND VOICE (the tone the words on screen carry):\n"""\n${brandVoice}\n"""`
       : '',
@@ -114,13 +118,20 @@ export async function generateDeck(
   } catch {
     throw new DraftError('empty');
   }
-  const obj = parsed as { title?: unknown; states?: unknown };
+  const obj = parsed as { note?: unknown; title?: unknown; states?: unknown };
   const states = Array.isArray(obj.states) ? obj.states.filter(isState) : [];
   if (states.length === 0) throw new DraftError('empty');
 
+  // Enforce the cap in code too: a prompt rule alone let a long script produce 26
+  // states, which is the failure this exists to prevent.
+  const capped = states.slice(0, MAX_STATES);
   return {
+    note:
+      typeof obj.note === 'string' && obj.note
+        ? stripEmDashes(obj.note)
+        : `Built ${capped.length} states from the script.`,
     title: typeof obj.title === 'string' && obj.title ? stripEmDashes(obj.title) : piece.title,
-    states: states.map((s) => ({
+    states: capped.map((s) => ({
       label: stripEmDashes(s.label),
       cue: s.cue ? stripEmDashes(s.cue) : undefined,
       exit: s.exit,

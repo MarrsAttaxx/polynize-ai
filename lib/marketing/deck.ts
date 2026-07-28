@@ -73,6 +73,8 @@ Elements
 - <div class="card">…</div>   raised card            - <div class="well">…</div>   carved into the surface
 - <div class="meter" data-level="high">RISK</div>    risk meter, level low | mid | high
 - <div class="hud">SCAN: COMPLETE</div>             a small monospace telemetry readout
+- <div class="corner tl coral">RISK: HIGH</div>     a persistent readout parked in a corner
+                                                    ("tl" top-left, "tr" top-right)
 
 Modifiers (add to any element)
 - colour: "mint" resolution · "coral" problem · "amber" tension · "gold" proof · "dim" recede
@@ -134,6 +136,14 @@ body{font-family:'Space Grotesk',system-ui,sans-serif;font-weight:700;color:var(
     radial-gradient(ellipse at 50% 48%,transparent 42%,rgba(0,0,0,.72) 100%);
   animation:flicker 5.5s steps(60) infinite}
 @keyframes flicker{0%,100%{opacity:1}47%{opacity:.97}49%{opacity:1}}
+
+/* Corner readouts: a persistent value (risk, score, count) parked in a corner so it
+   reads as instrument telemetry rather than as content competing with the headline. */
+.corner{position:fixed;z-index:8;font-family:var(--mono);font-weight:400;
+  font-size:clamp(13px,1.6vw,24px);letter-spacing:.16em;text-transform:uppercase;
+  padding:.45em .8em;border:1px solid currentColor;border-radius:4px;opacity:.9;
+  animation:arrive .34s cubic-bezier(.2,.9,.2,1) both}
+.corner.tl{top:5vh;left:4vw}.corner.tr{top:5vh;right:4vw}
 
 /* Instrument chrome: the readouts a scope prints in its corners. */
 .chrome{position:fixed;z-index:8;font-family:var(--mono);font-weight:400;font-size:12px;

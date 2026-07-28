@@ -65,13 +65,13 @@ export async function POST(
   }
 
   try {
-    const screenPrompt = await generateScreenPrompt(
+    const { prompt, note } = await generateScreenPrompt(
       owner,
       piece,
       body.direction ?? '',
       body.history ?? []
     );
-    return NextResponse.json({ screenPrompt });
+    return NextResponse.json({ screenPrompt: prompt, note });
   } catch (e) {
     if (e instanceof DraftError) {
       if (e.reason === 'no-concept') {

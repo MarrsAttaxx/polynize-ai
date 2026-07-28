@@ -134,7 +134,7 @@ export function ScreenPromptScreen({ initial }: { initial: MarketingPiece }) {
         body: JSON.stringify({ direction: said, history }),
       });
       const b = (await res.json().catch(() => null)) as
-        | { screenPrompt?: string; error?: string }
+        | { screenPrompt?: string; note?: string; error?: string }
         | null;
       if (!res.ok || !b?.screenPrompt) {
         setError(b?.error ?? 'Could not generate the screen prompt.');
@@ -142,11 +142,13 @@ export function ScreenPromptScreen({ initial }: { initial: MarketingPiece }) {
       }
       setPrompt(b.screenPrompt);
       latest.current = b.screenPrompt;
-      // Keep the exchange so a follow-up refines instead of starting over.
+      // Keep the exchange so a follow-up refines instead of starting over. April's
+      // turn is her short note, not the whole artifact: the artifact goes in the
+      // editor, and a wall of text in the transcript is why she read as silent.
       setHistory((h) => [
         ...h,
         { role: 'user', content: said || '(no direction given)' },
-        { role: 'assistant', content: b.screenPrompt as string },
+        { role: 'assistant', content: b.note || 'Rewrote the screen prompt.' },
       ]);
       setDirection('');
       flush();
@@ -174,14 +176,15 @@ export function ScreenPromptScreen({ initial }: { initial: MarketingPiece }) {
     if (building || !hasScript) return;
     setBuilding(true);
     setError(null);
+    const said = direction.trim();
     try {
       const res = await fetch(baseUrlRef.current + '/screen-prompt/deck', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ direction: direction.trim() }),
+        body: JSON.stringify({ direction: said }),
       });
       const b = (await res.json().catch(() => null)) as
-        | { url?: string; states?: number; error?: string }
+        | { url?: string; states?: number; note?: string; error?: string }
         | null;
       if (!res.ok || !b?.url) {
         setError(b?.error ?? 'Could not build the deck.');
@@ -189,6 +192,15 @@ export function ScreenPromptScreen({ initial }: { initial: MarketingPiece }) {
       }
       setDeckUrl(b.url);
       setDeckStates(b.states ?? null);
+      setHistory((h) => [
+        ...h,
+        { role: 'user', content: said || 'Build the deck.' },
+        {
+          role: 'assistant',
+          content: b.note || `Built the deck in ${b.states ?? 0} states.`,
+        },
+      ]);
+      setDirection('');
     } catch {
       setError('Network error. Try again.');
     } finally {
@@ -350,13 +362,14 @@ export function ScreenPromptScreen({ initial }: { initial: MarketingPiece }) {
                 </div>
               </div>
             ) : (
-              history
-                .filter((h) => h.role === 'user')
-                .map((h, i) => (
-                  <div key={i} className={`${c.msg} ${c.user}`}>
-                    {h.content}
-                  </div>
-                ))
+              history.map((h, i) => (
+                <div
+                  key={i}
+                  className={`${c.msg} ${h.role === 'user' ? c.user : c.assistant}`}
+                >
+                  {h.content}
+                </div>
+              ))
             )}
             {busy ? (
               <div className={`${c.msg} ${c.assistant} ${c.thinking}`}>

@@ -34,7 +34,15 @@ function systemPrompt(opts: {
 
 ${SCREEN_PROMPT_BRIEF}${shape}
 
-Never use the em-dash character (U+2014). Use a comma, a period, or a colon instead.`;
+Never use the em-dash character (U+2014). Use a comma, a period, or a colon instead.
+
+Reply in TWO parts, each introduced by its delimiter alone on its own line:
+
+===NOTE===
+One short sentence to the operator, in plain speech, saying what you built or changed. This is your side of the conversation, so write it as a reply, not a summary.
+
+===SCREEN PROMPT===
+The brief itself.`;
 }
 
 /**
@@ -48,7 +56,7 @@ export async function generateScreenPrompt(
   piece: MarketingPiece,
   direction: string,
   history: ScreenPromptTurn[] = []
-): Promise<string> {
+): Promise<{ prompt: string; note: string }> {
   const script = (piece.script ?? '').trim();
   if (!script) throw new DraftError('no-concept');
 
@@ -94,6 +102,15 @@ export async function generateScreenPrompt(
   const fence = out.match(/^```(?:\w+)?\s*([\s\S]*?)\s*```$/);
   if (fence) out = fence[1].trim();
   out = stripEmDashes(out);
+
+  // Split April's conversational reply from the artifact. If she skips the
+  // delimiters, treat everything as the brief rather than losing it.
+  let note = '';
+  const halves = out.split(/^[=\s]*={2,}\s*SCREEN\s*PROMPT\s*={2,}[=\s]*$/im);
+  if (halves.length > 1) {
+    note = halves[0].replace(/^[=\s]*={2,}\s*NOTE\s*={2,}[=\s]*$/im, '').trim();
+    out = halves.slice(1).join('\n').trim();
+  }
   if (!out) throw new DraftError('empty');
-  return out;
+  return { prompt: out, note: note || 'Rewrote the screen prompt.' };
 }

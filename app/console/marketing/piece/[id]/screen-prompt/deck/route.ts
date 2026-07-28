@@ -54,6 +54,7 @@ export async function POST(
     return NextResponse.json({
       ok: true,
       states: deck.states.length,
+      note: deck.note,
       url: `/console/deck/${id}`,
     });
   } catch (e) {
