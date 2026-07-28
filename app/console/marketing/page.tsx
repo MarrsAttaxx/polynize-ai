@@ -11,7 +11,7 @@ export const dynamic = 'force-dynamic';
 
 /**
  * Marketing engine — the dashboard. A key "Start a concept" action plus one card
- * per stream (owner bucket): Polynize brand, Marrs, Shourov, Patricia, Team. Each
+ * per stream (owner bucket), listed in the order STREAMS declares them. Each
  * card shows its counts and opens that owner's workflow (their concepts + pieces).
  * Concepts and pieces live INSIDE their stream, not in a flat top-level list.
  */

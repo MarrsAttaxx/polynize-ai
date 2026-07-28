@@ -10,17 +10,19 @@ export const STREAMS = [
   { id: 'polynize', label: 'Polynize' },
   { id: 'marrs', label: 'Marrs' },
   { id: 'shourov', label: 'Shourov' },
-  { id: 'patricia', label: 'Patricia' },
-  { id: 'julian', label: 'Julian' },
-  { id: 'dhamiri', label: 'Dhamiri' },
-  { id: 'avik', label: 'Avik' },
   { id: 'kristin', label: 'Kristin' },
+  { id: 'julian', label: 'Julian' },
 ] as const;
 
 /**
  * Stream avatars shown on the dashboard cards (mint-ringed circles). Files live
  * in public/pam/avatars/ and are registered here as they land; streams without
  * an entry render an initial-letter circle instead.
+ *
+ * Patricia, Dhamiri and Avik left the team (Marrs, 2026-07-28) and are gone from
+ * STREAMS above, but their avatars are kept registered on purpose: removing a
+ * stream only HIDES it, it does not delete anything the stream owns, so restoring
+ * one is a single line above rather than a hunt for what else was stripped out.
  */
 export const STREAM_AVATARS: Record<string, string> = {
   polynize: '/pam/avatars/polynize.png',

@@ -15,7 +15,7 @@ PAM (Polynize Agent Management) is the marketing engine: it takes an idea, shape
 > **Concept → Piece → Publish**
 > A core concept feeds many pieces. Each piece is produced for one or more platforms. Finished pieces are prepared into per-channel posts, scheduled on the calendar, and pushed to the socials via Metricool.
 
-**Streams** are brand buckets — who the content is *for*. There are eight: **Polynize, Marrs, Shourov, Patricia, Julian, Dhamiri, Avik, Kristin**. Almost everything (concepts, brand voice, content series, media, pieces) is scoped to a stream.
+**Streams** are brand buckets — who the content is *for*. There are five: **Polynize, Marrs, Shourov, Kristin, Julian**. Almost everything (concepts, brand voice, content series, media, pieces) is scoped to a stream.
 
 ---
 
@@ -155,7 +155,9 @@ Analytics land per stream (the loop-closing intelligence layer, "Donnie", is a *
 ## Appendix
 
 ### The eight streams
-Polynize (the company) · Marrs · Shourov · Patricia · Julian · Dhamiri · Avik · Kristin. (The old "Team" stream was removed.)
+Polynize (the company) · Marrs · Shourov · Kristin · Julian.
+
+Patricia, Dhamiri and Avik were removed on 2026-07-28 when they left the team. Removing a stream only hides it: anything those streams owned still exists in storage and is untouched, it simply no longer appears on the dashboard and its stream pages report "unknown stream". Restoring one is a single line in `lib/marketing/streams.ts`. (The old "Team" stream was removed earlier.)
 
 ### ICP archetypes (used in the Output-plan / content-series ICP field)
 Organisational Architect · High-Stakes Operator · Revenue Accelerator · Talent Champion · Service Ops Leader. *(Not final; firm up as the ICP messaging doc solidifies.)*
