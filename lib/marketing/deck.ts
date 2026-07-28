@@ -77,9 +77,17 @@ Elements
                                                     ("tl" top-left, "tr" top-right)
 
 Modifiers (add to any element)
-- colour: "mint" resolution · "coral" problem · "amber" tension · "gold" proof · "dim" recede
+- colour ROLE: "mint" resolution · "coral" problem · "amber" tension · "gold" proof
+- "dim" recede. This is a STATE, not a colour: keep the element's colour role and add
+  "dim" on top (class="pillar coral dim"), so a receding element still reads as itself.
 - "glow" pulsing emphasis · "grain" dithered texture · "big" / "small" scale
 - "focus" the engine snaps HUD corner brackets around it
+
+EVERY element that carries meaning takes a colour role. A set of pillars or cards is
+coloured by what each one MEANS (the problem coral, the tension amber, the proof gold,
+the resolution mint), and an element keeps that same colour every time it appears, so
+the deck reads as one system. Leaving them uncoloured produces a monochrome deck that
+throws away the fastest signal the format has.
 
 LESS IS MORE. One state is ONE talking point, for one beat of the script. Do not
 punctuate every sentence: the drama belongs in the TRANSITION between beats, not in a
