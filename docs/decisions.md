@@ -460,6 +460,10 @@ The trigger was pure friction. Marrs: *"I'm having trouble with the process of h
 
 **April supplies DATA ONLY** (`SCENE_VOCABULARY`): nodes, colours, lines, facts. No classes, no layout, no markup. The engine owns every pixel and every behaviour. This is what finally makes a generated scene predictable, and it retires a whole class of problems at once: content cannot run off the display, a generated state cannot lay itself out wrongly, and "remove the other pillars' names when one is focused" stops being something to ask for because the engine already does it.
 
+**A NAME IS EARNED, NOT GIVEN** (Marrs, 2026-07-28). The board opens as unnamed shapes. An object's name appears only once the presenter has opened it, and then stays for good, so the board fills in as he works it. Reading all three names before he has said anything gives the argument away; revealing each at the moment he covers it means the audience learns the set from him rather than from the screen. It also gives the board a visible sense of progress, which the operator cue now counts ("2 TO GO").
+
+**The close breaks where it was written to break.** Newlines in `close` are deliberate: it is the one piece of copy whose shape is the point ("Build a human" landing on its own line, "then amplify with AI" underneath), so it is authored, never left to wrapping.
+
 **Content must work in ANY order.** No node may depend on another having been opened first, and no fact may read as "and then". This is a real constraint on the writing, and it is the price of the interface reading as one.
 
 **THE TYPE FLOOR IS ABSOLUTE** (Marrs, 2026-07-28, set by eye against the real cut). The fact VALUES ("HIGH", "DECLINING") are the smallest anything may ever be on this screen, because in a 9:16 split-screen the board occupies half a phone screen. Everything is a deliberate multiple of `--t-floor` so the hierarchy survives at any viewport instead of collapsing into one middling size, and the headline is deliberately exaggerated. The fact LABELS sit AT the floor: their hierarchy against the values comes from weight and colour, never from shrinking them away.

@@ -47,7 +47,7 @@ const DEMO: Scene = {
       ],
     },
   ],
-  close: 'Build the human, then amplify',
+  close: 'Build a human\nthen amplify with AI',
 };
 
 export async function GET() {

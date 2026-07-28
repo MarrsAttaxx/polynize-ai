@@ -62,7 +62,14 @@ export type Scene = {
   concept: string;
   /** Two to four objects. More than four stops reading at a glance. */
   nodes: SceneNode[];
-  /** The line worth remembering, raised over the board with a swipe up. */
+  /**
+   * The line worth remembering, raised over the board by the clincher button.
+   *
+   * NEWLINES ARE DELIBERATE BREAKS. The close is the one piece of copy on the screen
+   * whose shape is the point ("Build a human" landing on its own line, then "then
+   * amplify with AI" underneath), so where it breaks is authored, never left to
+   * wrapping.
+   */
   close?: string;
 };
 
@@ -83,7 +90,9 @@ export const SCENE_VOCABULARY = `A SCENE is not a slide deck and has no slides, 
 
 NEVER put a sentence on a node. Whatever explains it is what the presenter SAYS, and it
 lives in the script. The screen carries only the name and the numbers.
-- CLOSE: the single line worth remembering, raised over the board at the end.
+- CLOSE: the single line worth remembering, raised over the board at the end. Break it
+  across lines yourself with a newline where the punch should land: the first line is the
+  claim and what follows sits under it.
 
 The presenter opens any node by touching it, reveals its facts in any order, closes it
 and opens another. Write the content so it works in ANY order: no node may depend on
@@ -183,10 +192,16 @@ body{font-family:'Space Grotesk',system-ui,sans-serif;font-weight:700;color:var(
 .node.mint {color:var(--mint); background:linear-gradient(180deg,rgba(105,252,203,.22),rgba(105,252,203,.04));border:1px solid rgba(105,252,203,.34)}
 .node.gold {color:var(--gold); background:linear-gradient(180deg,rgba(240,225,182,.22),rgba(240,225,182,.04));border:1px solid rgba(240,225,182,.34)}
 
-/* The name on the object, always cream so it reads against its own tint. */
+/* The name on the object, always cream so it reads against its own tint.
+   HIDDEN UNTIL THE OBJECT HAS BEEN OPENED (Marrs): the board starts as three unnamed
+   shapes and fills in as he works it, so the audience learns each class at the moment he
+   covers it rather than reading all three names before he has said anything. Once opened,
+   the name stays on the board for good. No transition on opacity: a name arrives, it
+   does not fade in, per the standing hard-cut rule. */
 .name{color:var(--cream);font-size:var(--t-name);letter-spacing:.07em;
-  text-transform:uppercase;text-align:center;line-height:1.15;
+  text-transform:uppercase;text-align:center;line-height:1.15;opacity:0;
   text-shadow:0 2px 10px rgba(0,0,0,.7);transition:font-size .5s var(--ease)}
+.node.seen .name{opacity:1}
 
 /* OPEN: this object grows into a panel. The others stay on the board, shrunk and
    quiet, still touchable, so switching between them is one move and the set is never
@@ -238,7 +253,8 @@ body{font-family:'Space Grotesk',system-ui,sans-serif;font-weight:700;color:var(
 #close{position:fixed;inset:0;z-index:7;display:none;align-items:center;justify-content:center;
   padding:8vh 6vw;background:rgba(10,10,15,.86)}
 #close.on{display:flex}
-#close p{color:var(--mint);font-size:min(clamp(30px,7vw,140px),16vh);line-height:.96;
+#close p{display:flex;flex-direction:column;align-items:center;
+  color:var(--mint);font-size:min(clamp(30px,7vw,140px),16vh);line-height:.96;
   letter-spacing:-.02em;text-transform:uppercase;text-align:center;
   animation:arrive .34s var(--ease) both}
 @keyframes arrive{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
@@ -321,7 +337,11 @@ const ENGINE_JS = `
   function setCue(){
     showClinch();
     if(closeEl.classList.contains('on')) cue.textContent='TOUCH ANYWHERE TO GO BACK';
-    else if(open<0) cue.textContent='TOUCH ONE'+(hasClose?'   \\u00b7   GREEN BUTTON TO LAND IT':'');
+    else if(open<0){
+      var unseen=document.querySelectorAll('.node:not(.seen)').length;
+      cue.textContent=(unseen ? 'TOUCH ONE   '+unseen+' TO GO' : 'ALL COVERED')
+        +(hasClose?'   \\u00b7   GREEN BUTTON TO LAND IT':'');
+    }
     else {
       var left=nodes[open].querySelectorAll('.fact:not(.shown)').length;
       cue.textContent = left ? 'TOUCH TO REVEAL   '+left+' LEFT' : 'TOUCH ANOTHER, OR SWIPE DOWN';
@@ -367,6 +387,7 @@ const ENGINE_JS = `
       scene.classList.add('open');
     });
     open=i;
+    nodes[i].classList.add('seen');
     fitSoon(nodes[i]);
     setCue();
   }
@@ -451,6 +472,7 @@ const ENGINE_JS = `
     nodes.forEach(function(n,k){ n.classList.toggle('on', k===q); });
     scene.classList.add('open');
     open=q;
+    nodes[q].classList.add('seen');
     fitSoon(nodes[q]);
   }
   setCue();
@@ -462,6 +484,15 @@ const esc = (s: string) =>
   s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
 const COLOURS: ReadonlySet<string> = new Set(['coral', 'amber', 'mint', 'gold']);
+
+/** One block per authored line, so the close breaks where it was written to break. */
+const closeLines = (close?: string) =>
+  (close ?? '')
+    .split('\n')
+    .map((l) => l.trim())
+    .filter(Boolean)
+    .map((l) => `<span>${esc(l)}</span>`)
+    .join('');
 
 /** Render a scene to one self-contained interactive page. */
 export function renderScene(scene: Scene): string {
@@ -507,7 +538,7 @@ export function renderScene(scene: Scene): string {
 ${nodesHtml}
   </div>
 </div>
-<div id="close" data-has="${scene.close ? '1' : '0'}"><p>${esc(scene.close ?? '')}</p></div>
+<div id="close" data-has="${scene.close ? '1' : '0'}"><p>${closeLines(scene.close)}</p></div>
 <div id="clinch"></div>
 <div id="floor">M</div>
 <div id="ret"></div>
