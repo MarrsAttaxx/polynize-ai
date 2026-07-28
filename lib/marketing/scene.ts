@@ -193,7 +193,7 @@ body{font-family:'Space Grotesk',system-ui,sans-serif;font-weight:700;color:var(
    lost. A receded object drops its name and becomes a shape. */
 #scene.open .node{height:min(26vh,19vw);opacity:.3;filter:saturate(.4)}
 #scene.open .node .name{font-size:min(clamp(9px,1vw,14px),1.6vh);opacity:0}
-#scene.open .node.on{height:min(80vh,58vw);aspect-ratio:1.32;opacity:1;filter:none;
+#scene.open .node.on{height:min(80vh,58vw);aspect-ratio:1.5;opacity:1;filter:none;
   justify-content:flex-start;padding:3% 3.5%}
 /* Shut, the name is the only thing on the object and sits at its foot. Open, it is the
    panel's title, so it moves to the top: same element, reordered, never a second copy. */
@@ -219,9 +219,14 @@ body{font-family:'Space Grotesk',system-ui,sans-serif;font-weight:700;color:var(
   border-top:1px solid rgba(244,236,228,.14);padding-top:1.5vh}
 /* The label and the value are both fully legible; the hierarchy between them comes
    from weight, colour and size, not from shrinking the label to nothing. */
-.fact .k{font-family:var(--mono);font-weight:400;color:var(--cream);opacity:.72;
-  font-size:var(--t-fact);letter-spacing:.1em;text-transform:uppercase}
-.fact .v{color:currentColor;font-size:var(--t-value);
+/* The label takes the room that is left, the value keeps exactly what it needs. Left to
+   themselves both sides shrink in proportion, so a long value ("DECLINING") squeezed a
+   short label into wrapping while the row still had space to give. */
+.fact .k{flex:1 1 auto;min-width:0;
+  font-family:var(--mono);font-weight:400;color:var(--cream);opacity:.72;
+  font-size:var(--t-fact);letter-spacing:.05em;text-transform:uppercase}
+.fact .v{flex:0 1 auto;white-space:nowrap;
+  color:currentColor;font-size:var(--t-value);
   text-transform:uppercase;letter-spacing:-.01em;text-align:right;
   clip-path:inset(0 100% 0 0)}
 .fact.shown .v{clip-path:inset(0 0 0 0);transition:clip-path .26s steps(9)}
