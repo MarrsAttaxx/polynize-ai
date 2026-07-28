@@ -158,30 +158,41 @@ body{font-family:'Space Grotesk',system-ui,sans-serif;font-weight:700;color:var(
 #sweep.run{animation:sweep .5s cubic-bezier(.3,.8,.2,1)}
 @keyframes sweep{0%{opacity:1;transform:translateY(-40vh)}100%{opacity:0;transform:translateY(105vh)}}
 
-#stage{position:relative;z-index:3;width:100vw;height:100vh;
+#stage{position:relative;z-index:3;width:100vw;height:100vh;overflow:hidden;
   display:flex;align-items:center;justify-content:center;padding:8vh 5vw}
-.state{display:none;width:100%;align-items:center;justify-content:center}
+.state{display:none;width:100%;max-height:100%;min-height:0;align-items:center;justify-content:center}
 .state.on{display:flex}
+/* The engine scales a state down if its content would overrun the screen, so a
+   generated deck can never spill off the display. */
+.state > *{transform-origin:center center}
 
-.stack{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2.6vh;width:100%}
-.row{display:flex;align-items:center;justify-content:center;gap:3.5vw;width:100%}
+.stack{display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:2.6vh;width:100%;max-height:100%;min-height:0}
+.row{display:flex;align-items:center;justify-content:center;gap:3.5vw;width:100%;
+  max-height:100%;min-height:0;flex:0 1 auto}
 .stack.left,.row.left{align-items:flex-start;justify-content:flex-start;text-align:left}
 .stack.right,.row.right{align-items:flex-end;justify-content:flex-end;text-align:right}
 
-.word{font-size:clamp(48px,10.5vw,180px);line-height:.94;letter-spacing:-.02em;text-transform:uppercase}
-.word.small{font-size:clamp(34px,6.5vw,110px)}.word.big{font-size:clamp(62px,13.5vw,230px)}
+.word{font-size:min(clamp(48px,10.5vw,180px),13vh);line-height:.94;letter-spacing:-.02em;text-transform:uppercase}
+.word.small{font-size:min(clamp(34px,6.5vw,110px),9vh)}
+.word.big{font-size:min(clamp(62px,13.5vw,230px),17vh)}
 .sub{font-size:clamp(17px,2.4vw,38px);letter-spacing:.01em;opacity:.7;font-weight:500}
-.num{font-size:clamp(56px,14vw,240px);line-height:.9;color:var(--gold);letter-spacing:-.03em}
+.num{font-size:min(clamp(56px,14vw,240px),20vh);line-height:.9;color:var(--gold);letter-spacing:-.03em}
 .hud{font-family:var(--mono);font-weight:400;font-size:clamp(11px,1.35vw,20px);
   letter-spacing:.2em;text-transform:uppercase;opacity:.62;
   padding:.5em .9em;border:1px solid rgba(244,236,228,.14);border-radius:4px}
 
-.pillar{flex:1;min-width:0;max-width:29%;aspect-ratio:.54;border-radius:16px;position:relative;overflow:hidden;
+.pillar{flex:0 1 auto;min-width:0;min-height:0;height:min(62vh,46vw);max-width:29%;
+  aspect-ratio:.54;border-radius:16px;position:relative;overflow:hidden;
   background:linear-gradient(180deg,var(--surface),var(--inset));box-shadow:var(--raised);
   display:flex;align-items:flex-end;justify-content:center;padding:3% 2% 6%;
   animation:idle 5s ease-in-out infinite}
 @keyframes idle{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
-.pillar span{font-size:clamp(12px,1.75vw,27px);letter-spacing:.07em;text-transform:uppercase;text-align:center;line-height:1.15}
+/* The label always reads in cream: the pillar's TINT carries the semantic colour, so
+   a coral label on a coral-washed pillar would be near-invisible on camera. */
+.pillar span{color:var(--cream);font-size:clamp(12px,1.75vw,27px);letter-spacing:.07em;
+  text-transform:uppercase;text-align:center;line-height:1.15;
+  text-shadow:0 2px 10px rgba(0,0,0,.7)}
 .card{background:var(--surface);box-shadow:var(--raised);border-radius:18px;padding:4vh 4vw}
 .well{background:var(--inset);border-radius:18px;padding:4vh 4vw;
   box-shadow:0 2px 3px var(--edge-light),0 -1px 2px var(--edge-dark) inset,0 12px 28px rgba(0,0,0,.5) inset}
@@ -275,7 +286,7 @@ const ENGINE_JS = `
 
   function size(){ var d=devicePixelRatio||1; fx.width=innerWidth*d; fx.height=innerHeight*d;
     fx.style.width=innerWidth+'px'; fx.style.height=innerHeight+'px'; ctx.setTransform(d,0,0,d,0,0); }
-  addEventListener('resize',size); size();
+  addEventListener('resize',function(){ size(); fit(); }); size();
 
   /* Lissajous: x=sin(at+d), y=sin(bt). The curve draws itself on, then off. */
   function lissajous(p,W,H,prev){
@@ -376,6 +387,27 @@ const ENGINE_JS = `
   function render(){
     steps(i).forEach(function(e){ e.classList.toggle('shown',(+e.dataset.step||0)<=step); });
     paint();
+    requestAnimationFrame(fit);
+  }
+  // Belt and braces on top of the CSS constraints: measure the laid-out state and
+  // scale it down if it would still overrun. Deck content is generated, so its size
+  // cannot be predicted, and anything spilling off the display ruins a take.
+  function fit(){
+    var st=states[i];
+    // Measure the CONTENT container, never a .corner readout: those are fixed to the
+    // screen edges, so scaling one is meaningless and measuring one hides a real
+    // overflow behind a tiny box.
+    var inner=st && (st.querySelector(':scope > .stack, :scope > .row')
+      || [].slice.call(st.children).filter(function(c){ return !/\bcorner\b/.test(c.className); })[0]);
+    if(!inner) return;
+    inner.style.transform='none';
+    var cs=getComputedStyle(stage);
+    var availH=stage.clientHeight-parseFloat(cs.paddingTop)-parseFloat(cs.paddingBottom);
+    var availW=stage.clientWidth-parseFloat(cs.paddingLeft)-parseFloat(cs.paddingRight);
+    var h=inner.scrollHeight, w=inner.scrollWidth;
+    if(!h||!w) return;
+    var k=Math.min(1, availH/h, availW/w);
+    if(k<0.999) inner.style.transform='scale('+k.toFixed(3)+')';
   }
   function enter(n){
     states[i].className='state'; i=n; step=0;
