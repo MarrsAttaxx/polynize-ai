@@ -108,19 +108,37 @@ body{font-family:'Space Grotesk',system-ui,sans-serif;font-weight:700;color:var(
   -webkit-font-smoothing:antialiased;user-select:none;-webkit-user-select:none;
   -webkit-tap-highlight-color:transparent;overscroll-behavior:none}
 
-/* Blueprint substrate: fine crosshatch on deep ink, heavier grid every 8 cells,
-   breathing slowly so the surface is never dead. */
-body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+/* OSCILLOSCOPE GRATICULE: 10 x 8 divisions with subdivisions, the etched screen of a
+   bench instrument rather than a blueprint. */
+#grat{position:fixed;inset:0;pointer-events:none;z-index:0;
   background-image:
-    linear-gradient(rgba(105,252,203,.04) 1px,transparent 1px),
-    linear-gradient(90deg,rgba(105,252,203,.04) 1px,transparent 1px),
-    linear-gradient(rgba(105,252,203,.075) 1px,transparent 1px),
-    linear-gradient(90deg,rgba(105,252,203,.075) 1px,transparent 1px);
-  background-size:40px 40px,40px 40px,320px 320px,320px 320px;
+    linear-gradient(rgba(105,252,203,.045) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(105,252,203,.045) 1px,transparent 1px),
+    linear-gradient(rgba(105,252,203,.10) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(105,252,203,.10) 1px,transparent 1px);
+  background-size:100% 2.5vh,2vw 100%,100% 12.5vh,10vw 100%;
   animation:breathe 7s ease-in-out infinite}
-@keyframes breathe{0%,100%{opacity:.55}50%{opacity:1}}
-body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:1;
-  background:radial-gradient(ellipse at 50% 45%,transparent 38%,rgba(0,0,0,.6) 100%)}
+@keyframes breathe{0%,100%{opacity:.6}50%{opacity:1}}
+/* The centre axes, brighter and finely ticked, as on a real graticule. */
+#grat::before,#grat::after{content:'';position:absolute;background-repeat:repeat}
+#grat::before{left:0;right:0;top:50%;height:1px;background:rgba(105,252,203,.22);
+  box-shadow:0 0 0 0 transparent;
+  background-image:repeating-linear-gradient(90deg,rgba(105,252,203,.5) 0 1px,transparent 1px 2.5vw)}
+#grat::after{top:0;bottom:0;left:50%;width:1px;background:rgba(105,252,203,.22);
+  background-image:repeating-linear-gradient(rgba(105,252,203,.5) 0 1px,transparent 1px 3.125vh)}
+
+/* CRT glass: scanlines, bloom-friendly vignette, and a faint mains flicker. */
+#crt{position:fixed;inset:0;pointer-events:none;z-index:9;
+  background:
+    repeating-linear-gradient(rgba(0,0,0,.22) 0 1px,transparent 1px 3px),
+    radial-gradient(ellipse at 50% 48%,transparent 42%,rgba(0,0,0,.72) 100%);
+  animation:flicker 5.5s steps(60) infinite}
+@keyframes flicker{0%,100%{opacity:1}47%{opacity:.97}49%{opacity:1}}
+
+/* Instrument chrome: the readouts a scope prints in its corners. */
+.chrome{position:fixed;z-index:8;font-family:var(--mono);font-weight:400;font-size:12px;
+  letter-spacing:.18em;text-transform:uppercase;color:var(--mint);opacity:.16}
+.chrome.tl{top:14px;left:18px}.chrome.tr{top:14px;right:18px}
 
 /* Phosphor scanline sweep: fires on every state change, so the interface reads as
    redrawing itself rather than cutting. */
@@ -250,18 +268,25 @@ const ENGINE_JS = `
   addEventListener('resize',size); size();
 
   /* Lissajous: x=sin(at+d), y=sin(bt). The curve draws itself on, then off. */
-  function lissajous(p,W,H){
-    var cx=W/2, cy=H/2, R=Math.min(W,H)*0.36;
-    var a=3, b=2, d=p*Math.PI*1.4;
-    var draw=p<.5 ? p/.5 : 1, fade=p<.5 ? 1 : 1-(p-.5)/.5;
-    ctx.strokeStyle='rgba(105,252,203,'+(0.85*fade)+')'; ctx.lineWidth=2;
-    ctx.shadowColor='rgba(105,252,203,.9)'; ctx.shadowBlur=18;
-    ctx.beginPath();
-    var N=Math.floor(700*draw);
-    for(var k=0;k<=N;k++){ var t=k/700*Math.PI*2;
-      var x=cx+R*1.35*Math.sin(a*t+d), y=cy+R*Math.sin(b*t);
-      k?ctx.lineTo(x,y):ctx.moveTo(x,y); }
-    ctx.stroke(); ctx.shadowBlur=0;
+  function lissajous(p,W,H,prev){
+    // X-Y mode: the beam sweeps the figure and persistence leaves the tail behind it.
+    var cx=W/2, cy=H/2, R=Math.min(W,H)*0.38;
+    var a=3, b=2, d=p*Math.PI*0.9, TURNS=3;
+    function pt(t){ return [cx+R*1.4*Math.sin(a*t+d), cy+R*Math.sin(b*t)]; }
+    var t0=prev*Math.PI*2*TURNS, t1=p*Math.PI*2*TURNS, seg=Math.max(2,Math.ceil((t1-t0)/0.02));
+    function sweep(width,alpha){
+      ctx.strokeStyle='rgba(105,252,203,'+alpha+')'; ctx.lineWidth=width;
+      ctx.lineCap='round'; ctx.beginPath();
+      for(var k=0;k<=seg;k++){ var q=pt(t0+(t1-t0)*k/seg); k?ctx.lineTo(q[0],q[1]):ctx.moveTo(q[0],q[1]); }
+      ctx.stroke();
+    }
+    sweep(9,0.05); sweep(4,0.14); sweep(1.6,0.95);   // bloom, halo, hot core
+    // The beam spot. Kept small and soft: a big hot head beads along the persistence
+    // trail instead of reading as one moving point of light.
+    var head=pt(t1);
+    var g=ctx.createRadialGradient(head[0],head[1],0,head[0],head[1],9);
+    g.addColorStop(0,'rgba(226,255,246,.7)'); g.addColorStop(1,'rgba(105,252,203,0)');
+    ctx.fillStyle=g; ctx.beginPath(); ctx.arc(head[0],head[1],9,0,Math.PI*2); ctx.fill();
   }
   /* Chladni: nodal lines of a vibrating plate. The pattern reorganises as (n,m) shift,
      which is the "structure becoming visible" motif. */
@@ -302,15 +327,33 @@ const ENGINE_JS = `
   var FIGS={lissajous:lissajous,chladni:chladni,rings:rings,lock:lock};
 
   function play(kind,swapAt,done){
-    var fn=FIGS[kind], dur=fn?620:180, t0=performance.now(), swapped=false;
+    var fn=FIGS[kind], dur=fn?780:180, t0=performance.now(), swapped=false, prev=0;
     fx.style.opacity=1;
+    ctx.clearRect(0,0,innerWidth,innerHeight);
     (function frame(now){
-      var p=Math.min(1,(now-t0)/dur);
-      ctx.clearRect(0,0,innerWidth,innerHeight);
-      if(fn) fn(p,innerWidth,innerHeight);
+      var p=Math.min(1,(now-t0)/dur), W=innerWidth, H=innerHeight;
+      // PHOSPHOR PERSISTENCE: fade the previous frame instead of clearing it, so the
+      // beam leaves a decaying trail. This is what makes it read as a CRT.
+      ctx.globalCompositeOperation='destination-out';
+      ctx.fillStyle='rgba(0,0,0,0.14)'; ctx.fillRect(0,0,W,H);
+      ctx.globalCompositeOperation='lighter';
+      if(fn) fn(p,W,H,prev);
+      ctx.globalCompositeOperation='source-over';
+      prev=p;
       if(!swapped && p>=0.42){ swapped=true; swapAt(); }
       if(p<1) requestAnimationFrame(frame);
-      else { ctx.clearRect(0,0,innerWidth,innerHeight); fx.style.opacity=0; busy=false; done&&done(); }
+      else {
+        // Let the phosphor decay out rather than snapping off.
+        (function decay(){
+          ctx.globalCompositeOperation='destination-out';
+          ctx.fillStyle='rgba(0,0,0,0.16)'; ctx.fillRect(0,0,W,H);
+          ctx.globalCompositeOperation='source-over';
+          fx.style.opacity=String(Math.max(0,+fx.style.opacity-0.06));
+          if(+fx.style.opacity>0.02) requestAnimationFrame(decay);
+          else { ctx.clearRect(0,0,W,H); fx.style.opacity=0; }
+        })();
+        busy=false; done&&done();
+      }
     })(t0);
   }
 
@@ -411,13 +454,17 @@ export function renderDeck(deck: Deck): string {
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
 <style>${ENGINE_CSS}</style>
 </head><body>
+<div id="grat"></div>
 <div id="sweep"></div>
 <canvas id="fx"></canvas>
 <div id="stage">
 ${states}
 </div>
 <div id="reticle"></div>
+<div class="chrome tl">X-Y  1.00 V/DIV</div>
+<div class="chrome tr">TIME  5 MS/DIV</div>
 <div id="cue"></div>
+<div id="crt"></div>
 <script type="application/json" id="meta">${meta}</script>
 <script>${ENGINE_JS}</script>
 </body></html>`;
