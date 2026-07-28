@@ -462,6 +462,12 @@ The trigger was pure friction. Marrs: *"I'm having trouble with the process of h
 
 **Content must work in ANY order.** No node may depend on another having been opened first, and no fact may read as "and then". This is a real constraint on the writing, and it is the price of the interface reading as one.
 
+**THE TYPE FLOOR IS ABSOLUTE** (Marrs, 2026-07-28, set by eye against the real cut). The fact VALUES ("HIGH", "DECLINING") are the smallest anything may ever be on this screen, because in a 9:16 split-screen the board occupies half a phone screen. Everything is a deliberate multiple of `--t-floor` so the hierarchy survives at any viewport instead of collapsing into one middling size, and the headline is deliberately exaggerated. The fact LABELS sit AT the floor: their hierarchy against the values comes from weight and colour, never from shrinking them away.
+
+**The consequence of a hard floor is that a long line cannot be scaled to fit**, and a five-line sentence pushed the facts off the bottom of the panel. The engine therefore spends the LINE's own headroom: a node's line is the only variable-length element, it sits well above the floor, so it shrinks toward the floor until the facts fit and stops there. Fixed-size elements are never touched and nothing ever goes below the floor. If a line is so long that it hits the floor and still does not fit, the copy is wrong, not the layout.
+
+**The clincher is a real control, not a swipe** (Marrs, 2026-07-28). A swipe is invisible: it gave the last move of the piece no affordance on screen and nothing for the presenter's hand to go to on camera. So there is a glowing mint button parked bottom right, present through the whole piece, that lands the closing line. It is UNLABELLED on purpose, so it cannot spoil the line it is about to deliver, and it hides while an object is open, because then the hand belongs on the object.
+
 **Consequence if violated:** reintroducing an index, a next gesture, or per-state generated HTML brings back the slide deck and with it the thing Marrs saw on camera. Rebuilding objects instead of moving them loses the continuity that is the entire point, however good the transition looks in isolation. Letting April emit markup again puts layout failures and off-screen content back into a generated artifact that nobody reviews until the shoot.
 
 ---

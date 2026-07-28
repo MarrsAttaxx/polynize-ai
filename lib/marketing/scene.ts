@@ -87,6 +87,19 @@ const ENGINE_CSS = `
   --edge-light:rgba(255,255,255,.07);--edge-dark:rgba(0,0,0,.55);
   --mono:ui-monospace,'SF Mono',Menlo,monospace;
   --ease:cubic-bezier(.22,.9,.24,1);
+
+  /* THE TYPE SCALE. Marrs set the floor by eye against the real cut: the fact VALUES
+     ("HIGH", "DECLINING") are the smallest anything may ever be on this screen, because
+     in a 9:16 split-screen the board occupies half a phone screen. Nothing below
+     --t-floor, ever. Everything else is a deliberate multiple of it, so the hierarchy
+     survives at any viewport instead of collapsing into one middling size. */
+  --t-floor:   min(clamp(15px,2.5vw,42px),4.6vh);
+  --t-fact:    var(--t-floor);                      /* the waiting label: at the floor */
+  --t-value:   min(clamp(20px,3.5vw,58px),6.5vh);   /* the payoff, bigger than its label */
+  --t-name:    min(clamp(19px,3.1vw,52px),5.8vh);   /* an object's name on the board */
+  --t-title:   min(clamp(23px,3.9vw,66px),7.2vh);   /* the open panel's title */
+  --t-line:    min(clamp(25px,4.3vw,74px),8vh);     /* the open panel's sentence */
+  --t-concept: min(clamp(40px,8.2vw,150px),13.5vh); /* the board headline, exaggerated */
 }
 html,body{height:100%;overflow:hidden;background:var(--ink);cursor:none;touch-action:none}
 body{font-family:'Space Grotesk',system-ui,sans-serif;font-weight:700;color:var(--cream);
@@ -133,10 +146,11 @@ body{font-family:'Space Grotesk',system-ui,sans-serif;font-weight:700;color:var(
 
 /* THE CONCEPT: the board's headline. It recedes rather than disappearing when a node
    opens, because the board is still there behind the thing you opened. */
-#concept{font-size:min(clamp(34px,7vw,120px),11vh);line-height:.94;letter-spacing:-.02em;
+#concept{font-size:var(--t-concept);line-height:.94;letter-spacing:-.02em;
   text-transform:uppercase;text-align:center;flex:0 0 auto;
   transition:font-size .5s var(--ease),opacity .5s var(--ease)}
-#scene.open #concept{font-size:min(clamp(15px,2.2vw,30px),3.4vh);opacity:.45}
+/* Receded, but never below the floor: it is still on camera. */
+#scene.open #concept{font-size:var(--t-floor);opacity:.5}
 
 /* THE OBJECTS. One row, always the same elements, never rebuilt. */
 #nodes{flex:1 1 auto;min-height:0;width:100%;display:flex;align-items:center;
@@ -160,7 +174,7 @@ body{font-family:'Space Grotesk',system-ui,sans-serif;font-weight:700;color:var(
 .node.gold {color:var(--gold); background:linear-gradient(180deg,rgba(240,225,182,.22),rgba(240,225,182,.04));border:1px solid rgba(240,225,182,.34)}
 
 /* The name on the object, always cream so it reads against its own tint. */
-.name{color:var(--cream);font-size:min(clamp(13px,1.9vw,30px),3.4vh);letter-spacing:.07em;
+.name{color:var(--cream);font-size:var(--t-name);letter-spacing:.07em;
   text-transform:uppercase;text-align:center;line-height:1.15;
   text-shadow:0 2px 10px rgba(0,0,0,.7);transition:font-size .5s var(--ease)}
 
@@ -169,11 +183,11 @@ body{font-family:'Space Grotesk',system-ui,sans-serif;font-weight:700;color:var(
    lost. A receded object drops its name and becomes a shape. */
 #scene.open .node{height:min(26vh,19vw);opacity:.3;filter:saturate(.4)}
 #scene.open .node .name{font-size:min(clamp(9px,1vw,14px),1.6vh);opacity:0}
-#scene.open .node.on{height:min(72vh,54vw);aspect-ratio:1.24;opacity:1;filter:none;
-  justify-content:flex-start;padding:3.5% 4%}
+#scene.open .node.on{height:min(80vh,58vw);aspect-ratio:1.32;opacity:1;filter:none;
+  justify-content:flex-start;padding:3% 3.5%}
 /* Shut, the name is the only thing on the object and sits at its foot. Open, it is the
    panel's title, so it moves to the top: same element, reordered, never a second copy. */
-#scene.open .node.on .name{font-size:min(clamp(16px,2.6vw,40px),4.6vh);opacity:1;
+#scene.open .node.on .name{font-size:var(--t-title);opacity:1;
   align-self:flex-start;text-align:left;order:-1;color:currentColor;
   letter-spacing:.1em;text-shadow:none}
 
@@ -188,7 +202,7 @@ body{font-family:'Space Grotesk',system-ui,sans-serif;font-weight:700;color:var(
 .body{display:none;flex:1 1 auto;min-height:0;width:100%;
   flex-direction:column;justify-content:center;gap:2.2vh;padding:1vh 1% 0}
 #scene.open .node.on .body{display:flex}
-.line{color:var(--cream);font-size:min(clamp(18px,3.2vw,54px),6.2vh);line-height:1.08;
+.line{color:var(--cream);font-size:var(--t-line);line-height:1.08;
   letter-spacing:-.01em;text-align:left}
 
 /* FACTS. A label sits there waiting; the value arrives on touch as a hard wipe, never
@@ -196,9 +210,11 @@ body{font-family:'Space Grotesk',system-ui,sans-serif;font-weight:700;color:var(
 .facts{display:flex;flex-direction:column;gap:1.1vh;width:100%}
 .fact{display:flex;align-items:baseline;justify-content:space-between;gap:2vw;
   border-top:1px solid rgba(244,236,228,.14);padding-top:1vh}
-.fact .k{font-family:var(--mono);font-weight:400;color:var(--cream);opacity:.62;
-  font-size:min(clamp(10px,1.35vw,20px),2.3vh);letter-spacing:.14em;text-transform:uppercase}
-.fact .v{color:currentColor;font-size:min(clamp(15px,2.5vw,42px),4.6vh);
+/* The label and the value are both fully legible; the hierarchy between them comes
+   from weight, colour and size, not from shrinking the label to nothing. */
+.fact .k{font-family:var(--mono);font-weight:400;color:var(--cream);opacity:.72;
+  font-size:var(--t-fact);letter-spacing:.1em;text-transform:uppercase}
+.fact .v{color:currentColor;font-size:var(--t-value);
   text-transform:uppercase;letter-spacing:-.01em;text-align:right;
   clip-path:inset(0 100% 0 0)}
 .fact.shown .v{clip-path:inset(0 0 0 0);transition:clip-path .26s steps(9)}
@@ -215,6 +231,24 @@ body{font-family:'Space Grotesk',system-ui,sans-serif;font-weight:700;color:var(
   animation:arrive .34s var(--ease) both}
 @keyframes arrive{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
 
+/* THE CLINCHER. A swipe is invisible, so the last move of the piece had no affordance
+   on screen and nothing for the presenter's hand to go to on camera. This is a real
+   glowing control parked bottom right: it sits there through the whole piece, and
+   pressing it lands the closing line. Unlabelled on purpose, so it cannot spoil the
+   line it is about to deliver. */
+#clinch{position:fixed;right:3.4vw;bottom:4.5vh;z-index:8;
+  width:min(11vh,9vw);height:min(11vh,9vw);border-radius:50%;
+  border:2px solid var(--mint);color:var(--mint);background:rgba(105,252,203,.09);
+  display:none;align-items:center;justify-content:center;cursor:none;
+  animation:pulse 2.4s ease-in-out infinite}
+/* Only on the board: while an object is open, the hand belongs on the object. */
+#clinch.on{display:flex}
+#clinch::after{content:'';width:26%;height:26%;border-top:3px solid currentColor;
+  border-right:3px solid currentColor;transform:rotate(-45deg) translate(-8%,8%)}
+@keyframes pulse{
+  0%,100%{box-shadow:0 0 0 0 rgba(105,252,203,.42),0 0 26px rgba(105,252,203,.28)}
+  50%{box-shadow:0 0 0 14px rgba(105,252,203,0),0 0 40px rgba(105,252,203,.5)}}
+
 /* Targeting reticle: the interface answering the hand. */
 #ret{position:fixed;width:54px;height:54px;margin:-27px 0 0 -27px;z-index:8;
   pointer-events:none;opacity:0;border:1px solid var(--mint);border-radius:50%}
@@ -225,6 +259,9 @@ body{font-family:'Space Grotesk',system-ui,sans-serif;font-weight:700;color:var(
 #cue{position:fixed;left:0;right:0;bottom:1.4vh;z-index:8;text-align:center;
   font-family:var(--mono);font-weight:400;font-size:14px;letter-spacing:.22em;
   text-transform:uppercase;color:var(--cream);opacity:.07;pointer-events:none}
+
+/* Resolves --t-floor to pixels so the fit routine knows where it must stop. */
+#floor{position:fixed;visibility:hidden;pointer-events:none;font-size:var(--t-floor)}
 
 /* Boot: the instrument comes up rather than just existing. */
 #scene.boot{animation:boot .5s var(--ease) both}
@@ -238,8 +275,15 @@ const ENGINE_JS = `
       closeEl=document.getElementById('close'),
       cue=document.getElementById('cue'),
       ret=document.getElementById('ret'),
-      sweep=document.getElementById('sweep');
+      sweep=document.getElementById('sweep'),
+      clinch=document.getElementById('clinch');
   var open=-1;
+  var hasClose=closeEl.dataset.has==='1';
+
+  /* The clincher waits on the board and gets out of the way while an object is open. */
+  function showClinch(){
+    clinch.classList.toggle('on', hasClose && open<0 && !closeEl.classList.contains('on'));
+  }
 
   /* FLIP. This is the whole trick, and the reason a scene reads as an interface: the
      objects are never rebuilt, so when the layout changes we measure where each one
@@ -263,12 +307,45 @@ const ENGINE_JS = `
   }
 
   function setCue(){
-    if(closeEl.classList.contains('on')) cue.textContent='SWIPE DOWN TO GO BACK';
-    else if(open<0) cue.textContent='TOUCH ONE'+(closeEl.dataset.has==='1'?'   \\u00b7   SWIPE UP TO CLOSE':'');
+    showClinch();
+    if(closeEl.classList.contains('on')) cue.textContent='TOUCH ANYWHERE TO GO BACK';
+    else if(open<0) cue.textContent='TOUCH ONE'+(hasClose?'   \\u00b7   GREEN BUTTON TO LAND IT':'');
     else {
       var left=nodes[open].querySelectorAll('.fact:not(.shown)').length;
       cue.textContent = left ? 'TOUCH TO REVEAL   '+left+' LEFT' : 'TOUCH ANOTHER, OR SWIPE DOWN';
     }
+  }
+
+  /* A node's line is the only variable-length thing on the panel: a long sentence wraps
+     to five lines and pushes the facts off the bottom. Marrs set an absolute type floor
+     (the fact VALUES are the smallest anything may ever be), so the panel cannot simply
+     be scaled down. What it CAN do is spend the line's own headroom: the line sits well
+     above the floor, so it shrinks toward it until the facts fit, and stops there.
+     Fixed-size elements are never touched, and nothing ever goes below the floor. */
+  var floorEl=document.getElementById('floor');
+  function fitPanel(n){
+    var line=n.querySelector('.line');
+    if(!line) return;
+    line.style.fontSize='';
+    var facts=n.querySelectorAll('.fact');
+    var last=facts.length ? facts[facts.length-1] : line;
+    var limit=n.getBoundingClientRect().bottom-parseFloat(getComputedStyle(n).paddingBottom);
+    var floorPx=parseFloat(getComputedStyle(floorEl).fontSize)||14;
+    var size=parseFloat(getComputedStyle(line).fontSize);
+    var guard=0;
+    while(last.getBoundingClientRect().bottom>limit && size>floorPx+0.5 && guard++<24){
+      size=Math.max(floorPx, size*0.94);
+      line.style.fontSize=size+'px';
+    }
+  }
+  /* Measured after the panel has finished growing, or the limit would be the box it is
+     animating FROM. The timeout covers the instant path, where nothing transitions. */
+  function fitSoon(n){
+    setTimeout(function(){ fitPanel(n); },0);
+    n.addEventListener('transitionend',function h(e){
+      if(e.propertyName!=='height') return;
+      n.removeEventListener('transitionend',h); fitPanel(n);
+    });
   }
 
   function openNode(i){
@@ -278,6 +355,7 @@ const ENGINE_JS = `
       scene.classList.add('open');
     });
     open=i;
+    fitSoon(nodes[i]);
     setCue();
   }
   function shut(){
@@ -297,6 +375,8 @@ const ENGINE_JS = `
     ret.classList.remove('hit'); void ret.offsetWidth; ret.classList.add('hit');
 
     if(closeEl.classList.contains('on')){ closeEl.classList.remove('on'); setCue(); return; }
+
+    if(target.closest && target.closest('#clinch')){ closeEl.classList.add('on'); setCue(); return; }
 
     var fact=target.closest ? target.closest('.fact') : null;
     if(fact && fact.closest('.node.on')){ fact.classList.add('shown'); setCue(); return; }
@@ -318,7 +398,7 @@ const ENGINE_JS = `
     var dx=x-sx, dy=y-sy, dt=Date.now()-st;
     if(Math.max(Math.abs(dx),Math.abs(dy))>60 && dt<800){
       if(dy<0 && Math.abs(dy)>Math.abs(dx)){
-        if(open<0 && closeEl.dataset.has==='1'){ closeEl.classList.add('on'); setCue(); }
+        if(open<0 && hasClose){ closeEl.classList.add('on'); setCue(); }
         return;
       }
       if(dy>0 && Math.abs(dy)>Math.abs(dx)){
@@ -340,7 +420,7 @@ const ENGINE_JS = `
     var k=e.key;
     if(k>='1'&&k<='9'){ var i=+k-1; if(nodes[i]) openNode(i); return; }
     if(k==='Escape'||k==='ArrowDown'){ if(closeEl.classList.contains('on')) closeEl.classList.remove('on'); else shut(); setCue(); return; }
-    if(k==='ArrowUp'){ if(open<0&&closeEl.dataset.has==='1'){ closeEl.classList.add('on'); setCue(); } return; }
+    if(k==='ArrowUp'){ if(open<0&&hasClose){ closeEl.classList.add('on'); setCue(); } return; }
     if(k===' '||k==='Enter'){
       if(open<0) return;
       var next=nodes[open].querySelector('.fact:not(.shown)');
@@ -350,10 +430,19 @@ const ENGINE_JS = `
   });
 
   /* ?node=N opens one object on load, so the console can preview a single view. */
+  /* ?node=N opens one object on load, so the console can preview a single view. It
+     opens INSTANTLY, with no FLIP: there is nothing for the object to move from on a
+     cold load, and animating it would mean the preview is wrong for half a second. */
   var q=parseInt((location.search.match(/[?&]node=(\\d+)/)||[])[1],10);
   scene.classList.add('boot');
-  if(!isNaN(q) && nodes[q]) requestAnimationFrame(function(){ openNode(q); });
+  if(!isNaN(q) && nodes[q]){
+    nodes.forEach(function(n,k){ n.classList.toggle('on', k===q); });
+    scene.classList.add('open');
+    open=q;
+    fitSoon(nodes[q]);
+  }
   setCue();
+  addEventListener('resize',function(){ if(open>=0) fitPanel(nodes[open]); });
 })();
 `;
 
@@ -408,6 +497,8 @@ ${nodesHtml}
   </div>
 </div>
 <div id="close" data-has="${scene.close ? '1' : '0'}"><p>${esc(scene.close ?? '')}</p></div>
+<div id="clinch"></div>
+<div id="floor">M</div>
 <div id="ret"></div>
 <div id="cue"></div>
 <div id="crt"></div>
