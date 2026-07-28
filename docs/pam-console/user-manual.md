@@ -113,6 +113,8 @@ Reusable photos and video per stream, at `Stream setup → Media library`.
 
 **Using media:** on any piece, the **media picker** shows that stream's library; click to attach. Attached media rides through **Prepare → calendar → Metricool** onto the real post. **One post = one video on its own, OR multiple images** — the picker enforces this because the platforms reject mixing media types or more than one video in a single post.
 
+**Wrong library?** Tick the assets you want (the checkbox sits on each thumbnail, and there's a **Select all**), choose the stream from **Move to…**, and hit **Move**. Because an asset is only a link, nothing is re-uploaded and the Box file never moves. Soul IDs are unaffected: they live on the Higgsfield account and were trained on the link, which does not change. The one thing to know is that if the asset was already **attached** to a piece or calendar entry in the library you're moving it *out of*, that attachment quietly drops, since attachments resolve per stream. Move first, attach after.
+
 **Delete** removes the reference from the library only; the Box file is untouched.
 
 **Fast-follows (🔜, not built yet):** uploading straight from the console into Box, and auto-syncing a Box folder so files appear in the library automatically.

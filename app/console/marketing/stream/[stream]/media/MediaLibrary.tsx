@@ -5,12 +5,18 @@
  * link (a Box live link, or any public media URL), then it appears in the grid and
  * becomes selectable when producing a piece in this stream. Delete drops the
  * reference only (the file in Box is untouched). POSTs to path-relative sibling
- * routes (/add, /delete) so it works on pam.polynize.ai and the console host.
+ * routes (/add, /delete, /move) so it works on pam.polynize.ai and the console host.
+ *
+ * Assets can also be MOVED to another stream, because uploading a batch to the wrong
+ * library is an easy mistake and the alternative fix is deleting and re-uploading all of
+ * them. Selection is multi-select for exactly that reason: the mistake is usually made
+ * once across many files.
  */
 
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import type { MediaAsset } from '@/lib/marketing/media-store';
+import { STREAMS } from '@/lib/marketing/streams';
 import s from './media.module.css';
 
 export function MediaLibrary({
@@ -27,6 +33,10 @@ export function MediaLibrary({
   const [kind, setKind] = useState<'auto' | 'image' | 'video'>('auto');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [target, setTarget] = useState('');
+  const [moving, setMoving] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
 
   // Ids deleted this session, so a server-list re-sync (below) never resurrects one
   // whose delete is still committing server-side.
@@ -113,6 +123,49 @@ export function MediaLibrary({
     }
   };
 
+  const toggle = (id: string) =>
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+
+  const move = async () => {
+    if (moving || !target || selected.size === 0) return;
+    const ids = [...selected];
+    setMoving(true);
+    setError(null);
+    setNotice(null);
+    try {
+      const res = await fetch(base() + '/move', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ media_ids: ids, target_stream: target }),
+      });
+      const data = (await res.json().catch(() => null)) as
+        | { moved?: string[]; failed?: string[]; message?: string; error?: string }
+        | null;
+      if (!res.ok || !data?.moved?.length) {
+        setError(data?.error ?? 'Could not move those.');
+        return;
+      }
+      // Drop only what actually moved, so a partial batch leaves the stragglers on
+      // screen and still selected rather than pretending they are gone.
+      const gone = new Set(data.moved);
+      gone.forEach((id) => deletedIds.current.add(id));
+      setAssets((a) => a.filter((m) => !gone.has(m.media_id)));
+      setSelected(new Set(ids.filter((id) => !gone.has(id))));
+      setNotice(data.message ?? `Moved ${data.moved.length}.`);
+      setTarget('');
+      router.refresh();
+    } catch {
+      setError('Network error. Try again.');
+    } finally {
+      setMoving(false);
+    }
+  };
+
   return (
     <div className={s.wrap}>
       <form id="media-add" className={s.addForm} onSubmit={add}>
@@ -154,13 +207,68 @@ export function MediaLibrary({
         file type). That is the link Metricool can fetch.
       </p>
       {error ? <p className={s.error}>{error}</p> : null}
+      {notice ? <p className={s.notice}>{notice}</p> : null}
+
+      {assets.length > 0 ? (
+        <div className={s.selectBar}>
+          <span className={s.selectCount}>
+            {selected.size ? `${selected.size} selected` : 'Select to move'}
+          </span>
+          <button
+            type="button"
+            className={s.selectAction}
+            onClick={() =>
+              setSelected(
+                selected.size === assets.length
+                  ? new Set()
+                  : new Set(assets.map((m) => m.media_id))
+              )
+            }
+          >
+            {selected.size === assets.length ? 'Clear' : 'Select all'}
+          </button>
+          <select
+            className={s.kindSelect}
+            value={target}
+            onChange={(e) => setTarget(e.target.value)}
+            aria-label="Move to which library"
+            disabled={moving || selected.size === 0}
+          >
+            <option value="">Move to…</option>
+            {STREAMS.filter((st) => st.id !== stream).map((st) => (
+              <option key={st.id} value={st.id}>
+                {st.label}
+              </option>
+            ))}
+          </select>
+          <button
+            type="button"
+            className={s.addBtn}
+            onClick={move}
+            disabled={moving || !target || selected.size === 0}
+          >
+            {moving ? 'Moving…' : 'Move'}
+          </button>
+        </div>
+      ) : null}
 
       {assets.length === 0 ? (
         <p className={s.empty}>No media yet. Add your first asset above.</p>
       ) : (
         <div className={s.grid}>
           {assets.map((m) => (
-            <div key={m.media_id} className={s.thumb}>
+            <div
+              key={m.media_id}
+              className={`${s.thumb} ${selected.has(m.media_id) ? s.thumbOn : ''}`}
+            >
+              <label className={s.pick}>
+                <input
+                  type="checkbox"
+                  checked={selected.has(m.media_id)}
+                  onChange={() => toggle(m.media_id)}
+                  aria-label={`Select ${m.label}`}
+                />
+              </label>
               <a
                 href={m.url}
                 target="_blank"

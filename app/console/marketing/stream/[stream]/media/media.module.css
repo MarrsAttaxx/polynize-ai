@@ -160,6 +160,8 @@
   margin-top: 6px;
 }
 .thumb {
+  /* Anchors the selection checkbox, which sits on the tile rather than under it. */
+  position: relative;
   display: flex;
   flex-direction: column;
   background: var(--tac-surface-2, var(--tac-surface));
@@ -544,4 +546,65 @@
   background: var(--mint);
   border-color: var(--mint);
   box-shadow: 0 0 0 3px rgba(105, 252, 203, 0.35);
+}
+
+/* Move-to-another-library controls. Uploading a batch into the wrong stream is an easy
+   mistake, so selection is multi-select and the target is an explicit choice. */
+.selectBar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 10px 0 2px;
+}
+.selectCount {
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+.selectAction {
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: var(--text-3);
+  background: transparent;
+  border: 1px solid var(--tac-edge-dark, rgba(255, 255, 255, 0.12));
+  border-radius: 8px;
+  padding: 7px 12px;
+  cursor: pointer;
+}
+.selectAction:hover {
+  color: var(--text);
+}
+.notice {
+  margin: 0;
+  font-size: 13px;
+  color: var(--mint);
+}
+
+/* The checkbox sits on the tile, not under it, so a whole batch can be ticked without
+   the eye leaving the thumbnails. */
+.pick {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 7px;
+  background: rgba(10, 10, 15, 0.72);
+  cursor: pointer;
+}
+.pick input {
+  width: 15px;
+  height: 15px;
+  accent-color: var(--mint);
+  cursor: pointer;
+}
+.thumbOn {
+  outline: 2px solid var(--mint);
+  outline-offset: 1px;
 }
