@@ -53,7 +53,9 @@ export async function POST(
     await saveDeck(id, deck);
     return NextResponse.json({
       ok: true,
-      states: deck.states.length,
+      // The label + cue of each state, so the client can offer per-state revision
+      // straight away. The html stays server-side; the client previews the real page.
+      states: deck.states.map((st) => ({ label: st.label, cue: st.cue ?? '' })),
       note: deck.note,
       url: `/console/deck/${id}`,
     });

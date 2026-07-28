@@ -19,6 +19,11 @@
  *          by the engine when the deck is built.
  *
  * Slides persist as JSON on `piece.slides` through the existing /state autosave.
+ *
+ * Below both columns, once a deck exists, sits THE BUILT DECK: the states as chips, a
+ * live preview of the selected one, and a line to tell April what to change about THAT
+ * STATE ALONE. Rebuilding re-decides every state, so it was impossible to fix one
+ * slide without disturbing the others; this is the surgical path.
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -32,7 +37,15 @@ import d from './slides.module.css';
 
 type SaveState = 'idle' | 'saving' | 'saved' | 'error';
 
-export function ScreenPromptScreen({ initial }: { initial: MarketingPiece }) {
+type DeckStateInfo = { label: string; cue: string };
+
+export function ScreenPromptScreen({
+  initial,
+  deckStates,
+}: {
+  initial: MarketingPiece;
+  deckStates: DeckStateInfo[] | null;
+}) {
   const [slides, setSlides] = useState<Slide[]>(() => parseSlides(initial.slides));
   const [saveState, setSaveState] = useState<SaveState>('idle');
   const [direction, setDirection] = useState('');
@@ -40,7 +53,20 @@ export function ScreenPromptScreen({ initial }: { initial: MarketingPiece }) {
   const [busy, setBusy] = useState(false);
   const [building, setBuilding] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [deckUrl, setDeckUrl] = useState<string | null>(null);
+  const [deckUrl, setDeckUrl] = useState<string | null>(
+    deckStates?.length ? `/console/deck/${initial.piece_id}` : null
+  );
+  const [built, setBuilt] = useState<DeckStateInfo[]>(deckStates ?? []);
+  const [sel, setSel] = useState(0);
+  const [tweak, setTweak] = useState('');
+  const [revising, setRevising] = useState(false);
+  // Bumped on every change so the preview iframe reloads instead of serving its cache.
+  const [previewV, setPreviewV] = useState(0);
+  // Deck feedback is kept separate from the slide-planning feedback: they sit in
+  // different parts of the page, and a note appearing far from the button that caused
+  // it reads as unrelated.
+  const [deckNote, setDeckNote] = useState<string | null>(null);
+  const [deckError, setDeckError] = useState<string | null>(null);
 
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const latest = useRef<Slide[]>(slides);
@@ -158,7 +184,7 @@ export function ScreenPromptScreen({ initial }: { initial: MarketingPiece }) {
   const buildDeck = async () => {
     if (building || !hasScript) return;
     setBuilding(true);
-    setError(null);
+    setDeckError(null);
     flush();
     try {
       const res = await fetch(baseUrlRef.current + '/screen-prompt/deck', {
@@ -167,18 +193,79 @@ export function ScreenPromptScreen({ initial }: { initial: MarketingPiece }) {
         body: JSON.stringify({ direction: direction.trim() }),
       });
       const b = (await res.json().catch(() => null)) as
-        | { url?: string; states?: number; note?: string; error?: string }
+        | { url?: string; states?: DeckStateInfo[]; note?: string; error?: string }
         | null;
       if (!res.ok || !b?.url) {
-        setError(b?.error ?? 'Could not build the deck.');
+        setDeckError(b?.error ?? 'Could not build the deck.');
         return;
       }
       setDeckUrl(b.url);
-      setNote(b.note ?? `Built the deck in ${b.states ?? 0} states.`);
+      setBuilt(b.states ?? []);
+      setSel(0);
+      setPreviewV((v) => v + 1);
+      setDeckNote(b.note ?? `Built the deck in ${b.states?.length ?? 0} states.`);
     } catch {
-      setError('Network error. Try again.');
+      setDeckError('Network error. Try again.');
     } finally {
       setBuilding(false);
+    }
+  };
+
+  // One state, one instruction. Every other state is written back untouched.
+  const reviseState = async () => {
+    const instruction = tweak.trim();
+    if (revising || !instruction || !built[sel]) return;
+    setRevising(true);
+    setDeckError(null);
+    try {
+      const res = await fetch(baseUrlRef.current + '/screen-prompt/deck/revise', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ index: sel, instruction }),
+      });
+      const b = (await res.json().catch(() => null)) as
+        | { states?: DeckStateInfo[]; note?: string; error?: string }
+        | null;
+      if (!res.ok || !b?.states) {
+        setDeckError(b?.error ?? 'Could not change that state.');
+        return;
+      }
+      setBuilt(b.states);
+      setDeckNote(b.note ?? null);
+      setTweak('');
+      setPreviewV((v) => v + 1);
+    } catch {
+      setDeckError('Network error. Try again.');
+    } finally {
+      setRevising(false);
+    }
+  };
+
+  const removeState = async () => {
+    if (revising || !built[sel]) return;
+    setRevising(true);
+    setDeckError(null);
+    try {
+      const res = await fetch(baseUrlRef.current + '/screen-prompt/deck/revise', {
+        method: 'DELETE',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ index: sel }),
+      });
+      const b = (await res.json().catch(() => null)) as
+        | { states?: DeckStateInfo[]; note?: string; error?: string }
+        | null;
+      if (!res.ok || !b?.states) {
+        setDeckError(b?.error ?? 'Could not remove that state.');
+        return;
+      }
+      setBuilt(b.states);
+      setSel((i) => Math.max(0, Math.min(i, b.states!.length - 1)));
+      setDeckNote(b.note ?? null);
+      setPreviewV((v) => v + 1);
+    } catch {
+      setDeckError('Network error. Try again.');
+    } finally {
+      setRevising(false);
     }
   };
 
@@ -340,16 +427,100 @@ export function ScreenPromptScreen({ initial }: { initial: MarketingPiece }) {
               onClick={buildDeck}
               disabled={building || !hasScript || slides.length === 0}
             >
-              {building ? 'Building the deck…' : '▶ Build the deck'}
+              {building
+                ? 'Building the deck…'
+                : built.length
+                  ? '▶ Rebuild the whole deck'
+                  : '▶ Build the deck'}
             </button>
-            {deckUrl ? (
-              <a href={deckUrl} target="_blank" rel="noopener noreferrer" className={d.openLink}>
-                Open deck ↗
-              </a>
+            {built.length ? (
+              <span className={d.rebuildWarn}>
+                Rebuilding re-decides every state. To change one, use the deck below.
+              </span>
             ) : null}
           </div>
         </section>
       </div>
+
+      {built.length ? (
+        <section className={d.deckPanel}>
+          <div className={d.colHead}>
+            <h2 className={d.colTitle}>The built deck</h2>
+            {deckUrl ? (
+              <a href={deckUrl} target="_blank" rel="noopener noreferrer" className={d.openLink}>
+                Open the deck ↗
+              </a>
+            ) : null}
+          </div>
+
+          <div className={d.chips}>
+            {built.map((st, i) => (
+              <button
+                key={i}
+                type="button"
+                className={`${d.chip} ${i === sel ? d.chipOn : ''}`}
+                onClick={() => setSel(i)}
+              >
+                <span className={d.chipNum}>{i + 1}</span>
+                {st.label || 'state'}
+              </button>
+            ))}
+          </div>
+
+          <div className={d.previewWrap}>
+            <iframe
+              key={`${sel}-${previewV}`}
+              className={d.preview}
+              src={`/console/deck/${initial.piece_id}?state=${sel}&v=${previewV}`}
+              title={`State ${sel + 1} preview`}
+            />
+          </div>
+
+          <div className={d.aprilBox}>
+            <input
+              className={d.aprilInput}
+              value={tweak}
+              onChange={(e) => setTweak(e.target.value)}
+              placeholder={`Change state ${sel + 1}, e.g. drop the other pillars' names`}
+              aria-label={`What to change about state ${sel + 1}`}
+              disabled={revising}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  void reviseState();
+                }
+              }}
+            />
+            <button
+              type="button"
+              className={d.aprilBtn}
+              onClick={reviseState}
+              disabled={revising || !tweak.trim()}
+            >
+              {revising ? 'Changing…' : 'Change this state'}
+            </button>
+            <button
+              type="button"
+              className={d.removeBtn}
+              onClick={removeState}
+              disabled={revising || built.length < 2}
+              title="Remove this state from the deck"
+            >
+              Remove
+            </button>
+          </div>
+          <p className={d.hint}>
+            Only this state changes. The rest of the deck is left exactly as it is.
+          </p>
+          {deckNote ? <p className={d.note}>April: {deckNote}</p> : null}
+          {deckError ? <p className={d.error}>{deckError}</p> : null}
+        </section>
+      ) : deckNote || deckError ? (
+        <section className={d.deckPanel}>
+          {deckNote ? <p className={d.note}>April: {deckNote}</p> : null}
+          {deckError ? <p className={d.error}>{deckError}</p> : null}
+        </section>
+      ) : null}
     </div>
   );
 }

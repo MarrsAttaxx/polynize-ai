@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { getCurrentUser } from '@/lib/console-auth';
 import { getPiece, type MarketingPiece } from '@/lib/marketing/piece-store';
+import { getDeck } from '@/lib/marketing/deck-store';
 import { ScreenPromptScreen } from './ScreenPromptScreen';
 import s from '../script.module.css';
 
@@ -46,5 +47,10 @@ export default async function PieceScreenPromptPage({
     );
   }
 
-  return <ScreenPromptScreen initial={piece} />;
+  // The built deck, when there is one, so the operator can revise a single state
+  // instead of rebuilding the lot. Label + cue only; the preview loads the real page.
+  const deck = await getDeck(id).catch(() => null);
+  const deckStates = deck?.states.map((st) => ({ label: st.label, cue: st.cue ?? '' })) ?? null;
+
+  return <ScreenPromptScreen initial={piece} deckStates={deckStates} />;
 }

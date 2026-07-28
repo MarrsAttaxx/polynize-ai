@@ -442,6 +442,30 @@ The trigger was pure friction. Marrs: *"I'm having trouble with the process of h
 
 ---
 
+## D31 — The touchscreen is an INTERFACE, not a slide deck. SUPERSEDES D30's slide model
+
+**Decision (2026-07-28, Marrs, after performing the first real deck):** *"We've built it with the concept of slides when it's not supposed to be a slide presentation. It's about navigating around the interactive HTML, not going through a series of slides. It doesn't present right."*
+
+**The reason it does not present right is OBJECT IDENTITY.** A slide deck destroys and recreates: state 2 is a different picture that happens to also contain a pillar. An interface transforms: the *same* pillar moves, grows and opens. An audience reads that difference immediately, because only one of them looks like a thing being operated rather than advanced. No amount of transition polish buys it, since what is missing is the continuity of the object, not the quality of the cut. D30's whole artifact model (states, an index, per-state HTML, gesture-driven advance) is therefore the wrong shape and is superseded.
+
+**A scene is not a list of states.** It is one set of objects that exist for the whole piece and are never rebuilt, plus a view state saying which one is open and what has been revealed on it. `lib/marketing/scene.ts`:
+
+- **CONCEPT** the headline over the board. It recedes when a node opens rather than disappearing, because the board is still there behind what you opened.
+- **NODES**, two to four objects side by side. Each has a label, a colour role, a line shown when it opens, and up to four **FACTS** (a label that waits, and a value revealed on touch).
+- **CLOSE**, the line worth remembering, raised over the board rather than replacing it.
+
+**Motion is FLIP, and that is the load-bearing technique.** Measure where every object is (First), change the layout class (Last), invert the difference with a transform, release it (Play). The objects are never re-created, so the eye follows one continuous thing instead of seeing a cut to a new picture. Everything else in the engine is in service of that.
+
+**Interaction is direct, not global.** Touching an object opens it; touching a fact reveals it; touching another object in the rail switches straight to it; touching the open object again, or swiping down, closes it. There is no next and no previous. A receded object stays on the board, shrunk and quiet but still touchable, so the set is never lost and switching is one move. Swipe up from the board raises the close line. Number keys, space and arrows do the same things for reviewing a scene in the console without a touchscreen.
+
+**April supplies DATA ONLY** (`SCENE_VOCABULARY`): nodes, colours, lines, facts. No classes, no layout, no markup. The engine owns every pixel and every behaviour. This is what finally makes a generated scene predictable, and it retires a whole class of problems at once: content cannot run off the display, a generated state cannot lay itself out wrongly, and "remove the other pillars' names when one is focused" stops being something to ask for because the engine already does it.
+
+**Content must work in ANY order.** No node may depend on another having been opened first, and no fact may read as "and then". This is a real constraint on the writing, and it is the price of the interface reading as one.
+
+**Consequence if violated:** reintroducing an index, a next gesture, or per-state generated HTML brings back the slide deck and with it the thing Marrs saw on camera. Rebuilding objects instead of moving them loses the continuity that is the entire point, however good the transition looks in isolation. Letting April emit markup again puts layout failures and off-screen content back into a generated artifact that nobody reviews until the shoot.
+
+---
+
 ---
 
 ## How to add to this log
@@ -454,6 +478,7 @@ When you make a decision that future-you (or a cold agent) might be tempted to u
 
 | Date | Change |
 |---|---|
+| 2026-07-28 | D31 SUPERSEDES D30's slide model: the touchscreen is an INTERFACE, not a deck. `lib/marketing/scene.ts` holds one set of persistent objects plus a view state, moved with FLIP so the same object transforms instead of a new picture replacing it. April supplies data only (nodes / colours / lines / facts); the engine owns all layout and behaviour. Touchable example at `/console/scene/demo`. Console rewiring (generation, editor, storage, per-piece route) still to come; the deck engine stays in place until it lands. |
 | 2026-07-27 | D30: the console BUILDS the touchscreen deck in-house (`lib/marketing/deck.ts` engine + `deck-generate.ts` + `deck-store.ts` + the unlisted `/console/deck/[id]` Route Handler), replacing D29's external animator handoff. Oscilloscope house style; cymatics/Lissajous figure per gesture; 4-6 states capped in code after a 26-page first pass; the Screen Prompt plan became SLIDE CARDS (visual + text per card, authoritative over the prose brief). Viewport rule added after a clipped deck: cap against viewport HEIGHT, and measure-and-scale each state after render. |
 | 2026-06-05 | Initial decision log: D1–D14 captured from the build history. |
 | 2026-06-18 | D15: PAM → marketing engine; mapping/blueprinting to Cognitive Studio; Newkind/reMYnd/Roxbury repos hard-deleted (SOC 2 + off-boarding); EverStock retained. |
