@@ -1084,3 +1084,35 @@
   border-color: var(--border-soft);
   background: transparent;
 }
+
+/* ---------- Capability modelling: "you are here" step ----------
+   Marks step 01 as the thing the CTA below actually performs. */
+.dcHowCardHere {
+  position: relative;
+  border-color: var(--border);
+  background: rgba(105, 252, 203, 0.04);
+}
+.dcHereTag {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 14px;
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--mint);
+}
+.dcHereDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--mint);
+  box-shadow: 0 0 0 0 rgba(105, 252, 203, 0.55);
+  animation: dcHerePulse 2.2s ease-out infinite;
+}
+@keyframes dcHerePulse {
+  0% { box-shadow: 0 0 0 0 rgba(105, 252, 203, 0.5); }
+  70% { box-shadow: 0 0 0 9px rgba(105, 252, 203, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(105, 252, 203, 0); }
+}

@@ -31,6 +31,9 @@ export default function HomePage() {
       <div className={s.dirC}>
         <DirCNav />
         <DirCHero />
+        {/* The education beat: what capability modelling is, and that mapping
+            your bottleneck is step one of it. */}
+        <DirCModelling />
         {/* Act 1 — the problem (AJ quote moved up to right after the hero) */}
         <DirCAjQuoteProblem />
         {/* Act 2 — we mapped the business */}
@@ -90,44 +93,17 @@ function DirCHero() {
         <span className={s.dcMintEmph}>amplified.</span>
       </h1>
       <p className={s.dcLede}>
-        We build the human capability that makes an AI economy work. Tell us where your business
-        chokes. You get every capability inside it scored against what good looks like, and a plan
-        that trains your people first, then deploys the agents around them.
+        We build the human capability that makes an AI economy work.
       </p>
-
-      {/* The benchmark triad: the new thesis in one glance, and the same numbers
-          the blueprint's Benchmarks tab returns for real. */}
-      <div className={`${s.dcEquation} ${s.reveal}`}>
-        <div className={`${s.dcEqCard} ${s.dcEqCardGold}`}>
-          <div className={s.dcEqNum}>41</div>
-          <div className={s.dcEqMeta}>
-            <div className={s.dcEqLabel}>Today</div>
-          </div>
-        </div>
-        <div className={s.dcEqPlus}>→</div>
-        <div className={`${s.dcEqCard} ${s.dcEqCardMint}`}>
-          <div className={s.dcEqNum}>85</div>
-          <div className={s.dcEqMeta}>
-            <div className={s.dcEqLabel}>Benchmark</div>
-          </div>
-        </div>
-        <div className={s.dcEqPlus}>=</div>
-        <div className={`${s.dcEqCard} ${s.dcEqCardOut}`}>
-          <div className={s.dcEqNum}>+44</div>
-          <div className={s.dcEqMeta}>
-            <div className={s.dcEqLabel}>Uplift</div>
-          </div>
-        </div>
-      </div>
 
       <div className={s.dcCtaRow}>
         <TrackedLink
           className={`${s.dcBtn} ${s.dcBtnPrimary}`}
           href="/blueprint"
           event="cta_click"
-          eventProps={{ surface: 'home_hero', label: 'build_blueprint' }}
+          eventProps={{ surface: 'home_hero', label: 'map_bottleneck' }}
         >
-          Build your blueprint <span className={s.dcArr}>→</span>
+          Map your bottleneck <span className={s.dcArr}>→</span>
         </TrackedLink>
         <TrackedLink
           className={`${s.dcBtn} ${s.dcBtnSecondary}`}
@@ -137,6 +113,93 @@ function DirCHero() {
           eventProps={{ surface: 'home_hero' }}
         >
           Talk to the Team
+        </TrackedLink>
+      </div>
+    </section>
+  );
+}
+
+/* ---------- Capability modelling (the education beat) ---------- */
+
+/**
+ * The first phase of the Polynize Capability Methodology. Modelling comes before
+ * enablement and deployment, and step 01 is exactly what the CTA below performs,
+ * which is why the first card is marked as the visitor's starting point.
+ */
+const MODEL_STEPS = [
+  {
+    n: '01',
+    state: 'Current state',
+    t: 'Map capabilities',
+    d: 'We break the work into the capabilities inside it, and allocate every one of them: human, hybrid, or agent.',
+    here: true,
+  },
+  {
+    n: '02',
+    state: 'Future state',
+    t: 'Set the benchmark',
+    d: 'We define what good looks like for each capability, measured in the flow of work rather than in a workshop.',
+  },
+  {
+    n: '03',
+    state: 'The distance',
+    t: 'Find the gap',
+    d: 'The measured distance between the two. That gap is the thing everything afterwards is built to close.',
+  },
+];
+
+function DirCModelling() {
+  return (
+    <section className={s.dcSection}>
+      <div className={s.dcSectionHead}>
+        <div className={s.dcSectionEyebrow}>Our methodology</div>
+        <h2 className={s.dcH2}>
+          It starts with
+          <br />
+          <span className={s.dcMintEmph}>capability modelling.</span>
+        </h2>
+        <p className={s.dcSectionLede}>
+          Before anything gets built, we model the work. Where your capability sits today, what good
+          looks like, and the distance between the two. Only then does it make sense to talk about
+          training people or deploying agents, because both are built to close that distance.
+        </p>
+      </div>
+
+      <div className={`${s.dcHowGrid} ${s.dcHowGrid3}`}>
+        {MODEL_STEPS.map((step) => (
+          <div
+            key={step.n}
+            className={`${s.dcHowCard} ${step.here ? s.dcHowCardHere : ''}`}
+          >
+            <div className={s.dcHowNum}>
+              {step.n} · {step.state}
+            </div>
+            <div className={s.dcHowTitle}>{step.t}</div>
+            <div className={s.dcHowDesc}>{step.d}</div>
+            {step.here && (
+              <div className={s.dcHereTag}>
+                <span className={s.dcHereDot} aria-hidden />
+                You are here
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+
+      <div className={s.dcMidCta}>
+        <div className={s.dcMidCtaText}>
+          <div className={s.dcMidCtaTitle}>Start with step one.</div>
+          <div className={s.dcMidCtaSub}>
+            Tell us where the work slows down and we will map the capabilities inside it.
+          </div>
+        </div>
+        <TrackedLink
+          className={`${s.dcBtn} ${s.dcBtnPrimary}`}
+          href="/blueprint"
+          event="cta_click"
+          eventProps={{ surface: 'home_modelling', label: 'map_bottleneck' }}
+        >
+          Map your bottleneck <span className={s.dcArr}>→</span>
         </TrackedLink>
       </div>
     </section>
@@ -156,7 +219,7 @@ function DirCMapHero() {
           <span className={s.dcMintEmph}>into capabilities.</span>
         </h2>
         <p className={s.dcSectionLede}>
-          Every capability inside the work that is choking you, allocated human, hybrid or agent,
+          Every capability inside the work that is holding you back, allocated human, hybrid or agent,
           scored against what good looks like, and sequenced into what to train and what to deploy.
         </p>
       </div>
@@ -174,9 +237,9 @@ function DirCMapHero() {
           className={`${s.dcBtn} ${s.dcBtnPrimary}`}
           href="/blueprint"
           event="cta_click"
-          eventProps={{ surface: 'home_mid_cta', label: 'build_blueprint' }}
+          eventProps={{ surface: 'home_mid_cta', label: 'map_bottleneck' }}
         >
-          Build your blueprint <span className={s.dcArr}>→</span>
+          Map your bottleneck <span className={s.dcArr}>→</span>
         </TrackedLink>
       </div>
     </section>
@@ -546,7 +609,7 @@ function DirCFinal() {
           now and good.
         </h2>
         <p className={s.dcFinalLede}>
-          Eight questions about the work that is choking you. What comes back is every capability
+          Eight questions about the work that is holding you back. What comes back is every capability
           inside it, mapped, benchmarked, and sequenced into what to train and what to deploy.
         </p>
         <div className={s.dcCtaRow} style={{ justifyContent: 'center' }}>
@@ -554,9 +617,9 @@ function DirCFinal() {
             className={`${s.dcBtn} ${s.dcBtnPrimary}`}
             href="/blueprint"
             event="cta_click"
-            eventProps={{ surface: 'home_final_cta', label: 'build_blueprint' }}
+            eventProps={{ surface: 'home_final_cta', label: 'map_bottleneck' }}
           >
-            Build your blueprint <span className={s.dcArr}>→</span>
+            Map your bottleneck <span className={s.dcArr}>→</span>
           </TrackedLink>
           <TrackedLink
             className={`${s.dcBtn} ${s.dcBtnSecondary}`}
