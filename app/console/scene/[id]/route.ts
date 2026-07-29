@@ -28,7 +28,7 @@ export async function GET(
     return new Response(
       `<!doctype html><meta charset="utf-8"><title>No scene</title>
 <body style="background:#0a0a0f;color:#f4ece4;font:16px/1.6 system-ui;display:grid;place-items:center;height:100vh;margin:0">
-<p>No scene built for this piece yet. Build it on the Screen Prompt stage.</p></body>`,
+<p>No interface built for this piece yet. Build it on the Interface stage.</p></body>`,
       { status: 404, headers: { 'content-type': 'text/html; charset=utf-8' } }
     );
   }

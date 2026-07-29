@@ -94,3 +94,11 @@ Two rules are baked into `split_screen_short.screenPromptShape` from this footag
 The console step that runs this: watch `~/Movies/polynize-studio/<shoot>/`, identify
 the two angles, cross-correlate, cut to clean takes in Descript, then run the
 composite above. The recipe is proven; only the wiring remains.
+
+
+## Audio source (settled 2026-07-28, Marrs)
+
+DJI lapel mics run into the **FRONT camera**, so the front camera's audio is both the
+published audio and the sync reference. No third stream to align and no master-audio
+decision: this is exactly the configuration the test footage above was shot in, so the
+measured 383ms cross-correlation offset and the recipe stand as-is.

@@ -1,8 +1,14 @@
 'use client';
 
 /**
- * The SCREEN PROMPT stage (D31). It edits the SCENE the presenter operates on the
- * touchscreen: one board of objects they open, reveal and close on camera.
+ * The INTERFACE stage (D31, renamed from "Screen Prompt" 2026-07-28). It edits the SCENE
+ * the presenter operates on the touchscreen: one board of objects they open, reveal and
+ * close on camera.
+ *
+ * The name matters because it IS the mental model (Marrs: "screen prompt seems a little
+ * weird now, this is the interface for this piece of content"). "Prompt" was left over
+ * from when the artifact was a brief handed to an animator, and it described a document.
+ * What the stage produces is the thing itself.
  *
  * It used to edit slide cards, because the screen used to be a deck. Under D31 the screen
  * is an interface built from DATA, and that changes what this page is for. The engine owns
@@ -18,17 +24,17 @@
  * what made minor edits feel impossible. April is here to propose a scene from the script
  * and to refine one on request; she is never in the way of an edit.
  *
- * Scenes persist through their own endpoint (`screen-prompt/scene`), not `piece.slides`.
+ * Scenes persist through their own endpoint (`interface/scene`), not on the piece.
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import type { MarketingPiece } from '@/lib/marketing/piece-store';
-import { scriptSections } from '@/lib/marketing/slides';
+import { scriptSections } from '@/lib/marketing/script-sections';
 import { StageRail } from '../StageRail';
 import { BackLink } from '@/app/console/marketing/_components/BackLink';
 import s from '../script.module.css';
-import d from './slides.module.css';
+import d from './interface.module.css';
 
 type SaveState = 'idle' | 'saving' | 'saved' | 'error';
 type Colour = 'coral' | 'amber' | 'gold' | 'mint';
@@ -53,7 +59,7 @@ const emptyNode = (i: number): Node => ({
   facts: [{ label: '', value: '' }],
 });
 
-export function ScreenPromptScreen({
+export function InterfaceScreen({
   initial,
   scene: initialScene,
 }: {
@@ -80,7 +86,7 @@ export function ScreenPromptScreen({
   const baseUrlRef = useRef('');
   useEffect(() => {
     baseUrlRef.current = window.location.pathname
-      .replace(/\/screen-prompt\/?$/, '')
+      .replace(/\/interface\/?$/, '')
       .replace(/\/+$/, '');
   }, []);
 
@@ -95,7 +101,7 @@ export function ScreenPromptScreen({
         setSaveState('saving');
         let ok = false;
         try {
-          const res = await fetch(baseUrlRef.current + '/screen-prompt/scene', {
+          const res = await fetch(baseUrlRef.current + '/interface/scene', {
             method: 'PUT',
             headers: { 'content-type': 'application/json' },
             body: JSON.stringify(content),
@@ -190,7 +196,7 @@ export function ScreenPromptScreen({
     setError(null);
     flush();
     try {
-      const res = await fetch(baseUrlRef.current + '/screen-prompt/scene', {
+      const res = await fetch(baseUrlRef.current + '/interface/scene', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ direction: direction.trim() }),
@@ -246,7 +252,7 @@ export function ScreenPromptScreen({
           />
           <div className={s.titleWrap}>
             <span className={s.eyebrow}>
-              {(initial.format ?? '').replace(/_/g, ' ')} · screen prompt
+              {(initial.format ?? '').replace(/_/g, ' ')} · interface
             </span>
             <h1 className={s.title}>{initial.title}</h1>
           </div>

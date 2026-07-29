@@ -57,6 +57,17 @@ export type FormatDef = {
  * dependency: it has to be built before the shoot because the presenter touches it
  * live on camera. It is a prop, not post-production.
  */
+/*
+ * RETIRED WITH THE DECK (D31, 2026-07-28). SCREEN_RULES, SCREEN_PROMPT_BRIEF and the
+ * per-format `screenPromptShape` fed the prose brief that an animator built from. Nothing
+ * calls them: the Interface stage generates a SCENE as data and the engine owns the look.
+ *
+ * Left in place rather than deleted because the editorial guidance inside them is still
+ * right and not yet expressed anywhere else: the first-frame ON-SCREEN TEXT that stops the
+ * scroll and differs from the spoken hook, and the long-form rule that the screen builds
+ * CUMULATIVELY instead of resetting each beat. Both belong in the scene generation prompt.
+ * Folding them in is a behaviour change, so it is a separate job; delete this block then.
+ */
 const SCREEN_RULES = `Screen visuals are REPRESENTATIONAL, not detailed: one big bold idea per state (a word, a number, a simple shape or diagram), readable in a thumbnail. Never a slide of bullet points, never small text, never a screenshot of an interface. Each touch does one legible thing that reinforces the point being spoken (reveal, split, collapse, snap into place, wipe away). The screen must never say something the spoken line contradicts.
 
 Any number or phrase shown on screen is lifted VERBATIM from the concept. Never convert, round, or derive one: if the concept says "a full day", the screen says A FULL DAY, not 24 HOURS. A figure the concept does not state does not go on the screen.`;

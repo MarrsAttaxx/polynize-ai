@@ -27,16 +27,19 @@ export const SHORT_FORM_STAGES: MiddleStage[] = [
     href: (id) => `/console/marketing/piece/${id}`,
   },
   {
-    // PRE-RECORD (D29 amended): the SCREEN PROMPT, the plan for what the touchscreen
-    // does. It must be BUILT before the shoot because the presenter touches it live
-    // on camera, and it prompts twice over: the animator builds the page from it and
-    // its cues prompt the presenter's gestures in the take. Distinct from the
-    // post-record `treatment` stage below (overlays/execution on the footage).
+    // PRE-RECORD (D31): the INTERFACE the touchscreen runs. It must exist before the
+    // shoot because the presenter operates it live on camera, so it is a prop rather
+    // than post-production. Distinct from the post-record `treatment` stage below
+    // (overlays/execution on the footage).
+    //
+    // The stage id stays `treatment_map` and the stored field stays `piece.treatment`
+    // through both renames (treatment -> screen prompt -> interface): display-only, so
+    // no piece already in flight is orphaned.
     id: 'treatment_map',
-    label: 'Screen Prompt',
+    label: 'Interface',
     role: 'hybrid',
     built: true,
-    href: (id) => `/console/marketing/piece/${id}/screen-prompt`,
+    href: (id) => `/console/marketing/piece/${id}/interface`,
   },
   {
     id: 'record',

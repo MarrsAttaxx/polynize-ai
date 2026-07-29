@@ -49,9 +49,9 @@ export function ScriptScreen({
   // edit path writes it. The save loop always reconciles against it.
   const latest = useRef(initial.script);
   const latestMedia = useRef<string[]>(initial.media ?? []);
-  // The SCREEN PROMPT rides along on the autosave purely to PRESERVE it: this screen
+  // The INTERFACE plan rides along on the autosave purely to PRESERVE it: this screen
   // PUTs the whole piece, so without carrying it a script save would wipe the screen
-  // plan. It is authored on its own Screen Prompt stage, never from here.
+  // plan. It is authored on its own Interface stage, never from here.
   const latestTreatment = useRef<string | undefined>(initial.treatment);
   const inFlight = useRef(false);
 

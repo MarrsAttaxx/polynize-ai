@@ -144,7 +144,7 @@ export async function POST(
           // "Untouched" = empty, or still exactly the scaffold createOutputs seeded.
           const scaffold = scaffoldScript(concept.framing, concept.body_md);
           if (!piece.script?.trim() || piece.script === scaffold) {
-            // Script only: the Screen Prompt is generated on its own stage, from
+            // Script only: the interface is built on its own stage, from
             // this locked script plus the operator's direction (D29 amended).
             const script = await draftVideoScript(user.email, piece);
             await savePiece(user.email, { ...piece, script });

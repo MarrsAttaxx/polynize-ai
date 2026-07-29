@@ -1,4 +1,4 @@
-/* Screen Prompt stage: the script beside the slide cards. */
+/* Interface stage: the script beside the interface being built from it. */
 
 .cols {
   display: grid;
