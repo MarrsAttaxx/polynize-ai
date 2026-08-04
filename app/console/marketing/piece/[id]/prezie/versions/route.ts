@@ -31,7 +31,7 @@ import {
   savePrezie,
   deletePrezie,
   listPreziesForConcept,
-  UNFILED,
+  conceptSlugFromRef,
   type Prezie,
 } from '@/lib/marketing/prezie-store';
 import { generateScene, MAX_FACTS, MAX_NODES } from '@/lib/marketing/scene-generate';
@@ -43,7 +43,7 @@ export const runtime = 'nodejs';
 export const maxDuration = 300;
 
 /** The concept a piece's prezies belong to, or the unfiled bucket. */
-const conceptOf = (piece: MarketingPiece) => piece.concept_ref?.trim() || UNFILED;
+const conceptOf = (piece: MarketingPiece) => conceptSlugFromRef(piece.concept_ref);
 
 const SceneSchema = z.object({
   title: z.string().trim().max(200).optional(),

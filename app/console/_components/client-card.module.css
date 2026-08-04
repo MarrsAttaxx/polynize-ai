@@ -535,12 +535,17 @@
   margin-bottom: 18px;
 }
 
+/* Section LABELS, not titles. They were 18px Space Grotesk, the same treatment as the
+   concept and piece names underneath them, so a heading and its contents read as the same
+   level and the hierarchy collapsed (Marrs). They now match "Stream setup" and all three
+   sit at 12px, which puts the item names back on top. */
 .dashSectionTitle {
-  font-family: var(--font-space-grotesk), 'Space Grotesk', sans-serif;
-  font-size: 18px;
-  font-weight: 700;
-  letter-spacing: -0.01em;
-  color: var(--text);
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--text-3);
   margin: 0;
 }
 
@@ -666,7 +671,7 @@
 .setupTitle {
   display: block;
   font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
-  font-size: 10px;
+  font-size: 12px;
   letter-spacing: 0.18em;
   text-transform: uppercase;
   color: var(--text-3);

@@ -4,6 +4,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { getCurrentUser } from '@/lib/console-auth';
 import { getConcept } from '@/lib/marketing/concept-store';
+import { listPreziesForConcept } from '@/lib/marketing/prezie-store';
 import { DeleteButton } from './DeleteButton';
 import { BackLink } from '@/app/console/marketing/_components/BackLink';
 import { MoveConceptButton } from './MoveConceptButton';
@@ -49,6 +50,11 @@ export default async function ConceptPage({
     );
   }
 
+  // Every prezie built from this concept, whichever piece it was made for. They are
+  // assets of the concept rather than of a piece, so this is where the whole set lives
+  // (Marrs expects to come back to these, including in the podcast).
+  const prezies = await listPreziesForConcept(slug).catch(() => []);
+
   return (
     <div className={s.root}>
       <header className={s.head}>
@@ -75,6 +81,31 @@ export default async function ConceptPage({
         </div>
         <DeleteButton stream={concept.stream} />
       </div>
+
+      {prezies.length ? (
+        <section className={s.prezies}>
+          <span className={s.preziesTitle}>Prezies from this concept</span>
+          <div className={s.prezieList}>
+            {prezies.map((p) => (
+              <a
+                key={p.prezie_id}
+                href={`/console/prezie/${p.concept}/${p.prezie_id}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={s.prezieCard}
+              >
+                <span className={s.prezieName}>{p.name}</span>
+                <span className={s.prezieMeta}>
+                  {p.scene.nodes.length} objects · {(p.updated_at ?? p.created_at).slice(0, 10)}
+                </span>
+                <span className={s.prezieObjects}>
+                  {p.scene.nodes.map((n) => n.label).join(' · ')}
+                </span>
+              </a>
+            ))}
+          </div>
+        </section>
+      ) : null}
 
       <article className={s.doc}>
         <ReactMarkdown remarkPlugins={[remarkGfm]}>{concept.body_md}</ReactMarkdown>

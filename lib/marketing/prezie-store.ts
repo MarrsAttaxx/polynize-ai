@@ -33,6 +33,22 @@ import type { Scene } from './scene';
 /** Pieces with no concept behind them still need somewhere to live. */
 export const UNFILED = '_unfiled';
 
+/**
+ * The concept SLUG a prezie is filed under, from a piece's `concept_ref`.
+ *
+ * `concept_ref` is a storage key (`pam/concept-bank/{owner}/core-concept-{slug}.md`), so it
+ * must never be used as the path segment itself: it carries slashes and an extension, which
+ * would nest the prezie under a fake directory tree and produce a URL that cannot route.
+ * The bare slug is also what the concept page has to hand, which is what lets both surfaces
+ * agree on where a concept's prezies live.
+ */
+export function conceptSlugFromRef(ref?: string): string {
+  const m = (ref ?? '').match(/core-concept-(.+)\.md$/);
+  const slug = (m ? m[1] : (ref ?? '')).trim();
+  // Anything that is not a clean single segment is not safe as a key or a URL part.
+  return slug && /^[A-Za-z0-9._-]+$/.test(slug) ? slug : UNFILED;
+}
+
 export type Prezie = {
   /** uuid; also the storage key tail and the id in the performance URL. */
   prezie_id: string;

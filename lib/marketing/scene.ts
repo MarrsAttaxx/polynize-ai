@@ -94,9 +94,10 @@ lives in the script. The screen carries only the name and the numbers.
   across lines yourself with a newline where the punch should land: the first line is the
   claim and what follows sits under it.
 
-THE BOARD READS LEFT TO RIGHT, AND THAT ORDER IS THE NARRATIVE (Marrs). The objects are
-not a list, they are the story laid out in space: the problem on the left, what it turns
-into as you move right, the resolution last. Order them so the argument is legible from
+THE ORDER OF THE OBJECTS CARRIES MEANING, so choose it rather than letting it fall out.
+Left to right is the usual reading (the problem on the left, the resolution last), and it
+is a good default, but it is NOT a rule: plenty of concepts are not a progression, and
+forcing one on them makes the board lie. What matters is that the order is legible from
 the board alone, before anyone touches anything.
 
 That is not the same as a sequence. The presenter opens the objects in whatever order the
@@ -313,6 +314,42 @@ const ENGINE_JS = `
   var open=-1;
   var hasClose=closeEl.dataset.has==='1';
 
+  /* TOUCH SOUND. Marrs's own samples, alternated so repeated touches do not read as a
+     loop. It plays out of the room speaker and his lapel mic picks it up, which is the
+     point: the sound is diegetic and arrives in the take rather than being added in post.
+     Two constraints shape this:
+       - Browsers refuse to play audio before a gesture, so the buffer is decoded lazily on
+         the FIRST touch and that touch is itself the unlock. The very first tap may be
+         silent; every one after it is not.
+       - Web Audio, not <audio>: an Audio element cannot overlap itself, so a quick double
+         tap would swallow its own second blip. */
+  var actx=null, buffers=[null,null], sfxTurn=0;
+  var SFX=['/pam/sfx/touch-01.wav','/pam/sfx/touch-02.wav'];
+  function loadSfx(i){
+    if(buffers[i]!==null) return;
+    buffers[i]=undefined;
+    fetch(SFX[i]).then(function(r){ return r.arrayBuffer(); })
+      .then(function(b){ return actx.decodeAudioData(b); })
+      .then(function(buf){ buffers[i]=buf; })
+      .catch(function(){ buffers[i]=null; });
+  }
+  function blip(){
+    try{
+      if(!actx){
+        var AC=window.AudioContext||window.webkitAudioContext;
+        if(!AC) return;
+        actx=new AC();
+        loadSfx(0); loadSfx(1);
+      }
+      if(actx.state==='suspended') actx.resume();
+      var i=sfxTurn++%2, buf=buffers[i]||buffers[(i+1)%2];
+      if(!buf) return;
+      var src=actx.createBufferSource(), g=actx.createGain();
+      src.buffer=buf; g.gain.value=0.85;
+      src.connect(g); g.connect(actx.destination); src.start();
+    }catch(e){}
+  }
+
   /* The clincher waits on the board and gets out of the way while an object is open. */
   function showClinch(){
     clinch.classList.toggle('on', hasClose && open<0 && !closeEl.classList.contains('on'));
@@ -409,6 +446,7 @@ const ENGINE_JS = `
   /* A touch on the board. Everything is a real hit target, so the presenter is
      operating objects rather than firing a global next. */
   function touch(x,y,target){
+    blip();
     ret.style.left=x+'px'; ret.style.top=y+'px';
     ret.classList.remove('hit'); void ret.offsetWidth; ret.classList.add('hit');
 
@@ -436,10 +474,11 @@ const ENGINE_JS = `
     var dx=x-sx, dy=y-sy, dt=Date.now()-st;
     if(Math.max(Math.abs(dx),Math.abs(dy))>60 && dt<800){
       if(dy<0 && Math.abs(dy)>Math.abs(dx)){
-        if(open<0 && hasClose){ closeEl.classList.add('on'); setCue(); }
+        if(open<0 && hasClose){ blip(); closeEl.classList.add('on'); setCue(); }
         return;
       }
       if(dy>0 && Math.abs(dy)>Math.abs(dx)){
+        blip();
         if(closeEl.classList.contains('on')) closeEl.classList.remove('on'); else shut();
         setCue(); return;
       }

@@ -4,7 +4,9 @@ import { getCurrentUser } from '@/lib/console-auth';
 import { getPiece, type MarketingPiece } from '@/lib/marketing/piece-store';
 import { randomUUID } from 'node:crypto';
 import { getScene } from '@/lib/marketing/scene-store';
-import { listPreziesForConcept, savePrezie, UNFILED } from '@/lib/marketing/prezie-store';
+import { getDeck } from '@/lib/marketing/deck-store';
+import { deckToScene } from '@/lib/marketing/deck-to-scene';
+import { listPreziesForConcept, savePrezie, conceptSlugFromRef } from '@/lib/marketing/prezie-store';
 import { PrezieScreen } from './PrezieScreen';
 import s from '../script.module.css';
 
@@ -55,7 +57,7 @@ export default async function PiecePreziePage({
     );
   }
 
-  const concept = piece.concept_ref?.trim() || UNFILED;
+  const concept = conceptSlugFromRef(piece.concept_ref);
   const pieceId = piece.piece_id;
   let all = await listPreziesForConcept(concept);
 
@@ -65,7 +67,11 @@ export default async function PiecePreziePage({
   // imported, prezies exist for the concept and this never runs again.
   if (all.length === 0) {
     try {
-      const legacy = await getScene(pieceId);
+      // Either older shape counts: the short-lived per-piece scene store, or a DECK from
+      // before the pivot. The deck path is the one that actually mattered in practice,
+      // because that is what the finished work was built in.
+      const deck = await getDeck(pieceId);
+      const legacy = (await getScene(pieceId)) ?? (deck ? deckToScene(deck) : null);
       if (legacy) {
         const now = new Date().toISOString();
         await savePrezie({
