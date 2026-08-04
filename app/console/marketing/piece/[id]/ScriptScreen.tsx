@@ -53,6 +53,10 @@ export function ScriptScreen({
   // PUTs the whole piece, so without carrying it a script save would wipe the screen
   // plan. It is authored on its own Interface stage, never from here.
   const latestTreatment = useRef<string | undefined>(initial.treatment);
+  // The piece NAME. Many pieces come off one concept, so the angle-derived name is only a
+  // starting point; it is edited in place and rides the same coalesced autosave.
+  const [title, setTitle] = useState(initial.title);
+  const latestTitle = useRef(initial.title);
   const inFlight = useRef(false);
 
   // Capture the state URL ONCE at mount. Deriving it inside save() at call time
@@ -91,6 +95,7 @@ export function ScriptScreen({
             headers: { 'content-type': 'application/json' },
             body: JSON.stringify({
               ...initial,
+              title: latestTitle.current.trim() || initial.title,
               script: content,
               media: mediaContent,
               treatment: latestTreatment.current,
@@ -205,7 +210,20 @@ export function ScriptScreen({
             <span className={s.eyebrow}>
               {(initial.format ?? '').replace(/_/g, ' ')} · script
             </span>
-            <h1 className={s.title}>{initial.title}</h1>
+            {/* RENAMEABLE: the derived name is a starting point, and a concept with eight
+                shorts against it needs eight distinguishable names. */}
+            <input
+              className={s.titleInput}
+              value={title}
+              onChange={(e) => {
+                setTitle(e.target.value);
+                latestTitle.current = e.target.value;
+                scheduleSave(latest.current);
+              }}
+              onBlur={flush}
+              aria-label="Piece name"
+              spellCheck={false}
+            />
           </div>
         </div>
         <div className={s.headRight}>

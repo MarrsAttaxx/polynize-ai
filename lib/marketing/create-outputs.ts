@@ -35,7 +35,16 @@ export async function createOutputs(
   owner: string,
   concept: ConceptDoc,
   specs: OutputSpec[],
-  opts?: { forceNew?: boolean }
+  opts?: {
+    forceNew?: boolean;
+    /**
+     * Title for the created piece(s). Every piece off one concept used to inherit the
+     * concept's title, so a concept with eight split-screen shorts against it produced
+     * eight identically named pieces and no way to tell them apart in a list. The angle
+     * is what distinguishes them, so the caller derives a name from it.
+     */
+    title?: string;
+  }
 ): Promise<CreatedOutput[]> {
   // forceNew skips the reuse check so every call creates a fresh piece. The
   // template path ("Use this template") passes it: the user expects a NEW draft
@@ -67,7 +76,7 @@ export async function createOutputs(
       stream: concept.stream,
       format: fmt.id,
       kind: fmt.kind,
-      title: concept.title,
+      title: opts?.title?.trim() || concept.title,
       concept_ref: concept.concept_ref,
       framing: concept.framing,
       pillar: spec.pillar || undefined,

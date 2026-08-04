@@ -22,8 +22,6 @@ type Draft = {
   format: string;
   platforms: string[];
   icp: string;
-  inputs: string;
-  outputs: string;
   length: string;
   hook_variants: string;
   hook_recipe: string;
@@ -39,8 +37,6 @@ const BLANK: Draft = {
   format: 'linkedin_text',
   platforms: ['linkedin'],
   icp: '',
-  inputs: '',
-  outputs: '',
   length: defaultLengthFor('linkedin_text'),
   hook_variants: '1',
   hook_recipe: '',
@@ -58,8 +54,6 @@ function toDraft(t: ContentTemplate): Draft {
     format: t.format,
     platforms: t.platforms,
     icp: t.icp ?? '',
-    inputs: t.inputs ?? '',
-    outputs: t.outputs ?? '',
     // Prefill length from the format default for older templates that predate it.
     length: t.length ?? defaultLengthFor(t.format),
     hook_variants: String(t.hook_variants ?? 1),
@@ -187,8 +181,6 @@ export function TemplatesManager({
       format: t.format,
       platforms: t.platforms.slice(),
       icp: t.icp ?? '',
-      inputs: t.inputs ?? '',
-      outputs: t.outputs ?? '',
       length: t.length ?? defaultLengthFor(t.format),
       hook_variants: String(t.hook_variants ?? 1),
       hook_recipe: t.hook_recipe ?? '',
@@ -293,16 +285,6 @@ export function TemplatesManager({
             Description (shown in the picker)
             <input className={s.input} value={draft.description} onChange={(e) => set('description', e.target.value)} placeholder="What this template makes, in a sentence." />
           </label>
-          <div className={s.fields}>
-            <label className={s.field}>
-              You bring (inputs)
-              <input className={s.input} value={draft.inputs} onChange={(e) => set('inputs', e.target.value)} placeholder="e.g. the finished episode video" />
-            </label>
-            <label className={s.field}>
-              You get (outputs)
-              <input className={s.input} value={draft.outputs} onChange={(e) => set('outputs', e.target.value)} placeholder="e.g. a captioned short with a re-cut hook" />
-            </label>
-          </div>
           <p className={s.recipeIntro}>
             The recipe below is what the agent follows. Write each part as a direct
             instruction, specific to this piece type. The concept supplies the facts

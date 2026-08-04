@@ -120,6 +120,23 @@ export async function POST(
     );
   }
 
+  // A NAME FROM THE ANGLE. Deterministic on purpose: an LLM call here would add a failure
+  // mode and a wait to the one moment the operator is trying to get moving, and a plain
+  // snippet of their own words is both recognisable and honest. It is a starting name, and
+  // renameable on the piece.
+  const angleName = (() => {
+    const a = (body.angle ?? '').trim();
+    if (!a) return '';
+    // First sentence or line, whichever comes first: that is where the angle states itself.
+    const first = a.split(/(?<=[.!?])\s|\n/)[0].trim().replace(/\s+/g, ' ');
+    if (!first) return '';
+    if (first.length <= 58) return first;
+    const cut = first.slice(0, 58);
+    const lastSpace = cut.lastIndexOf(' ');
+    return (lastSpace > 24 ? cut.slice(0, lastSpace) : cut).replace(/[,;:]$/, '');
+  })();
+  const pieceTitle = angleName ? `${concept.title}: ${angleName}` : concept.title;
+
   let pieces;
   try {
     pieces = await createOutputs(
@@ -137,7 +154,7 @@ export async function POST(
       // Each "Use this template" makes a fresh piece with a fresh draft, so it
       // never silently reopens a prior piece's stale draft. Variations accumulate
       // in the concept's dev hub (and can be deleted there).
-      { forceNew: true }
+      { forceNew: true, title: pieceTitle }
     );
   } catch (err) {
     console.error('[concept.create] create failed:', err);

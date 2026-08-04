@@ -199,3 +199,28 @@
   font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
   color: var(--text-2);
 }
+
+/* The piece NAME, edited in place. Styled as the heading it replaces so the page does not
+   suddenly look like a form: it reads as a title until you click into it. */
+.titleInput {
+  width: 100%;
+  font-family: var(--font-space-grotesk), 'Space Grotesk', sans-serif;
+  font-size: clamp(26px, 4vw, 38px);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.04;
+  color: var(--text);
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid transparent;
+  border-radius: 0;
+  padding: 0 0 2px;
+  margin: 0;
+}
+.titleInput:hover {
+  border-bottom-color: var(--tac-edge-dark, rgba(255, 255, 255, 0.14));
+}
+.titleInput:focus {
+  outline: none;
+  border-bottom-color: var(--mint);
+}
