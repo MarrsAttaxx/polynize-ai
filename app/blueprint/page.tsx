@@ -24,13 +24,15 @@ type QKey =
   | 'info'
   | 'judgement'
   | 'good'
+  | 'name'
   | 'email';
 type Question = {
   key: QKey;
   label: string;
   sub?: string;
   placeholder: string;
-  type: 'input' | 'textarea';
+  /** 'contact' renders name + email on one screen; both are lead fields, not mapped. */
+  type: 'input' | 'textarea' | 'contact';
   required?: boolean;
 };
 
@@ -91,7 +93,7 @@ const QUESTIONS: Question[] = [
     label: 'Where should we send your blueprint?',
     sub: 'We will not share it. Your blueprint appears on the next screen.',
     placeholder: '',
-    type: 'input',
+    type: 'contact',
     required: true,
   },
 ];
@@ -104,8 +106,13 @@ const EMPTY: Record<QKey, string> = {
   info: '',
   judgement: '',
   good: '',
+  name: '',
   email: '',
 };
+
+function isEmail(v: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim());
+}
 
 function assemblePayload(a: Record<QKey, string>): string {
   const val = (v: string) => (v.trim() ? v.trim() : 'Not enough information');
@@ -205,7 +212,11 @@ export default function BlueprintPage() {
       <div className={s.wrap}>
         <BlueprintDoc
           initialData={data}
-          lead={{ email: answers.email.trim(), business: answers.business.trim() }}
+          lead={{
+            name: answers.name.trim(),
+            email: answers.email.trim(),
+            business: answers.business.trim(),
+          }}
           onRestart={restart}
         />
       </div>
@@ -291,10 +302,16 @@ export default function BlueprintPage() {
   const q = QUESTIONS[step];
   const isLast = step === QUESTIONS.length - 1;
   const value = answers[q.key];
-  const canAdvance = !q.required || value.trim().length > 0;
+  const canAdvance =
+    q.type === 'contact'
+      ? answers.name.trim().length > 0 && isEmail(answers.email)
+      : !q.required || value.trim().length > 0;
 
   function setValue(v: string) {
     setAnswers((prev) => ({ ...prev, [q.key]: v }));
+  }
+  function setField(key: QKey, v: string) {
+    setAnswers((prev) => ({ ...prev, [key]: v }));
   }
   function next() {
     if (!canAdvance) return;
@@ -319,7 +336,38 @@ export default function BlueprintPage() {
           <h1 className={s.qTitle}>{q.label}</h1>
           {q.sub && <p className={s.inputSub}>{q.sub}</p>}
 
-          {q.type === 'input' ? (
+          {q.type === 'contact' ? (
+            <div className={s.qContact}>
+              <input
+                className={s.qInput}
+                value={answers.name}
+                autoFocus
+                placeholder="Your name"
+                aria-label="Your name"
+                onChange={(e) => setField('name', e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    next();
+                  }
+                }}
+              />
+              <input
+                className={s.qInput}
+                type="email"
+                value={answers.email}
+                placeholder="Your email"
+                aria-label="Your email"
+                onChange={(e) => setField('email', e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    next();
+                  }
+                }}
+              />
+            </div>
+          ) : q.type === 'input' ? (
             <input
               className={s.qInput}
               value={value}

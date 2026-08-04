@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { supabaseService } from '@/lib/supabase';
 import { validateSalesBlueprint } from '@/lib/agents/sales-blueprint-schema';
+import { captureLead } from '@/lib/leads';
 
 export const runtime = 'nodejs';
 
@@ -9,6 +10,7 @@ const BodySchema = z.object({
   id: z.string().uuid().optional(),
   data: z.record(z.string(), z.unknown()),
   /** Lead fields captured at intake on the public funnel. Absent for consultant-run maps. */
+  name: z.string().max(200).optional(),
   email: z.string().max(320).optional(),
   business: z.string().max(300).optional(),
 });
@@ -21,6 +23,10 @@ const BodySchema = z.object({
  * Supabase or the sales_blueprints table is unavailable, returns 503 with
  * ok:false so the client can degrade gracefully (the map still works in the
  * session, Share just stays disabled).
+ *
+ * On the first save of a public-funnel blueprint (the insert path, where lead
+ * fields are present) it also captures the lead into the `leads` table. Lead
+ * capture is best-effort: it never blocks or fails the blueprint save.
  */
 export async function POST(req: Request) {
   let body: z.infer<typeof BodySchema>;
@@ -41,62 +47,39 @@ export async function POST(req: Request) {
   }
   const content = validation.data;
 
-  // Only send lead columns when we actually have values, so a chat edit from the
-  // shared /blueprint/[id] view (which carries no lead) never nulls them out.
-  const lead: Record<string, string> = {};
-  if (body.email?.trim()) lead.email = body.email.trim();
-  if (body.business?.trim()) lead.business = body.business.trim();
-
   try {
     const sb = supabaseService();
 
-    // The email/business columns arrived in migration 0011. If that migration has
-    // not been applied yet, retry without them rather than losing the blueprint.
-    // PostgREST reports an unknown column as PGRST204 with a message like
-    // "Could not find the 'business' column of 'sales_blueprints' in the schema
-    // cache". Postgres itself says "column ... does not exist". Match both.
-    const isMissingLeadColumn = (e: unknown) => {
-      const err = (e ?? {}) as { code?: string; message?: string };
-      if (err.code === 'PGRST204') return true;
-      const msg = typeof err.message === 'string' ? err.message : String(e ?? '');
-      return /could not find the '(email|business)' column|column .*(email|business).* does not exist/i.test(
-        msg
-      );
-    };
-
     if (body.id) {
-      const base = { content, client: content.client, updated_at: new Date().toISOString() };
-      let { data, error } = await sb
+      const { data, error } = await sb
         .from('sales_blueprints')
-        .update({ ...base, ...lead })
+        .update({ content, client: content.client, updated_at: new Date().toISOString() })
         .eq('id', body.id)
         .select('id')
         .maybeSingle();
-      if (error && isMissingLeadColumn(error)) {
-        console.warn('[blueprint-map.save] lead columns missing, retrying update without them');
-        ({ data, error } = await sb
-          .from('sales_blueprints')
-          .update(base)
-          .eq('id', body.id)
-          .select('id')
-          .maybeSingle());
-      }
       if (error) throw error;
       // If the id no longer exists, fall through to an insert so the share link still resolves.
       if (data?.id) return NextResponse.json({ ok: true, id: data.id });
     }
 
-    const base = { content, client: content.client };
-    let { data, error } = await sb
+    const { data, error } = await sb
       .from('sales_blueprints')
-      .insert({ ...base, ...lead })
+      .insert({ content, client: content.client })
       .select('id')
       .single();
-    if (error && isMissingLeadColumn(error)) {
-      console.warn('[blueprint-map.save] lead columns missing, retrying insert without them');
-      ({ data, error } = await sb.from('sales_blueprints').insert(base).select('id').single());
-    }
     if (error || !data) throw error ?? new Error('insert returned no row');
+
+    // First save of a funnel blueprint: capture the lead. Fire and forget so a
+    // missing leads table or a duplicate email never affects the blueprint save.
+    if (body.email?.trim()) {
+      await captureLead({
+        email: body.email,
+        name: body.name,
+        business: body.business,
+        blueprintId: data.id,
+      });
+    }
+
     return NextResponse.json({ ok: true, id: data.id });
   } catch (e) {
     // Supabase errors are plain objects, not Error instances, so String(e)

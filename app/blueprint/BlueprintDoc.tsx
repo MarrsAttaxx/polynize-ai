@@ -113,7 +113,7 @@ export function BlueprintDoc({
   initialData: SalesBlueprint;
   initialId?: string;
   /** Captured at intake on the public funnel. Absent on the shared /blueprint/[id] view. */
-  lead?: { email: string; business: string };
+  lead?: { name: string; email: string; business: string };
   onRestart?: () => void;
 }) {
   const [data, setData] = useState<SalesBlueprint>(initialData);
@@ -136,6 +136,7 @@ export function BlueprintDoc({
         body: JSON.stringify({
           id: blueprintId ?? undefined,
           data: next,
+          name: lead?.name || undefined,
           email: lead?.email || undefined,
           business: lead?.business || undefined,
         }),

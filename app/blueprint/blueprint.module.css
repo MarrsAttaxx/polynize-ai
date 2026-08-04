@@ -939,3 +939,6 @@
   .actHead, .actRow { grid-template-columns: 30px 80px 1fr 50px; }
   .actRat { display: none; }
 }
+
+/* Contact step: name + email stacked on one screen (the lead capture). */
+.qContact { display: flex; flex-direction: column; gap: 12px; }
