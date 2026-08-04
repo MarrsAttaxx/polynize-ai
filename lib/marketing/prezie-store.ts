@@ -131,10 +131,10 @@ export async function listPreziesForConcept(concept: string): Promise<Prezie[]> 
   try {
     if (isBucketConfigured()) {
       const keys = (await listKeys(prefix)).filter((k) => k.endsWith('.json'));
-      for (const k of keys) {
-        const p = await readAt(k);
-        if (p) docs.push(p);
-      }
+      // Read every key at once rather than one latency per prezie.
+      docs = (await Promise.all(keys.map((k) => readAt(k)))).filter(
+        (p): p is Prezie => p !== null
+      );
     } else {
       const { data, error } = await supabaseService()
         .from('content_shoot_sheets')

@@ -45,21 +45,39 @@ export default async function StreamPage({
     );
   }
 
-  let concepts: ConceptDoc[] = [];
-  try {
-    concepts = (await listConcepts(user.email)).filter(
-      (c) => (c.stream || DEFAULT_STREAM) === stream
-    );
-  } catch (err) {
-    console.error('[marketing.stream] concept list failed:', err);
-  }
+  // ALL FIVE LOADS AT ONCE. They are independent, and awaited one after another they
+  // stacked five round trips (each of which was itself serial internally) into the time
+  // to first byte: opening a stream took three to four seconds. Every one still degrades
+  // on its own, so a single store being down costs its section and not the page.
+  const [conceptsRes, piecesRes, brandVoiceRes, templatesRes, mediaRes] = await Promise.all([
+    listConcepts(user.email).catch((err) => {
+      console.error('[marketing.stream] concept list failed:', err);
+      return [] as ConceptDoc[];
+    }),
+    listSavedPieces(user.email).catch((err) => {
+      console.error('[marketing.stream] piece list failed:', err);
+      return [] as MarketingPiece[];
+    }),
+    getBrandVoiceForStream(stream).catch((err) => {
+      console.error('[marketing.stream] brand voice read failed:', err);
+      return null;
+    }),
+    listTemplates(stream).catch((err) => {
+      console.error('[marketing.stream] template list failed:', err);
+      return [];
+    }),
+    listMediaForStream(stream).catch((err) => {
+      console.error('[marketing.stream] media list failed:', err);
+      return [];
+    }),
+  ]);
+
+  const concepts: ConceptDoc[] = conceptsRes.filter(
+    (c) => (c.stream || DEFAULT_STREAM) === stream
+  );
 
   const byId = new Map<string, MarketingPiece>();
-  try {
-    for (const p of await listSavedPieces(user.email)) byId.set(p.piece_id, p);
-  } catch (err) {
-    console.error('[marketing.stream] piece list failed:', err);
-  }
+  for (const p of piecesRes) byId.set(p.piece_id, p);
   const pieces = [...byId.values()].filter((p) => (p.stream || DEFAULT_STREAM) === stream);
 
   // Group in-development pieces by their core concept: one card per concept,
@@ -78,27 +96,10 @@ export default async function StreamPage({
   // Stream-home core assets (D20/D25): the brand voice every piece in this
   // stream is written in, and the template library it creates from. Degrade
   // gracefully on error so the page still renders.
-  let brandVoiceSet = false;
-  try {
-    brandVoiceSet = !!(await getBrandVoiceForStream(stream));
-  } catch (err) {
-    console.error('[marketing.stream] brand voice read failed:', err);
-  }
-  let activeTemplates = 0;
-  let totalTemplates = 0;
-  try {
-    const templates = await listTemplates(stream);
-    totalTemplates = templates.length;
-    activeTemplates = templates.filter((t) => t.status === 'active').length;
-  } catch (err) {
-    console.error('[marketing.stream] template list failed:', err);
-  }
-  let mediaCount = 0;
-  try {
-    mediaCount = (await listMediaForStream(stream)).length;
-  } catch (err) {
-    console.error('[marketing.stream] media list failed:', err);
-  }
+  const brandVoiceSet = !!brandVoiceRes;
+  const totalTemplates = templatesRes.length;
+  const activeTemplates = templatesRes.filter((t) => t.status === 'active').length;
+  const mediaCount = mediaRes.length;
 
   return (
     <>

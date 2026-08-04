@@ -278,10 +278,12 @@ export async function listConcepts(owner: string): Promise<ConceptDoc[]> {
   let docs: ConceptDoc[] = [];
   if (isBucketConfigured()) {
     const keys = (await listKeys(prefix)).filter((k) => k.endsWith('.md'));
-    for (const k of keys) {
-      const d = await readConceptAt(k);
-      if (d) docs.push(d);
-    }
+    // Read every key AT ONCE. Sequentially this was one network round trip per
+    // document, so a stream with twenty concepts paid twenty latencies in a row, which
+    // is most of why opening a stream took seconds.
+    docs = (await Promise.all(keys.map((k) => readConceptAt(k)))).filter(
+      (d): d is ConceptDoc => d !== null
+    );
   } else {
     const { data, error } = await supabaseService()
       .from('content_shoot_sheets')

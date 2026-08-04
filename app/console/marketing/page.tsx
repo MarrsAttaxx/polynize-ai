@@ -27,23 +27,28 @@ export default async function MarketingPage() {
   const counts = new Map<string, { concepts: number; pieces: number }>();
   for (const st of STREAMS) counts.set(st.id, { concepts: 0, pieces: 0 });
 
+  // Both lists at once: awaited in turn they stacked two full store reads into the time
+  // to first byte, which is a visible wait on the way back to this page.
+  const [piecesRes, conceptsRes] = await Promise.all([
+    listSavedPieces(user.email).catch((err) => {
+      console.error('[marketing] piece list failed:', err);
+      return [] as MarketingPiece[];
+    }),
+    listConcepts(user.email).catch((err) => {
+      console.error('[marketing] concept list failed:', err);
+      return [];
+    }),
+  ]);
+
   const byId = new Map<string, MarketingPiece>();
-  try {
-    for (const p of await listSavedPieces(user.email)) byId.set(p.piece_id, p);
-  } catch (err) {
-    console.error('[marketing] piece list failed:', err);
-  }
+  for (const p of piecesRes) byId.set(p.piece_id, p);
   for (const p of byId.values()) {
     const c = counts.get(p.stream || DEFAULT_STREAM);
     if (c) c.pieces += 1;
   }
-  try {
-    for (const cpt of await listConcepts(user.email)) {
-      const c = counts.get(cpt.stream || DEFAULT_STREAM);
-      if (c) c.concepts += 1;
-    }
-  } catch (err) {
-    console.error('[marketing] concept list failed:', err);
+  for (const cpt of conceptsRes) {
+    const c = counts.get(cpt.stream || DEFAULT_STREAM);
+    if (c) c.concepts += 1;
   }
 
   return (

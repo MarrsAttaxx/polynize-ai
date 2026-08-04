@@ -37,6 +37,11 @@ export function MediaLibrary({
   const [target, setTarget] = useState('');
   const [moving, setMoving] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
+  // Assets whose file would not load. A broken link used to render as an invisible or
+  // collapsed tile, which is how Marrs ended up with one he could see the name of but
+  // could not work out how to remove. A dead link is exactly the one you most want to
+  // delete, so it now says so and keeps its controls.
+  const [broken, setBroken] = useState<Set<string>>(new Set());
 
   // Ids deleted this session, so a server-list re-sync (below) never resurrects one
   // whose delete is still committing server-side.
@@ -275,14 +280,23 @@ export function MediaLibrary({
                 rel="noopener noreferrer"
                 className={s.thumbLink}
               >
-                {m.kind === 'image' ? (
+                {m.kind === 'image' && !broken.has(m.media_id) ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
                     src={m.url}
                     alt={m.label}
                     className={s.thumbImg}
                     loading="lazy"
+                    onError={() =>
+                      setBroken((prev) => {
+                        const next = new Set(prev);
+                        next.add(m.media_id);
+                        return next;
+                      })
+                    }
                   />
+                ) : m.kind === 'image' ? (
+                  <span className={s.brokenTile}>link broken</span>
                 ) : (
                   <span className={s.videoTile} aria-hidden>
                     ▶

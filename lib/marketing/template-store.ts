@@ -134,10 +134,10 @@ export async function listTemplates(stream: string): Promise<ContentTemplate[]> 
   let docs: ContentTemplate[] = [];
   if (isBucketConfigured()) {
     const keys = (await listKeys(prefix)).filter((k) => k.endsWith('.json'));
-    for (const k of keys) {
-      const t = await readAt(k);
-      if (t) docs.push(t);
-    }
+    // Read every key at once rather than one latency per template.
+    docs = (await Promise.all(keys.map((k) => readAt(k)))).filter(
+      (t): t is ContentTemplate => t !== null
+    );
   } else {
     const { data, error } = await supabaseService()
       .from('content_shoot_sheets')

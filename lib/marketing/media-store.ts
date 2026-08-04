@@ -111,10 +111,10 @@ export async function listMediaForStream(stream: string): Promise<MediaAsset[]> 
   let docs: MediaAsset[] = [];
   if (isBucketConfigured()) {
     const keys = (await listKeys(prefix)).filter((k) => k.endsWith('.json'));
-    for (const k of keys) {
-      const m = await readAt(k);
-      if (m) docs.push(m);
-    }
+    // Read every key at once rather than one latency per asset (see concept-store).
+    docs = (await Promise.all(keys.map((k) => readAt(k)))).filter(
+      (m): m is MediaAsset => m !== null
+    );
   } else {
     const { data, error } = await supabaseService()
       .from('content_shoot_sheets')
