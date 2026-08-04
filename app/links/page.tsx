@@ -20,7 +20,7 @@ export const metadata: Metadata = {
 
 const MISSION_CONTROL_URL =
   'https://app.polynize.io/#/loop/0f5acd09-8627-479b-9c74-1f044c2e880b/execute?from=%2Fstudio%2Fdesign';
-const BOOKING_URL = 'https://calendly.com/marrscoiro/meeting30';
+const BOOKING_URL = 'https://calendar.app.google/rw8Vpd7BkJh5wwig9';
 
 type LinkCard = {
   href: string;
@@ -68,7 +68,7 @@ const GET_STARTED: LinkCard[] = [
   {
     href: BOOKING_URL,
     external: true,
-    tag: { label: 'calendly' },
+    tag: { label: 'calendar' },
     meta: '20 min',
     title: 'Book a call with Marrs',
     desc: 'Talk to our co-founder about your agent needs.',
