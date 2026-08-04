@@ -5,7 +5,7 @@ import { AjTeamDiagram } from './_components/AjTeamDiagram';
 import { DraftingGrid } from './_components/DraftingGrid';
 import { TrackedLink } from './_components/TrackedLink';
 
-const BOOKING_URL = 'https://calendly.com/marrscoiro/meeting30';
+const BOOKING_URL = 'https://calendar.app.google/rw8Vpd7BkJh5wwig9';
 const POLYNIZE_IO = 'https://polynize.io';
 const YOUTUBE_CHANNEL = 'https://www.youtube.com/@polynize.agentic';
 const LINKEDIN_URL = 'https://www.linkedin.com/company/polynize';

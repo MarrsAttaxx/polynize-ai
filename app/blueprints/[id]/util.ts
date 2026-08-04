@@ -20,4 +20,4 @@ export function firstNameOf(name: string | undefined, fallback = 'You'): string 
   return (name ?? '').trim().split(/\s+/)[0] || fallback;
 }
 
-export const BOOKING_URL = 'https://calendly.com/marrscoiro/meeting30';
+export const BOOKING_URL = 'https://calendar.app.google/rw8Vpd7BkJh5wwig9';

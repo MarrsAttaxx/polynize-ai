@@ -9,7 +9,7 @@ import { ResetLink } from '@/app/_components/ResetLink';
 import { DayInLife } from '@/app/_components/DayInLife';
 import s from './phase-b.module.css';
 
-const BOOKING_URL = 'https://calendly.com/marrscoiro/meeting30';
+const BOOKING_URL = 'https://calendar.app.google/rw8Vpd7BkJh5wwig9';
 
 type Props = {
   answers: Partial<Answers>;
