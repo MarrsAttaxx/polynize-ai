@@ -8,6 +8,7 @@ import { listPreziesForConcept } from '@/lib/marketing/prezie-store';
 import { DeleteButton } from './DeleteButton';
 import { BackLink } from '@/app/console/marketing/_components/BackLink';
 import { MoveConceptButton } from './MoveConceptButton';
+import { ConceptTitle } from './ConceptTitle';
 import s from './concept.module.css';
 
 export const dynamic = 'force-dynamic';
@@ -67,7 +68,7 @@ export default async function ConceptPage({
           <MoveConceptButton currentStream={concept.stream} />
         </div>
         <span className={s.eyebrow}>concept · {concept.stream}</span>
-        <h1 className={s.title}>{concept.title}</h1>
+        <ConceptTitle slug={slug} initial={concept.title} className={s.title} />
       </header>
 
       <div className={s.developRow}>

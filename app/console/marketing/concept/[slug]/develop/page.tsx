@@ -6,6 +6,7 @@ import { listSavedPieces, type MarketingPiece } from '@/lib/marketing/piece-stor
 import { pieceInDevGroup } from '@/lib/marketing/dev-group';
 import { formatById } from '@/lib/marketing/output-plan';
 import { BackLink } from '@/app/console/marketing/_components/BackLink';
+import { ConceptTitle } from '../ConceptTitle';
 import { AdoptCreateButton } from './AdoptCreateButton';
 import { DevGroupDeleteButton } from './DevGroupDeleteButton';
 import s from '../concept.module.css';
@@ -64,7 +65,14 @@ export default async function ConceptDevelopPage({
           <DevGroupDeleteButton stream={stream} count={pieces.length} title={title} />
         </div>
         <span className={s.eyebrow}>in development · {stream}</span>
-        <h1 className={s.title}>{title}</h1>
+        {/* Renames the CONCEPT. This card, its hub, and the pieces under it are three
+            different things; they were sharing one label by accident, which is why
+            renaming a piece appeared to rename the concept. */}
+        {concept ? (
+          <ConceptTitle slug={slug} initial={title} className={s.title} />
+        ) : (
+          <h1 className={s.title}>{title}</h1>
+        )}
       </header>
 
       <div className={s.developRow}>
@@ -113,11 +121,17 @@ export default async function ConceptDevelopPage({
                     <span className={`${s.outputKind} ${s[`kind_${kind}`] ?? ''}`}>
                       {kind}
                     </span>
+                    {/* The PIECE's own name leads. This showed the format label, so every
+                        split-screen short in a concept read as "Split screen short
+                        (9:16 hero)" and renaming a piece changed nothing visible here. The
+                        format is still worth seeing, just not as the identity. */}
                     <span className={s.outputLabel}>
-                      {fmt?.label ?? p.format}
-                      {p.pillar ? (
-                        <span className={s.outputPillar}> · {p.pillar}</span>
-                      ) : null}
+                      {p.title}
+                      <span className={s.outputPillar}>
+                        {' · '}
+                        {fmt?.label ?? p.format}
+                        {p.pillar ? ` · ${p.pillar}` : ''}
+                      </span>
                     </span>
                     <span className={s.outputStatus}>{p.status ?? 'draft'}</span>
                   </Link>

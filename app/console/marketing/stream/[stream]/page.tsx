@@ -240,6 +240,14 @@ export default async function StreamPage({
                 const conceptBacked = /core-concept-.+\.md$/.test(
                   grouped[0].concept_ref ?? ''
                 );
+                // THE CARD IS THE CONCEPT, so it is named by the concept. It used to be
+                // labelled with grouped[0].title, i.e. whichever piece happened to be
+                // first, which meant renaming a piece silently renamed this card and the
+                // two ideas became impossible to tell apart. The group key IS the concept
+                // slug, so the concept's own title is the right label; a pre-concept-bank
+                // group with no concept behind it still falls back to its first piece.
+                const conceptTitle =
+                  concepts.find((c) => c.framing_slug === slug)?.title ?? grouped[0].title;
                 return (
                   <Link
                     key={slug}
@@ -250,7 +258,7 @@ export default async function StreamPage({
                       {conceptBacked ? 'core concept · ' : ''}
                       {grouped.length} piece{grouped.length === 1 ? '' : 's'}
                     </span>
-                    <span className={l.cardTitle}>{grouped[0].title}</span>
+                    <span className={l.cardTitle}>{conceptTitle}</span>
                     <span className={l.cardDesc}>{kinds.join(' · ')}</span>
                     <span className={l.cardArrow} aria-hidden>
                       →

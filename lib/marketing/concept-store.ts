@@ -163,6 +163,32 @@ async function writeConceptAt(key: string, record: ConceptDoc): Promise<void> {
 
 // --- Public API --------------------------------------------------------------
 
+/**
+ * Rename a concept IN PLACE: the display title changes, the slug does not.
+ *
+ * This cannot go through `saveConcept`, which derives the slug from the framing. A rename
+ * that moved the slug would orphan everything keyed to it: every piece's `concept_ref`,
+ * every dev-group membership, and every prezie filed under `pam/prezies/{slug}/`. So the
+ * key is left exactly as it is and only the human-readable title moves, which is the same
+ * display-only rule every rename in this codebase follows.
+ */
+export async function renameConcept(
+  owner: string,
+  slug: string,
+  title: string
+): Promise<ConceptDoc | null> {
+  const key = conceptKey(owner, slug);
+  const existing = await readConceptAt(key);
+  if (!existing) return null;
+  const next: ConceptDoc = {
+    ...existing,
+    title: title.trim() || existing.title,
+    updated_at: new Date().toISOString(),
+  };
+  await writeConceptAt(key, next);
+  return next;
+}
+
 export async function saveConcept(
   doc: {
     owner: string;
