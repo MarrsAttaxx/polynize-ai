@@ -329,3 +329,49 @@
   font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
   color: var(--text-2);
 }
+
+/* How to write a template that behaves. Collapsed by default: it is reference, and it is
+   read once when a template misbehaves rather than every visit. */
+.guide {
+  margin-top: 4px;
+  max-width: 76ch;
+}
+.guideSummary {
+  cursor: pointer;
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--mint);
+  list-style: none;
+}
+.guideSummary::marker,
+.guideSummary::-webkit-details-marker {
+  display: none;
+}
+.guideSummary::before {
+  content: '+ ';
+}
+details[open] .guideSummary::before {
+  content: '- ';
+}
+.guideBody {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 12px;
+  padding: 14px 16px;
+  border-left: 2px solid rgba(105, 252, 203, 0.35);
+  background: var(--tac-surface);
+  border-radius: 0 10px 10px 0;
+}
+.guideBody p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--text-2);
+}
+.guideBody strong {
+  color: var(--text);
+  font-weight: 600;
+}

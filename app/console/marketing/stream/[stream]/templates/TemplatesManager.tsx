@@ -25,6 +25,7 @@ type Draft = {
   inputs: string;
   outputs: string;
   length: string;
+  hook_variants: string;
   hook_recipe: string;
   recipe: string;
   cta_recipe: string;
@@ -41,6 +42,7 @@ const BLANK: Draft = {
   inputs: '',
   outputs: '',
   length: defaultLengthFor('linkedin_text'),
+  hook_variants: '1',
   hook_recipe: '',
   recipe: '',
   cta_recipe: '',
@@ -60,6 +62,7 @@ function toDraft(t: ContentTemplate): Draft {
     outputs: t.outputs ?? '',
     // Prefill length from the format default for older templates that predate it.
     length: t.length ?? defaultLengthFor(t.format),
+    hook_variants: String(t.hook_variants ?? 1),
     hook_recipe: t.hook_recipe ?? '',
     recipe: t.recipe ?? '',
     cta_recipe: t.cta_recipe ?? '',
@@ -187,6 +190,7 @@ export function TemplatesManager({
       inputs: t.inputs ?? '',
       outputs: t.outputs ?? '',
       length: t.length ?? defaultLengthFor(t.format),
+      hook_variants: String(t.hook_variants ?? 1),
       hook_recipe: t.hook_recipe ?? '',
       recipe: t.recipe ?? '',
       cta_recipe: t.cta_recipe ?? '',
@@ -313,6 +317,19 @@ export function TemplatesManager({
               onChange={(e) => set('length', e.target.value)}
               placeholder="e.g. 150 to 250 words, or 45 to 90 seconds"
             />
+          </label>
+          <label className={s.field}>
+            How many hooks? (record them all in one session, cut into that many posts)
+            <select
+              className={s.input}
+              value={draft.hook_variants}
+              onChange={(e) => set('hook_variants', e.target.value)}
+            >
+              <option value="1">1 hook</option>
+              <option value="2">2 hooks, one body</option>
+              <option value="3">3 hooks, one body</option>
+              <option value="4">4 hooks, one body</option>
+            </select>
           </label>
           <label className={s.fieldWide}>
             Hook recipe (how to OPEN, as an ordered formula the agent follows)

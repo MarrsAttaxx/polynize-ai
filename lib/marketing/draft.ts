@@ -56,6 +56,8 @@ export type RecipeParts = {
   recipe?: string;
   ctaRecipe?: string;
   length?: string;
+  /** How many hook variants to write. 1 or undefined = one hook, as before. */
+  hookVariants?: number;
 };
 
 /** Map a resolved Content Template to the recipe parts the prompt blocks consume. */
@@ -64,12 +66,17 @@ export function recipePartsFromTemplate(t: {
   recipe?: string;
   cta_recipe?: string;
   length?: string;
+  hook_variants?: number;
 }): RecipeParts {
+  const variants = Number(t.hook_variants);
   return {
     hookRecipe: t.hook_recipe || undefined,
     recipe: t.recipe || undefined,
     ctaRecipe: t.cta_recipe || undefined,
     length: t.length || undefined,
+    // Clamped here so a bad stored value cannot ask for forty hooks.
+    hookVariants:
+      Number.isFinite(variants) && variants > 1 ? Math.min(Math.floor(variants), 6) : undefined,
   };
 }
 
@@ -120,6 +127,19 @@ export function recipeBlock(parts: RecipeParts): string {
   if (hookRecipe) {
     sections.push(
       `HOOK RECIPE (how to open this piece; follow it as an ordered formula, step by step):\n"""\n${hookRecipe}\n"""`
+    );
+  }
+  // N HOOKS, ONE BODY. This is a shape instruction and it belongs here rather than in the
+  // operator's recipe wording, which cannot change the structure of the output. The point
+  // is production: the presenter records every hook against one body in a single session,
+  // and the piece is then cut into that many posts and scheduled days apart.
+  if (parts.hookVariants && parts.hookVariants > 1) {
+    const n = parts.hookVariants;
+    sections.push(
+      `HOOK VARIANTS: write ${n} DIFFERENT hooks for this one piece, not one.\n` +
+        `Label them "HOOK OPTION 1" to "HOOK OPTION ${n}", each following the hook recipe above and each with its own ON-SCREEN TEXT line where the format uses one.\n` +
+        `They must be genuinely different ways IN to the same argument (a different belief flipped, a different fact led with, a different audience addressed), never rewordings of each other, and each must hand over cleanly to the SAME body.\n` +
+        `Write the body, and the close, ONCE. The body must not refer back to anything specific to one hook, because whichever hook is used it has to follow on.`
     );
   }
   if (recipe) {

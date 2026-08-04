@@ -486,6 +486,28 @@ The remaining fit routine is a backstop, not a layout mechanism: it earns its ke
 
 ---
 
+## D32 — A piece needs three inputs: the concept, the template, and the ANGLE
+
+**Decision (2026-08-04, Marrs):** Choosing a concept and a template used to create the piece and draft it in the same click. *"The script is way off."* It was, and not because April writes badly: **a concept says what a piece is ABOUT and a template says what SHAPE it takes, and neither says what ARGUMENT it makes or who it is for.** Drafting off the pair is drafting with no editorial intent, so the model has to invent one, and every such draft is generic by construction.
+
+**So the angle is a first-class input, captured before anything is written.** Choosing a template asks one question on its own screen, "What angle do you want to take on this?", and the answer is saved to `piece.angle` before the draft runs.
+
+- **ONE box, not three fields.** The angle, the audience and the rough points arrive in the same breath when a person describes what they want. Splitting them into separate inputs is the form-filling the step exists to remove.
+- **It leads the draft message and sits at the TOP of the precedence list** in both prompts, above the concept's own emphasis and above the recipe. It selects and orders what matters; it never licenses a fact the concept does not contain.
+- **Copy supplied in the angle is FINAL COPY.** Marrs gave specific hooks and a CTA and the draft wrote its own, because the recipe governs hooks and nothing said otherwise. Lines given in the angle now go in verbatim and beat the recipe, which governs only the shape of what the operator did not write.
+- **The angle draft is never lost.** It is mirrored to localStorage per concept+template as it is typed, restored on return, cleared only once a piece exists. Local rather than server-side deliberately: it must survive a failed request and a closed tab, which are exactly the moments a server save would not have happened either. He lost a long angle once; that is one time too many for something that is often the most considered writing in the piece.
+- **The angle SEEDS the prezie's narrative** (and scene generation falls back to it), so intent is stated once. On whether the two are the same thing: the **angle** is editorial (which argument, for whom) and the **narrative** is creative (the image that lands it). They arrive together, so they share one input and diverge only if the board later wants a tighter image than the brief had.
+
+**Templates were fighting this, and needed three fixes of their own.**
+
+- **A BUILT-IN BECOMES YOURS THE MOMENT YOU USE IT.** The library lived in a hardcoded array, so the starter templates were permanently unfixable: *"a mess of half-good templates I can't edit"*. Using one now copies it into the stream and the piece references the copy, so refining it afterwards actually affects the next piece.
+- **HOOK COUNT IS STRUCTURE, NOT PROSE.** Marrs wrote the hook three times into a recipe and got one hook back, because the prompt is built to produce a single opening and no recipe wording can change the shape of the output. `hook_variants` (clamped 1-6) makes the prompt ask for N genuinely different ways in to the same argument, each with its own on-screen text, over ONE body written once. This is the mechanism behind one-body-three-posts: record every hook in a single session, cut into that many pieces, schedule them days apart.
+- **Guidance lives on the templates page**, not in a doc nobody opens: write instructions rather than descriptions, one per line (the fields are injected as separate named sections, so a rule buried mid-paragraph carries less weight), say what NOT to do, and leave specific words to the angle so every piece off a template does not sound the same.
+
+**Consequence if violated:** going back to drafting straight from concept plus template returns the generic first draft, and the fix will look like a prompt problem when it is a missing input. Letting the recipe outrank operator-supplied copy means his own lines get rewritten. Expressing structural asks (how many hooks, how long) as recipe prose means they are silently ignored, which is worse than refusing them.
+
+---
+
 ---
 
 ## How to add to this log
@@ -498,6 +520,7 @@ When you make a decision that future-you (or a cold agent) might be tempted to u
 
 | Date | Change |
 |---|---|
+| 2026-08-04 | D32: the ANGLE becomes a first-class input, asked for on its own screen before any draft runs and saved to `piece.angle`; it leads both prompts' precedence and its supplied lines are used verbatim over the recipe. Angle drafts persist locally so they cannot be lost. Templates: built-ins copy into the stream on use (they were unfixable in code), `hook_variants` makes N-hooks-one-body structural rather than recipe prose, and how-to guidance sits on the templates page. Also: prezies belong to the concept with versions, decks retrofit into prezies, touch SFX from Marrs's samples, format icons on template cards, and the stream/dashboard load was parallelised after it took 3-4s to open a stream. |
 | 2026-07-28 | The Screen Prompt stage is renamed the INTERFACE (Marrs: the name kept describing a document, and it is not one). Route `piece/[id]/interface` with the old path redirecting; stage id `treatment_map` and field `piece.treatment` unchanged, display-only as with every prior rename. The move also retired the unreachable deck/slides builders and their four lib modules, since leaving them would have created an `interface/deck/` endpoint; deck PLAYBACK (`/console/deck/[id]`) is kept so existing decks still perform. Audio for shoots settled: DJI lapel mics into the FRONT camera, so front-camera audio is the sync source, which is what the test footage already proved. |
 | 2026-07-28 | D31 wired into the console: `scene-store.ts` (data keyed by piece id), `scene-generate.ts` (April returns data, caps enforced in code, colour falls back by position so a set is never monochrome), `/console/scene/[id]` unlisted route, and the Screen Prompt stage rebuilt as a scene editor where edits are direct and cost no LLM call. Engine additions the same day, all from Marrs performing it: a type scale with an absolute floor set by the fact values, no prose on a node (it is what he says, and it was the only variable-length element), a glowing clincher button replacing an invisible swipe, names revealed only once an object has been opened, and an authored line break on the close. The deck engine and its URLs stay live until a piece is shot with a scene. |
 | 2026-07-28 | D31 SUPERSEDES D30's slide model: the touchscreen is an INTERFACE, not a deck. `lib/marketing/scene.ts` holds one set of persistent objects plus a view state, moved with FLIP so the same object transforms instead of a new picture replacing it. April supplies data only (nodes / colours / lines / facts); the engine owns all layout and behaviour. Touchable example at `/console/scene/demo`. Console rewiring (generation, editor, storage, per-piece route) still to come; the deck engine stays in place until it lands. |

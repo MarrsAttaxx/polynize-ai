@@ -12,7 +12,7 @@ import { z } from 'zod';
 import { getCurrentUser } from '@/lib/console-auth';
 import { getConcept } from '@/lib/marketing/concept-store';
 import { formatById } from '@/lib/marketing/output-plan';
-import { getTemplate } from '@/lib/marketing/template-store';
+import { getTemplate, saveTemplate, templateKey } from '@/lib/marketing/template-store';
 import { getLibraryTemplate, libraryRef } from '@/lib/marketing/template-library';
 import {
   createOutputs,
@@ -69,8 +69,31 @@ export async function POST(
   let template;
   let templateRef: string;
   if (body.source === 'library') {
-    template = getLibraryTemplate(body.template_id);
+    const lib = getLibraryTemplate(body.template_id);
+    template = lib;
     templateRef = libraryRef(body.template_id);
+    // USING A BUILT-IN COPIES IT INTO THE STREAM, so from here on it is an ordinary
+    // editable template. The built-ins live in code, which made them permanently
+    // unfixable: Marrs had "a mess of half-good templates" he could not touch. The copy
+    // takes over the ref too, so refining it afterwards actually affects the next piece.
+    // Best effort: if the copy fails the piece is still created against the library ref.
+    if (lib) {
+      try {
+        if (!(await getTemplate(concept.stream, lib.template_id))) {
+          const now = new Date().toISOString();
+          await saveTemplate({
+            ...lib,
+            stream: concept.stream,
+            created_at: now,
+            updated_at: now,
+          });
+        }
+        templateRef = templateKey(concept.stream, lib.template_id);
+        template = (await getTemplate(concept.stream, lib.template_id)) ?? lib;
+      } catch (err) {
+        console.error('[concept.create] library copy failed (using the built-in):', err);
+      }
+    }
   } else {
     try {
       template = (await getTemplate(concept.stream, body.template_id)) ?? undefined;

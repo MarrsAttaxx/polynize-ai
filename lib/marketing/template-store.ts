@@ -52,6 +52,17 @@ export type ContentTemplate = {
   /** Target length (words for text, minutes/seconds for video). Prefilled from the
    *  format's industry default; injected into the draft prompt as a limit. */
   length?: string;
+  /**
+   * HOW MANY HOOK VARIANTS this template asks for. Undefined or 1 means a single hook.
+   *
+   * This has to be STRUCTURE rather than prose in the hook recipe. Marrs wrote the hook
+   * three times into a recipe and got one hook back, because the prompt is built to
+   * produce a single opening and no recipe wording can change the shape of the output.
+   * It is also the mechanism behind one-body-three-posts: record several hooks against
+   * one body in a single session, then cut that into that many pieces and schedule them
+   * days apart.
+   */
+  hook_variants?: number;
   /** A link to (or description of) an example piece made from this template. */
   example?: string;
   created_at: string;

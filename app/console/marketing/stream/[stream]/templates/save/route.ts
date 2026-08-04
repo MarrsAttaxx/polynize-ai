@@ -35,6 +35,8 @@ const BodySchema = z.object({
   inputs: z.string().max(600).optional(),
   outputs: z.string().max(600).optional(),
   length: z.string().max(400).optional(),
+  // Clamped: a hook count is a small integer, and 1 means the ordinary single hook.
+  hook_variants: z.coerce.number().int().min(1).max(6).optional(),
   hook_recipe: z.string().max(8000).optional(),
   recipe: z.string().max(20_000).optional(),
   cta_recipe: z.string().max(8000).optional(),
@@ -109,6 +111,9 @@ export async function PUT(
     inputs: body.inputs ? stripEmDashes(body.inputs.trim()) : undefined,
     outputs: body.outputs ? stripEmDashes(body.outputs.trim()) : undefined,
     length: body.length ? stripEmDashes(body.length.trim()) : undefined,
+    // 1 is the ordinary case and is stored as absent, so a template that never asked
+    // for variants stays byte-identical to before this field existed.
+    hook_variants: body.hook_variants && body.hook_variants > 1 ? body.hook_variants : undefined,
     hook_recipe: body.hook_recipe ? stripEmDashes(body.hook_recipe.trim()) : undefined,
     recipe: body.recipe ? stripEmDashes(body.recipe.trim()) : undefined,
     cta_recipe: body.cta_recipe ? stripEmDashes(body.cta_recipe.trim()) : undefined,
