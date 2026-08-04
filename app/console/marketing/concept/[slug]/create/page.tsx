@@ -5,7 +5,6 @@ import { getConcept } from '@/lib/marketing/concept-store';
 import { listTemplates, type ContentTemplate } from '@/lib/marketing/template-store';
 import { LIBRARY_TEMPLATES } from '@/lib/marketing/template-library';
 import { TemplatePicker } from './TemplatePicker';
-import { BackLink } from '@/app/console/marketing/_components/BackLink';
 import s from './create.module.css';
 
 export const dynamic = 'force-dynamic';
@@ -62,27 +61,17 @@ export default async function CreateFromConceptPage({
 
   return (
     <div className={s.root}>
-      <header className={s.head}>
-        <BackLink
-          fallbackHref={`/console/marketing/concept/${slug}`}
-          className={s.back}
-          dashboardHref={`/console/marketing/stream/${concept.stream}`}
-        />
-        <span className={s.eyebrow}>create content · {concept.stream}</span>
-        <h1 className={s.title}>Pick a content template</h1>
-        <p className={s.sub}>
-          A content template already knows its format, platforms, audience, and production
-          recipe; you bring the concept. Or{' '}
-          <Link href={`/console/marketing/concept/${slug}/plan`} className={s.customLink}>
-            plan a custom output →
-          </Link>
-        </p>
-      </header>
-
+      {/* The header lives INSIDE the picker so it can stand down once a template is
+          chosen: on the angle screen everything above the question is a distraction
+          (Marrs), and a server-rendered header cannot be hidden by a client step. */}
       <TemplatePicker
         streamTemplates={streamTemplates}
         libraryTemplates={library}
         stream={concept.stream}
+        conceptSlug={slug}
+        backHref={`/console/marketing/concept/${slug}`}
+        dashboardHref={`/console/marketing/stream/${concept.stream}`}
+        planHref={`/console/marketing/concept/${slug}/plan`}
       />
     </div>
   );

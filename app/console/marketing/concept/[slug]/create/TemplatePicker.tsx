@@ -16,13 +16,14 @@
  *    glance: whether this makes a video, a written post, or an image.
  */
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import type { ContentTemplate } from '@/lib/marketing/template-store';
 import type { LibraryTemplate } from '@/lib/marketing/template-library';
 import { formatById, type FormatKind } from '@/lib/marketing/output-plan';
 import { channelLabel } from '@/lib/marketing/channels';
+import { BackLink } from '@/app/console/marketing/_components/BackLink';
 import s from './create.module.css';
 
 type AnyTemplate = (ContentTemplate | LibraryTemplate) & { stream?: string };
@@ -70,10 +71,18 @@ export function TemplatePicker({
   streamTemplates,
   libraryTemplates,
   stream,
+  conceptSlug,
+  backHref,
+  dashboardHref,
+  planHref,
 }: {
   streamTemplates: ContentTemplate[];
   libraryTemplates: LibraryTemplate[];
   stream: string;
+  conceptSlug: string;
+  backHref: string;
+  dashboardHref: string;
+  planHref: string;
 }) {
   const router = useRouter();
   const [busy, setBusy] = useState<string | null>(null);
@@ -83,6 +92,37 @@ export function TemplatePicker({
     null
   );
   const [angle, setAngle] = useState('');
+
+  /**
+   * THE ANGLE DRAFT IS NEVER LOST. Marrs wrote a long angle, and it went with the page.
+   * It is real writing, often the most considered thing in the whole piece, and at that
+   * moment it exists nowhere but an uncommitted textarea. So it is mirrored to
+   * localStorage per concept+template as he types, restored on return, and cleared only
+   * once a piece has actually been created from it. Local rather than server-side on
+   * purpose: it has to survive a failed request and a closed tab, which is exactly when a
+   * save to the server would not have happened either.
+   */
+  const draftKey = chosen
+    ? `pam.angle.${conceptSlug}.${chosen.source}:${chosen.t.template_id}`
+    : null;
+  useEffect(() => {
+    if (!draftKey) return;
+    try {
+      const saved = window.localStorage.getItem(draftKey);
+      if (saved) setAngle(saved);
+    } catch {
+      /* private mode; the box just starts empty */
+    }
+  }, [draftKey]);
+  useEffect(() => {
+    if (!draftKey) return;
+    try {
+      if (angle.trim()) window.localStorage.setItem(draftKey, angle);
+      else window.localStorage.removeItem(draftKey);
+    } catch {
+      /* nothing to do; the text is still on screen */
+    }
+  }, [draftKey, angle]);
 
   // Hide library templates the stream has already copied (same id).
   const streamIds = new Set(streamTemplates.map((t) => t.template_id));
@@ -108,6 +148,12 @@ export function TemplatePicker({
         setError(b?.error ?? 'Could not create from this template.');
         setBusy(null);
         return;
+      }
+      // Committed: the angle now lives on the piece, so the local copy can go.
+      try {
+        if (draftKey) window.localStorage.removeItem(draftKey);
+      } catch {
+        /* harmless */
       }
       router.push(b.target);
     } catch {
@@ -221,6 +267,21 @@ export function TemplatePicker({
   }
   return (
     <div className={s.picker}>
+      {/* The header lives here rather than on the page so it can stand down on the angle
+          screen, where everything above the question is a distraction (Marrs). */}
+      <header className={s.head}>
+        <BackLink fallbackHref={backHref} className={s.back} dashboardHref={dashboardHref} />
+        <span className={s.eyebrow}>create content · {stream}</span>
+        <h1 className={s.title}>Pick a content template</h1>
+        <p className={s.sub}>
+          A content template already knows its format, platforms, audience, and production
+          recipe; you bring the concept. Or{' '}
+          <Link href={planHref} className={s.customLink}>
+            plan a custom output →
+          </Link>
+        </p>
+      </header>
+
       {error ? <p className={s.error}>{error}</p> : null}
 
       <section className={s.panel}>
