@@ -27,19 +27,21 @@ export const SHORT_FORM_STAGES: MiddleStage[] = [
     href: (id) => `/console/marketing/piece/${id}`,
   },
   {
-    // PRE-RECORD (D31): the INTERFACE the touchscreen runs. It must exist before the
+    // PRE-RECORD (D31): the PREZIE the touchscreen runs. It must exist before the
     // shoot because the presenter operates it live on camera, so it is a prop rather
     // than post-production. Distinct from the post-record `treatment` stage below
     // (overlays/execution on the footage).
     //
-    // The stage id stays `treatment_map` and the stored field stays `piece.treatment`
-    // through both renames (treatment -> screen prompt -> interface): display-only, so
-    // no piece already in flight is orphaned.
+    // The stage id stays `treatment_map` through every rename of this stage
+    // (treatment -> screen prompt -> interface -> prezie): display-only, so no piece
+    // already in flight is orphaned. "Prezie" is Marrs's own word for it, which is the
+    // best reason to use it: it is what he calls the thing when he is not thinking about
+    // the console.
     id: 'treatment_map',
-    label: 'Interface',
+    label: 'Prezie',
     role: 'hybrid',
     built: true,
-    href: (id) => `/console/marketing/piece/${id}/interface`,
+    href: (id) => `/console/marketing/piece/${id}/prezie`,
   },
   {
     id: 'record',

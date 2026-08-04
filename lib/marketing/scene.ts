@@ -94,10 +94,15 @@ lives in the script. The screen carries only the name and the numbers.
   across lines yourself with a newline where the punch should land: the first line is the
   claim and what follows sits under it.
 
-The presenter opens any node by touching it, reveals its facts in any order, closes it
-and opens another. Write the content so it works in ANY order: no node may depend on
-another having been opened first, and no fact may read as "and then". There is no
-first and no last, apart from the concept the board opens on and the close.`;
+THE BOARD READS LEFT TO RIGHT, AND THAT ORDER IS THE NARRATIVE (Marrs). The objects are
+not a list, they are the story laid out in space: the problem on the left, what it turns
+into as you move right, the resolution last. Order them so the argument is legible from
+the board alone, before anyone touches anything.
+
+That is not the same as a sequence. The presenter opens the objects in whatever order the
+moment takes, so the CONTENT of each must stand alone: no node may depend on another
+having been opened first, and no fact may read as "and then". The narrative is in the
+LAYOUT; the freedom is in the performance. Both at once is the point.`;
 
 const ENGINE_CSS = `
 *{margin:0;padding:0;box-sizing:border-box}

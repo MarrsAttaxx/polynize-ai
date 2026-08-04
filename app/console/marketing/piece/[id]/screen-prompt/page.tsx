@@ -1,16 +1,15 @@
 import { redirect } from 'next/navigation';
 
 /**
- * The stage moved to `interface` when it was renamed (D31, 2026-07-28). This keeps the
- * old path working: the stage is bookmarked, and it is the sort of page left open in a
- * tab for days while a piece is in production, so a dead link here would read as the
- * console losing the work rather than as a rename.
+ * This stage has been renamed twice (screen prompt, then interface, now PREZIE). Both old
+ * paths redirect: the stage gets bookmarked and left open in a tab for days while a piece
+ * is in production, so a dead link would read as the console losing the work.
  */
-export default async function ScreenPromptRedirect({
+export default async function RenamedStageRedirect({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  redirect(`/console/marketing/piece/${id}/interface`);
+  redirect(`/console/marketing/piece/${id}/prezie`);
 }
