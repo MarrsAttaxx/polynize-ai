@@ -240,3 +240,93 @@
   font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
   color: var(--text-2);
 }
+
+/* What this template MAKES, at a glance: video, written post, or image. */
+.formatIcon {
+  display: inline-flex;
+  align-items: center;
+  margin-right: 8px;
+  color: var(--mint);
+  vertical-align: -2px;
+}
+
+/* THE ANGLE STEP. Deliberately one screen with one question on it: this is the moment the
+   piece gets its intent, and anything else on screen competes with thinking. */
+.angleWrap {
+  max-width: 680px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.angleBack {
+  align-self: flex-start;
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: var(--text-3);
+  background: transparent;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+}
+.angleBack:hover {
+  color: var(--mint);
+}
+.angleChosen {
+  display: flex;
+  align-items: center;
+  margin: 0;
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+.angleQ {
+  font-family: var(--font-space-grotesk), 'Space Grotesk', sans-serif;
+  font-size: clamp(22px, 3.4vw, 30px);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+  margin: 4px 0 0;
+}
+.angleHelp {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--text-3);
+  max-width: 62ch;
+}
+.angleInput {
+  width: 100%;
+  resize: vertical;
+  background: var(--tac-inset, #0f0f17);
+  border: 1px solid var(--tac-edge-dark, rgba(255, 255, 255, 0.12));
+  border-radius: 12px;
+  padding: 14px 16px;
+  color: var(--text);
+  font-family: var(--font-space-grotesk), 'Space Grotesk', system-ui, sans-serif;
+  font-size: 15px;
+  line-height: 1.65;
+}
+.angleInput:focus {
+  outline: none;
+  border-color: rgba(105, 252, 203, 0.5);
+}
+.angleFoot {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+.angleSkip {
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: var(--text-3);
+  background: transparent;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+}
+.angleSkip:hover {
+  color: var(--text-2);
+}

@@ -138,7 +138,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       piece,
       body.direction ?? '',
       base?.scene ?? null,
-      body.narrative ?? ''
+      // The angle is the standing brief for the piece, so it applies even if the operator
+      // cleared the narrative box.
+      body.narrative?.trim() || piece.angle?.trim() || ''
     );
 
     const now = new Date().toISOString();

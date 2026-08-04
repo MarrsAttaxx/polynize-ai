@@ -20,6 +20,7 @@ import {
   streamTemplateRef,
 } from '@/lib/marketing/create-outputs';
 import { getPiece, savePiece } from '@/lib/marketing/piece-store';
+import { stripEmDashes } from '@/lib/em-dash';
 import { draftTextBody, draftVideoScript } from '@/lib/marketing/draft';
 import { scaffoldScript } from '@/lib/marketing/concept-parse';
 
@@ -31,6 +32,8 @@ export const maxDuration = 60;
 const BodySchema = z.object({
   source: z.enum(['stream', 'library']),
   template_id: z.string().min(1).max(80),
+  /** The operator's angle for this piece. Optional: "skip" is a legitimate choice. */
+  angle: z.string().max(4000).optional(),
 });
 
 export async function POST(
@@ -130,7 +133,13 @@ export async function POST(
   const created = pieces[0];
   if (created) {
     try {
-      const piece = await getPiece(user.email, created.pieceId);
+      let piece = await getPiece(user.email, created.pieceId);
+      // The angle is saved BEFORE drafting, so the draft is written with it rather than
+      // having it bolted on afterwards. This is the whole point of the extra step.
+      if (piece && body.angle?.trim()) {
+        piece = { ...piece, angle: stripEmDashes(body.angle.trim()) };
+        await savePiece(user.email, piece);
+      }
       if (piece) {
         // Match how the piece page renders: kind 'text' → TextOutputScreen (body),
         // everything else → ScriptScreen (script). Drafting into the OTHER field

@@ -79,7 +79,10 @@ export function PrezieScreen({
   const [versions, setVersions] = useState<Version[]>(initialVersions);
   const [open, setOpen] = useState<Open | null>(opening);
   const [saveState, setSaveState] = useState<SaveState>('idle');
-  const [narrative, setNarrative] = useState('');
+  // Seeded from the piece's ANGLE, stated once at creation. The narrative can still be
+  // sharpened here (the board often wants a tighter image than the brief did), but the
+  // operator should never be asked for their intent a second time.
+  const [narrative, setNarrative] = useState((initial.angle ?? '').trim());
   const [direction, setDirection] = useState('');
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState<string | null>(null);

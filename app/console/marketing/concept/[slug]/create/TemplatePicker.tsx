@@ -1,11 +1,19 @@
 'use client';
 
 /**
- * The template picker (D25): the stream's own templates first, then the built-in
- * library. Each card shows what you bring / what you get and an example, so the
- * user sees what they're about to create before committing. "Use" POSTs to ./go
- * and lands on the created piece. Templates whose format module isn't built yet
- * show as developing and can't be used (honest about what one-shots today).
+ * The template picker (D25, revised 2026-08-04). Two changes from Marrs trying to get
+ * into a writing flow and finding the piece incoherent:
+ *
+ * 1. AN ANGLE IS ASKED FOR BEFORE ANYTHING IS DRAFTED. Choosing a template used to create
+ *    the piece and draft it in the same click, so April had the concept and the shape but
+ *    no editorial intent and had to guess. "The script is way off" is the predictable
+ *    result of drafting blind, not a prompt-quality problem. The concept says what the
+ *    piece is ABOUT, the template says what SHAPE it takes, and the angle is the third
+ *    thing that only the human has.
+ * 2. The card no longer prints "You bring / You get / Example". Between the concept and
+ *    the template the piece is already described, so at the moment of choosing those read
+ *    as noise. A FORMAT ICON carries the one thing that was genuinely hard to see at a
+ *    glance: whether this makes a video, a written post, or an image.
  */
 
 import { useState } from 'react';
@@ -13,11 +21,50 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import type { ContentTemplate } from '@/lib/marketing/template-store';
 import type { LibraryTemplate } from '@/lib/marketing/template-library';
-import { formatById } from '@/lib/marketing/output-plan';
+import { formatById, type FormatKind } from '@/lib/marketing/output-plan';
 import { channelLabel } from '@/lib/marketing/channels';
 import s from './create.module.css';
 
 type AnyTemplate = (ContentTemplate | LibraryTemplate) & { stream?: string };
+
+/**
+ * What this template MAKES, at a glance. Inline SVG rather than an icon font or an emoji:
+ * it inherits currentColor, stays crisp at any size, and adds no dependency for 3 marks.
+ */
+function FormatIcon({ kind }: { kind: FormatKind }) {
+  const p = {
+    width: 15,
+    height: 15,
+    viewBox: '0 0 16 16',
+    fill: 'none',
+    stroke: 'currentColor',
+    strokeWidth: 1.5,
+    strokeLinecap: 'round' as const,
+    strokeLinejoin: 'round' as const,
+    'aria-hidden': true,
+  };
+  if (kind === 'video')
+    return (
+      <svg {...p}>
+        <rect x="1.5" y="3.5" width="9" height="9" rx="1.5" />
+        <path d="M10.5 7l4-2.2v6.4L10.5 9z" />
+      </svg>
+    );
+  if (kind === 'image')
+    return (
+      <svg {...p}>
+        <rect x="1.5" y="2.5" width="13" height="11" rx="1.5" />
+        <circle cx="5.5" cy="6" r="1.1" />
+        <path d="M2 11.5l3.5-3 3 2.5 2-1.8 3.5 3" />
+      </svg>
+    );
+  return (
+    <svg {...p}>
+      <rect x="2.5" y="1.5" width="11" height="13" rx="1.5" />
+      <path d="M5 5h6M5 8h6M5 11h3.5" />
+    </svg>
+  );
+}
 
 export function TemplatePicker({
   streamTemplates,
@@ -31,14 +78,20 @@ export function TemplatePicker({
   const router = useRouter();
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // The template chosen but not yet committed: the angle is asked for in between.
+  const [chosen, setChosen] = useState<{ t: AnyTemplate; source: 'stream' | 'library' } | null>(
+    null
+  );
+  const [angle, setAngle] = useState('');
 
   // Hide library templates the stream has already copied (same id).
   const streamIds = new Set(streamTemplates.map((t) => t.template_id));
   const library = libraryTemplates.filter((t) => !streamIds.has(t.template_id));
 
-  const use = async (t: AnyTemplate, source: 'stream' | 'library') => {
+  const create = async () => {
+    if (!chosen || busy) return;
+    const { t, source } = chosen;
     const key = `${source}:${t.template_id}`;
-    if (busy) return;
     setBusy(key);
     setError(null);
     try {
@@ -46,7 +99,7 @@ export function TemplatePicker({
       const res = await fetch(url, {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ source, template_id: t.template_id }),
+        body: JSON.stringify({ source, template_id: t.template_id, angle: angle.trim() }),
       });
       const b = (await res.json().catch(() => null)) as
         | { target?: string; error?: string }
@@ -70,7 +123,12 @@ export function TemplatePicker({
     return (
       <div key={key} className={`${s.card} ${usable ? '' : s.cardDim}`}>
         <div className={s.cardHead}>
-          <span className={s.cardName}>{t.name}</span>
+          <span className={s.cardName}>
+            <span className={s.formatIcon}>
+              <FormatIcon kind={fmt?.kind ?? 'text'} />
+            </span>
+            {t.name}
+          </span>
           <span className={`${s.status} ${t.status === 'active' ? s.stActive : s.stDev}`}>
             {t.status}
           </span>
@@ -85,23 +143,15 @@ export function TemplatePicker({
             <span className={s.ioLabel}>Length:</span> {t.length}
           </p>
         ) : null}
-        {t.inputs ? (
-          <p className={s.cardIo}>
-            <span className={s.ioLabel}>You bring:</span> {t.inputs}
-          </p>
-        ) : null}
-        {t.outputs ? (
-          <p className={s.cardIo}>
-            <span className={s.ioLabel}>You get:</span> {t.outputs}
-          </p>
-        ) : null}
-        {t.example ? <p className={s.cardExample}>Example: {t.example}</p> : null}
         <div className={s.cardFoot}>
           {usable ? (
             <button
               type="button"
               className={s.useBtn}
-              onClick={() => use(t, source)}
+              onClick={() => {
+                setChosen({ t, source });
+                setError(null);
+              }}
               disabled={busy !== null}
             >
               {busy === key ? 'Creating…' : 'Use this template →'}
@@ -117,6 +167,58 @@ export function TemplatePicker({
     );
   };
 
+  // THE ANGLE. One box, deliberately: the angle and the rough points arrive in the same
+  // breath when someone describes what they want, and splitting them into separate fields
+  // would be the form-filling this step exists to remove. One question on the screen,
+  // because this is the moment the piece gets its intent and anything else competes.
+  if (chosen) {
+    const cf = formatById(chosen.t.format);
+    return (
+      <div className={s.angleWrap}>
+        <button type="button" className={s.angleBack} onClick={() => setChosen(null)}>
+          &larr; Choose a different template
+        </button>
+        <p className={s.angleChosen}>
+          <span className={s.formatIcon}>
+            <FormatIcon kind={cf?.kind ?? 'text'} />
+          </span>
+          {chosen.t.name}
+        </p>
+        <h2 className={s.angleQ}>What angle do you want to take on this?</h2>
+        <p className={s.angleHelp}>
+          The concept says what this is about and the template says what shape it takes.
+          The angle is the part only you have: which argument you are making, who it is
+          for, and any rough points you already know you want in. Write it however it comes
+          out.
+        </p>
+        <textarea
+          className={s.angleInput}
+          value={angle}
+          onChange={(e) => setAngle(e.target.value)}
+          placeholder={
+            'e.g. for ops leaders about to buy AI licences for the whole team. AI is a force multiplier, so mapping the work has to come first or you just multiply the mess. Points I want in: the three tiers, and that a map tells you what should stay human.'
+          }
+          rows={8}
+          autoFocus
+          disabled={busy !== null}
+        />
+        <div className={s.angleFoot}>
+          <button
+            type="button"
+            className={s.useBtn}
+            onClick={create}
+            disabled={busy !== null || !angle.trim()}
+          >
+            {busy ? 'Writing it\u2026' : 'Create the piece \u2192'}
+          </button>
+          <button type="button" className={s.angleSkip} onClick={create} disabled={busy !== null}>
+            Skip, just use the concept
+          </button>
+        </div>
+        {error ? <p className={s.error}>{error}</p> : null}
+      </div>
+    );
+  }
   return (
     <div className={s.picker}>
       {error ? <p className={s.error}>{error}</p> : null}

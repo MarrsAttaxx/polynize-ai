@@ -42,6 +42,17 @@ export type MarketingPiece = {
   kind?: 'video' | 'text' | 'image';
   /** The concept's framing (0009: framing). */
   framing?: string;
+  /**
+   * THE ANGLE: the spin this particular piece takes on the concept, in the operator's own
+   * words, captured before anything is drafted.
+   *
+   * A concept says what the piece is ABOUT and a template says what SHAPE it takes. Those
+   * two are not enough to write from, which is why drafting straight off them produced
+   * scripts that were "way off" (Marrs): they were written with no editorial intent
+   * because nobody had supplied any. This is the third input, and only a human has it.
+   * It also seeds the prezie's narrative, so the intent is stated once.
+   */
+  angle?: string;
   /** Selected ICP archetype id (see output-plan.ICP_ARCHETYPES). */
   icp?: string;
   /** Selected publish channels; become calendar_entries at the tail. */

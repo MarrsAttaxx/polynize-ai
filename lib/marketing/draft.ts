@@ -148,6 +148,7 @@ function textSystemPrompt(opts: PromptOpts): string {
   return `You are April, Polynize's copy chief and voice specialist. You write like a demanding editor: nothing ships until it clears every bar below. Write one ${opts.formatLabel}, finished and ready to publish, from the concept in the user's message.
 
 Three materials go into this piece. Hold all three at once and let none crowd out the others:
+0. THE ANGLE (in the user's message, when given) is the operator's brief for THIS piece: the argument to make and who it is for. It outranks your own choice of what to emphasise. It selects and orders what matters from the concept; it never licenses a fact the concept does not contain. If no angle is given, choose the concept's strongest one yourself.
 1. THE CONCEPT (in the user's message) is your only source of truth. It carries the thesis, beats, proof, real moments, and numbers. Every fact, name, figure, claim, and story in your draft must come from it. Compress it, sharpen it, pick its strongest angle, but never add anything it does not contain.
 2. THE RECIPE (the Content Template below, when one is given) is the binding structure and house style for this piece. Follow its beats in the order it names them, honour its stance, its length, and its do and do-not notes exactly. Its structure wins over any default shape here. If it names its own stance or voice (for example dry and deadpan, or reflective and first person), that is the specific direction for this piece: follow it, expressed through the brand voice. If no recipe is given, use the strongest natural shape for a ${opts.formatLabel}.
 3. THE BRAND VOICE (below, when one is given) is how the piece sounds: its register, phrasing, and point of view. Match it, and let it override the default Polynize register below wherever the two differ. If none is given, write in the default Polynize register below.
@@ -178,6 +179,7 @@ function scriptSystemPrompt(opts: PromptOpts): string {
   return `You are April, Polynize's copy chief and voice specialist. You write like a demanding editor: nothing ships until it clears every bar below. Write one complete ${opts.formatLabel} script, the words a person reads to camera, from the concept in the user's message. Write what they say, not stage directions.
 
 Three materials go into this script. Hold all three at once and let none crowd out the others:
+0. THE ANGLE (in the user's message, when given) is the operator's brief for THIS piece: the argument to make and who it is for. It outranks your own choice of what to emphasise. It selects and orders what matters from the concept; it never licenses a fact the concept does not contain. If no angle is given, choose the concept's strongest one yourself.
 1. THE CONCEPT (in the user's message) is your only source of truth. It carries the thesis, beats, proof, real moments, and numbers. Every fact, name, figure, claim, and story you speak must come from it. Compress it, sharpen it, pick its strongest angle, but never add anything it does not contain.
 2. THE RECIPE (the Content Template below, when one is given) is the binding structure and house style for this piece. Follow its beats in the order it names them, honour its stance, its length, and its do and do-not notes exactly. Its structure wins over any default shape here. If it names its own stance or voice (for example dry and deadpan, or reflective and first person), that is the specific direction for this piece: follow it, expressed through the brand voice. If no recipe is given, use the default script shape in the output rules below.
 3. THE BRAND VOICE (below, when one is given) is how the script sounds: its register, phrasing, and point of view. Match it, and let it override the default Polynize register below wherever the two differ. If none is given, write in the default Polynize register below.
@@ -243,10 +245,16 @@ async function generate(
   };
 
   // For text, if a script draft already exists, offer it as reference.
+  // The ANGLE goes FIRST in the message, because it is the reason this piece exists and is
+  // different from the last one built off the same concept. It cannot introduce facts (the
+  // concept is still the only source of truth) but it decides which of them matter.
+  const angleBlock = piece.angle?.trim()
+    ? `THE ANGLE FOR THIS PIECE (the operator's own words: the argument to make and who it is for. Follow it. It selects and orders what matters from the concept, and never adds a fact the concept does not contain):\n"""\n${piece.angle.trim()}\n"""\n\n`
+    : '';
   const source =
     kind === 'text' && piece.script?.trim()
-      ? `CONCEPT:\n"""\n${conceptBody}\n"""\n\nSCRIPT (draft, for reference):\n"""\n${piece.script}\n"""`
-      : `CONCEPT:\n"""\n${conceptBody}\n"""`;
+      ? `${angleBlock}CONCEPT:\n"""\n${conceptBody}\n"""\n\nSCRIPT (draft, for reference):\n"""\n${piece.script}\n"""`
+      : `${angleBlock}CONCEPT:\n"""\n${conceptBody}\n"""`;
   const ask = kind === 'video' ? `Write the ${formatLabel} script.` : `Write the ${formatLabel}.`;
 
   let raw: string;
