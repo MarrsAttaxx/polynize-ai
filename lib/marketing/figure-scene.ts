@@ -32,6 +32,23 @@ const FRAME_CSS = `
   contain:layout paint}
 .figure.on{display:block}
 .figure > *{position:absolute;inset:0}
+/* THE NEXT CONTROL. Always present, top right, and on an interactive figure it is the ONLY way
+   forward: tap-anywhere-advances made a draggable figure unusable, because every touch meant
+   for the figure jumped the board on instead (Marrs, on his slider). Mint and visible, because
+   he asked to be able to see it and reach for it mid-take. */
+#next{position:fixed;top:3.5vh;right:3vw;z-index:8;
+  width:min(9vh,7.5vw);height:min(9vh,7.5vw);border-radius:50%;
+  border:2px solid var(--mint);color:var(--mint);background:rgba(105,252,203,.1);
+  display:grid;place-items:center;cursor:none;
+  box-shadow:0 0 0 0 rgba(105,252,203,.4),0 0 22px rgba(105,252,203,.22);
+  animation:nextPulse 2.8s ease-in-out infinite}
+#next::after{content:'';width:26%;height:26%;border-top:3px solid currentColor;
+  border-right:3px solid currentColor;transform:rotate(45deg) translate(-6%,6%)}
+#next.done{opacity:.25;animation:none}
+@keyframes nextPulse{
+  0%,100%{box-shadow:0 0 0 0 rgba(105,252,203,.4),0 0 22px rgba(105,252,203,.22)}
+  50%{box-shadow:0 0 0 12px rgba(105,252,203,0),0 0 34px rgba(105,252,203,.42)}}
+
 /* Arriving: the figure cuts in and settles, rather than fading. */
 .figure.on{animation:figIn .3s cubic-bezier(.22,.9,.24,1) both}
 @keyframes figIn{from{opacity:0;transform:scale(.99)}to{opacity:1;transform:none}}
@@ -42,6 +59,7 @@ const ENGINE_JS = `
   var figs=[].slice.call(document.querySelectorAll('.figure')),
       cue=document.getElementById('cue'),
       ret=document.getElementById('ret'),
+      nextBtn=document.getElementById('next'),
       sweep=document.getElementById('sweep');
   if(!figs.length) return;
   var at=0, step=0;
@@ -70,6 +88,9 @@ const ENGINE_JS = `
   }
 
   function taps(i){ return parseInt(figs[i].getAttribute('data-taps')||'0',10)||0; }
+  /* An interactive figure owns its touches: a slider to drag, several things to hit. On one of
+     those the board never advances on a bare tap, only on the NEXT control. */
+  function owns(i){ return figs[i].getAttribute('data-interactive')==='1'; }
 
   function paint(){
     figs.forEach(function(f,i){ f.classList.toggle('on', i===at); });
@@ -79,10 +100,17 @@ const ENGINE_JS = `
        things stay where the presenter put them. */
     for(var k=1;k<=8;k++) f.classList.toggle('s'+k, k<=step);
     sweep.classList.remove('run'); void sweep.offsetWidth; sweep.classList.add('run');
+    nextBtn.classList.toggle('done', at>=figs.length-1);
     var left=taps(at)-step;
-    cue.textContent = left>0
-      ? 'TAP   '+left+' MORE'
-      : (at<figs.length-1 ? 'TAP FOR THE NEXT' : 'END   SWIPE BACK TO REPLAY');
+    if(owns(at)){
+      cue.textContent = left>0
+        ? 'THE SCREEN IS THE FIGURE   '+left+' MORE'
+        : (at<figs.length-1 ? 'GREEN BUTTON FOR THE NEXT' : 'END');
+    } else {
+      cue.textContent = left>0
+        ? 'TAP   '+left+' MORE'
+        : (at<figs.length-1 ? 'TAP OR THE GREEN BUTTON' : 'END   SWIPE BACK TO REPLAY');
+    }
   }
 
   function advance(){
@@ -103,22 +131,35 @@ const ENGINE_JS = `
     ret.classList.remove('hit'); void ret.offsetWidth; ret.classList.add('hit');
   }
 
+  /* The NEXT control is a real hit target and is checked before anything else, so it works even
+     while the figure underneath is claiming every other touch. */
+  function onNext(t){ return t && t.closest && t.closest('#next'); }
+
   var sx=0,sy=0,t0=0;
   function down(x,y){ sx=x; sy=y; t0=Date.now(); }
-  function up(x,y){
+  function up(x,y,target){
+    if(onNext(target)){ blip(); hit(x,y); advance(); return; }
     var dx=x-sx, dy=y-sy;
+    /* A swipe still works everywhere: it is unambiguous, and on an interactive figure a drag on
+       the figure's own control is handled by the figure and never reaches here as a swipe. */
     if(Math.max(Math.abs(dx),Math.abs(dy))>60 && Date.now()-t0<800){
       blip();
       if(Math.abs(dx)>Math.abs(dy)) { if(dx<0) advance(); else back(); }
       else if(dy>0) back(); else advance();
       return;
     }
+    /* A bare tap advances ONLY when the figure is not claiming the screen. */
+    if(owns(at)){
+      if(step<taps(at)){ blip(); hit(x,y); step++; paint(); }
+      return;
+    }
     blip(); hit(x,y); advance();
   }
   addEventListener('touchstart',function(e){var t=e.touches[0];down(t.clientX,t.clientY);},{passive:true});
-  addEventListener('touchend',function(e){var t=e.changedTouches[0];up(t.clientX,t.clientY);},{passive:true});
+  addEventListener('touchend',function(e){var t=e.changedTouches[0];
+    up(t.clientX,t.clientY,document.elementFromPoint(t.clientX,t.clientY));},{passive:true});
   addEventListener('mousedown',function(e){down(e.clientX,e.clientY);});
-  addEventListener('mouseup',function(e){up(e.clientX,e.clientY);});
+  addEventListener('mouseup',function(e){up(e.clientX,e.clientY,e.target);});
   addEventListener('keydown',function(e){
     var k=e.key;
     if(k==='ArrowRight'||k===' '||k==='Enter') advance();
@@ -156,6 +197,7 @@ export function renderFigureScene(scene: FigureScene): string {
 <div class="chrome tl">X-Y 1.00 V/DIV</div>
 <div class="chrome tr">TIME 5 MS/DIV</div>
 ${figures}
+<div id="next"></div>
 <div id="ret"></div>
 <div id="cue"></div>
 <div id="crt"></div>

@@ -45,6 +45,16 @@ export type PrezieFigure = {
   html: string;
   /** How many taps this figure takes to complete. */
   taps: number;
+  /**
+   * TRUE when the figure has its own interaction and the touches belong to IT: a slider to
+   * drag, several things to hit, anything where a stray tap should not move the board on.
+   *
+   * This exists because tap-anywhere-advances made interactive figures impossible. Marrs drew
+   * a slider and could not use it: every touch on it jumped to the next figure. On an
+   * interactive figure the engine stops advancing on taps and the explicit NEXT control is the
+   * only way forward, which is exactly what he asked for.
+   */
+  interactive?: boolean;
 };
 
 /**
@@ -100,6 +110,7 @@ export function sanitiseFigure(f: {
   css: string;
   html: string;
   taps: number;
+  interactive?: boolean;
 }): PrezieFigure {
   const taps = Number(f.taps);
   return {
@@ -110,6 +121,7 @@ export function sanitiseFigure(f: {
     html: sanitiseFigureHtml(f.html),
     // Nobody performs a figure with twelve taps in it, and a negative one breaks the engine.
     taps: Number.isFinite(taps) ? Math.max(0, Math.min(Math.floor(taps), 8)) : 0,
+    interactive: f.interactive === true ? true : undefined,
   };
 }
 
@@ -126,7 +138,9 @@ export function renderFigureFrame(f: PrezieFigure, index: number): string {
   // Every selector she wrote is prefixed with this figure's own id. Two figures may both use
   // `.box` and neither will reach the other, and nothing she writes can reach the engine.
   const scoped = scopeCss(f.css, `#${id}`);
-  return `<section class="figure" id="${id}" data-taps="${f.taps}">
+  return `<section class="figure" id="${id}" data-taps="${f.taps}"${
+    f.interactive ? ' data-interactive="1"' : ''
+  }>
 <style>${scoped}</style>
 ${f.html}
 </section>`;
