@@ -24,7 +24,7 @@ import {
   conceptSlugFromRef,
   type Prezie,
 } from '@/lib/marketing/prezie-store';
-import { generateFigure } from '@/lib/marketing/figure-generate';
+import { discussFigure, generateFigure, type FigureTurn } from '@/lib/marketing/figure-generate';
 import { conceptBodyForPiece, DraftError } from '@/lib/marketing/draft';
 
 export const dynamic = 'force-dynamic';
@@ -39,6 +39,19 @@ const AskSchema = z.object({
   ask: z.string().trim().min(1).max(4000),
   /** Present when refining an existing figure rather than adding one. */
   figure_id: z.string().trim().max(200).optional(),
+  /**
+   * 'discuss' talks about what to draw without drawing it; 'draw' commits.
+   *
+   * Marrs asked for this after finding the loop was trial and error: "she explains to me the
+   * figure that she can draw, when I agree on it she draws it". Talking costs a sentence and
+   * drawing costs a turn, so the disagreement belongs in the cheap step.
+   */
+  mode: z.enum(['discuss', 'draw']).default('draw'),
+  /** The conversation so far, so a proposal builds on the last one and the draw honours it. */
+  history: z
+    .array(z.object({ role: z.enum(['operator', 'april']), text: z.string().max(6000) }))
+    .max(24)
+    .optional(),
 });
 const IdSchema = z.object({
   prezie_id: z.string().trim().min(1).max(200),
@@ -102,8 +115,28 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   try {
     // The concept is handed over so a figure can carry a real number rather than a placeholder.
     const conceptBody = await conceptBodyForPiece(user.email, piece).catch(() => '');
+    const history = (body.history ?? []) as FigureTurn[];
+
+    // TALKING FIRST. Nothing is saved and no figure changes: this is the cheap step where the
+    // picture gets agreed, and where she can say what she cannot draw before it costs a turn.
+    if (body.mode === 'discuss') {
+      const reply = await discussFigure(
+        body.ask,
+        { concept: conceptBody, angle: piece.angle },
+        history,
+        current
+      );
+      return NextResponse.json({ ok: true, reply });
+    }
+
+    // DRAWING. The agreed conversation goes in with the ask, so what was settled while talking
+    // is what gets built rather than only the last thing said.
+    const agreed = history.length
+      ? `${history.map((t) => `${t.role === 'operator' ? 'I said' : 'You said'}: ${t.text}`).join('\n\n')}\n\nSo draw this: ${body.ask}`
+      : body.ask;
+
     const { figure, note } = await generateFigure(
-      body.ask,
+      agreed,
       { concept: conceptBody, angle: piece.angle },
       current
     );

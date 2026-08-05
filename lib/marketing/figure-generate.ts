@@ -19,6 +19,33 @@ import { DraftError } from './draft';
 import { complete } from '@/lib/llm';
 import { stripEmDashes } from '@/lib/em-dash';
 
+
+/**
+ * WHAT SHE CAN AND CANNOT DRAW, stated plainly.
+ *
+ * Marrs tried to get a seesaw whose falling counterweight flings a ball, and could not: "she's
+ * just not good at physics". She was not refusing, she was attempting something CSS cannot do
+ * and then shipping a poor version of it. Nothing in her instructions said where the ceiling
+ * was, so she over-promised, and the operator paid for it in wasted turns.
+ *
+ * Naming the ceiling is the fix. It makes her proposals land inside her ability, and it lets
+ * her say "that will look wrong, here is what reads better" instead of quietly failing.
+ */
+export const FIGURE_CAPABILITIES = `WHAT YOU CAN DRAW WELL, because it is what CSS is good at:
+- Shapes: rectangles, circles, ellipses, triangles, arrows, rings, bars, grids, columns, dotted and dashed lines, gradients, glows, blurs.
+- Transforms: move, scale, rotate, skew. A beam tilting on a pivot, a panel sliding, a shape growing, a column filling.
+- Staged reveals: things arriving, disappearing, changing colour, changing size, being crossed out or ringed.
+- Simple continuous loops: a pulse, a slow drift, a spin, a flowing gradient.
+- Type as a graphic element: one huge word, a huge number, a huge glyph.
+
+WHAT YOU CANNOT DO WELL, and must never promise:
+- PHYSICS. Nothing falls, bounces, collides or transfers momentum convincingly. A ball "flung" by a lever will look wrong, because all you can do is tween it along a straight line or one fixed curve, and the eye reads that as a sticker sliding rather than an object being thrown.
+- Arbitrary motion paths, particle systems, fluid, smoke, cloth, springs, or anything that should look simulated.
+- 3D perspective, photorealism, illustration, drawings of people, places or products.
+- Precise diagrams of real machinery.
+
+WHEN WHAT IS ASKED FOR IS IN THAT SECOND LIST, say so in ONE plain sentence and immediately offer the strongest thing that DOES read. For a lever, do not animate a flying ball: tilt the beam, drop the heavy end, and let the output ARRIVE on the far side at scale. That reads as consequence, which is the actual point, and it looks deliberate rather than broken. Being straight about this is more useful than trying and missing.`;
+
 const SYSTEM = `You are April, Polynize's visual-direction specialist. You draw ONE FIGURE for a touchscreen the presenter operates on camera, as a fragment of HTML plus its own CSS.
 
 A figure is a PICTURE THAT MAKES AN ARGUMENT, not a slide. It is a diagram, a mechanism, a shape that means something: a lever that flings a small weight because a big one dropped, a funnel, a building that absorbs something, a matrix filling in. It is filmed on a 32in screen and read from across a room.
@@ -33,6 +60,8 @@ Colour carries MEANING here: the thing going wrong is coral, the thing that fixe
 SIZE EVERYTHING IN vh AND vw, never px. The figure fills a frame of unknown pixel size and
 must be legible on half a phone screen. Nothing smaller than 3vh of text, ever. Nothing may
 be positioned outside the frame; keep every element within 0 to 100 percent of it.
+
+${FIGURE_CAPABILITIES}
 
 ${FIGURE_STEP_CONTRACT}
 
@@ -71,6 +100,75 @@ function parseLoose(raw: string): unknown {
   const b = c.lastIndexOf('}');
   if (a === -1 || b === -1) throw new Error('no JSON object');
   return JSON.parse(c.slice(a, b + 1));
+}
+
+
+const DISCUSS_SYSTEM = `You are April, Polynize's visual-direction specialist, talking to the presenter about ONE figure for a touchscreen he performs to camera.
+
+You are NOT drawing yet. He describes the CONCEPT he wants to get across and you propose what to draw. This exists because guessing and drawing costs him a whole turn, while proposing costs a sentence.
+
+${FIGURE_CAPABILITIES}
+
+HOW TO REPLY
+- Offer TWO OR THREE concrete options, numbered, each in two or three sentences. Say what is on screen, what each tap does, and what the picture MEANS. No preamble.
+- Every option must be something you can actually build from the list above. If his idea needs physics or illustration, say so in one sentence and propose what reads instead. Do not pretend.
+- Recommend one, in a short line, and say why it lands hardest on camera.
+- If he has already decided, do not offer alternatives: confirm what you will draw in one or two sentences and stop.
+- Talk like a colleague at a whiteboard. Plain speech, no lists of adjectives, no restating his brief back to him.
+- Never use the em-dash character (U+2014).
+
+Reply as plain text. No JSON, no code, no markup.`;
+
+/** One turn of the conversation, kept so a proposal can build on the last one. */
+export type FigureTurn = { role: 'operator' | 'april'; text: string };
+
+/**
+ * Talk about a figure without drawing it.
+ *
+ * The point is to settle WHAT to draw before spending a draw on it, and to let her say what
+ * she cannot do before he asks for it three times.
+ */
+export async function discussFigure(
+  ask: string,
+  ctx: FigureContext,
+  history: FigureTurn[] = [],
+  current?: PrezieFigure | null
+): Promise<string> {
+  const want = ask.trim();
+  if (!want) throw new DraftError('empty');
+
+  const context = [
+    ctx.angle?.trim() ? `THE PIECE'S ANGLE:\n"""\n${ctx.angle.trim()}\n"""` : '',
+    ctx.concept?.trim() ? `THE CONCEPT (where any real number or name must come from):\n"""\n${ctx.concept.trim()}\n"""` : '',
+    current
+      ? `THE FIGURE ON SCREEN NOW, which he may be asking to change:\n"""\n${current.brief}\n"""`
+      : '',
+  ].filter(Boolean);
+
+  const messages: { role: 'user' | 'assistant'; content: string }[] = [];
+  if (context.length) messages.push({ role: 'user', content: context.join('\n\n') });
+  for (const t of history.slice(-10)) {
+    messages.push({ role: t.role === 'operator' ? 'user' : 'assistant', content: t.text });
+  }
+  messages.push({ role: 'user', content: want });
+
+  let raw: string;
+  try {
+    raw = await complete({
+      system: DISCUSS_SYSTEM,
+      messages,
+      maxTokens: 3000,
+      temperature: 0.7,
+      json: false,
+      apiKey: process.env.APRIL_OPENROUTER_API_KEY,
+    });
+  } catch (e) {
+    console.error(`[figure.discuss] LLM threw: ${e instanceof Error ? e.message : String(e)}`);
+    throw new DraftError('llm-unavailable');
+  }
+  const reply = stripEmDashes(raw.trim());
+  if (!reply) throw new DraftError('empty');
+  return reply;
 }
 
 export type FigureContext = {

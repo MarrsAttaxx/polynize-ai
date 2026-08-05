@@ -550,3 +550,40 @@
   color: var(--text-2);
   white-space: pre-wrap;
 }
+
+/* The conversation about one figure. Short-lived by design: it is a working discussion about a
+   picture, not a transcript worth keeping once the picture exists. */
+.thread {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 40vh;
+  overflow-y: auto;
+  padding: 12px;
+  border-radius: 12px;
+  background: var(--tac-inset, #0f0f17);
+  border: 1px solid var(--tac-edge-dark, rgba(255, 255, 255, 0.08));
+}
+.threadMine,
+.threadApril {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  padding: 9px 12px;
+  border-radius: 10px;
+}
+.threadMine {
+  align-self: flex-end;
+  max-width: 88%;
+  color: var(--text);
+  background: rgba(105, 252, 203, 0.08);
+  border: 1px solid rgba(105, 252, 203, 0.3);
+}
+.threadApril {
+  align-self: flex-start;
+  max-width: 96%;
+  color: var(--text-2);
+  border-left: 2px solid rgba(105, 252, 203, 0.35);
+  border-radius: 0 10px 10px 0;
+}

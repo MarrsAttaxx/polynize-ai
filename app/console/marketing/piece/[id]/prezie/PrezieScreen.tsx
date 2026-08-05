@@ -108,6 +108,15 @@ export function PrezieScreen({
   const [figSel, setFigSel] = useState(0);
   const [ask, setAsk] = useState('');
   const [drawing, setDrawing] = useState(false);
+  /**
+   * The conversation about the current figure. Marrs asked for this because drawing first was
+   * trial and error: he tells her the CONCEPT, she says what she can draw, and only when they
+   * agree does she build it. Talking costs a sentence; drawing costs a turn.
+   *
+   * Client-side only, and cleared when the selected figure changes: it is a working
+   * conversation about one picture, not a record worth keeping once the picture exists.
+   */
+  const [thread, setThread] = useState<{ role: 'operator' | 'april'; text: string }[]>([]);
 
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const latest = useRef<Open | null>(opening);
@@ -275,6 +284,40 @@ export function PrezieScreen({
   const figures = open?.figures ?? [];
   const figEndpoint = () => baseUrlRef.current + '/prezie/figure';
 
+  /** Talk about the picture without drawing it. Nothing is saved and no figure changes. */
+  const talk = async () => {
+    const said = ask.trim();
+    if (!open || drawing || !said) return;
+    setDrawing(true);
+    setError(null);
+    const sent = [...thread, { role: 'operator' as const, text: said }];
+    setThread(sent);
+    setAsk('');
+    try {
+      const res = await fetch(figEndpoint(), {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          prezie_id: open.prezie_id,
+          ask: said,
+          mode: 'discuss',
+          history: thread,
+          figure_id: figures[figSel]?.figure_id,
+        }),
+      });
+      const b = (await res.json().catch(() => null)) as { reply?: string; error?: string } | null;
+      if (!res.ok || !b?.reply) {
+        setError(b?.error ?? 'Could not reach her.');
+        return;
+      }
+      setThread([...sent, { role: 'april', text: b.reply }]);
+    } catch {
+      setError('Network error. Try again.');
+    } finally {
+      setDrawing(false);
+    }
+  };
+
   /**
    * One call for both drawing and revising: passing a figure_id makes it a revision, and the
    * brief accumulates server-side so earlier turns are not undone by later ones.
@@ -291,6 +334,10 @@ export function PrezieScreen({
         body: JSON.stringify({
           prezie_id: open.prezie_id,
           ask: said,
+          mode: 'draw',
+          // What was agreed while talking goes in with the ask, so the drawing honours the
+          // conversation rather than only the last sentence of it.
+          history: thread,
           figure_id: revise ? figures[figSel]?.figure_id : undefined,
         }),
       });
@@ -308,6 +355,7 @@ export function PrezieScreen({
       setFigSel(at >= 0 ? at : Math.max(0, next.length - 1));
       setNote(b.note ?? null);
       setAsk('');
+      setThread([]);
       setPreviewV((v) => v + 1);
     } catch {
       setError('Network error. Try again.');
@@ -602,6 +650,7 @@ export function PrezieScreen({
                       className={d.versionPick}
                       onClick={() => {
                         setFigSel(i);
+                        setThread([]);
                         setPreviewV((v) => v + 1);
                       }}
                     >
@@ -643,11 +692,26 @@ export function PrezieScreen({
                 ))
               )}
 
+              {thread.length ? (
+                <div className={d.thread}>
+                  {thread.map((m, i) => (
+                    <p
+                      key={i}
+                      className={m.role === 'april' ? d.threadApril : d.threadMine}
+                    >
+                      {m.text}
+                    </p>
+                  ))}
+                </div>
+              ) : null}
+
               <label className={d.field}>
                 <span>
-                  {figures.length
-                    ? `Change figure ${figSel + 1}, or describe a new one`
-                    : 'Describe the first figure'}
+                  {thread.length
+                    ? 'Keep talking, or draw what you have agreed'
+                    : figures.length
+                      ? `Talk about figure ${figSel + 1}, or describe a new one`
+                      : 'Say what you are trying to get across, and she will propose the picture'}
                 </span>
                 <textarea
                   value={ask}
@@ -660,13 +724,16 @@ export function PrezieScreen({
                 />
               </label>
               <div className={d.aprilBox}>
+                {/* TALK FIRST is the default action, because settling the picture in a sentence
+                    is cheaper than drawing the wrong one. Drawing stays one click away for
+                    when he already knows what he wants. */}
                 <button
                   type="button"
                   className={d.aprilBtn}
-                  onClick={() => void draw(true)}
-                  disabled={drawing || !ask.trim() || figures.length === 0}
+                  onClick={() => void talk()}
+                  disabled={drawing || !ask.trim()}
                 >
-                  {drawing ? 'Drawing…' : `Change figure ${figSel + 1}`}
+                  {drawing ? 'Thinking…' : 'Talk it through'}
                 </button>
                 <button
                   type="button"
@@ -674,12 +741,23 @@ export function PrezieScreen({
                   onClick={() => void draw(false)}
                   disabled={drawing || !ask.trim()}
                 >
-                  {figures.length ? '+ Draw it as a new figure' : 'Draw it'}
+                  {figures.length ? '+ Draw as a new figure' : 'Draw it'}
                 </button>
+                {figures.length ? (
+                  <button
+                    type="button"
+                    className={d.addBtn}
+                    onClick={() => void draw(true)}
+                    disabled={drawing || !ask.trim()}
+                  >
+                    Change figure {figSel + 1}
+                  </button>
+                ) : null}
               </div>
               <p className={d.hint}>
-                A change keeps everything you already approved about that figure. A new figure
-                is added at the end and can be moved.
+                Talking costs a sentence and changes nothing. She will tell you straight if
+                something cannot be drawn well, and offer what reads instead. Whatever you agree
+                goes in when you draw.
               </p>
             </>
           ) : open && open.scene ? (
