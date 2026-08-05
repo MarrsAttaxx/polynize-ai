@@ -96,11 +96,18 @@ export default async function ConceptPage({
                 className={s.prezieCard}
               >
                 <span className={s.prezieName}>{p.name}</span>
+                {/* A figure prezie has no board, so it is described by its figures. */}
                 <span className={s.prezieMeta}>
-                  {p.scene.nodes.length} objects · {(p.updated_at ?? p.created_at).slice(0, 10)}
+                  {p.figures?.length
+                    ? `${p.figures.length} figures`
+                    : `${p.scene?.nodes.length ?? 0} objects`}{' '}
+                  · {(p.updated_at ?? p.created_at).slice(0, 10)}
                 </span>
                 <span className={s.prezieObjects}>
-                  {p.scene.nodes.map((n) => n.label).join(' · ')}
+                  {(p.figures?.length
+                    ? p.figures.map((f) => f.name)
+                    : (p.scene?.nodes ?? []).map((n) => n.label)
+                  ).join(' · ')}
                 </span>
               </a>
             ))}

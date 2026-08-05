@@ -508,6 +508,34 @@ The remaining fit routine is a backstop, not a layout mechanism: it earns its ke
 
 ---
 
+## D33 — A prezie is authored FIGURES, drawn by conversation. Supersedes D31's fixed scene shape
+
+**Decision (2026-08-05, Marrs):** He described, in plain English, a circle with a question mark, a lever whose falling counterweight flings the work out as output, a building that an "AI" box attaches to and then dissolves inside, and a three-column capability matrix filling in a column at a time. He got four coloured pillars with fact rows, and said April was *"using some kind of formula"*.
+
+**She was not. The vocabulary had one sentence in it.** A scene was `nodes[] of {label, colour, facts[]}` and nothing else, so his prompt could only be translated into that. The fault was mine twice: I built the single shape, and I then proposed a fixed set of five "board types" as the fix. That was also wrong, and his very next request proved it: **the space of visual metaphors has no end, so any fixed vocabulary is permanently one metaphor behind the operator.**
+
+**So generated markup returns, having been removed for good reason.** The deck model let April emit HTML and produced layouts that ran off the display and drifted off-brand. But the diagnosis of that failure was wrong: **it was not the freedom, it was the absence of a loop.** A deck generated 26 states blind and the problem was discovered with a camera pointed at it. Marrs: *"she needs to be able to iterate through the process with me."*
+
+The three things that were missing, and are now the design:
+
+- **ONE FIGURE AT A TIME.** A bad turn costs seconds, not a shoot.
+- **A LIVE PREVIEW BESIDE A CHAT.** It is seen before it matters. The preview is the real page at `?figure=N`, not a mock-up.
+- **HARD BOUNDS THE ENGINE OWNS.** The substrate, the type floor, the colour tokens, the tap mechanism, the frame. A figure supplies only what is inside its own box.
+
+**REVISION IS THE PRIMARY OPERATION, and the brief ACCUMULATES.** Each turn appends to what the figure has been asked to be. Without that, turn three has no idea what turn one wanted and quietly undoes it, which is precisely what makes an iterative loop feel broken.
+
+**The tap contract is CUMULATIVE.** The engine adds `s1`, then `s1 s2`, and so on, so a rule written for the first tap stays true for the rest of the figure and things stay where the presenter put them. `taps` declares how many the figure needs.
+
+**Sanitising is load-bearing, not ceremony.** Figures serve from the unlisted prezie URL, which is unauthenticated by design (D31), so injected script would run for anyone holding the link. Stripped: script, event handlers, `javascript:`, remote urls, `@import`, `position:fixed`, and any rule targeting `html`, `body` or `:root`. Every selector she writes is then prefixed with that figure's own id, so two figures cannot collide and nothing she writes can reach the engine. Tested against adversarial input, which surfaced a real bug: the `:root` strip needed a loop, because removing one rule deletes the brace the next match anchors on and a single pass left every second one behind.
+
+**Both models coexist.** `prezie.figures` renders as a tapped walkthrough through `renderFigureScene`; `prezie.scene` still renders as the open/close board through `renderScene`. Nothing already built changes behaviour, and `isPrezie` accepts either, because requiring a board would have made every figure prezie read as malformed and vanish from the version list.
+
+**On D31's "no next and no previous":** that still holds WITHIN a figure, where objects persist and transform. Moving between figures is a real transition, because they are genuinely different pictures, and his own description is sequential.
+
+**Consequence if violated:** going back to a fixed data shape means the operator's next metaphor cannot be expressed and the tool starts dictating the ideas. Generating a whole prezie in one shot brings back the deck's failure whatever the vocabulary. Dropping the accumulating brief turns iteration into a random walk. Relaxing the sanitiser puts executable content on a public URL.
+
+---
+
 ---
 
 ## How to add to this log
@@ -520,6 +548,7 @@ When you make a decision that future-you (or a cold agent) might be tempted to u
 
 | Date | Change |
 |---|---|
+| 2026-08-05 | D33: a prezie becomes authored FIGURES drawn by conversation, superseding D31's single scene shape and replacing the fixed five-figure vocabulary I proposed the day before (his next request already fell outside it). Generated markup returns with the loop that was missing: one figure at a time, a live preview of the real page, an accumulating brief so revisions do not undo each other, a cumulative s1..sN tap contract, and sanitising plus per-figure selector scoping because these serve from an unauthenticated URL. Both models coexist; nothing already built changes. |
 | 2026-08-04 | The SHORT-FORM SCRIPT SHAPE is now Marrs's own, taken verbatim from a script he wrote (`docs/pam-console/short-form-script-shape.md`): N hooks separated by `----`, each with paired ON-SCREEN TEXT and SPOKEN lines, then BEAT 1-4 of spoken prose only, then CTA and CLOSE as separate sections. `HOOK_CRAFT` replaces invented hook examples with craft rules read off his three real hooks (withhold the payload, qualify the audience out loud, carry authority, and make the two lines do different jobs). One of the examples it replaces was a draft he had already rejected as a bad hook, which an agent had pulled from the starter library and recommended back to him: exemplars come from approved work, never from generated drafts. Also: concept and piece renaming separated after a piece rename retitled the in-development card (which was labelled with the first piece's title) and the hub's piece list showed the format label instead of the piece name. |
 | 2026-08-04 | D32: the ANGLE becomes a first-class input, asked for on its own screen before any draft runs and saved to `piece.angle`; it leads both prompts' precedence and its supplied lines are used verbatim over the recipe. Angle drafts persist locally so they cannot be lost. Templates: built-ins copy into the stream on use (they were unfixable in code), `hook_variants` makes N-hooks-one-body structural rather than recipe prose, and how-to guidance sits on the templates page. Also: prezies belong to the concept with versions, decks retrofit into prezies, touch SFX from Marrs's samples, format icons on template cards, and the stream/dashboard load was parallelised after it took 3-4s to open a stream. |
 | 2026-07-28 | The Screen Prompt stage is renamed the INTERFACE (Marrs: the name kept describing a document, and it is not one). Route `piece/[id]/interface` with the old path redirecting; stage id `treatment_map` and field `piece.treatment` unchanged, display-only as with every prior rename. The move also retired the unreachable deck/slides builders and their four lib modules, since leaving them would have created an `interface/deck/` endpoint; deck PLAYBACK (`/console/deck/[id]`) is kept so existing decks still perform. Audio for shoots settled: DJI lapel mics into the FRONT camera, so front-camera audio is the sync source, which is what the test footage already proved. |

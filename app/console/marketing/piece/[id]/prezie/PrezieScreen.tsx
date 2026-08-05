@@ -46,7 +46,15 @@ type Version = {
   url: string;
   node_count: number;
 };
-type Open = { prezie_id: string; name: string; scene: Scene };
+type FigureView = { figure_id: string; name: string; brief: string; taps: number };
+type Open = {
+  prezie_id: string;
+  name: string;
+  /** The legacy node board. Null on a figure prezie (D33). */
+  scene: Scene | null;
+  /** Authored figures, in performance order. Null on a board prezie. */
+  figures: FigureView[] | null;
+};
 
 const MAX_NODES = 4;
 const MAX_FACTS = 4;
@@ -89,6 +97,11 @@ export function PrezieScreen({
   const [error, setError] = useState<string | null>(null);
   const [sel, setSel] = useState(-1);
   const [previewV, setPreviewV] = useState(0);
+  // THE ITERATION LOOP. One selected figure, one thing to say about it. Everything else on
+  // this panel exists to make those two obvious.
+  const [figSel, setFigSel] = useState(0);
+  const [ask, setAsk] = useState('');
+  const [drawing, setDrawing] = useState(false);
 
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const latest = useRef<Open | null>(opening);
@@ -112,6 +125,10 @@ export function PrezieScreen({
       for (;;) {
         const content = latest.current;
         if (!content) break;
+        // The autosave PUT carries a board. A figure prezie has none, and its figures are
+        // already persisted by the figure endpoint as each turn lands, so there is nothing
+        // here to save and attempting it would fail validation on every keystroke.
+        if (!content.scene) break;
         setSaveState('saving');
         let ok = false;
         let body: { versions?: Version[] } | null = null;
@@ -172,43 +189,174 @@ export function PrezieScreen({
   useEffect(() => () => flushRef.current(), []);
 
   // ---- edits: all direct, none of them cost an LLM call ----
+  // These edit the LEGACY node board, which a figure prezie does not have. Guarding on the
+  // board rather than on `open` keeps the two models from tripping over each other.
   const patchScene = (p: Partial<Scene>) => {
-    if (!open) return;
+    if (!open?.scene) return;
     commit({ ...open, scene: { ...open.scene, ...p } });
   };
   const patchNode = (i: number, p: Partial<Node>) => {
-    if (!open) return;
+    if (!open?.scene) return;
     patchScene({ nodes: open.scene.nodes.map((n, k) => (k === i ? { ...n, ...p } : n)) });
   };
   const patchFact = (i: number, j: number, p: Partial<Fact>) => {
-    if (!open) return;
+    if (!open?.scene) return;
     patchNode(i, { facts: open.scene.nodes[i].facts.map((f, k) => (k === j ? { ...f, ...p } : f)) });
   };
   const addFact = (i: number) => {
-    if (!open || open.scene.nodes[i].facts.length >= MAX_FACTS) return;
+    if (!open?.scene || open.scene.nodes[i].facts.length >= MAX_FACTS) return;
     patchNode(i, { facts: [...open.scene.nodes[i].facts, { label: '', value: '' }] });
   };
   const removeFact = (i: number, j: number) => {
-    if (!open) return;
+    if (!open?.scene) return;
     patchNode(i, { facts: open.scene.nodes[i].facts.filter((_, k) => k !== j) });
   };
   const addNode = () => {
-    if (!open || open.scene.nodes.length >= MAX_NODES) return;
+    if (!open?.scene || open.scene.nodes.length >= MAX_NODES) return;
     patchScene({ nodes: [...open.scene.nodes, emptyNode(open.scene.nodes.length)] });
   };
   const removeNode = (i: number) => {
-    if (!open || open.scene.nodes.length < 2) return;
+    if (!open?.scene || open.scene.nodes.length < 2) return;
     const nodes = open.scene.nodes.filter((_, k) => k !== i);
     patchScene({ nodes });
     setSel((k) => (k >= nodes.length ? nodes.length - 1 : k));
   };
   const moveNode = (i: number, dir: -1 | 1) => {
-    if (!open) return;
+    if (!open?.scene) return;
     const j = i + dir;
     if (j < 0 || j >= open.scene.nodes.length) return;
     const nodes = open.scene.nodes.slice();
     [nodes[i], nodes[j]] = [nodes[j], nodes[i]];
     patchScene({ nodes });
+  };
+
+  /**
+   * Create an empty FIGURE prezie, so the loop has something to hang off. It is a version like
+   * any other and appears in the list on the left; it simply starts with no figures instead of
+   * a generated board.
+   */
+  const startFigures = async () => {
+    if (drawing) return;
+    setDrawing(true);
+    setError(null);
+    try {
+      const res = await fetch(baseUrlRef.current + '/prezie/versions', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ figures: true, name: initial.title }),
+      });
+      const b = (await res.json().catch(() => null)) as
+        | { prezie?: { prezie_id: string; name: string }; versions?: Version[]; error?: string }
+        | null;
+      if (!res.ok || !b?.prezie) {
+        setError(b?.error ?? 'Could not start it.');
+        return;
+      }
+      setOpen({ prezie_id: b.prezie.prezie_id, name: b.prezie.name, scene: null, figures: [] });
+      latest.current = null;
+      if (b.versions) setVersions(b.versions);
+      setFigSel(0);
+      setSaveState('saved');
+      setPreviewV((v) => v + 1);
+    } catch {
+      setError('Network error. Try again.');
+    } finally {
+      setDrawing(false);
+    }
+  };
+
+  // ---- figures: draw, revise, remove ----
+  const figures = open?.figures ?? [];
+  const figEndpoint = () => baseUrlRef.current + '/prezie/figure';
+
+  /**
+   * One call for both drawing and revising: passing a figure_id makes it a revision, and the
+   * brief accumulates server-side so earlier turns are not undone by later ones.
+   */
+  const draw = async (revise: boolean) => {
+    const said = ask.trim();
+    if (!open || drawing || !said) return;
+    setDrawing(true);
+    setError(null);
+    try {
+      const res = await fetch(figEndpoint(), {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          prezie_id: open.prezie_id,
+          ask: said,
+          figure_id: revise ? figures[figSel]?.figure_id : undefined,
+        }),
+      });
+      const b = (await res.json().catch(() => null)) as
+        | { prezie?: { figures?: FigureView[] }; note?: string; figure_id?: string; error?: string }
+        | null;
+      if (!res.ok || !b?.prezie?.figures) {
+        setError(b?.error ?? 'Could not draw that.');
+        return;
+      }
+      const next = b.prezie.figures;
+      setOpen({ ...open, figures: next });
+      // Land on whatever was just drawn, so the preview shows the thing under discussion.
+      const at = next.findIndex((f) => f.figure_id === b.figure_id);
+      setFigSel(at >= 0 ? at : Math.max(0, next.length - 1));
+      setNote(b.note ?? null);
+      setAsk('');
+      setPreviewV((v) => v + 1);
+    } catch {
+      setError('Network error. Try again.');
+    } finally {
+      setDrawing(false);
+    }
+  };
+
+  const removeFigure = async (f: FigureView) => {
+    if (!open || drawing || !window.confirm(`Delete "${f.name}"?`)) return;
+    setDrawing(true);
+    setError(null);
+    try {
+      const res = await fetch(figEndpoint(), {
+        method: 'DELETE',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ prezie_id: open.prezie_id, figure_id: f.figure_id }),
+      });
+      const b = (await res.json().catch(() => null)) as
+        | { prezie?: { figures?: FigureView[] }; error?: string }
+        | null;
+      if (!res.ok || !b?.prezie?.figures) {
+        setError(b?.error ?? 'Could not delete it.');
+        return;
+      }
+      setOpen({ ...open, figures: b.prezie.figures });
+      setFigSel((k) => Math.max(0, Math.min(k, b.prezie!.figures!.length - 1)));
+      setPreviewV((v) => v + 1);
+    } catch {
+      setError('Network error. Try again.');
+    } finally {
+      setDrawing(false);
+    }
+  };
+
+  const moveFigure = async (i: number, dir: -1 | 1) => {
+    if (!open || drawing) return;
+    const j = i + dir;
+    if (j < 0 || j >= figures.length) return;
+    const order = figures.map((f) => f.figure_id);
+    [order[i], order[j]] = [order[j], order[i]];
+    // Optimistic: the order is the operator's own decision, so it should feel instant.
+    const shown = order.map((fid) => figures.find((f) => f.figure_id === fid)!);
+    setOpen({ ...open, figures: shown });
+    setFigSel(j);
+    setPreviewV((v) => v + 1);
+    try {
+      await fetch(figEndpoint(), {
+        method: 'PATCH',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ prezie_id: open.prezie_id, order }),
+      });
+    } catch {
+      setError('Could not save the new order.');
+    }
   };
 
   // ---- versions ----
@@ -235,8 +383,14 @@ export function PrezieScreen({
         setError(b?.error ?? 'Could not build it.');
         return;
       }
-      setOpen({ prezie_id: b.prezie.prezie_id, name: b.prezie.name, scene: b.prezie.scene });
-      latest.current = { prezie_id: b.prezie.prezie_id, name: b.prezie.name, scene: b.prezie.scene };
+      const built: Open = {
+        prezie_id: b.prezie.prezie_id,
+        name: b.prezie.name,
+        scene: b.prezie.scene,
+        figures: null,
+      };
+      setOpen(built);
+      latest.current = built;
       if (b.versions) setVersions(b.versions);
       setNote(b.note ?? null);
       setDirection('');
@@ -298,7 +452,7 @@ export function PrezieScreen({
           ? 'Save failed'
           : '';
 
-  const nodes = open?.scene.nodes ?? [];
+  const nodes = open?.scene?.nodes ?? [];
   const mine = versions.filter((v) => v.for_this_piece);
   const others = versions.filter((v) => !v.for_this_piece);
 
@@ -416,7 +570,109 @@ export function PrezieScreen({
             ) : null}
           </div>
 
-          {open ? (
+          {open && open.figures ? (
+            <>
+              <p className={d.editHint}>
+                Say what you want and April draws it. Say what to change and she changes that
+                and leaves the rest alone. Build it up a figure at a time.
+              </p>
+
+              {figures.length === 0 ? (
+                <p className={d.empty}>
+                  Nothing drawn yet. Describe the first picture below, in your own words.
+                </p>
+              ) : (
+                figures.map((f, i) => (
+                  <div
+                    key={f.figure_id}
+                    className={`${d.version} ${i === figSel ? d.versionOn : ''}`}
+                  >
+                    <button
+                      type="button"
+                      className={d.versionPick}
+                      onClick={() => {
+                        setFigSel(i);
+                        setPreviewV((v) => v + 1);
+                      }}
+                    >
+                      <span className={d.versionName}>
+                        {i + 1}. {f.name}
+                      </span>
+                      <span className={d.versionMeta}>
+                        {f.taps} tap{f.taps === 1 ? '' : 's'}
+                      </span>
+                    </button>
+                    <button
+                      type="button"
+                      className={d.versionOpen}
+                      onClick={() => void moveFigure(i, -1)}
+                      disabled={i === 0 || drawing}
+                      title="Earlier"
+                    >
+                      ↑
+                    </button>
+                    <button
+                      type="button"
+                      className={d.versionOpen}
+                      onClick={() => void moveFigure(i, 1)}
+                      disabled={i === figures.length - 1 || drawing}
+                      title="Later"
+                    >
+                      ↓
+                    </button>
+                    <button
+                      type="button"
+                      className={d.versionDel}
+                      onClick={() => void removeFigure(f)}
+                      disabled={drawing}
+                      aria-label={`Delete ${f.name}`}
+                    >
+                      ✕
+                    </button>
+                  </div>
+                ))
+              )}
+
+              <label className={d.field}>
+                <span>
+                  {figures.length
+                    ? `Change figure ${figSel + 1}, or describe a new one`
+                    : 'Describe the first figure'}
+                </span>
+                <textarea
+                  value={ask}
+                  onChange={(e) => setAsk(e.target.value)}
+                  placeholder={
+                    'e.g. a lever. Small coral ball on the long arm is the work, big mint mass on the short arm is AI. One tap and the mass drops, the beam flips, the work is flung out as OUTPUT.'
+                  }
+                  rows={5}
+                  disabled={drawing}
+                />
+              </label>
+              <div className={d.aprilBox}>
+                <button
+                  type="button"
+                  className={d.aprilBtn}
+                  onClick={() => void draw(true)}
+                  disabled={drawing || !ask.trim() || figures.length === 0}
+                >
+                  {drawing ? 'Drawing…' : `Change figure ${figSel + 1}`}
+                </button>
+                <button
+                  type="button"
+                  className={d.addBtn}
+                  onClick={() => void draw(false)}
+                  disabled={drawing || !ask.trim()}
+                >
+                  {figures.length ? '+ Draw it as a new figure' : 'Draw it'}
+                </button>
+              </div>
+              <p className={d.hint}>
+                A change keeps everything you already approved about that figure. A new figure
+                is added at the end and can be moved.
+              </p>
+            </>
+          ) : open && open.scene ? (
             <>
               <p className={d.editHint}>
                 Every field here is editable. Type over any value and it saves itself. No
@@ -437,7 +693,7 @@ export function PrezieScreen({
               <label className={d.field}>
                 <span>The concept, over the whole board</span>
                 <textarea
-                  value={open.scene.concept}
+                  value={open.scene?.concept ?? ''}
                   onChange={(e) => patchScene({ concept: e.target.value })}
                   onBlur={flush}
                   placeholder="e.g. Three divergent classes"
@@ -561,7 +817,7 @@ export function PrezieScreen({
               <label className={d.field}>
                 <span>The closing line. Break it where the punch should land</span>
                 <textarea
-                  value={open.scene.close ?? ''}
+                  value={open.scene?.close ?? ''}
                   onChange={(e) => patchScene({ close: e.target.value })}
                   onBlur={flush}
                   placeholder={'Build a human\nthen amplify with AI'}
@@ -570,10 +826,20 @@ export function PrezieScreen({
               </label>
             </>
           ) : (
-            <p className={d.empty}>
-              Nothing open. Pick a version on the left, or write the narrative below and let
-              April build one.
-            </p>
+            <>
+              <p className={d.empty}>
+                Nothing open. Start a prezie you build up a figure at a time, pick a version on
+                the left, or use the narrative box below for the older three-object board.
+              </p>
+              <button
+                type="button"
+                className={d.aprilBtn}
+                onClick={() => void startFigures()}
+                disabled={drawing}
+              >
+                {drawing ? 'Starting…' : 'Start a prezie, figure by figure'}
+              </button>
+            </>
           )}
 
           <div className={d.buildBox}>
@@ -619,7 +885,7 @@ export function PrezieScreen({
         </section>
       </div>
 
-      {open && nodes.length ? (
+      {open && (nodes.length || figures.length) ? (
         <section className={d.deckPanel}>
           <div className={d.colHead}>
             <h2 className={d.colTitle}>On the touchscreen</h2>
@@ -633,7 +899,7 @@ export function PrezieScreen({
             </a>
           </div>
 
-          <div className={d.chips}>
+          <div className={d.chips} hidden={Boolean(open.figures)}>
             <button
               type="button"
               className={`${d.chip} ${sel === -1 ? d.chipOn : ''}`}
@@ -656,15 +922,19 @@ export function PrezieScreen({
           </div>
 
           <div className={d.previewWrap}>
+            {/* The preview is the real page. On a figure prezie it opens on the figure under
+                discussion, complete, so what is reviewed is what the camera will see. */}
             <iframe
-              key={`${open.prezie_id}-${sel}-${previewV}`}
+              key={`${open.prezie_id}-${open.figures ? figSel : sel}-${previewV}`}
               className={d.preview}
               src={
-                sel >= 0
-                  ? `/console/prezie/${concept}/${open.prezie_id}?node=${sel}&v=${previewV}`
-                  : `/console/prezie/${concept}/${open.prezie_id}?v=${previewV}`
+                open.figures
+                  ? `/console/prezie/${concept}/${open.prezie_id}?figure=${figSel}&v=${previewV}`
+                  : sel >= 0
+                    ? `/console/prezie/${concept}/${open.prezie_id}?node=${sel}&v=${previewV}`
+                    : `/console/prezie/${concept}/${open.prezie_id}?v=${previewV}`
               }
-              title={sel >= 0 ? `Object ${sel + 1}` : 'The board'}
+              title={open.figures ? `Figure ${figSel + 1}` : sel >= 0 ? `Object ${sel + 1}` : 'The board'}
             />
           </div>
           <p className={d.hint}>

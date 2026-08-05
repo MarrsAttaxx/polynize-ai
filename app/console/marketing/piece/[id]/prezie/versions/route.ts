@@ -69,6 +69,11 @@ const SceneSchema = z.object({
 });
 
 const GenerateSchema = z.object({
+  /**
+   * Start an EMPTY FIGURE prezie (D33) instead of generating a board. No LLM call: the loop
+   * begins with the operator describing the first picture, not with a guess at one.
+   */
+  figures: z.boolean().optional(),
   narrative: z.string().max(4000).optional(),
   direction: z.string().max(4000).optional(),
   /** The version to refine, when this is a follow-up rather than a fresh build. */
@@ -94,7 +99,7 @@ const summarise = (list: Prezie[], pieceId: string) =>
     created_at: p.created_at,
     updated_at: p.updated_at,
     url: `/console/prezie/${p.concept}/${p.prezie_id}`,
-    node_count: p.scene.nodes.length,
+    node_count: p.figures?.length ?? p.scene?.nodes.length ?? 0,
   }));
 
 /** undefined = the read failed; null = there is genuinely no such piece. */
@@ -128,6 +133,30 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   if (!piece) return NextResponse.json({ error: 'piece not found' }, { status: 404 });
 
   const concept = conceptOf(piece);
+
+  // An empty figure prezie is created directly. There is nothing to generate yet, and asking
+  // April for an opening guess is what produced boards that ignored what he wanted.
+  if (body.figures) {
+    const now = new Date().toISOString();
+    const prezie: Prezie = {
+      prezie_id: randomUUID(),
+      concept,
+      piece_id: piece.piece_id,
+      stream: piece.stream,
+      owner: user.email,
+      name: stripEmDashes(body.name?.trim() || piece.title),
+      figures: [],
+      created_at: now,
+    };
+    await savePrezie(prezie);
+    const list = await listPreziesForConcept(concept);
+    return NextResponse.json({
+      ok: true,
+      note: 'Started an empty prezie. Describe the first figure.',
+      prezie: { ...prezie, url: `/console/prezie/${concept}/${prezie.prezie_id}` },
+      versions: summarise(list, piece.piece_id),
+    });
+  }
 
   try {
     // Refining works from the named version, so a follow-up direction sharpens what is on

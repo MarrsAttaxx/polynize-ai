@@ -29,6 +29,7 @@ import { getSheetState, saveSheetState, deleteSheetState } from '@/lib/content/s
 import { isBucketConfigured, getObjectText, putObjectText, deleteObject, listKeys } from '@/lib/agents/bucket';
 import { supabaseService } from '@/lib/supabase';
 import type { Scene } from './scene';
+import type { PrezieFigure } from './figure';
 
 /** Pieces with no concept behind them still need somewhere to live. */
 export const UNFILED = '_unfiled';
@@ -60,8 +61,18 @@ export type Prezie = {
   owner: string;
   /** Human label in the version list, e.g. "Force multiplier". */
   name: string;
-  /** What the engine renders. */
-  scene: Scene;
+  /**
+   * What the engine renders, for prezies built on the node board (the pre-D33 model).
+   * Optional now: a figure prezie has no board.
+   */
+  scene?: Scene;
+  /**
+   * AUTHORED FIGURES (D33), in performance order. When present these are what render, and the
+   * board is ignored. Kept as a separate field rather than replacing `scene` so every prezie
+   * already built keeps working: the two models coexist and the renderer picks by what is
+   * there.
+   */
+  figures?: PrezieFigure[];
   created_at: string;
   updated_at?: string;
 };
@@ -76,14 +87,14 @@ export function isPrezie(x: unknown): x is Prezie {
   if (!x || typeof x !== 'object' || Array.isArray(x)) return false;
   const p = x as Record<string, unknown>;
   const str = (v: unknown) => typeof v === 'string' && v.length > 0;
+  if (!str(p.prezie_id) || !str(p.concept)) return false;
+  // A prezie is valid with EITHER a node board or authored figures. Requiring a board would
+  // make every figure prezie read as malformed and silently vanish from the version list.
   const scene = p.scene as { concept?: unknown; nodes?: unknown } | undefined;
-  return (
-    str(p.prezie_id) &&
-    str(p.concept) &&
-    Boolean(scene) &&
-    typeof scene?.concept === 'string' &&
-    Array.isArray(scene?.nodes)
-  );
+  const hasBoard =
+    Boolean(scene) && typeof scene?.concept === 'string' && Array.isArray(scene?.nodes);
+  const hasFigures = Array.isArray(p.figures) && (p.figures as unknown[]).length > 0;
+  return hasBoard || hasFigures;
 }
 
 async function readAt(key: string): Promise<Prezie | null> {

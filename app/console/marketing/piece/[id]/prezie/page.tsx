@@ -100,7 +100,7 @@ export default async function PiecePreziePage({
     created_at: p.created_at,
     updated_at: p.updated_at,
     url: `/console/prezie/${p.concept}/${p.prezie_id}`,
-    node_count: p.scene.nodes.length,
+    node_count: p.figures?.length ?? p.scene?.nodes.length ?? 0,
   }));
 
   // An explicit `?v=` wins (that is the version list being clicked). Otherwise open the
@@ -119,7 +119,12 @@ export default async function PiecePreziePage({
       versions={versions}
       opening={
         opening
-          ? { prezie_id: opening.prezie_id, name: opening.name, scene: opening.scene }
+          ? {
+              prezie_id: opening.prezie_id,
+              name: opening.name,
+              scene: opening.scene ?? null,
+              figures: opening.figures ?? null,
+            }
           : null
       }
     />
