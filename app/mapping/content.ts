@@ -24,6 +24,7 @@ export type MappingContent = {
   };
   problem: { h2: string; paras: string[] };
   whatItIs: { h2: string; paras: string[]; cards: Card[] };
+  matrixImage: { src: string; alt: string; caption: string };
   walkaway: { h2: string; intro: string; items: WalkawayItem[]; footnote: string };
   howItRuns: { h2: string; stages: Stage[]; line: string };
   video: { h2: string; src: string; poster: string; caption: string };
@@ -134,6 +135,13 @@ export const mappingContent: MappingContent = {
       },
     ],
     line: 'No cap on how many people take part. We scope that with you up front.',
+  },
+
+  matrixImage: {
+    src: '/mapping/capability-matrix.jpg',
+    alt: 'A team capability matrix: people down the side, work scenarios across the top, each capability scored and coloured from strong to gap.',
+    caption:
+      'A real capability map. Every person against every part of the work, scored and coloured, with the gaps showing up plainly.',
   },
 
   video: {

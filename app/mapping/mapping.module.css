@@ -114,8 +114,8 @@
 .leadLine { font-size: 16px; color: var(--text-2); margin: 0 0 28px; max-width: 720px; }
 
 /* ---------- Hero ---------- */
-.hero { padding: 40px 0 64px; }
-.heroCopy { max-width: 800px; margin-bottom: 44px; }
+.hero { padding: 40px 0 8px; }
+.heroCopy { max-width: 800px; }
 .heroSub {
   font-size: clamp(16px, 1.6vw, 18.5px);
   line-height: 1.6;
@@ -124,84 +124,24 @@
   max-width: 640px;
 }
 
-/* ---------- Capability matrix ---------- */
-.matrixFrame {
+/* ---------- Capability matrix (real screenshot) ---------- */
+.matrixFigure { margin: 40px 0 0; }
+.matrixImg {
+  display: block;
+  width: 100%;
+  height: auto;
   border: 1px solid var(--border-soft);
-  border-radius: 16px;
+  border-radius: 14px;
   background: var(--surface);
-  padding: 22px 24px 26px;
   box-shadow: 0 30px 80px rgba(0, 0, 0, 0.35);
 }
-.matrixHead {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  flex-wrap: wrap;
-  margin-bottom: 18px;
-}
-.matrixEyebrow {
-  font-family: var(--font-inter), monospace;
-  font-size: 11px;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
+.matrixCaption {
+  margin: 16px 0 0;
+  font-size: 13px;
   color: var(--text-3);
+  max-width: 720px;
+  line-height: 1.5;
 }
-.matrixLegend { display: flex; gap: 16px; }
-.legItem {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  font-size: 11px;
-  color: var(--text-3);
-  letter-spacing: 0.02em;
-}
-.legDot { width: 10px; height: 10px; border-radius: 3px; }
-
-.matrixScroll { overflow-x: auto; }
-.matrixGrid {
-  display: grid;
-  grid-template-columns: minmax(118px, 1.5fr) repeat(var(--cols), minmax(46px, 1fr));
-  gap: 6px;
-  min-width: 620px;
-}
-.matrixRowContents { display: contents; }
-.matrixCorner { grid-column: 1; }
-.matrixColHead {
-  font-size: 10.5px;
-  color: var(--text-3);
-  letter-spacing: 0.02em;
-  text-align: center;
-  align-self: end;
-  padding-bottom: 6px;
-  line-height: 1.2;
-}
-.matrixRowHead {
-  font-size: 12.5px;
-  color: var(--text-2);
-  display: flex;
-  align-items: center;
-  padding-right: 12px;
-  min-height: 40px;
-}
-.matrixCell {
-  aspect-ratio: 1 / 1;
-  min-height: 34px;
-  border-radius: 5px;
-  border: 1px solid var(--border-soft);
-  background: transparent;
-  opacity: 0;
-  transform: scale(0.9);
-  transition: opacity 0.32s ease, transform 0.32s ease, background 0.2s ease, border-color 0.2s ease;
-}
-.cellOn { opacity: 1; transform: none; }
-.lvStrong { background: rgba(105, 252, 203, 0.82); border-color: rgba(105, 252, 203, 0.9); }
-.lvDev { background: rgba(240, 184, 107, 0.78); border-color: rgba(240, 184, 107, 0.85); }
-.lvGap { background: rgba(255, 122, 107, 0.9); border-color: rgba(255, 122, 107, 0.95); }
-/* legend dots reuse the level classes at full opacity via their own sizing */
-.legDot.lvStrong { background: var(--mint); }
-.legDot.lvDev { background: var(--amber); }
-.legDot.lvGap { background: var(--coral); }
 
 /* ---------- Card grids ---------- */
 .cards3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 34px; }
