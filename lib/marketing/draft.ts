@@ -16,7 +16,7 @@
 import type { MarketingPiece } from './piece-store';
 import { getConcept } from './concept-store';
 import { getBrandVoiceForStream } from './brand-voice-store';
-import { icpLabel, formatById, defaultLengthFor } from './output-plan';
+import { icpLabel, formatById, defaultLengthFor, HOOK_CRAFT } from './output-plan';
 import { resolveTemplateRef } from './create-outputs';
 import { complete } from '@/lib/llm';
 import { stripEmDashes } from '@/lib/em-dash';
@@ -124,9 +124,13 @@ export function recipeBlock(parts: RecipeParts): string {
     return length ? `\n\nLENGTH (a limit, not a target to pad to): ${length}` : '';
   }
   const sections: string[] = [];
+  // The house craft rules for hooks go in FIRST, before any template's own recipe, because
+  // they are read off hooks the presenter wrote and a template's recipe is a preference on
+  // top of them. Without this the model invents hook-shaped filler.
+  sections.push(HOOK_CRAFT);
   if (hookRecipe) {
     sections.push(
-      `HOOK RECIPE (how to open this piece; follow it as an ordered formula, step by step):\n"""\n${hookRecipe}\n"""`
+      `HOOK RECIPE for this template specifically (a preference on top of the craft rules above; follow it as an ordered formula):\n"""\n${hookRecipe}\n"""`
     );
   }
   // N HOOKS, ONE BODY. This is a shape instruction and it belongs here rather than in the
@@ -137,7 +141,7 @@ export function recipeBlock(parts: RecipeParts): string {
     const n = parts.hookVariants;
     sections.push(
       `HOOK VARIANTS: write ${n} DIFFERENT hooks for this one piece, not one.\n` +
-        `Label them "HOOK OPTION 1" to "HOOK OPTION ${n}", each following the hook recipe above and each with its own ON-SCREEN TEXT line where the format uses one.\n` +
+        `Label them "HOOK 1:" to "HOOK ${n}:", each with its own ON-SCREEN TEXT and SPOKEN lines, separated by a line of four hyphens, exactly as the output shape shows.\n` +
         `They must be genuinely different ways IN to the same argument (a different belief flipped, a different fact led with, a different audience addressed), never rewordings of each other, and each must hand over cleanly to the SAME body.\n` +
         `Write the body, and the close, ONCE. The body must not refer back to anything specific to one hook, because whichever hook is used it has to follow on.`
     );

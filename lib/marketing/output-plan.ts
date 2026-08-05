@@ -57,6 +57,44 @@ export type FormatDef = {
  * dependency: it has to be built before the shoot because the presenter touches it
  * live on camera. It is a prop, not post-production.
  */
+/**
+ * HOW A HOOK WORKS HERE, read off three that Marrs actually wrote rather than invented.
+ *
+ * This replaces a set of examples I made up, one of which was a draft he had already
+ * rejected as a bad hook. Examples that are not his produce hooks that are not his, so the
+ * patterns below are described from what HIS hooks DO, not from what they sound like.
+ *
+ * The three, verbatim, for the record:
+ *   1. ON-SCREEN "The smartest companies do this before touching any AI."
+ *      SPOKEN "The smartest companies in the world are doing this right now before touching
+ *      any AI"
+ *   2. ON-SCREEN "The Key to Unlocking AI in Your Company"
+ *      SPOKEN "If your company is struggling to implement AI in any meaningful way, you're
+ *      most likely missing this important first step."
+ *   3. ON-SCREEN "Why Buying More AI Licences Makes things worse"
+ *      SPOKEN "If your company keeps buying more AI licences and you haven't seen any ROI
+ *      yet, I guarantee THIS is the problem."
+ */
+export const HOOK_CRAFT = `HOW A HOOK WORKS IN THIS HOUSE. These are craft rules read off hooks the presenter wrote himself, so follow them as rules rather than as taste.
+
+WHAT EVERY HOOK DOES
+- IT WITHHOLDS THE PAYLOAD. Each of his hooks points at an unnamed thing: "do THIS", "missing THIS important first step", "THIS is the problem". The hook names the SHAPE of the answer and never the answer. A hook that contains the answer is not a hook, it is a summary.
+- IT QUALIFIES THE AUDIENCE OUT LOUD. Two of the three open with a condition that lets the right viewer recognise themselves: "If your company is struggling to...", "If your company keeps buying...". That is what makes the wrong viewer scroll on and the right one stay.
+- IT CARRIES AUTHORITY OR A GUARANTEE. "The smartest companies in the world". "I guarantee". A flat claim with nothing behind it does not survive the first second.
+- IT IS SECOND PERSON, PRESENT TENSE, ABOUT THEIR COMPANY, NOW. Never about the presenter. No greeting, no "in this video", and never a question as the opening line.
+
+THE TWO LINES DO DIFFERENT JOBS
+- ON-SCREEN TEXT is the headline: 6 to 10 words, declarative, readable on mute at a glance. It states the claim or the prize.
+- SPOKEN is longer, 15 to 25 words, one breath. It qualifies who this is for and carries the guarantee or the authority.
+- They must NOT be the same sentence reworded. Read together they open a gap that the beats then close.
+
+THREE WAYS IN, one per hook when several are asked for. These are different ENTRY POINTS to the same argument, never rewordings of each other:
+- THE ELITE ALREADY DO IT: name what the best operators do before the thing the viewer is rushing into, and withhold what "it" is.
+- THE MISSING FIRST STEP: name the symptom the viewer is living with, then assert there is a step they skipped.
+- THE COUNTERPRODUCTIVE ACTION: name what they are actively spending money or effort on, and say it is making the problem worse.
+
+NEVER: a rhetorical question as the first line, "in this video", "let me tell you", a statistic with no consequence attached, or an on-screen line that just repeats the spoken one.`;
+
 /*
  * RETIRED WITH THE DECK (D31, 2026-07-28). SCREEN_RULES, SCREEN_PROMPT_BRIEF and the
  * per-format `screenPromptShape` fed the prose brief that an animator built from. Nothing
@@ -148,9 +186,48 @@ export const FORMATS: FormatDef[] = [
     twoTrack: true,
     scriptShape: `Output shape. This is the SPLIT-SCREEN 9:16 hero format. One studio setup, two angles: the TOP half of the frame is a mid front shot of the presenter to camera, the BOTTOM half is a bird's-eye view of a 32in touchscreen the presenter is touching. Both halves are on screen the whole time, so the words and the screen move together.
 
-Use plain beat labels on their own lines: HOOK, then the beats, then the close. If the recipe defines its own beats, use its labels and its order and honour its own ending, including whether it has a call to action. End on one sharp spoken line worth punching. Keep it fast: one idea per beat, and the screen changes on every beat so the frame never sits still.
+THE SHAPE, exactly. This is Marrs's own short-form structure, taken from a script he wrote; it is the house standard for short form, not a suggestion.
 
-Output the SPOKEN SCRIPT ONLY: the beat labels, and under each the exact words said to camera. It is read off a teleprompter, so it carries no visual notes, no screen descriptions, no stage directions and no shot marks. The screen is planned separately, from this script.`,
+HOOK 1:
+ON-SCREEN TEXT: <the headline claim, 6 to 10 words>
+SPOKEN: <what he says, one breath, 15 to 25 words>
+
+----
+
+HOOK 2:
+(same two lines)
+
+----
+
+HOOK 3:
+(same two lines)
+
+----
+
+BEAT 1
+<spoken prose, one or two short paragraphs, one idea>
+
+BEAT 2
+<spoken prose>
+
+BEAT 3
+<spoken prose>
+
+BEAT 4 (only if the argument needs it)
+<spoken prose>
+
+CTA
+<the ask, one or two sentences>
+
+CLOSE
+<one line after the CTA, the last thing said, worth punching>
+
+Rules that follow from that shape:
+- Write as many HOOKS as asked for (the default is one; a template can ask for three), each separated by a line of four hyphens. Every hook is a DIFFERENT way in to the same argument, and every one must hand over cleanly to BEAT 1, because only one of them will survive the edit.
+- ON-SCREEN TEXT and SPOKEN are NOT the same sentence. The on-screen line is the headline: shorter, flatter, declarative, the thing that stops a scroll on mute. The spoken line is said out loud and usually qualifies who this is for. Together they should open a gap, not repeat each other.
+- THE BEATS CARRY SPOKEN WORDS ONLY. No screen notes, no stage directions, no shot marks: the beats are read off a teleprompter and the screen is planned separately as the prezie. The ON-SCREEN TEXT line inside a hook is the ONE exception, because that text is part of the hook itself.
+- CTA and CLOSE are separate sections and both are needed. The CTA is the ask. The CLOSE is one line AFTER it, the actual last thing said, and it is punched in the edit, so it has to be worth punching.
+- Three beats is the norm and four is allowed when the argument genuinely has a fourth move. One idea per beat.`,
     screenPromptShape: `Before the first beat, add one line labelled "ON-SCREEN TEXT:" holding the first-frame caption that stops the scroll, or write "none" if the opening is purely visual. It is never spoken, and if used its words differ from the spoken hook so the two together open a gap.
 
 FRAMING for this format, state it in the DESIGN SYSTEM section. These are measured from the real rig, so design to them:
