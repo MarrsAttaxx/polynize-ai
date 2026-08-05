@@ -40,17 +40,6 @@ export function MappingLanding({ content: c }: { content: MappingContent }) {
               </a>
             </div>
           </div>
-          <figure className={s.heroFigure}>
-            <Image
-              className={s.heroImg}
-              src={c.hero.image.src}
-              alt={c.hero.image.alt}
-              width={c.hero.image.width}
-              height={c.hero.image.height}
-              sizes="(max-width: 680px) 100vw, 1096px"
-              priority
-            />
-          </figure>
         </section>
 
         {/* 2. Video */}

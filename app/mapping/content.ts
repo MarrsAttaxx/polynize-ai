@@ -25,7 +25,6 @@ export type MappingContent = {
     subhead: string;
     primaryCta: string;
     secondaryLabel: string;
-    image: { src: string; alt: string; width: number; height: number };
   };
   problem: { h2: string; paras: string[]; silos: Silo[] };
   whatItIs: { h2: string; paras: string[]; cards: Card[] };
@@ -56,12 +55,6 @@ export const mappingContent: MappingContent = {
       'A three hour session that shows you where your team’s capability sits against the work that matters, so you can see where to invest next. You leave with the map, the data, and a report.',
     primaryCta: 'Book a discovery call',
     secondaryLabel: 'See how it works',
-    image: {
-      src: '/mapping/founders-matrix.jpg',
-      alt: 'Shourov Bhattacharya and Marrs Coiro sitting either side of a screen showing a live team capability map.',
-      width: 1600,
-      height: 900,
-    },
   },
 
   problem: {

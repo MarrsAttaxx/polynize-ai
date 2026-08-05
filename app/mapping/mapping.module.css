@@ -128,15 +128,6 @@
   margin: 22px auto 0;
   max-width: 640px;
 }
-.heroFigure { margin: 44px 0 0; }
-.heroImg {
-  display: block;
-  width: 100%;
-  height: auto;
-  border: 1px solid var(--border-soft);
-  border-radius: 14px;
-  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.35);
-}
 
 /* ---------- Capability matrix (real screenshot) ---------- */
 .matrixFigure { margin: 40px 0 0; }
