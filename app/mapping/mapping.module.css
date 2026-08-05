@@ -1,6 +1,7 @@
 /* Team Capability Mapping landing page.
    Uses the site design tokens from app/globals.css. Headings in Space Grotesk,
-   body in Inter. Dark, drafting-grid aesthetic to match the homepage. */
+   body in Inter. Dark, drafting-grid aesthetic to match the homepage.
+   Layout is centre-aligned throughout (see the .section text-align rule). */
 
 .page {
   position: relative;
@@ -68,14 +69,15 @@
   transition: border-color 0.15s, color 0.15s;
 }
 .btnGhost:hover { border-color: var(--border); color: var(--text); }
-.ctaRow { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 30px; }
+.ctaRow { display: flex; gap: 14px; flex-wrap: wrap; justify-content: center; margin-top: 30px; }
 
 /* ---------- Section scaffolding ---------- */
 .section {
   padding: 68px 0;
   border-top: 1px solid var(--border-soft);
+  text-align: center;
 }
-.sectionHead { max-width: 780px; margin-bottom: 34px; }
+.sectionHead { max-width: 780px; margin: 0 auto 34px; }
 .eyebrow {
   display: inline-block;
   font-family: var(--font-inter), monospace;
@@ -102,7 +104,7 @@
   line-height: 1.12;
   margin: 0;
 }
-.prose { max-width: 720px; }
+.prose { max-width: 720px; margin-left: auto; margin-right: auto; }
 .prose p {
   font-size: 16px;
   line-height: 1.65;
@@ -111,16 +113,16 @@
 }
 .prose p:last-child { margin-bottom: 0; }
 .proseEmph { color: var(--text) !important; font-weight: 500; }
-.leadLine { font-size: 16px; color: var(--text-2); margin: 0 0 28px; max-width: 720px; }
+.leadLine { font-size: 16px; color: var(--text-2); margin: 0 auto 28px; max-width: 720px; }
 
 /* ---------- Hero ---------- */
 .hero { padding: 40px 0 8px; }
-.heroCopy { max-width: 800px; }
+.heroCopy { max-width: 800px; margin: 0 auto; text-align: center; }
 .heroSub {
   font-size: clamp(16px, 1.6vw, 18.5px);
   line-height: 1.6;
   color: var(--text-2);
-  margin: 22px 0 0;
+  margin: 22px auto 0;
   max-width: 640px;
 }
 
@@ -136,7 +138,7 @@
   box-shadow: 0 30px 80px rgba(0, 0, 0, 0.35);
 }
 .matrixCaption {
-  margin: 16px 0 0;
+  margin: 16px auto 0;
   font-size: 13px;
   color: var(--text-3);
   max-width: 720px;
@@ -164,10 +166,10 @@
 /* ---------- Walk-away ---------- */
 .walkList { display: flex; flex-direction: column; gap: 2px; }
 .walkItem {
-  display: grid;
-  grid-template-columns: 64px 1fr;
-  gap: 20px;
-  align-items: start;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
   padding: 22px 0;
   border-top: 1px solid var(--border-soft);
 }
@@ -185,12 +187,13 @@
   font-weight: 600;
   margin-bottom: 7px;
 }
-.walkBody { font-size: 14.5px; line-height: 1.6; color: var(--text-2); max-width: 720px; }
+.walkBody { font-size: 14.5px; line-height: 1.6; color: var(--text-2); max-width: 720px; margin: 0 auto; }
 .walkFootnote {
-  margin-top: 26px;
+  margin: 26px auto 0;
+  max-width: 640px;
   padding: 14px 18px;
   border: 1px solid var(--border-soft);
-  border-left: 2px solid var(--mint);
+  border-top: 2px solid var(--mint);
   border-radius: 8px;
   background: rgba(105, 252, 203, 0.04);
   font-size: 14px;
@@ -246,9 +249,10 @@
   overflow: hidden;
   background: #000;
   max-width: 900px;
+  margin: 0 auto;
 }
 .video { display: block; width: 100%; height: auto; }
-.videoCaption { margin: 16px 0 0; font-size: 13px; color: var(--text-3); max-width: 720px; line-height: 1.5; }
+.videoCaption { margin: 16px auto 0; font-size: 13px; color: var(--text-3); max-width: 720px; line-height: 1.5; }
 
 /* ---------- Proof ---------- */
 .proof {
@@ -257,6 +261,7 @@
   background: rgba(105, 252, 203, 0.04);
   padding: 40px 40px 36px;
   max-width: 900px;
+  margin: 0 auto;
 }
 .proofH2 {
   font-family: var(--font-space-grotesk), sans-serif;
@@ -315,6 +320,6 @@
   .section { padding: 52px 0; }
   .cards2 { grid-template-columns: 1fr; }
   .stages { grid-template-columns: 1fr; }
-  .walkItem { grid-template-columns: 44px 1fr; gap: 14px; }
+  .walkItem { gap: 14px; }
   .proof, .finalCard { padding: 32px 22px; }
 }
