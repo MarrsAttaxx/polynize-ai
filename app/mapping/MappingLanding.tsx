@@ -1,7 +1,10 @@
 import Link from 'next/link';
+import Image from 'next/image';
 import { DraftingGrid } from '../_components/DraftingGrid';
 import { TrackedLink } from '../_components/TrackedLink';
 import { SiteFooter } from '../_components/SiteFooter';
+import { SiloDiagram } from './SiloDiagram';
+import { StageGlyph } from './_icons';
 import { BOOKING_URL, type MappingContent } from './content';
 import s from './mapping.module.css';
 
@@ -37,10 +40,21 @@ export function MappingLanding({ content: c }: { content: MappingContent }) {
               </a>
             </div>
           </div>
+          <figure className={s.heroFigure}>
+            <Image
+              className={s.heroImg}
+              src={c.hero.image.src}
+              alt={c.hero.image.alt}
+              width={c.hero.image.width}
+              height={c.hero.image.height}
+              sizes="(max-width: 680px) 100vw, 1096px"
+              priority
+            />
+          </figure>
         </section>
 
         {/* 2. Video */}
-        <Section eyebrow="From the podcast" h2={c.video.h2}>
+        <Section eyebrow={c.video.eyebrow} h2={c.video.h2}>
           <div className={s.videoWrap}>
             <video
               className={s.video}
@@ -52,7 +66,15 @@ export function MappingLanding({ content: c }: { content: MappingContent }) {
               <source src={c.video.src} type="video/mp4" />
             </video>
           </div>
-          <p className={s.videoCaption}>{c.video.caption}</p>
+          <div className={s.videoMeta}>
+            <span className={s.avatars} aria-hidden="true">
+              {c.video.people.map((p) => (
+                /* eslint-disable-next-line @next/next/no-img-element */
+                <img key={p.name} className={s.avatar} src={p.src} alt="" width={40} height={40} />
+              ))}
+            </span>
+            <p className={s.videoCaption}>{c.video.caption}</p>
+          </div>
         </Section>
 
         {/* 3. The problem */}
@@ -64,6 +86,7 @@ export function MappingLanding({ content: c }: { content: MappingContent }) {
               </p>
             ))}
           </div>
+          <SiloDiagram items={c.problem.silos} />
         </Section>
 
         {/* 4. What it is */}
@@ -82,13 +105,29 @@ export function MappingLanding({ content: c }: { content: MappingContent }) {
             ))}
           </div>
           <figure className={s.matrixFigure}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              className={s.matrixImg}
-              src={c.matrixImage.src}
-              alt={c.matrixImage.alt}
-              loading="lazy"
-            />
+            {/* Scrolls sideways on narrow screens rather than shrinking the cells
+                into unreadable texture. The legend and caption stay outside it. */}
+            <div className={s.matrixScroll}>
+              <Image
+                className={s.matrixImg}
+                src={c.matrixImage.src}
+                alt={c.matrixImage.alt}
+                width={c.matrixImage.width}
+                height={c.matrixImage.height}
+                sizes="(max-width: 680px) 900px, 1096px"
+              />
+            </div>
+            <div className={s.legend}>
+              <span className={s.legendItem}>
+                <i className={`${s.legendDot} ${s.dotMint}`} />Strong
+              </span>
+              <span className={s.legendItem}>
+                <i className={`${s.legendDot} ${s.dotAmber}`} />Developing
+              </span>
+              <span className={s.legendItem}>
+                <i className={`${s.legendDot} ${s.dotCoral}`} />Gap
+              </span>
+            </div>
             <figcaption className={s.matrixCaption}>{c.matrixImage.caption}</figcaption>
           </figure>
         </Section>
@@ -102,6 +141,9 @@ export function MappingLanding({ content: c }: { content: MappingContent }) {
           <div className={s.stages}>
             {c.howItRuns.stages.map((st) => (
               <div key={st.n} className={s.stage}>
+                <span className={s.stageIcon}>
+                  <StageGlyph kind={st.icon} />
+                </span>
                 <div className={s.stageNum}>{st.n}</div>
                 <div className={s.stageTitle}>{st.title}</div>
                 <div className={s.stageWhat}>{st.what}</div>
@@ -210,7 +252,7 @@ function MappingNav({ cta }: { cta: string }) {
     <nav className={s.nav}>
       <Link className={s.wordmark} href="/">
         <span className={s.mark} aria-hidden>
-          <img src="/assets/polynize-mark.png" alt="" />
+          <img src="/assets/polynize-mark.png" alt="" width={26} height={26} />
         </span>
         <span>
           polynize<span style={{ color: 'var(--text-3)' }}>.ai</span>

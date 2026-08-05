@@ -11,9 +11,13 @@
  * company, never a price, Australian spelling, no em-dashes, human led.
  */
 
+import type { StageIcon } from './_icons';
+import type { Silo } from './SiloDiagram';
+
 export type Card = { title: string; body: string };
 export type WalkawayItem = { n: string; title: string; body: string };
-export type Stage = { n: string; title: string; what: string; who: string };
+export type Stage = { n: string; title: string; what: string; who: string; icon: StageIcon };
+export type Person = { name: string; src: string };
 
 export type MappingContent = {
   hero: {
@@ -21,13 +25,21 @@ export type MappingContent = {
     subhead: string;
     primaryCta: string;
     secondaryLabel: string;
+    image: { src: string; alt: string; width: number; height: number };
   };
-  problem: { h2: string; paras: string[] };
+  problem: { h2: string; paras: string[]; silos: Silo[] };
   whatItIs: { h2: string; paras: string[]; cards: Card[] };
-  matrixImage: { src: string; alt: string; caption: string };
+  matrixImage: { src: string; alt: string; caption: string; width: number; height: number };
   walkaway: { h2: string; intro: string; items: WalkawayItem[]; footnote: string };
   howItRuns: { h2: string; stages: Stage[]; line: string };
-  video: { h2: string; src: string; poster: string; caption: string };
+  video: {
+    eyebrow: string;
+    h2: string;
+    src: string;
+    poster: string;
+    caption: string;
+    people: Person[];
+  };
   proof: { h2: string; paras: string[]; stat: string };
   examples: { h2: string; intro: string; cards: Card[] };
   audience: { h2: string; paras: string[] };
@@ -44,6 +56,12 @@ export const mappingContent: MappingContent = {
       'A three hour session that shows you where your team’s capability sits against the work that matters, so you can see where to invest next. You leave with the map, the data, and a report.',
     primaryCta: 'Book a discovery call',
     secondaryLabel: 'See how it works',
+    image: {
+      src: '/mapping/founders-matrix.jpg',
+      alt: 'Shourov Bhattacharya and Marrs Coiro sitting either side of a screen showing a live team capability map.',
+      width: 1600,
+      height: 900,
+    },
   },
 
   problem: {
@@ -52,6 +70,11 @@ export const mappingContent: MappingContent = {
       'Most companies think about work in silos. People over here, processes over there, technology somewhere else. IT knows nothing about the people. A consultant fixes your workflows without knowing your team. Everyone holds one piece.',
       'So when a decision comes up, where should AI go, where do people need to stay in charge, who is ready and who is not, there is nothing to make the decision against.',
       'You cannot go where you need to go without a map.',
+    ],
+    silos: [
+      { kind: 'people', label: 'People', note: 'Who is ready, and who is not.' },
+      { kind: 'process', label: 'Processes', note: 'Mapped without the people.' },
+      { kind: 'technology', label: 'Technology', note: 'Chosen without either.' },
     ],
   },
 
@@ -108,30 +131,35 @@ export const mappingContent: MappingContent = {
         title: 'Discovery',
         what: 'We work out what is worth mapping, and what a result would be worth to you.',
         who: 'You, and whoever holds the budget',
+        icon: 'discovery',
       },
       {
         n: '02',
         title: 'Agreement',
         what: 'Scope and price confirmed.',
         who: 'You',
+        icon: 'agreement',
       },
       {
         n: '03',
         title: 'Input and setup',
         what: 'We build the scenarios from your real work. Either a short session or online, whichever suits.',
         who: 'Your project lead',
+        icon: 'setup',
       },
       {
         n: '04',
         title: 'The session',
         what: 'Three hours. Your team works through the scenarios and the map builds live.',
         who: 'Your team',
+        icon: 'session',
       },
       {
         n: '05',
         title: 'Handover showcase',
         what: 'One hour. We walk your leadership through the map, the report, and what we would do next.',
         who: 'Your leadership',
+        icon: 'handover',
       },
     ],
     line: 'No cap on how many people take part. We scope that with you up front.',
@@ -142,14 +170,20 @@ export const mappingContent: MappingContent = {
     alt: 'A team capability matrix: people down the side, work scenarios across the top, each capability scored and coloured from strong to gap.',
     caption:
       'A real capability map. Every person against every part of the work, scored and coloured, with the gaps showing up plainly.',
+    width: 1920,
+    height: 908,
   },
 
   video: {
+    eyebrow: 'Capability Mapping',
     h2: 'What the map actually shows.',
     src: '/mapping/capability-mapping.mp4',
     poster: '/mapping/poster.jpg',
-    caption:
-      'Shourov Bhattacharya and Marrs Coiro, co founders, on reading a capability map. From the Humans, Amplified podcast.',
+    caption: 'Shourov Bhattacharya and Marrs Coiro, co founders, on reading a capability map.',
+    people: [
+      { name: 'Shourov Bhattacharya', src: '/mapping/avatar-shourov.jpg' },
+      { name: 'Marrs Coiro', src: '/mapping/avatar-marrs.jpg' },
+    ],
   },
 
   proof: {
