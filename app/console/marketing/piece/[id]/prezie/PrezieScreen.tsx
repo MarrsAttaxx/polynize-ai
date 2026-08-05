@@ -46,7 +46,14 @@ type Version = {
   url: string;
   node_count: number;
 };
-type FigureView = { figure_id: string; name: string; brief: string; taps: number };
+type FigureView = {
+  figure_id: string;
+  name: string;
+  brief: string;
+  taps: number;
+  /** True when the screen's touches belong to this figure rather than to the board. */
+  interactive?: boolean;
+};
 type Open = {
   prezie_id: string;
   name: string;
@@ -415,6 +422,37 @@ export function PrezieScreen({
     }
   };
 
+  /**
+   * Whether this figure owns the screen's touches. His switch, not April's.
+   *
+   * She has the same flag and is told to set it, but he has been blocked twice waiting for her
+   * to do something she could have done, and this is a one-bit fact he knows for certain.
+   */
+  const setOwnsScreen = async (f: FigureView, on: boolean) => {
+    if (!open || drawing) return;
+    // Optimistic: it is his own decision about his own figure, so it should feel instant.
+    setOpen({
+      ...open,
+      figures: figures.map((g) =>
+        g.figure_id === f.figure_id ? { ...g, interactive: on } : g
+      ),
+    });
+    setPreviewV((v) => v + 1);
+    try {
+      await fetch(figEndpoint(), {
+        method: 'PATCH',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          prezie_id: open.prezie_id,
+          figure_id: f.figure_id,
+          interactive: on,
+        }),
+      });
+    } catch {
+      setError('Could not save that.');
+    }
+  };
+
   const moveFigure = async (i: number, dir: -1 | 1) => {
     if (!open || drawing) return;
     const j = i + dir;
@@ -683,7 +721,21 @@ export function PrezieScreen({
                       </span>
                       <span className={d.versionMeta}>
                         {f.taps} tap{f.taps === 1 ? '' : 's'}
+                        {f.interactive ? ' · the screen is this figure' : ''}
                       </span>
+                    </button>
+                    <button
+                      type="button"
+                      className={`${d.versionOpen} ${f.interactive ? d.rigOnBtn : ''}`}
+                      onClick={() => void setOwnsScreen(f, !f.interactive)}
+                      disabled={drawing}
+                      title={
+                        f.interactive
+                          ? 'The screen belongs to this figure: only the corner mark advances'
+                          : 'Give the screen to this figure, so a touch works it instead of moving on'
+                      }
+                    >
+                      ⇱
                     </button>
                     <button
                       type="button"

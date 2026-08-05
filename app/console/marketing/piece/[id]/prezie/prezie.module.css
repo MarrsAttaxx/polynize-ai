@@ -629,3 +629,9 @@
   font-size: 11px;
   color: var(--text-3);
 }
+
+/* On when this figure owns the screen's touches. */
+.rigOnBtn {
+  color: var(--mint) !important;
+  border-color: var(--mint) !important;
+}

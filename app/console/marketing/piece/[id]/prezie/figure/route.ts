@@ -59,7 +59,16 @@ const IdSchema = z.object({
 });
 const OrderSchema = z.object({
   prezie_id: z.string().trim().min(1).max(200),
-  order: z.array(z.string().trim().min(1).max(200)).min(1).max(24),
+  order: z.array(z.string().trim().min(1).max(200)).min(1).max(24).optional(),
+  /**
+   * Set whether ONE figure owns the screen's touches, without asking April.
+   *
+   * She has the same flag and is told to set it, but Marrs has now been blocked twice waiting
+   * for her to do something she could have done, and this is a one-bit fact about the figure
+   * that he knows for certain. A switch he owns is deterministic; a prompt rule is a hope.
+   */
+  figure_id: z.string().trim().min(1).max(200).optional(),
+  interactive: z.boolean().optional(),
 });
 
 /** Everything the client needs to render the loop; the css/html go too, for the preview. */
@@ -72,6 +81,7 @@ const view = (p: Prezie) => ({
     name: f.name,
     brief: f.brief,
     taps: f.taps,
+    interactive: f.interactive === true,
   })),
 });
 
@@ -207,12 +217,35 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   const { prezie } = found;
 
   const have = prezie.figures ?? [];
+
+  // Setting the flag on one figure. Deliberately the same verb as reordering: both are the
+  // operator arranging what already exists, neither costs a generation.
+  if (body.figure_id && typeof body.interactive === 'boolean') {
+    if (!have.some((f) => f.figure_id === body.figure_id)) {
+      return NextResponse.json({ error: 'That figure is gone. Reload.' }, { status: 409 });
+    }
+    const next: Prezie = {
+      ...prezie,
+      figures: have.map((f) =>
+        f.figure_id === body.figure_id
+          ? { ...f, interactive: body.interactive === true ? true : undefined }
+          : f
+      ),
+      updated_at: new Date().toISOString(),
+    };
+    await savePrezie(next);
+    return NextResponse.json({ ok: true, prezie: view(next) });
+  }
+  if (!body.order) {
+    return NextResponse.json({ error: 'nothing to change' }, { status: 400 });
+  }
   // Reorder by the ids given, then append anything the client did not mention, so a stale
   // client can never silently drop a figure it had not loaded.
-  const ordered = body.order
+  const order = body.order;
+  const ordered = order
     .map((fid) => have.find((f) => f.figure_id === fid))
     .filter((f): f is NonNullable<typeof f> => Boolean(f));
-  const rest = have.filter((f) => !body.order.includes(f.figure_id));
+  const rest = have.filter((f) => !order.includes(f.figure_id));
 
   const next: Prezie = {
     ...prezie,
