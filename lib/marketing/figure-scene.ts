@@ -32,22 +32,25 @@ const FRAME_CSS = `
   contain:layout paint}
 .figure.on{display:block}
 .figure > *{position:absolute;inset:0}
-/* THE NEXT CONTROL. Always present, top right, and on an interactive figure it is the ONLY way
-   forward: tap-anywhere-advances made a draggable figure unusable, because every touch meant
-   for the figure jumped the board on instead (Marrs, on his slider). Mint and visible, because
-   he asked to be able to see it and reach for it mid-take. */
-#next{position:fixed;top:3.5vh;right:3vw;z-index:8;
-  width:min(9vh,7.5vw);height:min(9vh,7.5vw);border-radius:50%;
-  border:2px solid var(--mint);color:var(--mint);background:rgba(105,252,203,.1);
+/* THE NEXT CONTROL. Bottom right, and DELIBERATELY ALMOST INVISIBLE.
+   It began mint and pulsing, which defeated its own purpose: the audience could see it and it
+   read as a next button on a presentation (Marrs). It belongs to the same family as the
+   operator cue strip, which is legible to him standing over the screen and effectively gone on
+   camera, so it is cream at a tenth opacity with no glow and no animation. Nothing that moves,
+   because movement is what the eye finds.
+
+   The HIT AREA is large and the MARK is small: he has to hit it reliably mid-take without
+   looking, and neither of those requirements is about how visible it is. */
+#next{position:fixed;right:0;bottom:0;z-index:8;
+  width:min(16vh,13vw);height:min(16vh,13vw);
   display:grid;place-items:center;cursor:none;
-  box-shadow:0 0 0 0 rgba(105,252,203,.4),0 0 22px rgba(105,252,203,.22);
-  animation:nextPulse 2.8s ease-in-out infinite}
-#next::after{content:'';width:26%;height:26%;border-top:3px solid currentColor;
-  border-right:3px solid currentColor;transform:rotate(45deg) translate(-6%,6%)}
-#next.done{opacity:.25;animation:none}
-@keyframes nextPulse{
-  0%,100%{box-shadow:0 0 0 0 rgba(105,252,203,.4),0 0 22px rgba(105,252,203,.22)}
-  50%{box-shadow:0 0 0 12px rgba(105,252,203,0),0 0 34px rgba(105,252,203,.42)}}
+  background:transparent;border:none;padding:0}
+/* The mark: a small chevron, off in the corner, at the cue strip's opacity. */
+#next::after{content:'';width:1.6vh;height:1.6vh;margin:0 2.2vh 2.2vh 0;
+  border-top:2px solid var(--cream);border-right:2px solid var(--cream);
+  transform:rotate(45deg);opacity:.1}
+/* At the end there is nowhere to go, so the mark goes entirely. */
+#next.done::after{opacity:0}
 
 /* Arriving: the figure cuts in and settles, rather than fading. */
 .figure.on{animation:figIn .3s cubic-bezier(.22,.9,.24,1) both}
@@ -105,11 +108,11 @@ const ENGINE_JS = `
     if(owns(at)){
       cue.textContent = left>0
         ? 'THE SCREEN IS THE FIGURE   '+left+' MORE'
-        : (at<figs.length-1 ? 'GREEN BUTTON FOR THE NEXT' : 'END');
+        : (at<figs.length-1 ? 'BOTTOM RIGHT FOR THE NEXT' : 'END');
     } else {
       cue.textContent = left>0
         ? 'TAP   '+left+' MORE'
-        : (at<figs.length-1 ? 'TAP OR THE GREEN BUTTON' : 'END   SWIPE BACK TO REPLAY');
+        : (at<figs.length-1 ? 'TAP, OR BOTTOM RIGHT' : 'END   SWIPE BACK TO REPLAY');
     }
   }
 
