@@ -105,7 +105,7 @@ moment takes, so the CONTENT of each must stand alone: no node may depend on ano
 having been opened first, and no fact may read as "and then". The narrative is in the
 LAYOUT; the freedom is in the performance. Both at once is the point.`;
 
-const ENGINE_CSS = `
+export const SCENE_ENGINE_CSS = `
 *{margin:0;padding:0;box-sizing:border-box}
 :root{
   --ink:#0a0a0f;--surface:#1c1c27;--inset:#0f0f17;
@@ -570,7 +570,7 @@ export function renderScene(scene: Scene): string {
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
-<style>${ENGINE_CSS}</style>
+<style>${SCENE_ENGINE_CSS}</style>
 </head><body>
 <div id="grat"></div>
 <div id="sweep"></div>
