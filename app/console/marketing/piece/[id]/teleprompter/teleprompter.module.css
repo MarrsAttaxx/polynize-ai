@@ -83,7 +83,8 @@
 }
 .header {
   font-family: var(--font-jetbrains-mono), monospace;
-  font-size: clamp(14px, 2.4vw, 22px);
+  /* Relative to the body, so one control moves both and the proportion stays right. */
+  font-size: 0.34em;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: #7cffb2;
@@ -92,9 +93,13 @@
 .body {
   font-family: var(--font-space-grotesk), 'Space Grotesk', sans-serif;
   font-weight: 600;
-  font-size: clamp(28px, 5.2vw, 62px);
-  line-height: 1.35;
+  /* Inherited from the stage, whose size the rig control sets. It used to set its own clamp(),
+     which silently overrode the control and capped the text at 62px: too small to read off
+     beam-splitter glass at teleprompter distance. */
+  font-size: inherit;
+  line-height: 1.3;
   white-space: pre-wrap;
+  text-wrap: balance;
 }
 
 .hint {
@@ -109,4 +114,67 @@
   font-size: 11px;
   color: rgba(255, 255, 255, 0.35);
   pointer-events: none;
+}
+
+/* MIRRORED for beam-splitter glass. Only the stage flips: the controls and counter stay
+   readable to whoever is standing beside the rig. */
+.mirrored {
+  transform: scaleX(-1);
+}
+
+/* The stage's font-size is set inline from the size control, so the text scales from one
+   place and the header keeps its relative proportion. */
+.rig {
+  position: fixed;
+  left: 50%;
+  bottom: 18px;
+  transform: translateX(-50%);
+  z-index: 6;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 12px;
+  background: rgba(10, 10, 15, 0.82);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+.rig button {
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 13px;
+  color: var(--text-2, #cfc8c1);
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 8px;
+  padding: 8px 12px;
+  cursor: pointer;
+  min-width: 44px;
+}
+.rig button:hover {
+  color: var(--mint, #69fccb);
+  border-color: rgba(105, 252, 203, 0.45);
+}
+.rigOn {
+  color: var(--mint, #69fccb) !important;
+  border-color: var(--mint, #69fccb) !important;
+}
+.rigValue {
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: var(--text-3, #8b857f);
+  min-width: 30px;
+  text-align: center;
+}
+/* Once hidden, the way back is deliberately tiny and dim: on a beam splitter anything bright
+   shows up as a reflection in the shot. */
+.rigShow {
+  position: fixed;
+  left: 10px;
+  bottom: 8px;
+  z-index: 6;
+  background: transparent;
+  border: none;
+  color: rgba(244, 236, 228, 0.14);
+  font-size: 18px;
+  cursor: pointer;
+  padding: 6px 10px;
 }

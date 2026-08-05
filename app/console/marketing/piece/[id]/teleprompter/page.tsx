@@ -11,10 +11,14 @@ export const dynamic = 'force-dynamic';
  * always reflects the latest saved script.
  */
 function toSections(script: string): string[] {
-  return script
-    .split(/\n\s*\n/)
-    .map((b) => b.trim())
-    .filter(Boolean);
+  return (
+    script
+      .split(/\n\s*\n/)
+      .map((b) => b.trim())
+      // A run of dashes separates the alternative HOOKS in the house script shape. It is
+      // punctuation, and as its own section it is a blank screen to tap past mid-take.
+      .filter((b) => b && !/^[-–—_=]{2,}$/.test(b))
+  );
 }
 
 export default async function TeleprompterPage({
