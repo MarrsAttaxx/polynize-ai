@@ -1,0 +1,380 @@
+/* Team Capability Mapping landing page.
+   Uses the site design tokens from app/globals.css. Headings in Space Grotesk,
+   body in Inter. Dark, drafting-grid aesthetic to match the homepage. */
+
+.page {
+  position: relative;
+  max-width: 1160px;
+  margin: 0 auto;
+  padding: 0 32px 40px;
+  color: var(--text);
+  font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+}
+
+/* ---------- Nav ---------- */
+.nav {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 0;
+  background: linear-gradient(var(--bg) 72%, rgba(10, 10, 15, 0));
+  backdrop-filter: blur(2px);
+}
+.wordmark {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-space-grotesk), sans-serif;
+  font-weight: 600;
+  font-size: 17px;
+  letter-spacing: -0.01em;
+  color: var(--text);
+  text-decoration: none;
+}
+.mark img { width: 26px; height: 26px; display: block; }
+.navBtn { padding: 10px 18px; font-size: 13px; }
+
+/* ---------- Buttons ---------- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border-radius: 12px;
+  padding: 14px 24px;
+  font-size: 14.5px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  text-decoration: none;
+  cursor: pointer;
+  transition: filter 0.15s, background 0.15s, border-color 0.15s;
+  white-space: nowrap;
+}
+.btnPrimary { background: var(--mint); color: #06120d; border: 1px solid var(--mint); }
+.btnPrimary:hover { filter: brightness(1.08); }
+.btnGhost {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 20px;
+  border-radius: 12px;
+  border: 1px solid var(--border-soft);
+  color: var(--text-2);
+  font-size: 14.5px;
+  font-weight: 500;
+  text-decoration: none;
+  transition: border-color 0.15s, color 0.15s;
+}
+.btnGhost:hover { border-color: var(--border); color: var(--text); }
+.ctaRow { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 30px; }
+
+/* ---------- Section scaffolding ---------- */
+.section {
+  padding: 68px 0;
+  border-top: 1px solid var(--border-soft);
+}
+.sectionHead { max-width: 780px; margin-bottom: 34px; }
+.eyebrow {
+  display: inline-block;
+  font-family: var(--font-inter), monospace;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--mint);
+  margin-bottom: 16px;
+}
+.h1 {
+  font-family: var(--font-space-grotesk), sans-serif;
+  font-size: clamp(38px, 6vw, 64px);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.04;
+  margin: 0;
+}
+.h2 {
+  font-family: var(--font-space-grotesk), sans-serif;
+  font-size: clamp(26px, 3.4vw, 36px);
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  line-height: 1.12;
+  margin: 0;
+}
+.prose { max-width: 720px; }
+.prose p {
+  font-size: 16px;
+  line-height: 1.65;
+  color: var(--text-2);
+  margin: 0 0 16px;
+}
+.prose p:last-child { margin-bottom: 0; }
+.proseEmph { color: var(--text) !important; font-weight: 500; }
+.leadLine { font-size: 16px; color: var(--text-2); margin: 0 0 28px; max-width: 720px; }
+
+/* ---------- Hero ---------- */
+.hero { padding: 40px 0 64px; }
+.heroCopy { max-width: 800px; margin-bottom: 44px; }
+.heroSub {
+  font-size: clamp(16px, 1.6vw, 18.5px);
+  line-height: 1.6;
+  color: var(--text-2);
+  margin: 22px 0 0;
+  max-width: 640px;
+}
+
+/* ---------- Capability matrix ---------- */
+.matrixFrame {
+  border: 1px solid var(--border-soft);
+  border-radius: 16px;
+  background: var(--surface);
+  padding: 22px 24px 26px;
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.35);
+}
+.matrixHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 18px;
+}
+.matrixEyebrow {
+  font-family: var(--font-inter), monospace;
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+.matrixLegend { display: flex; gap: 16px; }
+.legItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 11px;
+  color: var(--text-3);
+  letter-spacing: 0.02em;
+}
+.legDot { width: 10px; height: 10px; border-radius: 3px; }
+
+.matrixScroll { overflow-x: auto; }
+.matrixGrid {
+  display: grid;
+  grid-template-columns: minmax(118px, 1.5fr) repeat(var(--cols), minmax(46px, 1fr));
+  gap: 6px;
+  min-width: 620px;
+}
+.matrixRowContents { display: contents; }
+.matrixCorner { grid-column: 1; }
+.matrixColHead {
+  font-size: 10.5px;
+  color: var(--text-3);
+  letter-spacing: 0.02em;
+  text-align: center;
+  align-self: end;
+  padding-bottom: 6px;
+  line-height: 1.2;
+}
+.matrixRowHead {
+  font-size: 12.5px;
+  color: var(--text-2);
+  display: flex;
+  align-items: center;
+  padding-right: 12px;
+  min-height: 40px;
+}
+.matrixCell {
+  aspect-ratio: 1 / 1;
+  min-height: 34px;
+  border-radius: 5px;
+  border: 1px solid var(--border-soft);
+  background: transparent;
+  opacity: 0;
+  transform: scale(0.9);
+  transition: opacity 0.32s ease, transform 0.32s ease, background 0.2s ease, border-color 0.2s ease;
+}
+.cellOn { opacity: 1; transform: none; }
+.lvStrong { background: rgba(105, 252, 203, 0.82); border-color: rgba(105, 252, 203, 0.9); }
+.lvDev { background: rgba(240, 184, 107, 0.78); border-color: rgba(240, 184, 107, 0.85); }
+.lvGap { background: rgba(255, 122, 107, 0.9); border-color: rgba(255, 122, 107, 0.95); }
+/* legend dots reuse the level classes at full opacity via their own sizing */
+.legDot.lvStrong { background: var(--mint); }
+.legDot.lvDev { background: var(--amber); }
+.legDot.lvGap { background: var(--coral); }
+
+/* ---------- Card grids ---------- */
+.cards3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 34px; }
+.cards2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+.card {
+  border: 1px solid var(--border-soft);
+  border-radius: 12px;
+  background: var(--surface);
+  padding: 22px 22px 24px;
+}
+.cardTitle {
+  font-family: var(--font-space-grotesk), sans-serif;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 10px;
+}
+.cardBody { font-size: 14px; line-height: 1.55; color: var(--text-2); }
+
+/* ---------- Walk-away ---------- */
+.walkList { display: flex; flex-direction: column; gap: 2px; }
+.walkItem {
+  display: grid;
+  grid-template-columns: 64px 1fr;
+  gap: 20px;
+  align-items: start;
+  padding: 22px 0;
+  border-top: 1px solid var(--border-soft);
+}
+.walkItem:first-child { border-top: none; }
+.walkNum {
+  font-family: var(--font-space-grotesk), sans-serif;
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--mint);
+  font-variant-numeric: tabular-nums;
+}
+.walkTitle {
+  font-family: var(--font-space-grotesk), sans-serif;
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 7px;
+}
+.walkBody { font-size: 14.5px; line-height: 1.6; color: var(--text-2); max-width: 720px; }
+.walkFootnote {
+  margin-top: 26px;
+  padding: 14px 18px;
+  border: 1px solid var(--border-soft);
+  border-left: 2px solid var(--mint);
+  border-radius: 8px;
+  background: rgba(105, 252, 203, 0.04);
+  font-size: 14px;
+  color: var(--text-2);
+}
+
+/* ---------- How it runs (stages) ---------- */
+.stages { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; }
+.stage {
+  border: 1px solid var(--border-soft);
+  border-radius: 12px;
+  background: var(--surface);
+  padding: 18px 16px 16px;
+  display: flex;
+  flex-direction: column;
+}
+.stageNum {
+  font-family: var(--font-inter), monospace;
+  font-size: 12px;
+  color: var(--mint);
+  letter-spacing: 0.08em;
+  margin-bottom: 12px;
+}
+.stageTitle {
+  font-family: var(--font-space-grotesk), sans-serif;
+  font-size: 15.5px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+.stageWhat { font-size: 12.5px; line-height: 1.5; color: var(--text-2); flex: 1; margin-bottom: 14px; }
+.stageWho {
+  font-size: 12px;
+  color: var(--text-2);
+  border-top: 1px solid var(--border-soft);
+  padding-top: 10px;
+  line-height: 1.4;
+}
+.stageWhoLabel {
+  display: block;
+  font-family: var(--font-inter), monospace;
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  margin-bottom: 4px;
+}
+.stagesLine { margin-top: 24px; font-size: 14px; color: var(--text-3); }
+
+/* ---------- Video ---------- */
+.videoWrap {
+  border: 1px solid var(--border-soft);
+  border-radius: 14px;
+  overflow: hidden;
+  background: #000;
+  max-width: 900px;
+}
+.video { display: block; width: 100%; height: auto; }
+.videoCaption { margin: 16px 0 0; font-size: 13px; color: var(--text-3); max-width: 720px; line-height: 1.5; }
+
+/* ---------- Proof ---------- */
+.proof {
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: rgba(105, 252, 203, 0.04);
+  padding: 40px 40px 36px;
+  max-width: 900px;
+}
+.proofH2 {
+  font-family: var(--font-space-grotesk), sans-serif;
+  font-size: clamp(23px, 3vw, 30px);
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  line-height: 1.18;
+  margin: 0 0 20px;
+}
+.proofStat {
+  margin-top: 22px;
+  font-family: var(--font-space-grotesk), sans-serif;
+  font-size: 17px;
+  font-weight: 500;
+  color: var(--mint);
+}
+
+/* ---------- Text link ---------- */
+.textLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 26px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--mint);
+  text-decoration: none;
+}
+.textLink:hover { text-decoration: underline; text-underline-offset: 4px; }
+
+/* ---------- Final CTA ---------- */
+.finalCard {
+  border: 1px solid var(--border-soft);
+  border-radius: 18px;
+  background: var(--surface);
+  padding: 56px 40px;
+  text-align: center;
+}
+.finalH2 {
+  font-family: var(--font-space-grotesk), sans-serif;
+  font-size: clamp(28px, 4vw, 42px);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.08;
+  margin: 0 0 16px;
+}
+.finalBody { font-size: 16px; color: var(--text-2); max-width: 520px; margin: 0 auto 30px; line-height: 1.6; }
+
+/* ---------- Responsive ---------- */
+@media (max-width: 900px) {
+  .stages { grid-template-columns: repeat(2, 1fr); }
+  .cards3 { grid-template-columns: 1fr; }
+}
+@media (max-width: 680px) {
+  .page { padding: 0 18px 32px; }
+  .section { padding: 52px 0; }
+  .cards2 { grid-template-columns: 1fr; }
+  .stages { grid-template-columns: 1fr; }
+  .walkItem { grid-template-columns: 44px 1fr; gap: 14px; }
+  .proof, .finalCard { padding: 32px 22px; }
+}
