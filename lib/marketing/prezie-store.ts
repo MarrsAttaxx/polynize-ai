@@ -93,7 +93,12 @@ export function isPrezie(x: unknown): x is Prezie {
   const scene = p.scene as { concept?: unknown; nodes?: unknown } | undefined;
   const hasBoard =
     Boolean(scene) && typeof scene?.concept === 'string' && Array.isArray(scene?.nodes);
-  const hasFigures = Array.isArray(p.figures) && (p.figures as unknown[]).length > 0;
+  // An EMPTY figures array is valid and deliberate: starting a figure prezie creates one with
+  // nothing in it, because there is nothing to draw until the operator has described
+  // something. Requiring at least one figure made a just-created prezie unreadable, so the
+  // first draw could never find it ("That prezie is gone. Reload."). The presence of the
+  // array is the signal that this is a figure prezie; its length says nothing about validity.
+  const hasFigures = Array.isArray(p.figures);
   return hasBoard || hasFigures;
 }
 

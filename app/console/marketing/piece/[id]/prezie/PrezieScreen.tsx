@@ -87,10 +87,16 @@ export function PrezieScreen({
   const [versions, setVersions] = useState<Version[]>(initialVersions);
   const [open, setOpen] = useState<Open | null>(opening);
   const [saveState, setSaveState] = useState<SaveState>('idle');
-  // Seeded from the piece's ANGLE, stated once at creation. The narrative can still be
-  // sharpened here (the board often wants a tighter image than the brief did), but the
-  // operator should never be asked for their intent a second time.
-  const [narrative, setNarrative] = useState((initial.angle ?? '').trim());
+  /**
+   * NOT prefilled from the angle any more.
+   *
+   * Seeding it looked like reuse and read as detritus: Marrs found "some old text stuck in
+   * there" on every prezie, which was in fact his own angle for the piece, dumped into an
+   * editable box with nothing saying where it came from. The angle is still used, and is now
+   * shown as read-only context instead; generation falls back to it server-side whenever this
+   * box is empty, so nothing is lost by leaving it blank.
+   */
+  const [narrative, setNarrative] = useState('');
   const [direction, setDirection] = useState('');
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState<string | null>(null);
@@ -843,8 +849,17 @@ export function PrezieScreen({
           )}
 
           <div className={d.buildBox}>
+            {initial.angle?.trim() ? (
+              <details className={d.angleContext}>
+                <summary>The angle you gave this piece</summary>
+                <p>{initial.angle.trim()}</p>
+              </details>
+            ) : null}
             <label className={d.field}>
-              <span>The narrative. The governing image the board is built from</span>
+              <span>
+                The narrative. The governing image the board is built from. Leave it empty to
+                use the angle above
+              </span>
               <textarea
                 value={narrative}
                 onChange={(e) => setNarrative(e.target.value)}

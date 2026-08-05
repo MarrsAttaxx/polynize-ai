@@ -521,3 +521,32 @@
   padding-top: 14px;
   border-top: 1px solid var(--tac-edge-dark, rgba(255, 255, 255, 0.08));
 }
+
+/* The angle, as read-only context. It used to be dumped INTO the narrative box, where it read
+   as leftover text rather than as the brief the operator wrote. */
+.angleContext {
+  font-size: 12px;
+  color: var(--text-3);
+}
+.angleContext summary {
+  cursor: pointer;
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+.angleContext summary:hover {
+  color: var(--mint);
+}
+.angleContext p {
+  margin: 8px 0 0;
+  padding: 10px 12px;
+  border-left: 2px solid rgba(105, 252, 203, 0.3);
+  background: var(--tac-inset, #0f0f17);
+  border-radius: 0 8px 8px 0;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--text-2);
+  white-space: pre-wrap;
+}
