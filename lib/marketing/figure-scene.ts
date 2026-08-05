@@ -126,9 +126,14 @@ const ENGINE_JS = `
     else if(k==='Home'){ at=0; step=0; paint(); }
   });
 
-  /* ?figure=N opens on one figure, complete, so the console can preview a single picture. */
+  /* ?figure=N opens on one figure AT ITS RESTING STATE, step zero.
+     It used to open it complete, with every tap already applied, which made the console
+     preview lie: a figure whose first state is a question mark and whose tap reveals a matrix
+     previewed as the matrix, so it read as though the instruction had been ignored. The point
+     of a preview is to show what the audience sees first, and the taps are then available by
+     tapping the preview itself. */
   var q=parseInt((location.search.match(/[?&]figure=(\\d+)/)||[])[1],10);
-  if(!isNaN(q) && figs[q]){ at=Math.max(0,Math.min(figs.length-1,q)); step=taps(at); }
+  if(!isNaN(q) && figs[q]){ at=Math.max(0,Math.min(figs.length-1,q)); step=0; }
   paint();
 })();
 `;

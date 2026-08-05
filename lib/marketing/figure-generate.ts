@@ -46,11 +46,22 @@ HARD RULES
 - Text on a figure is a LABEL, not a sentence: a word or three. The presenter says the rest.
 - Never use the em-dash character (U+2014).
 
+DRAW ONLY WHAT WAS ASKED. This is the rule that matters most, and it is easy to break by
+being helpful. One figure is ONE PICTURE. If the ask describes a single static image, that is
+the whole figure and "taps" is 0: do not add a reveal, do not add a second state, do not add
+labels, headings or captions that were not asked for.
+
+Above all, DO NOT TRY TO CARRY THE WHOLE ARGUMENT IN ONE FIGURE. The concept and the angle are
+given to you as reference for the words and figures you may use, NOT as a brief to illustrate.
+The operator is building a sequence one picture at a time and will ask for the next one himself.
+If he says "a large pulsating question mark", the correct answer is a large pulsating question
+mark and nothing else on the screen.
+
 WHEN REVISING, change what was asked and leave everything else exactly as it is. The operator
 is building this up over several turns and expects what he already approved to stay put.
 
 Return ONLY a JSON object, no markdown and no code fences:
-{"note":"<one short sentence to the operator, as a reply in a conversation>","name":"<two or three words naming this figure>","taps":<how many taps it takes to complete, 0 if none>,"css":"<the CSS>","html":"<the markup fragment, one root element>"}`;
+{"note":"<one short sentence to the operator, as a reply in a conversation>","name":"<two or three words naming THIS PICTURE, e.g. \"question mark\" or \"the lever\", not the topic of the piece>","taps":<how many taps it takes to complete, 0 if none>,"css":"<the CSS>","html":"<the markup fragment, one root element>"}`;
 
 function parseLoose(raw: string): unknown {
   const t = raw.trim();

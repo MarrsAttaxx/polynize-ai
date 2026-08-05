@@ -569,7 +569,11 @@ export function PrezieScreen({
         <section className={d.slideCol}>
           <div className={d.colHead}>
             <h2 className={d.colTitle}>{open ? open.name : 'Build a prezie'}</h2>
-            {open ? (
+            {open?.figures ? (
+              <span className={d.count}>
+                {figures.length} figure{figures.length === 1 ? '' : 's'}
+              </span>
+            ) : open ? (
               <span className={d.count}>
                 {nodes.length}/{MAX_NODES} objects
               </span>
@@ -953,7 +957,8 @@ export function PrezieScreen({
             />
           </div>
           <p className={d.hint}>
-            The live page, not a mock-up. Touch it here the way you will on the screen.
+            The live page, not a mock-up, and it opens as the audience first sees it. Tap the
+            preview to walk through this figure the way you will on the screen.
           </p>
         </section>
       ) : null}
