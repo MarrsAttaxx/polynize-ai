@@ -284,6 +284,28 @@ export function PrezieScreen({
   const figures = open?.figures ?? [];
   const figEndpoint = () => baseUrlRef.current + '/prezie/figure';
 
+  /**
+   * Her last reply, and the numbered options in it if she offered any.
+   *
+   * This exists because talking used to be a dead end: she would propose two or three options
+   * and there was no way to say "do that one". The box had been cleared by the reply, and the
+   * draw buttons were disabled while it was empty, so after a proposal there was literally no
+   * button to press (Marrs: "I have no way of telling her to do that solution").
+   */
+  const lastFromApril = thread.length && thread[thread.length - 1].role === 'april'
+    ? thread[thread.length - 1].text
+    : null;
+  const offered = lastFromApril
+    ? Array.from(
+        new Set(
+          // "1." / "2)" / "Option 3" at the start of a line: how she is asked to lay them out.
+          (lastFromApril.match(/^\s*(?:option\s*)?([1-9])[.):]/gim) ?? []).map((m) =>
+            Number(m.replace(/\D/g, ''))
+          )
+        )
+      ).sort()
+    : [];
+
   /** Talk about the picture without drawing it. Nothing is saved and no figure changes. */
   const talk = async () => {
     const said = ask.trim();
@@ -322,8 +344,10 @@ export function PrezieScreen({
    * One call for both drawing and revising: passing a figure_id makes it a revision, and the
    * brief accumulates server-side so earlier turns are not undone by later ones.
    */
-  const draw = async (revise: boolean) => {
-    const said = ask.trim();
+  const draw = async (revise: boolean, instruction?: string) => {
+    // The instruction may come from a button rather than the box: after she has proposed
+    // something, the conversation IS the brief and there is nothing left to type.
+    const said = (instruction ?? ask).trim();
     if (!open || drawing || !said) return;
     setDrawing(true);
     setError(null);
@@ -705,6 +729,48 @@ export function PrezieScreen({
                 </div>
               ) : null}
 
+              {/* BUILD WHAT SHE JUST SAID. These sit directly under her reply, need no typing,
+                  and are the answer to talking being a dead end. */}
+              {lastFromApril ? (
+                <div className={d.agreeBox}>
+                  <span className={d.agreeLabel}>Build it</span>
+                  {offered.map((n) => (
+                    <button
+                      key={n}
+                      type="button"
+                      className={d.agreeBtn}
+                      onClick={() =>
+                        void draw(
+                          figures.length > 0,
+                          `Build option ${n}, exactly as you just described it. Do not add anything else.`
+                        )
+                      }
+                      disabled={drawing}
+                    >
+                      Option {n}
+                    </button>
+                  ))}
+                  <button
+                    type="button"
+                    className={d.agreeBtn}
+                    onClick={() =>
+                      void draw(
+                        figures.length > 0,
+                        'Build exactly what you just described. If you offered more than one option, build the one you recommended, and nothing else.'
+                      )
+                    }
+                    disabled={drawing}
+                  >
+                    {offered.length ? 'Your pick' : 'Draw that'}
+                  </button>
+                  {figures.length ? (
+                    <span className={d.agreeNote}>
+                      replaces figure {figSel + 1}
+                    </span>
+                  ) : null}
+                </div>
+              ) : null}
+
               <label className={d.field}>
                 <span>
                   {thread.length
@@ -738,8 +804,14 @@ export function PrezieScreen({
                 <button
                   type="button"
                   className={d.addBtn}
-                  onClick={() => void draw(false)}
-                  disabled={drawing || !ask.trim()}
+                  onClick={() =>
+                    void draw(
+                      false,
+                      ask.trim() ||
+                        'Build exactly what you just described, and nothing else.'
+                    )
+                  }
+                  disabled={drawing || (!ask.trim() && !lastFromApril)}
                 >
                   {figures.length ? '+ Draw as a new figure' : 'Draw it'}
                 </button>
@@ -747,8 +819,14 @@ export function PrezieScreen({
                   <button
                     type="button"
                     className={d.addBtn}
-                    onClick={() => void draw(true)}
-                    disabled={drawing || !ask.trim()}
+                    onClick={() =>
+                      void draw(
+                        true,
+                        ask.trim() ||
+                          'Build exactly what you just described, and nothing else.'
+                      )
+                    }
+                    disabled={drawing || (!ask.trim() && !lastFromApril)}
                   >
                     Change figure {figSel + 1}
                   </button>
