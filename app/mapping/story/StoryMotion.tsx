@@ -57,8 +57,13 @@ export function StoryMotion() {
           onEnter: (els) =>
             gsap.fromTo(
               els,
-              { ...from, immediateRender: false },
+              from,
               {
+                // immediateRender belongs in the TO vars. GSAP reads it from
+                // params[varsIndex], which for fromTo is this object; passing it in the
+                // FROM vars is silently ignored, which is why a liveness failsafe had
+                // to be invented to rescue elements stuck at their start state.
+                immediateRender: false,
                 opacity: 1,
                 x: 0,
                 y: 0,
@@ -88,10 +93,29 @@ export function StoryMotion() {
 
       // Beat lines are the spine of the page, so they get their own slower cue.
       reveal(`.${s.beatLine}, .${s.turnLine}`, { x: 56, opacity: 0 }, 'top 82%', 0.9);
-
-      // The beat diagrams draw themselves in behind their line.
-      reveal(`.${s.figure} [data-fig-item]`, { x: 26, opacity: 0 }, 'top 86%', 0.7);
     });
+
+    /**
+     * Beat figures are CSS keyframes, not tweens, so all they need is the class. That
+     * is deliberate: CSS animations run in environments where a JS-driven ticker does
+     * not, and their base style is the finished drawing, so a figure cannot end up
+     * stranded mid-animation. This observer only ever ADDS the class.
+     */
+    const figures = Array.from(document.querySelectorAll('[data-fig]'));
+    const figIo = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) {
+          if (!e.isIntersecting) continue;
+          // s.play, not 'play': CSS modules hash the name. Deleting the rule that
+          // defines it once made s.rise undefined and every element rendered
+          // class="undefined", which took the whole page down.
+          if (s.play) e.target.classList.add(s.play);
+          figIo.unobserve(e.target);
+        }
+      },
+      { rootMargin: '0px 0px -18% 0px' }
+    );
+    figures.forEach((f) => figIo.observe(f));
 
     /**
      * Liveness failsafe, and it is not theoretical: a reveal tween applies its start
@@ -112,6 +136,7 @@ export function StoryMotion() {
     }, 1200);
 
     return () => {
+      figIo.disconnect();
       cancelAnimationFrame(raf);
       window.clearTimeout(failsafe);
       ctx.revert();

@@ -343,48 +343,128 @@
 }
 
 /* ---------- Beat figures ----------
-   One diagram per beat, filling what was dead space between the lines. Same drawing
-   vocabulary as the route: dashed survey lines, hollow markers, no numerals. */
-.figure {
-  width: 100%;
-  max-width: 420px;
-  margin: 34px auto 0;
-}
+   Four instruments in the ate.html idiom. Neutral greys only: mint is the route and the
+   turn, and amber and coral are spoken for by the matrix legend two sections down, so
+   spending either here would collide with a meaning the reader is given later.
+
+   MOTION POLICY, and it is the whole reason these are CSS keyframes and not GSAP.
+   The base style IS the finished drawing. Animation exists only while .play is on the
+   container, and a CSS animation hands the element back to its base style when it ends.
+   So no script, no observer, a stalled requestAnimationFrame and prefers-reduced-motion
+   all land on the completed figure. Nothing here rests at opacity 0. This page has
+   shipped invisible copy twice; it will not do it a third time. */
+.figure { width: 100%; max-width: 480px; margin: 40px auto 0; }
 .figureSvg { display: block; width: 100%; height: auto; overflow: visible; }
+
+/* the instrument: rules and neatlines. never animated. */
+.figFrame {
+  fill: none;
+  stroke: color-mix(in srgb, var(--text-3) 42%, transparent);
+  stroke-width: 1.4;
+}
+/* content that is present but withheld: a bar standing in for a word */
+.figRule { fill: color-mix(in srgb, var(--text-3) 32%, transparent); }
+/* an empty slot */
+.figPill {
+  fill: none;
+  stroke: color-mix(in srgb, var(--text-3) 45%, transparent);
+  stroke-width: 1.5;
+}
+/* route, unresolved */
 .figDash {
   fill: none;
-  stroke: color-mix(in srgb, var(--mint) 55%, transparent);
-  stroke-width: 2.4;
+  stroke: color-mix(in srgb, var(--text-3) 70%, transparent);
+  stroke-width: 2.6;
   stroke-linecap: butt;
   stroke-dasharray: 9 7;
 }
-.figNode { fill: var(--mint); opacity: 0.9; }
-.figOrigin { fill: none; stroke: var(--mint); stroke-width: 2; }
-.figOriginCore { fill: var(--mint); }
+/* one dash of a fanned route, drawn as geometry so a plugin cannot flatten it */
+.figSeg {
+  stroke: color-mix(in srgb, var(--text-3) 70%, transparent);
+  stroke-width: 2.6;
+  stroke-linecap: butt;
+}
+/* the committed stretch: the only thing not in question */
+.figStem {
+  fill: none;
+  stroke: color-mix(in srgb, var(--text-3) 92%, transparent);
+  stroke-width: 2.6;
+  stroke-linecap: butt;
+}
+.figSource { fill: color-mix(in srgb, var(--text-3) 88%, transparent); }
 .figHollow {
   fill: none;
-  stroke: color-mix(in srgb, var(--text-3) 75%, transparent);
+  stroke: color-mix(in srgb, var(--text-3) 68%, transparent);
   stroke-width: 1.8;
   stroke-dasharray: 5 5;
 }
 .figCross {
   fill: none;
-  stroke: color-mix(in srgb, var(--text-3) 60%, transparent);
-  stroke-width: 1.6;
-  stroke-dasharray: 4 5;
+  stroke: color-mix(in srgb, var(--text-3) 50%, transparent);
+  stroke-width: 1.5;
+  stroke-dasharray: 3 4;
 }
-.figBox {
-  fill: none;
-  stroke: color-mix(in srgb, var(--text-3) 70%, transparent);
-  stroke-width: 1.8;
-  stroke-dasharray: 6 5;
+
+/* --- the wash. The deck runs a stagger far shorter than its own fade, so a dozen
+       items are mid-fade at once and it reads as one directional wipe. 46ms into a
+       460ms fade holds that ratio. --- */
+@keyframes figWash {
+  from { opacity: 0; transform: translateX(16px); }
+  to { opacity: 1; transform: none; }
 }
-.figMark {
-  fill: color-mix(in srgb, var(--text-3) 95%, transparent);
-  font-family: var(--font-space-grotesk), sans-serif;
-  font-size: 20px;
-  font-weight: 600;
-  text-anchor: middle;
+.play .figItem {
+  animation: figWash 460ms cubic-bezier(0.4, 0, 0.2, 1) both;
+  animation-delay: calc(var(--i, 0) * 46ms);
+}
+
+/* --- beat 3: a position fix that closes three times and never locks, and a horizon
+       that re-levels and settles nowhere in particular. Both end off true, which is
+       the point, and both end STATIC: nothing on this page loops. --- */
+@keyframes figLock {
+  0% { transform: scale(1.5); opacity: 0; }
+  22% { transform: scale(0.82); opacity: 1; }
+  40% { transform: scale(1.28); }
+  58% { transform: scale(0.9); }
+  76% { transform: scale(1.18); }
+  100% { transform: scale(1); opacity: 1; }
+}
+.play .figLock {
+  transform-origin: 96px 75px;
+  animation: figLock 2.1s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+@keyframes figHorizon {
+  0% { transform: translateY(34px); opacity: 0; }
+  25% { transform: translateY(34px); opacity: 1; }
+  45% { transform: translateY(-18px); }
+  68% { transform: translateY(22px); }
+  100% { transform: none; }
+}
+.play .figHorizon {
+  animation: figHorizon 2.2s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+/* --- beat 4: the trying. Commits faster than it lets go, three times, and keeps
+       nothing. Resting fill-opacity is 0 and the animation returns to 0, so there is
+       no code path where this leaves anything filled or anything hidden. --- */
+.figTry { fill: color-mix(in srgb, var(--text-3) 70%, transparent); fill-opacity: 0; }
+@keyframes figTryWash {
+  0% { fill-opacity: 0; }
+  36% { fill-opacity: 0.34; }
+  60% { fill-opacity: 0.34; }
+  100% { fill-opacity: 0; }
+}
+.play .figTry {
+  animation: figTryWash 620ms cubic-bezier(0.4, 0, 0.2, 1);
+  animation-delay: calc(900ms + var(--k, 0) * 520ms);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .play .figItem,
+  .play .figLock,
+  .play .figHorizon,
+  .play .figTry {
+    animation: none;
+  }
 }
 
 /* ---------- The route ----------

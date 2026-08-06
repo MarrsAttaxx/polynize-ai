@@ -304,7 +304,7 @@ export function StoryPath({ beatCount }: { beatCount: number }) {
 
         {/* The landing. Below the turn line, in the gap before the map. */}
         <g
-          className={`${s.wp} ${s.wpX}`}
+          className={s.wp}
           ref={(el) => {
             wpRefs.current[checkpoints.length] = el;
           }}
