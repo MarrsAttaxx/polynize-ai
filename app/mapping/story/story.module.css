@@ -751,9 +751,25 @@
   to { opacity: 1; transform: none; }
 }
 
-/* Reveals are driven by GSAP now (see StoryMotion.tsx). The old
+/* ---------- Reveal hooks ----------
+   Reveals are driven by GSAP now (see StoryMotion.tsx). The old
    @supports (animation-timeline: view()) block lived here and only fired for browsers
-   with scroll-driven CSS, which left a large minority of readers on a static page. */
+   with scroll-driven CSS, which left a large minority of readers on a static page.
+
+   THESE THREE RULES MUST EXIST, even though the declaration looks pointless. A CSS
+   module only exports names it actually defines. Deleting the @supports block removed
+   the only definitions, so s.rise became undefined, every element rendered
+   class="undefined", and StoryMotion's three selectors (.undefined) all matched all of
+   them at once. Three competing tweens per element and overwrite: 'auto' left the
+   sub-lines and everything past the map stranded at opacity 0.
+
+   opacity: 1 is the honest declaration here: the resting state of a reveal target is
+   visible, and GSAP's inline styles override it while a tween runs. */
+.rise,
+.riseLate,
+.riseScale {
+  opacity: 1;
+}
 
 
 /* ---------- Responsive ---------- */

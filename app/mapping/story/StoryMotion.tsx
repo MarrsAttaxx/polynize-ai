@@ -12,13 +12,18 @@ import s from './story.module.css';
  * visitor in six saw a completely static page. GSAP works everywhere, so the motion is
  * now something every reader actually gets.
  *
- * WHY gsap.from AND NOT gsap.to. `from` tweens declare where the element comes FROM and
- * leave the element's own stylesheet value as the destination. So if this script never
- * loads, never runs, or throws, every element simply sits at its final state: visible.
- * Nothing on this page is hidden by CSS waiting for a callback to rescue it. That was a
- * real bug here once and it is not coming back.
+ * CONTENT MUST NEVER END UP HIDDEN. Three separate rules enforce that, because this
+ * page has now shipped invisible copy twice and each time for a different reason:
  *
- * useLayoutEffect so the from-state is applied before the browser paints, otherwise
+ *  1. Nothing is hidden in CSS. The stylesheet state is the FINISHED state, so no
+ *     script, no GSAP, or a thrown error all leave the page fully readable.
+ *  2. Reveals are fromTo with an explicit `opacity: 1` destination, never `from`. A
+ *     `from` tween infers its end state at build time, so anything disturbing it
+ *     mid-flight can park the element on the start values.
+ *  3. An element must appear in exactly one batch. Two competing tweens plus
+ *     overwrite: 'auto' is what stranded the beat lines at opacity 0.
+ *
+ * useLayoutEffect so the start state is applied before the browser paints, otherwise
  * anything already in view flashes in at full opacity and then jumps back to animate.
  */
 
@@ -33,47 +38,60 @@ export function StoryMotion() {
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 
     const ctx = gsap.context(() => {
-      const reveal = (selector: string, vars: gsap.TweenVars, start = 'top 88%') => {
+      /**
+       * fromTo with an EXPLICIT destination, not from(). A `from` tween infers its end
+       * state from whatever the element computes to at the moment the tween is built,
+       * so anything that disturbs it mid-flight can leave the element parked at the
+       * start values, i.e. invisible. Stating opacity: 1 outright means the only place
+       * this animation can finish is visible.
+       */
+      const reveal = (
+        selector: string,
+        from: gsap.TweenVars,
+        start = 'top 88%',
+        duration = 0.68
+      ) => {
         ScrollTrigger.batch(selector, {
           start,
           once: true,
           onEnter: (els) =>
-            gsap.from(els, {
-              duration: 0.68,
-              ease: 'power3.out',
-              stagger: 0.08,
-              overwrite: 'auto',
-              ...vars,
-            }),
+            gsap.fromTo(
+              els,
+              { ...from, immediateRender: false },
+              {
+                opacity: 1,
+                y: 0,
+                scale: 1,
+                duration,
+                ease: 'power3.out',
+                stagger: 0.08,
+                overwrite: 'auto',
+                clearProps: 'transform',
+              }
+            ),
         });
       };
 
-      // Headings and body land first, supporting text just behind them.
+      // Headings and body land first.
       // Beat lines are excluded because they have their own cue below; an element in
-      // two batches gets two competing from-tweens and overwrite strands it hidden.
+      // two batches gets two competing tweens and overwrite strands it hidden.
       reveal(`.${s.rise}:not(.${s.beatLine}):not(.${s.turnLine})`, { y: 26, opacity: 0 });
-      reveal(`.${s.riseLate}`, { y: 20, opacity: 0, delay: 0.12 });
-      // Figures get a touch of scale so they read as arriving rather than fading.
-      reveal(`.${s.riseScale}`, { y: 30, opacity: 0, scale: 0.975, duration: 0.8 }, 'top 90%');
 
-      // Beat lines are the spine of the page, so they get their own slower, later cue.
-      ScrollTrigger.batch(`.${s.beatLine}, .${s.turnLine}`, {
-        start: 'top 78%',
-        once: true,
-        onEnter: (els) =>
-          gsap.from(els, {
-            y: 34,
-            opacity: 0,
-            duration: 0.82,
-            ease: 'power3.out',
-            overwrite: 'auto',
-          }),
-      });
+      // Supporting text just behind its headline. Achieved with a later trigger point
+      // rather than a delay, so a reader who scrolls straight past never waits on a
+      // timer to see the words.
+      reveal(`.${s.riseLate}`, { y: 20, opacity: 0 }, 'top 84%');
+
+      // Figures get a touch of scale so they read as arriving rather than fading.
+      reveal(`.${s.riseScale}`, { y: 30, opacity: 0, scale: 0.975 }, 'top 90%', 0.8);
+
+      // Beat lines are the spine of the page, so they get their own slower cue.
+      reveal(`.${s.beatLine}, .${s.turnLine}`, { y: 34, opacity: 0 }, 'top 82%', 0.82);
     });
 
     /**
-     * Liveness failsafe, and it is not theoretical: gsap.from applies its start state
-     * immediately and then relies on the ticker to animate away from it. In an
+     * Liveness failsafe, and it is not theoretical: a reveal tween applies its start
+     * state and then relies on the ticker to animate away from it. In an
      * environment where scripts run but requestAnimationFrame never fires, every
      * reveal target is left pinned at opacity 0 and the page reads as blank. Measured
      * in this project's own preview browser.

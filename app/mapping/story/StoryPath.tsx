@@ -96,26 +96,45 @@ export function StoryPath({ beatCount }: { beatCount: number }) {
     const section = host?.parentElement;
     if (!host || !section) return;
 
+    /**
+     * Bail out of the state update when nothing actually moved. Returning a fresh
+     * object or array every tick made the deps of the drawing effect change on every
+     * observer callback, so it reverted and rebuilt its GSAP context in a loop, and the
+     * ScrollTrigger.refresh() that came with it disturbed every other trigger on the
+     * page. That is what was stranding the sub-lines and everything past the map.
+     */
     const measure = () => {
       const secTop = section.getBoundingClientRect().top + window.scrollY;
-      setBox({ w: host.clientWidth, h: section.offsetHeight });
+      const w = host.clientWidth;
+      const h = section.offsetHeight;
+      setBox((prev) => (prev.w === w && prev.h === h ? prev : { w, h }));
+
       const beats = Array.from(section.querySelectorAll('[data-beat]')) as HTMLElement[];
-      setWaypoints(
-        beats.map((b) => {
-          const r = b.getBoundingClientRect();
-          return r.top + window.scrollY - secTop + r.height / 2;
-        })
+      const ys = beats.map((b) => {
+        const r = b.getBoundingClientRect();
+        return r.top + window.scrollY - secTop + r.height / 2;
+      });
+      setWaypoints((prev) =>
+        prev.length === ys.length && prev.every((v, i) => Math.abs(v - ys[i]) < 1) ? prev : ys
       );
     };
 
     measure();
+    // Debounced, and refresh only after the measurement has settled.
+    let t = 0;
     const ro = new ResizeObserver(() => {
-      measure();
-      ScrollTrigger.refresh();
+      window.clearTimeout(t);
+      t = window.setTimeout(() => {
+        measure();
+        ScrollTrigger.refresh();
+      }, 120);
     });
     ro.observe(section);
     (document as Document & { fonts?: FontFaceSet }).fonts?.ready.then(measure).catch(() => {});
-    return () => ro.disconnect();
+    return () => {
+      window.clearTimeout(t);
+      ro.disconnect();
+    };
   }, [beatCount]);
 
   useEffect(() => {
@@ -167,7 +186,7 @@ export function StoryPath({ beatCount }: { beatCount: number }) {
     }, hostRef);
 
     return () => ctx.revert();
-  }, [box, waypoints]);
+  }, [box.w, box.h, waypoints]);
 
   if (!box.w || !box.h || !waypoints.length) {
     return <div className={s.rail} ref={hostRef} aria-hidden="true" />;
