@@ -260,6 +260,14 @@
   height: 1px;
   background: color-mix(in srgb, var(--mint) 45%, transparent);
 }
+/* The route passes behind these, so a dark halo keeps the words crisp where the line
+   crosses them. Cheaper and more legible than dimming the route. */
+.beatLine,
+.turnLine,
+.beatSub,
+.kicker {
+  text-shadow: 0 0 22px var(--bg), 0 0 8px var(--bg), 0 0 3px var(--bg);
+}
 .beatLine {
   font-family: var(--font-space-grotesk), sans-serif;
   font-size: clamp(30px, 5.2vw, 58px);
@@ -293,12 +301,15 @@
    A dashed path down the left margin with a waypoint per beat and a mint trail that
    fills in behind the reader. Sits in the slack beside the 860px text column, so the
    copy stays centred. Purely decorative, hidden where there is no room. */
+/* Full-bleed now, not a margin rail. The route crosses the sheet, swinging out to the
+   left edge and back, and passes BEHIND the copy (.beat is z-index 1) exactly as a
+   route behaves on a chart. */
 .rail {
   position: absolute;
-  left: 0;
+  left: calc(50% - 50vw);
   top: 0;
   bottom: 0;
-  width: 132px;
+  width: 100vw;
   pointer-events: none;
   z-index: 0;
 }
@@ -746,15 +757,13 @@
 
 
 /* ---------- Responsive ---------- */
-/* Zero-overlap needs 860px of copy + 2 x 132px rail + 64px page padding = 1188px.
-   Below that the rail would sit on the text, so it drops back behind it at low
-   opacity rather than disappearing: the route is the page's central metaphor and
-   deleting it on every laptop and phone would delete the idea. */
-@media (max-width: 1188px) {
-  .rail { left: 50%; transform: translateX(-50%); opacity: 0.3; }
+/* The route is full-bleed and behind the copy at every size. It only steps back a
+   little on small screens, where the text column occupies most of the sheet. */
+@media (max-width: 900px) {
+  .rail { opacity: 0.6; }
 }
 @media (max-width: 680px) {
-  .rail { opacity: 0.22; }
+  .rail { opacity: 0.45; }
 }
 @media (prefers-reduced-motion: reduce) {
   /* Route fully drawn, no hachure to sit through. */

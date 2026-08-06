@@ -85,7 +85,11 @@ export function StoryLanding({
           {beats.map((b, i) => (
             <div key={i} data-beat className={`${s.beat} ${b.turn ? s.beatTurn : ''}`}>
               {b.kicker && <div className={`${s.kicker} ${s.rise}`}>{b.kicker}</div>}
-              <p className={`${b.turn ? s.turnLine : s.beatLine} ${s.rise}`}>{b.line}</p>
+              {/* No .rise here on purpose. StoryMotion animates beat lines on their
+                  own slower cue, and carrying both classes put the element in two GSAP
+                  batches at once, where overwrite killed one tween mid-flight and left
+                  the line stranded at opacity 0. */}
+              <p className={b.turn ? s.turnLine : s.beatLine}>{b.line}</p>
               {b.sub && <p className={`${s.beatSub} ${s.riseLate}`}>{b.sub}</p>}
             </div>
           ))}

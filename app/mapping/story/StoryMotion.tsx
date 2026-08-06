@@ -49,7 +49,9 @@ export function StoryMotion() {
       };
 
       // Headings and body land first, supporting text just behind them.
-      reveal(`.${s.rise}`, { y: 26, opacity: 0 });
+      // Beat lines are excluded because they have their own cue below; an element in
+      // two batches gets two competing from-tweens and overwrite strands it hidden.
+      reveal(`.${s.rise}:not(.${s.beatLine}):not(.${s.turnLine})`, { y: 26, opacity: 0 });
       reveal(`.${s.riseLate}`, { y: 20, opacity: 0, delay: 0.12 });
       // Figures get a touch of scale so they read as arriving rather than fading.
       reveal(`.${s.riseScale}`, { y: 30, opacity: 0, scale: 0.975, duration: 0.8 }, 'top 90%');
