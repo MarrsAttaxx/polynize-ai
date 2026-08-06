@@ -64,17 +64,32 @@ export type PrezieFigure = {
  * so injected script would run for anyone holding the link. The realistic risk here is a
  * model mistake rather than an attacker, but the blast radius is the same either way, and the
  * cost of refusing script is zero: a figure has no legitimate need for any.
+ *
+ * SVG WIDENS THIS, which is why it is hardened here in the same commit that opens it up. `<svg>`
+ * was always permitted and merely never offered, so telling April to draw with it changes what
+ * actually arrives. Two elements matter: `<foreignObject>`, which hosts arbitrary HTML inside the
+ * SVG namespace and is a standard way to smuggle markup past a filter that only knows about SVG
+ * shapes; and remote `href`/`xlink:href` on `<image>`, `<use>` and `<a>`, which would make a figure
+ * fetch from the network in the middle of a take. Neither has any legitimate use in a figure.
  */
 export function sanitiseFigureHtml(raw: string): string {
   let s = String(raw ?? '');
   // Whole elements that can execute, navigate or load remote content.
-  s = s.replace(/<\s*(script|iframe|object|embed|link|meta|base|form|svg:script)\b[\s\S]*?<\s*\/\s*\1\s*>/gi, '');
-  s = s.replace(/<\s*(script|iframe|object|embed|link|meta|base)\b[^>]*\/?\s*>/gi, '');
+  s = s.replace(/<\s*(script|iframe|object|embed|link|meta|base|form|svg:script|foreignObject)\b[\s\S]*?<\s*\/\s*\1\s*>/gi, '');
+  s = s.replace(/<\s*(script|iframe|object|embed|link|meta|base|foreignObject)\b[^>]*\/?\s*>/gi, '');
   // Inline handlers and javascript: targets.
   s = s.replace(/\son[a-z]+\s*=\s*"[^"]*"/gi, '');
   s = s.replace(/\son[a-z]+\s*=\s*'[^']*'/gi, '');
   s = s.replace(/\son[a-z]+\s*=\s*[^\s>]+/gi, '');
   s = s.replace(/javascript\s*:/gi, '');
+  // Remote references. A same-figure reference (href="#xg-grad") is how gradients, clip paths and
+  // motion paths work, so only off-machine targets are neutralised, and by breaking the attribute
+  // name rather than deleting it, so a malformed tag cannot be stitched back together.
+  s = s.replace(
+    /\s(?:xlink:)?href\s*=\s*("|')\s*(?:https?:)?\/\/[^"']*\1/gi,
+    ' data-blocked-href=$1$1'
+  );
+  s = s.replace(/\s(?:xlink:)?href\s*=\s*(?:https?:)?\/\/[^\s>]+/gi, ' data-blocked-href=""');
   return s.trim();
 }
 

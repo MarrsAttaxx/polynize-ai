@@ -1,7 +1,9 @@
 # Is CSS the wrong tool for figures? (research, 2026-08-06)
 
-**Status: research, not a decision.** Nothing here has been built. When Marrs picks, the choice
-becomes D34 in [`decisions.md`](../decisions.md) and this note becomes its evidence.
+**Status: partly decided.** Marrs chose item 2 (SVG) on 2026-08-06 and it shipped the same day as
+**D34** in [`decisions.md`](../decisions.md); read that for what was actually built, including the
+mandated canvas, the three SVG traps and the sanitiser hardening. Items 1, 3, 4 and 5 below are
+still open. Everything else here is the evidence the choice was made on.
 
 Marrs's question, in his words: *"are we just simply using the wrong tool for this? Maybe CSS is
 not the right tool. I know that there's a model in Higgsfield that does graphics beautifully,
@@ -161,8 +163,10 @@ Ordered by value over effort, and each one ships independently.
    the script; one planner call decides the picture, the taps and the medium per beat; fan out and
    generate every figure in parallel; open the result in the editor that already exists for tweaking
    one figure at a time. Medium-agnostic, so it is worth doing first whatever else is decided.
-2. **Let her draw in SVG.** Biggest accuracy gain per unit of work. A prompt change plus
-   `foreignObject` in the sanitiser. Test before trusting.
+2. **Let her draw in SVG.** SHIPPED 2026-08-06 as D34. Biggest accuracy gain per unit of work, and it
+   was a prompt change plus sanitiser hardening as predicted. What the build added beyond this note:
+   one mandated canvas rather than her choice of viewBox, and three traps that only showed up in the
+   end-to-end test (transform origin, text not wrapping, off-canvas after a tap).
 3. **Sandbox the figure and allow JavaScript.** Removes the drag, slider and physics ceiling
    completely. Verified safe.
 4. **Generated stills for illustration beats**, composited under engine-owned type.
