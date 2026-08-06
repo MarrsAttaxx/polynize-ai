@@ -105,6 +105,21 @@ is building this up over several turns and expects what he already approved to s
 Return ONLY a JSON object, no markdown and no code fences:
 {"note":"<one short sentence to the operator, as a reply in a conversation>","name":"<two or three words naming THIS PICTURE, e.g. \"question mark\" or \"the lever\", not the topic of the piece>","taps":<how many taps it takes to complete, 0 if none>,"interactive":<true only if the figure has its own drag or multiple hit targets, otherwise omit>,"css":"<the CSS>","html":"<the markup fragment, one root element>"}`;
 
+
+/**
+ * The model the FIGURE work runs on.
+ *
+ * Figures are CSS and markup, which is a coding task, and the drafting model is chosen for
+ * speed and prose. Marrs's read after a week of using it: "it's not a coding model." Set
+ * FIGURE_MODEL to move this work alone; unset, it falls back to whatever the rest of PAM uses,
+ * so nothing changes by accident.
+ *
+ * As of 2026-08-06 `deepseek/deepseek-v4-pro` is both stronger at this and cheaper than the
+ * drafting model on OpenRouter (0.43 vs 1.50 per million in, 0.87 vs 9.00 out, same 1M
+ * context), so the economics point the same way as the quality.
+ */
+const figureModel = () => process.env.FIGURE_MODEL || undefined;
+
 function parseLoose(raw: string): unknown {
   const t = raw.trim();
   const fence = t.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
@@ -184,6 +199,9 @@ export async function discussFigure(
       maxTokens: 3000,
       temperature: 0.7,
       json: false,
+      // The discussion is about what to draw, so it wants the same head that will draw it: it
+      // has to know what is buildable, and that is the coding model's knowledge.
+      model: figureModel(),
       apiKey: process.env.APRIL_OPENROUTER_API_KEY,
     });
   } catch (e) {
@@ -239,6 +257,7 @@ export async function generateFigure(
       maxTokens: 12000,
       temperature: 0.6,
       json: false,
+      model: figureModel(),
       apiKey: process.env.APRIL_OPENROUTER_API_KEY,
     });
   } catch (e) {

@@ -15,7 +15,9 @@ const DEFAULT_TIMEOUT_MS = 240_000;
 export async function completeWithOpenRouter(args: CompleteArgs): Promise<string> {
   const apiKey = args.apiKey ?? process.env.OPENROUTER_API_KEY;
   if (!apiKey) throw new Error('OPENROUTER_API_KEY is not set');
-  const model = process.env.OPENROUTER_MODEL ?? 'minimax/minimax-01';
+  // The caller's choice wins, then the env default. See CompleteArgs.model for why the caller
+  // gets a say: the figure work is a coding task and does not want the drafting model.
+  const model = args.model ?? process.env.OPENROUTER_MODEL ?? 'minimax/minimax-01';
   const referer = process.env.OPENROUTER_REFERER ?? 'https://polynize.ai';
   const title = process.env.OPENROUTER_TITLE ?? 'Polynize Agent Builder';
   const timeoutMs = Number(process.env.OPENROUTER_TIMEOUT_MS) || DEFAULT_TIMEOUT_MS;

@@ -24,6 +24,18 @@ export type CompleteArgs = {
    * provider's env key when unset.
    */
   apiKey?: string;
+  /**
+   * Override the model for THIS call.
+   *
+   * One global OPENROUTER_MODEL drove every call in PAM: script drafting, concept synthesis,
+   * hooks and the touchscreen figures. Those are not the same job. Drafting is prose and is
+   * latency-sensitive because someone is waiting to write; a FIGURE is CSS and markup, which is
+   * a coding task and rewards a stronger model. Marrs's own read: "it's not a coding model".
+   *
+   * Per-call rather than per-provider so the choice sits with the code that knows what kind of
+   * work it is asking for, and so one task can be moved without touching the others.
+   */
+  model?: string;
 };
 
 /**
