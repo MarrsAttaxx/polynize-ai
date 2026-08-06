@@ -116,6 +116,16 @@ export function PrezieScreen({
   const [ask, setAsk] = useState('');
   const [drawing, setDrawing] = useState(false);
   /**
+   * SECONDS THE CURRENT CALL HAS BEEN RUNNING.
+   *
+   * Marrs reported the talking feature broken ("she sits there thinking for ages and nothing
+   * happens") and then corrected himself: it had worked, it was just slower on the coding model.
+   * The feature was fine and the FEEDBACK was not. A static "Thinking…" on one button, with the
+   * draw buttons merely greying out, gives a slow call no way to look alive. A number that goes up
+   * does, and it costs nothing.
+   */
+  const [elapsed, setElapsed] = useState(0);
+  /**
    * Which model actually served the last figure call, reported by the server from the same
    * function that picks it. Shown because "did my env var take effect" should not require
    * digging through function logs while trying to work.
@@ -144,6 +154,19 @@ export function PrezieScreen({
       .replace(/\/+$/, '');
   }, []);
   const endpoint = () => baseUrlRef.current + '/prezie/versions';
+
+  // Tick while a figure call is in flight, and reset the moment it is not, so the number always
+  // belongs to the call currently running.
+  useEffect(() => {
+    if (!drawing && !busy) {
+      setElapsed(0);
+      return;
+    }
+    setElapsed(0);
+    const started = Date.now();
+    const t = setInterval(() => setElapsed(Math.round((Date.now() - started) / 1000)), 1000);
+    return () => clearInterval(t);
+  }, [drawing, busy]);
 
   // Serialized autosave: one PUT in flight, latest content coalesced.
   const save = useCallback(async () => {
@@ -867,7 +890,7 @@ export function PrezieScreen({
                   onClick={() => void talk()}
                   disabled={drawing || !ask.trim()}
                 >
-                  {drawing ? 'Thinking…' : 'Talk it through'}
+                  {drawing ? `Working… ${elapsed}s` : 'Talk it through'}
                 </button>
                 <button
                   type="button"
@@ -881,7 +904,11 @@ export function PrezieScreen({
                   }
                   disabled={drawing || (!ask.trim() && !lastFromApril)}
                 >
-                  {figures.length ? '+ Draw as a new figure' : 'Draw it'}
+                  {drawing
+                    ? `${elapsed}s`
+                    : figures.length
+                      ? '+ Draw as a new figure'
+                      : 'Draw it'}
                 </button>
                 {figures.length ? (
                   <button
@@ -896,15 +923,31 @@ export function PrezieScreen({
                     }
                     disabled={drawing || (!ask.trim() && !lastFromApril)}
                   >
-                    Change figure {figSel + 1}
+                    {drawing ? `${elapsed}s` : `Change figure ${figSel + 1}`}
                   </button>
                 ) : null}
               </div>
-              <p className={d.hint}>
-                Talking costs a sentence and changes nothing. She will tell you straight if
-                something cannot be drawn well, and offer what reads instead. Whatever you agree
-                goes in when you draw.
-              </p>
+              {/* One unmissable indicator for all three actions above. Without it, clicking a
+                  draw button greyed it out and changed nothing else on the page. */}
+              {drawing ? (
+                <p className={d.working}>
+                  <i className={d.workingDot} aria-hidden="true" />
+                  {elapsed}s
+                  <span>
+                    {elapsed < 25
+                      ? 'She is on the coding model, which thinks longer than the old one. Talking usually lands in 15 to 30 seconds, a drawing in 30 to 90.'
+                      : elapsed < 100
+                        ? 'Still going. A drawing takes 30 to 90 seconds on this model.'
+                        : 'Longer than usual. It will either land or come back with an error; nothing is lost either way.'}
+                  </span>
+                </p>
+              ) : (
+                <p className={d.hint}>
+                  Talking costs a sentence and changes nothing. She will tell you straight if
+                  something cannot be drawn well, and offer what reads instead. Whatever you agree
+                  goes in when you draw.
+                </p>
+              )}
             </>
           ) : open && open.scene ? (
             <>
@@ -1071,7 +1114,7 @@ export function PrezieScreen({
                 onClick={() => void startFigures()}
                 disabled={drawing}
               >
-                {drawing ? 'Starting…' : 'Start a prezie, figure by figure'}
+                {drawing ? `Starting… ${elapsed}s` : 'Start a prezie, figure by figure'}
               </button>
             </>
           )}
@@ -1116,7 +1159,7 @@ export function PrezieScreen({
                 }}
               />
               <button type="button" className={d.aprilBtn} onClick={build} disabled={busy}>
-                {busy ? 'Building…' : versions.length ? 'Build a new version' : 'Build it'}
+                {busy ? `Building… ${elapsed}s` : versions.length ? 'Build a new version' : 'Build it'}
               </button>
             </div>
             <p className={d.hint}>

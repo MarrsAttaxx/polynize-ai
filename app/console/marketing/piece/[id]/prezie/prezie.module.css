@@ -646,3 +646,47 @@
   color: var(--text-3);
   opacity: 0.75;
 }
+
+/**
+ * THE WORKING LINE, shown only while a call is in flight.
+ *
+ * Marrs reported the talking feature broken: "she sits there thinking for ages and nothing
+ * happens", then corrected himself when it arrived. It was not broken, it was slow, and the only
+ * feedback was one button's label changing to static text (the DRAW buttons changed nothing at
+ * all, they just greyed out). A long wait with no motion reads as a hang, so this counts up and
+ * says what to expect.
+ */
+.working {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin: 0;
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  color: var(--mint);
+}
+.working span {
+  color: var(--text-3);
+  letter-spacing: 0;
+  font-family: inherit;
+}
+.workingDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--mint);
+  flex: none;
+  animation: workingPulse 1.1s ease-in-out infinite;
+}
+@keyframes workingPulse {
+  0%,
+  100% {
+    opacity: 0.25;
+    transform: scale(0.8);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.15);
+  }
+}
