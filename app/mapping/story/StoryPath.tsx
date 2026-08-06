@@ -8,15 +8,18 @@ import s from './story.module.css';
 /**
  * The plotted route: a full-width expedition line that draws itself as you descend.
  *
- * It is no longer a margin rail. The route now crosses the sheet, swinging out to the
- * left edge and back, so it reads as a journey over ground rather than a progress bar.
- * It passes BEHIND the copy (rail is z-index 0, .beat is z-index 1), which is exactly
- * how a route behaves on a chart.
+ * Reads as departure point, four numbered checkpoints, then X. The X sits on the turn
+ * beat ("you cannot go where you need to go without a map"), so the destination is
+ * reached exactly as the copy asks for one and the next section answers it with the
+ * real map. Arriving at any checkpoint is an event: the marker pops and a ring rides
+ * out from it.
  *
- * Chaos to order is in the geometry: early legs carry extra jittered waypoints so the
- * line genuinely scribbles, and the jitter decays to nothing by the turn, where the
- * route runs clean into the X. That survives a screenshot, reduced motion and a failed
- * script, because it is drawn, not animated.
+ * It crosses the sheet, swinging out to the left edge and back, and passes BEHIND the
+ * copy (rail is z-index 0, .beat is z-index 1), which is how a route behaves on a chart.
+ *
+ * Chaos to order is in the geometry: early legs carry extra jittered points so the line
+ * genuinely searches, decaying to nothing by the turn. That survives a screenshot,
+ * reduced motion and a failed script, because it is drawn, not animated.
  *
  * FAIL-SAFE: the faint full route is server-rendered and always visible. GSAP only ever
  * adds the bright trail on top by growing a clip rectangle.
@@ -24,11 +27,7 @@ import s from './story.module.css';
 
 gsap.registerPlugin(ScrollTrigger);
 
-/**
- * Where the route sits horizontally at each waypoint, as a fraction of sheet width.
- * Deliberately wanders left and back rather than tracking one margin. Index 0 is the
- * start above beat 1; the last entry is the destination.
- */
+/** Where the route sits horizontally at each stop, as a fraction of sheet width. */
 const X_STOPS = [0.3, 0.08, 0.44, 0.13, 0.36, 0.5];
 
 /** Fixed wander table. Deterministic: a random value here is a hydration mismatch. */
@@ -57,11 +56,7 @@ function splinePath(pts: Pt[]) {
   return d;
 }
 
-/**
- * Build the whole route. Between each pair of stops we drop extra jittered points; how
- * many, and how far off course, is governed by the decay. Early legs get a genuine
- * search pattern, the last leg gets none.
- */
+/** Extra jittered points between stops, heaviest on the first leg, none on the last. */
 function buildRoute(width: number, stops: Pt[]) {
   const legs = stops.length - 1;
   const pts: Pt[] = [stops[0]];
@@ -87,7 +82,8 @@ export function StoryPath({ beatCount }: { beatCount: number }) {
   const hostRef = useRef<HTMLDivElement | null>(null);
   const clipRef = useRef<SVGRectElement | null>(null);
   const wpRefs = useRef<(SVGGElement | null)[]>([]);
-  const xRef = useRef<SVGGElement | null>(null);
+  const rippleRefs = useRef<(SVGCircleElement | null)[]>([]);
+  const firedRef = useRef<Set<number>>(new Set());
   const [box, setBox] = useState({ w: 0, h: 0 });
   const [waypoints, setWaypoints] = useState<number[]>([]);
 
@@ -100,8 +96,7 @@ export function StoryPath({ beatCount }: { beatCount: number }) {
      * Bail out of the state update when nothing actually moved. Returning a fresh
      * object or array every tick made the deps of the drawing effect change on every
      * observer callback, so it reverted and rebuilt its GSAP context in a loop, and the
-     * ScrollTrigger.refresh() that came with it disturbed every other trigger on the
-     * page. That is what was stranding the sub-lines and everything past the map.
+     * ScrollTrigger.refresh() that came with it disturbed every other trigger.
      */
     const measure = () => {
       const secTop = section.getBoundingClientRect().top + window.scrollY;
@@ -120,7 +115,6 @@ export function StoryPath({ beatCount }: { beatCount: number }) {
     };
 
     measure();
-    // Debounced, and refresh only after the measurement has settled.
     let t = 0;
     const ro = new ResizeObserver(() => {
       window.clearTimeout(t);
@@ -146,10 +140,31 @@ export function StoryPath({ beatCount }: { beatCount: number }) {
       if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
         gsap.set(clipRef.current, { attr: { height: box.h } });
         wpRefs.current.forEach((g) => g && g.classList.add(s.wpOn));
-        gsap.set(xRef.current, { opacity: 1, scale: 1 });
         section.setAttribute('data-reached', String(waypoints.length - 1));
         return;
       }
+
+      /** Arriving at a checkpoint is an event: the marker pops, a ring rides out. */
+      const arrive = (i: number) => {
+        if (firedRef.current.has(i)) return;
+        firedRef.current.add(i);
+        const g = wpRefs.current[i];
+        const ring = rippleRefs.current[i];
+        if (g) {
+          gsap.fromTo(
+            g,
+            { scale: 0.7, transformOrigin: '50% 50%' },
+            { scale: 1, duration: 0.55, ease: 'back.out(3)' }
+          );
+        }
+        if (ring) {
+          gsap.fromTo(
+            ring,
+            { attr: { r: 12 }, opacity: 0.8 },
+            { attr: { r: 62 }, opacity: 0, duration: 1.1, ease: 'power2.out' }
+          );
+        }
+      };
 
       gsap.to(clipRef.current, {
         attr: { height: box.h },
@@ -165,24 +180,15 @@ export function StoryPath({ beatCount }: { beatCount: number }) {
             waypoints.forEach((y, i) => {
               const on = y <= travelled;
               wpRefs.current[i]?.classList.toggle(s.wpOn, on);
-              if (on) reached = i;
+              if (on) {
+                reached = i;
+                arrive(i);
+              }
             });
             section.setAttribute('data-reached', String(reached));
           },
         },
       });
-
-      gsap.fromTo(
-        xRef.current,
-        { opacity: 0, scale: 0.4, transformOrigin: 'center' },
-        {
-          opacity: 1,
-          scale: 1,
-          duration: 0.5,
-          ease: 'back.out(2)',
-          scrollTrigger: { trigger: section, start: 'bottom 78%', toggleActions: 'play none none reverse' },
-        }
-      );
     }, hostRef);
 
     return () => ctx.revert();
@@ -193,17 +199,15 @@ export function StoryPath({ beatCount }: { beatCount: number }) {
   }
 
   const { w, h } = box;
-  // Narrow screens get a tighter swing, or the route would leave the sheet.
   const spread = w < 760 ? 0.55 : 1;
   const centre = 0.5;
   const xAt = (i: number) => w * (centre + (X_STOPS[i % X_STOPS.length] - centre) * spread);
 
-  const stops: Pt[] = [
-    { x: xAt(0), y: 0 },
-    ...waypoints.map((y, i) => ({ x: xAt(i + 1), y })),
-    { x: w * centre, y: h },
-  ];
+  // Departure point, then one stop per beat. The final beat is the turn and its marker
+  // is the X, so the route ENDS at the destination rather than running past it.
+  const stops: Pt[] = [{ x: xAt(0), y: 0 }, ...waypoints.map((y, i) => ({ x: xAt(i + 1), y }))];
   const d = splinePath(buildRoute(w, stops));
+  const lastIndex = waypoints.length - 1;
 
   const ticks: { y: number; major: boolean; label?: string }[] = [];
   for (let y = 60, n = 1; y < h - 40; y += 42, n++) {
@@ -212,7 +216,6 @@ export function StoryPath({ beatCount }: { beatCount: number }) {
   }
 
   const start = stops[0];
-  const end = stops[stops.length - 1];
 
   return (
     <div className={s.rail} ref={hostRef} aria-hidden="true">
@@ -244,9 +247,10 @@ export function StoryPath({ beatCount }: { beatCount: number }) {
           ))}
         </g>
 
+        {/* Departure point */}
         <g className={s.startMark}>
-          <circle cx={start.x} cy={start.y + 10} r="9" />
-          <circle cx={start.x} cy={start.y + 10} r="3.5" className={s.startCore} />
+          <circle cx={start.x} cy={start.y + 20} r="18" />
+          <circle cx={start.x} cy={start.y + 20} r="7" className={s.startCore} />
         </g>
 
         {/* The road ahead. Always rendered, so the route exists with no script.
@@ -261,27 +265,41 @@ export function StoryPath({ beatCount }: { beatCount: number }) {
 
         {waypoints.map((y, i) => {
           const x = xAt(i + 1);
+          const isDestination = i === lastIndex;
           return (
             <g
               key={`wp-${i}`}
-              className={s.wp}
+              className={`${s.wp} ${isDestination ? s.wpX : ''}`}
               ref={(el) => {
                 wpRefs.current[i] = el;
               }}
             >
-              <circle className={s.wpHalo} cx={x} cy={y} r={12} />
-              <circle className={s.wpDot} cx={x} cy={y} r={4.5} />
-              <text className={s.wpNum} x={x + 20} y={y + 3}>
-                {String(i + 1).padStart(2, '0')}
-              </text>
+              <circle
+                className={s.wpRipple}
+                cx={x}
+                cy={y}
+                r={12}
+                ref={(el) => {
+                  rippleRefs.current[i] = el;
+                }}
+              />
+              {isDestination ? (
+                <g className={s.xGlyph}>
+                  <line x1={x - 20} y1={y - 20} x2={x + 20} y2={y + 20} />
+                  <line x1={x + 20} y1={y - 20} x2={x - 20} y2={y + 20} />
+                </g>
+              ) : (
+                <>
+                  <circle className={s.wpHalo} cx={x} cy={y} r={24} />
+                  <circle className={s.wpDot} cx={x} cy={y} r={9} />
+                  <text className={s.wpNum} x={x + 36} y={y + 5}>
+                    {String(i + 1).padStart(2, '0')}
+                  </text>
+                </>
+              )}
             </g>
           );
         })}
-
-        <g className={s.xMark} ref={xRef}>
-          <line x1={end.x - 10} y1={end.y - 18} x2={end.x + 10} y2={end.y + 2} />
-          <line x1={end.x + 10} y1={end.y - 18} x2={end.x - 10} y2={end.y + 2} />
-        </g>
       </svg>
     </div>
   );

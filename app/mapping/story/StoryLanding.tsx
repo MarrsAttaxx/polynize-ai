@@ -47,6 +47,11 @@ export function StoryLanding({
           <div className={s.heroCopy}>
             <h1 className={s.h1}>{c.hero.h1}</h1>
             <p className={s.heroSub}>{c.hero.subhead}</p>
+            {/* On its own line so the product name lands as a statement rather than
+                trailing off the end of a paragraph. */}
+            <p className={s.heroName}>
+              We call it <em className={s.heroNameEm}>capability mapping</em>.
+            </p>
             <div className={s.ctaRow}>
               <TrackedLink
                 className={`${s.btn} ${s.btnPrimary}`}

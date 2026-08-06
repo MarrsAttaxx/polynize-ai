@@ -128,7 +128,7 @@ export const storyContent: MappingContent = {
   hero: {
     h1: 'Map what your team can actually do with AI.',
     subhead:
-      'Before you invest another dollar in AI, see what your people can genuinely do with it, benchmarked against what good looks like. We call it capability mapping.',
+      'Before you invest another dollar in AI, see what your people can genuinely do with it, benchmarked against what good looks like.',
     primaryCta: 'Book a demo',
     secondaryLabel: 'See how it works',
   },
