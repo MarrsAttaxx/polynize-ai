@@ -7,10 +7,34 @@
   z-index: 100;
   background: #000;
   color: #fff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   overflow: hidden;
+}
+
+/* THE SCROLL CONTAINER. An ordinary one, which is the whole point: the wheel and a hidden mouse
+   work with no code at all, and auto-scroll is just something else moving scrollTop. */
+.scroll {
+  position: absolute;
+  inset: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  /* Smooth scrolling would fight the per-frame auto-scroll, so it stays off. */
+  scroll-behavior: auto;
+  scrollbar-width: none;
+}
+.scroll::-webkit-scrollbar {
+  display: none;
+}
+/* Half a screen of air top and bottom, so the first line can start at eye level and the last
+   line can be read without it sitting on the bottom edge. */
+.column {
+  max-width: 92vw;
+  margin: 0 auto;
+  padding: 46vh 6vw;
+  text-align: center;
+}
+.block + .block {
+  margin-top: 6vh;
 }
 
 .topbar {
@@ -177,4 +201,19 @@
   font-size: 18px;
   cursor: pointer;
   padding: 6px 10px;
+}
+
+/* The rig strip. One row of everything, because on set the wrong button is worse than a
+   crowded one, and it hides entirely with one tap. */
+.rig .exit {
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 13px;
+  color: var(--text-3, #8b857f);
+  text-decoration: none;
+  padding: 8px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 8px;
+}
+.rig .exit:hover {
+  color: var(--coral, #ff7a6b);
 }

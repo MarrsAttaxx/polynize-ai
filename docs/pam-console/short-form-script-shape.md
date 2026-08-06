@@ -85,3 +85,32 @@ exactly that reason.
 
 **The rule that follows: exemplars come from work the operator has approved, never from
 generated drafts.** A rejected draft sitting in a repo is not evidence of anything.
+
+
+## The teleprompter
+
+A CONTINUOUS SCROLL of the whole script, not a paged sequence of sections (changed 2026-08-06
+after Marrs used it: *"instead of tapped for next section, can we just make it a straight scroll,
+because I have a mouse that I'm hiding on my desk"*).
+
+It matters for the same reason the prezie beats a deck: he stops executing steps and reads at his
+own pace, embellishing where he wants without falling out of sync with a mechanism.
+
+- **The wheel scrolls it**, with no code: it is an ordinary scroll container, so a hidden mouse
+  on the desk works by itself.
+- **Auto-scroll** at an adjustable speed (12 to 120 px/sec), started and stopped with space.
+  Manual scrolling is never blocked while it runs, and it carries on from wherever he leaves it.
+- **Mirrored** for beam-splitter glass, **sized** in seven steps, both remembered per DEVICE
+  rather than per piece: the iPad in the rig is always mirrored and the laptop never is.
+- Controls hide with one tap, because anything bright is a reflection in the shot.
+- Half a screen of padding top and bottom, so the first line starts at eye level and the last can
+  be read without sitting on the bottom edge.
+
+**Two things this removed.** The fit-down that shrank a long beat to fit one screen is gone, and
+so is the problem it solved: nothing has to fit any more. And the tap zones are gone, because a
+stray touch on a prompter costs you your place in the script.
+
+**One implementation note worth keeping.** Auto-scroll accumulates FRACTIONAL pixels between
+frames. A readable pace is well under one pixel per frame (20px/s is a third of a pixel at 60fps),
+so rounding each frame independently gives zero movement forever. Verified: the naive version
+moves 0px in a second where the accumulator moves 19 of an intended 20.
