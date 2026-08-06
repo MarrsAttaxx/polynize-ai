@@ -658,35 +658,66 @@
  */
 .working {
   display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+}
+.workingHead {
+  display: flex;
   align-items: center;
-  gap: 9px;
+  gap: 8px;
   margin: 0;
   font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
   font-size: 12px;
   letter-spacing: 0.04em;
-  color: var(--mint);
-}
-.working span {
   color: var(--text-3);
-  letter-spacing: 0;
-  font-family: inherit;
 }
-.workingDot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: var(--mint);
+.workingHead b {
+  font-weight: 400;
+  color: var(--mint);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+/* The house mark, animated, keyed transparent so it sits on the panel with no plate. */
+.workingMark {
   flex: none;
-  animation: workingPulse 1.1s ease-in-out infinite;
+  display: block;
 }
-@keyframes workingPulse {
-  0%,
-  100% {
-    opacity: 0.25;
-    transform: scale(0.8);
-  }
-  50% {
-    opacity: 1;
-    transform: scale(1.15);
-  }
+
+/**
+ * HER OUTPUT, SCROLLING. One line, clipped, showing the END of what has arrived.
+ *
+ * `justify-content: flex-end` inside an `overflow: hidden` box is what makes it scroll: the text
+ * overflows to the LEFT and is clipped there, so new characters keep appearing at the right edge
+ * like a tape. No animation, no JS measuring, and it cannot drift out of sync with the data
+ * because the position IS the data.
+ *
+ * Deliberately dim and small. Marrs asked for confidence that she is working, not something to
+ * read, and anything more legible would compete with her actual reply.
+ */
+.stream {
+  display: flex;
+  justify-content: flex-end;
+  overflow: hidden;
+  margin: 0;
+  height: 15px;
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 11px;
+  line-height: 15px;
+  color: var(--text-3);
+  opacity: 0.6;
+  /* Fades into the left edge so the clip reads as motion rather than a cut-off word. */
+  mask-image: linear-gradient(to right, transparent, #000 22%);
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 22%);
+}
+.stream span {
+  flex: none;
+  white-space: pre;
+}
+/* The placeholder is a message, not a tape, so it reads from the left like normal text. */
+.stream em {
+  flex: none;
+  margin-right: auto;
+  font-style: normal;
+  opacity: 0.8;
 }

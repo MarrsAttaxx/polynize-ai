@@ -1,7 +1,9 @@
 import { NO_EM_DASH_INSTRUCTION } from '../em-dash';
 import { completeWithKimi } from './kimi';
 import { completeWithOpenAI } from './openai';
-import { completeWithOpenRouter } from './openrouter';
+import { completeWithOpenRouter, streamWithOpenRouter, type StreamDelta } from './openrouter';
+
+export type { StreamDelta };
 
 export type ChatMessage = { role: 'user' | 'assistant'; content: string };
 
@@ -69,4 +71,23 @@ export async function complete(args: CompleteArgs): Promise<string> {
     default:
       throw new Error(`Unknown LLM_PROVIDER: ${provider}`);
   }
+}
+
+/**
+ * `complete()`, but reporting partial output as it arrives. Returns the same final string.
+ *
+ * Only OpenRouter streams; every other provider falls back to the blocking call and simply never
+ * reports a delta. That is deliberate: a caller can always ask for progress, and the worst case is
+ * that it gets none, so no feature has to branch on which provider is configured.
+ */
+export async function completeStream(
+  args: CompleteArgs,
+  onDelta: (d: StreamDelta) => void
+): Promise<string> {
+  const provider = process.env.LLM_PROVIDER ?? 'openrouter';
+  const system = `${args.system}\n\n${NO_EM_DASH_INSTRUCTION}`;
+  if (provider === 'openrouter' || provider === 'minimax') {
+    return streamWithOpenRouter({ ...args, system }, onDelta);
+  }
+  return complete(args);
 }

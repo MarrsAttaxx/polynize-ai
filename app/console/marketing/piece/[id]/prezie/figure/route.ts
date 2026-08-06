@@ -57,6 +57,15 @@ const AskSchema = z.object({
     .array(z.object({ role: z.enum(['operator', 'april']), text: z.string().max(6000) }))
     .max(24)
     .optional(),
+  /**
+   * Stream progress while she works, instead of one response at the end.
+   *
+   * Marrs asked for this after a slow call read as a freeze: "is there a way that I can see her
+   * reasoning? even if small, or just one line scrolling fast, would give me the confidence that
+   * she is actually working on something." Opt-in rather than always-on so the plain JSON
+   * response stays the contract for anything that just wants the answer.
+   */
+  stream: z.boolean().optional(),
 });
 const IdSchema = z.object({
   prezie_id: z.string().trim().min(1).max(200),
@@ -127,7 +136,12 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     return NextResponse.json({ error: 'That figure is gone. Reload.' }, { status: 409 });
   }
 
-  try {
+  /**
+   * The whole job, with an optional progress reporter. One body of work for both the plain JSON
+   * response and the streamed one, so the two can never drift apart: streaming changes how the
+   * answer is DELIVERED and nothing about how it is produced.
+   */
+  const run = async (onProgress?: (d: { reasoning?: string; content?: string }) => void) => {
     // The concept is handed over so a figure can carry a real number rather than a placeholder.
     const conceptBody = await conceptBodyForPiece(user.email, piece).catch(() => '');
     const history = (body.history ?? []) as FigureTurn[];
@@ -139,9 +153,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         body.ask,
         { concept: conceptBody, angle: piece.angle },
         history,
-        current
+        current,
+        onProgress
       );
-      return NextResponse.json({ ok: true, reply, model: figureModelInUse() });
+      return { ok: true as const, reply, model: figureModelInUse() };
     }
 
     // DRAWING. The agreed conversation goes in with the ask, so what was settled while talking
@@ -153,7 +168,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     const { figure, note } = await generateFigure(
       agreed,
       { concept: conceptBody, angle: piece.angle },
-      current
+      current,
+      onProgress
     );
 
     const next: Prezie = {
@@ -164,26 +180,88 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       updated_at: new Date().toISOString(),
     };
     await savePrezie(next);
-    return NextResponse.json({
-      ok: true,
+    return {
+      ok: true as const,
       note,
       figure_id: figure.figure_id,
       prezie: view(next),
       model: figureModelInUse(),
-    });
-  } catch (e) {
+    };
+  };
+
+  /** The operator-facing message for a failure, kept identical on both paths. */
+  const failure = (e: unknown) => {
     if (e instanceof DraftError && e.reason === 'empty') {
-      return NextResponse.json(
-        { error: 'That came back unusable. Try describing it a different way.' },
-        { status: 502 }
-      );
+      return 'That came back unusable. Try describing it a different way.';
     }
     console.error('[prezie.figure] failed:', e);
-    return NextResponse.json(
-      { error: 'April is unavailable right now. Try again in a moment.' },
-      { status: 502 }
-    );
+    return 'April is unavailable right now. Try again in a moment.';
+  };
+
+  if (!body.stream) {
+    try {
+      return NextResponse.json(await run());
+    } catch (e) {
+      return NextResponse.json({ error: failure(e) }, { status: 502 });
+    }
   }
+
+  // STREAMED. Newline-delimited JSON rather than SSE: the client reads it with a plain fetch
+  // reader, so there is no EventSource, no reconnection semantics and no second protocol to
+  // reason about. Three event types: `think` while she works, then exactly one `ok` or `err`.
+  const encoder = new TextEncoder();
+  const stream = new ReadableStream<Uint8Array>({
+    async start(controller) {
+      let closed = false;
+      const send = (obj: unknown) => {
+        if (closed) return;
+        controller.enqueue(encoder.encode(JSON.stringify(obj) + '\n'));
+      };
+
+      // Deltas arrive per token, which is far too often to forward one line each. A rolling tail
+      // is flushed on a timer instead: bounded traffic, and the client can render what it
+      // receives with no accumulation of its own.
+      let tail = '';
+      let phase: 'thinking' | 'writing' = 'thinking';
+      let dirty = false;
+      const flush = () => {
+        if (!dirty) return;
+        dirty = false;
+        send({ t: 'think', phase, d: tail });
+      };
+      const ticker = setInterval(flush, 150);
+
+      try {
+        const payload = await run(({ reasoning, content }) => {
+          // Once real output starts arriving the phase changes and never goes back, which is the
+          // difference between "still deciding" and "writing it out" at a glance.
+          if (content) phase = 'writing';
+          const piece = (content ?? reasoning ?? '').replace(/\s+/g, ' ');
+          if (!piece) return;
+          tail = (tail + piece).slice(-220);
+          dirty = true;
+        });
+        clearInterval(ticker);
+        flush();
+        send({ t: 'ok', ...payload });
+      } catch (e) {
+        clearInterval(ticker);
+        send({ t: 'err', error: failure(e) });
+      } finally {
+        closed = true;
+        controller.close();
+      }
+    },
+  });
+
+  return new Response(stream, {
+    headers: {
+      'content-type': 'application/x-ndjson; charset=utf-8',
+      'cache-control': 'no-store, no-transform',
+      // Tells any intermediate proxy not to buffer, which would defeat the whole point.
+      'x-accel-buffering': 'no',
+    },
+  });
 }
 
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {

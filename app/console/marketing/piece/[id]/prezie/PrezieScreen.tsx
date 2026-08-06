@@ -126,6 +126,19 @@ export function PrezieScreen({
    */
   const [elapsed, setElapsed] = useState(0);
   /**
+   * WHAT SHE IS PRODUCING RIGHT NOW, as one rolling line.
+   *
+   * The timer proved the page was alive but not that SHE was. Marrs: "is there a way that I can
+   * see her reasoning? so I can see if she's actually thinking things through, or frozen? even if
+   * small, or just one line scrolling fast, would give me the confidence that she is actually
+   * working on something." So the call streams, and this is the tail of it.
+   *
+   * `phase` separates deciding from writing, which is the more useful of the two signals: ninety
+   * seconds of "thinking" is a different situation from ninety seconds of "writing", and only one
+   * of them is worth cancelling.
+   */
+  const [think, setThink] = useState<{ phase: 'thinking' | 'writing'; text: string } | null>(null);
+  /**
    * Which model actually served the last figure call, reported by the server from the same
    * function that picks it. Shown because "did my env var take effect" should not require
    * digging through function logs while trying to work.
@@ -160,6 +173,7 @@ export function PrezieScreen({
   useEffect(() => {
     if (!drawing && !busy) {
       setElapsed(0);
+      setThink(null);
       return;
     }
     setElapsed(0);
@@ -342,6 +356,61 @@ export function PrezieScreen({
       ).sort()
     : [];
 
+  /**
+   * Post to the figure endpoint and read her progress as it arrives.
+   *
+   * The response is newline-delimited JSON: any number of `think` events, then exactly one `ok` or
+   * `err`. Errors raised before the stream starts (auth, validation, a stale prezie) still arrive
+   * as ordinary JSON, so the content type decides how to read the body rather than assuming.
+   */
+  const askApril = async <T,>(payload: Record<string, unknown>): Promise<T> => {
+    const res = await fetch(figEndpoint(), {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ ...payload, stream: true }),
+    });
+    if (!res.ok || !res.body || !(res.headers.get('content-type') ?? '').includes('ndjson')) {
+      const b = (await res.json().catch(() => null)) as { error?: string } | null;
+      throw new Error(b?.error ?? 'Could not reach her.');
+    }
+    const reader = res.body.getReader();
+    const dec = new TextDecoder();
+    let buf = '';
+    let finished: T | null = null;
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buf += dec.decode(value, { stream: true });
+      // Only whole lines are parsed; a chunk can split one anywhere.
+      let nl: number;
+      while ((nl = buf.indexOf('\n')) !== -1) {
+        const line = buf.slice(0, nl).trim();
+        buf = buf.slice(nl + 1);
+        if (!line) continue;
+        let ev: {
+          t?: string;
+          phase?: 'thinking' | 'writing';
+          d?: string;
+          error?: string;
+        };
+        try {
+          ev = JSON.parse(line) as typeof ev;
+        } catch {
+          continue;
+        }
+        if (ev.t === 'think') {
+          setThink({ phase: ev.phase ?? 'thinking', text: ev.d ?? '' });
+        } else if (ev.t === 'err') {
+          throw new Error(ev.error ?? 'She could not finish that.');
+        } else if (ev.t === 'ok') {
+          finished = ev as T;
+        }
+      }
+    }
+    if (!finished) throw new Error('The connection dropped before she finished.');
+    return finished;
+  };
+
   /** Talk about the picture without drawing it. Nothing is saved and no figure changes. */
   const talk = async () => {
     const said = ask.trim();
@@ -352,28 +421,21 @@ export function PrezieScreen({
     setThread(sent);
     setAsk('');
     try {
-      const res = await fetch(figEndpoint(), {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({
-          prezie_id: open.prezie_id,
-          ask: said,
-          mode: 'discuss',
-          history: thread,
-          figure_id: figures[figSel]?.figure_id,
-        }),
+      const b = await askApril<{ reply?: string; model?: string }>({
+        prezie_id: open.prezie_id,
+        ask: said,
+        mode: 'discuss',
+        history: thread,
+        figure_id: figures[figSel]?.figure_id,
       });
-      const b = (await res.json().catch(() => null)) as
-        | { reply?: string; model?: string; error?: string }
-        | null;
-      if (!res.ok || !b?.reply) {
-        setError(b?.error ?? 'Could not reach her.');
+      if (!b.reply) {
+        setError('She came back empty. Try again.');
         return;
       }
       if (b.model) setModel(b.model);
       setThread([...sent, { role: 'april', text: b.reply }]);
-    } catch {
-      setError('Network error. Try again.');
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Network error. Try again.');
     } finally {
       setDrawing(false);
     }
@@ -391,30 +453,22 @@ export function PrezieScreen({
     setDrawing(true);
     setError(null);
     try {
-      const res = await fetch(figEndpoint(), {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({
-          prezie_id: open.prezie_id,
-          ask: said,
-          mode: 'draw',
-          // What was agreed while talking goes in with the ask, so the drawing honours the
-          // conversation rather than only the last sentence of it.
-          history: thread,
-          figure_id: revise ? figures[figSel]?.figure_id : undefined,
-        }),
+      const b = await askApril<{
+        prezie?: { figures?: FigureView[] };
+        note?: string;
+        figure_id?: string;
+        model?: string;
+      }>({
+        prezie_id: open.prezie_id,
+        ask: said,
+        mode: 'draw',
+        // What was agreed while talking goes in with the ask, so the drawing honours the
+        // conversation rather than only the last sentence of it.
+        history: thread,
+        figure_id: revise ? figures[figSel]?.figure_id : undefined,
       });
-      const b = (await res.json().catch(() => null)) as
-        | {
-            prezie?: { figures?: FigureView[] };
-            note?: string;
-            figure_id?: string;
-            model?: string;
-            error?: string;
-          }
-        | null;
-      if (!res.ok || !b?.prezie?.figures) {
-        setError(b?.error ?? 'Could not draw that.');
+      if (!b.prezie?.figures) {
+        setError('Could not draw that.');
         return;
       }
       if (b.model) setModel(b.model);
@@ -427,8 +481,8 @@ export function PrezieScreen({
       setAsk('');
       setThread([]);
       setPreviewV((v) => v + 1);
-    } catch {
-      setError('Network error. Try again.');
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Network error. Try again.');
     } finally {
       setDrawing(false);
     }
@@ -930,17 +984,33 @@ export function PrezieScreen({
               {/* One unmissable indicator for all three actions above. Without it, clicking a
                   draw button greyed it out and changed nothing else on the page. */}
               {drawing ? (
-                <p className={d.working}>
-                  <i className={d.workingDot} aria-hidden="true" />
-                  {elapsed}s
-                  <span>
-                    {elapsed < 25
-                      ? 'She is on the coding model, which thinks longer than the old one. Talking usually lands in 15 to 30 seconds, a drawing in 30 to 90.'
-                      : elapsed < 100
-                        ? 'Still going. A drawing takes 30 to 90 seconds on this model.'
-                        : 'Longer than usual. It will either land or come back with an error; nothing is lost either way.'}
-                  </span>
-                </p>
+                <div className={d.working}>
+                  <p className={d.workingHead}>
+                    <img
+                      className={d.workingMark}
+                      src="/console-assets/mark-loop.png"
+                      alt=""
+                      width={18}
+                      height={18}
+                    />
+                    <b>{think?.phase === 'writing' ? 'writing it' : 'thinking'}</b>
+                    {elapsed}s
+                  </p>
+                  {/* HER ACTUAL OUTPUT, scrolling. The point is not that it is readable, it is
+                      that it is HERS and it is moving: a spinner cannot tell you whether the
+                      model is working or wedged, and this can. */}
+                  <p className={d.stream} aria-live="off">
+                    {think?.text ? (
+                      <span>{think.text}</span>
+                    ) : (
+                      <em>
+                        {elapsed < 12
+                          ? 'waiting for her first tokens'
+                          : 'no output yet. If this stays empty past a minute, the model is wedged and it is worth cancelling.'}
+                      </em>
+                    )}
+                  </p>
+                </div>
               ) : (
                 <p className={d.hint}>
                   Talking costs a sentence and changes nothing. She will tell you straight if

@@ -17,7 +17,7 @@ import { randomUUID } from 'node:crypto';
 import { sanitiseFigure, FIGURE_STEP_CONTRACT, type PrezieFigure } from './figure';
 import { parseFigureReply } from './figure-parse';
 import { DraftError } from './draft';
-import { complete } from '@/lib/llm';
+import { complete, completeStream, type StreamDelta } from '@/lib/llm';
 import { resolveModel } from '@/lib/llm/openrouter';
 import { stripEmDashes } from '@/lib/em-dash';
 
@@ -280,7 +280,8 @@ export async function discussFigure(
   ask: string,
   ctx: FigureContext,
   history: FigureTurn[] = [],
-  current?: PrezieFigure | null
+  current?: PrezieFigure | null,
+  onProgress?: (d: StreamDelta) => void
 ): Promise<string> {
   const want = ask.trim();
   if (!want) throw new DraftError('empty');
@@ -300,19 +301,20 @@ export async function discussFigure(
   }
   messages.push({ role: 'user', content: want });
 
+  const call = {
+    system: DISCUSS_SYSTEM,
+    messages,
+    maxTokens: 3000,
+    temperature: 0.7,
+    json: false,
+    // The discussion is about what to draw, so it wants the same head that will draw it: it
+    // has to know what is buildable, and that is the coding model's knowledge.
+    model: figureModel(),
+    apiKey: process.env.APRIL_OPENROUTER_API_KEY,
+  };
   let raw: string;
   try {
-    raw = await complete({
-      system: DISCUSS_SYSTEM,
-      messages,
-      maxTokens: 3000,
-      temperature: 0.7,
-      json: false,
-      // The discussion is about what to draw, so it wants the same head that will draw it: it
-      // has to know what is buildable, and that is the coding model's knowledge.
-      model: figureModel(),
-      apiKey: process.env.APRIL_OPENROUTER_API_KEY,
-    });
+    raw = onProgress ? await completeStream(call, onProgress) : await complete(call);
   } catch (e) {
     console.error(`[figure.discuss] LLM threw: ${e instanceof Error ? e.message : String(e)}`);
     throw new DraftError('llm-unavailable');
@@ -338,7 +340,8 @@ export type FigureContext = {
 export async function generateFigure(
   ask: string,
   ctx: FigureContext,
-  current?: PrezieFigure | null
+  current?: PrezieFigure | null,
+  onProgress?: (d: StreamDelta) => void
 ): Promise<{ figure: PrezieFigure; note: string }> {
   const want = ask.trim();
   if (!want) throw new DraftError('empty');
@@ -356,19 +359,20 @@ export async function generateFigure(
     `${current ? 'THE CHANGE THE OPERATOR WANTS' : 'WHAT THE OPERATOR WANTS DRAWN'}:\n"""\n${want}\n"""`,
   ].filter(Boolean);
 
+  const call = {
+    system: SYSTEM,
+    messages: [{ role: 'user' as const, content: parts.join('\n\n') }],
+    // Markup plus CSS plus a thinking model's reasoning overhead: generous, or the figure
+    // arrives truncated and unusable, which is the one failure that wastes a whole turn.
+    maxTokens: 12000,
+    temperature: 0.6,
+    json: false,
+    model: figureModel(),
+    apiKey: process.env.APRIL_OPENROUTER_API_KEY,
+  };
   let raw: string;
   try {
-    raw = await complete({
-      system: SYSTEM,
-      messages: [{ role: 'user', content: parts.join('\n\n') }],
-      // Markup plus CSS plus a thinking model's reasoning overhead: generous, or the figure
-      // arrives truncated and unusable, which is the one failure that wastes a whole turn.
-      maxTokens: 12000,
-      temperature: 0.6,
-      json: false,
-      model: figureModel(),
-      apiKey: process.env.APRIL_OPENROUTER_API_KEY,
-    });
+    raw = onProgress ? await completeStream(call, onProgress) : await complete(call);
   } catch (e) {
     console.error(`[figure] LLM threw: ${e instanceof Error ? e.message : String(e)}`);
     throw new DraftError('llm-unavailable');
