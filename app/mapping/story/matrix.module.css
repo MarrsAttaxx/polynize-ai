@@ -1,0 +1,348 @@
+/* Capability matrix, ported from the ATE deck (polynize.io/ate.html).
+
+   The deck hard-codes its own palette. Here every colour is derived from the three
+   brand tokens (--mint strong, --amber developing, --coral gap) via color-mix, so
+   the mid-2026 rebrand flows straight through and the legend on the page stays
+   truthful about what the colours mean. */
+
+.wrap {
+  width: 100%;
+  max-width: 1096px;
+  margin: 0 auto;
+  text-align: left;
+}
+
+.grid {
+  display: grid;
+  gap: 3px;
+  align-items: stretch;
+  min-width: 900px;
+}
+
+/* ---------- Header cells ---------- */
+.corner,
+.scn,
+.cap,
+.user,
+.cell {
+  opacity: 0;
+  transition: opacity 0.42s ease;
+}
+.on .corner,
+.on .scn,
+.on .cap,
+.on .user,
+.on .cell {
+  opacity: 1;
+}
+
+.corner {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 3px;
+  padding: 0 0 6px 2px;
+}
+.allUsers {
+  align-self: flex-start;
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  font-weight: 600;
+  color: var(--mint);
+  border: 1px solid color-mix(in srgb, var(--mint) 40%, transparent);
+  border-radius: 3px;
+  padding: 2px 8px;
+}
+.allSub { font-size: 9.5px; color: var(--text-3); }
+
+.scn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 4px 6px;
+}
+.scnTag {
+  font-size: 8px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-weight: 600;
+  color: var(--mint);
+  border: 1px solid color-mix(in srgb, var(--mint) 40%, transparent);
+  border-radius: 3px;
+  padding: 1px 7px;
+  white-space: nowrap;
+}
+.scnName {
+  font-size: 8.5px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  text-align: center;
+  line-height: 1.2;
+  font-weight: 600;
+}
+
+.cap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  font-size: 7px;
+  letter-spacing: 0;
+  text-transform: uppercase;
+  line-height: 1.15;
+  font-weight: 600;
+  border-radius: 3px;
+  padding: 3px 2px;
+  min-height: 24px;
+  /* Columns are only ~54px, so labels must wrap inside the chip rather than spill
+     over the neighbour. break-word (not anywhere) keeps whole words together and
+     splits only when a single word genuinely cannot fit. */
+  overflow: hidden;
+  overflow-wrap: break-word;
+}
+.analytic {
+  color: var(--amber);
+  background: color-mix(in srgb, var(--amber) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--amber) 35%, transparent);
+}
+.functional {
+  color: var(--mint);
+  background: color-mix(in srgb, var(--mint) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--mint) 35%, transparent);
+}
+.collaboration {
+  color: color-mix(in srgb, var(--mint) 70%, #ffffff);
+  background: color-mix(in srgb, var(--mint) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--mint) 28%, transparent);
+}
+
+/* ---------- User rows ---------- */
+.user {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 10px 0 2px;
+}
+.userHandle {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.userBar {
+  height: 3px;
+  border-radius: 2px;
+  background: var(--bg-deep);
+  overflow: hidden;
+}
+.userBar i {
+  display: block;
+  height: 100%;
+  border-radius: 2px;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--mint) 60%, transparent), var(--mint));
+}
+
+/* ---------- Cells ---------- */
+.cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 21px;
+  border-radius: 3px;
+  font-size: 9.5px;
+  font-weight: 600;
+  white-space: nowrap;
+  font-family: inherit;
+  border: 1px solid transparent;
+  cursor: pointer;
+  padding: 0;
+  transition: opacity 0.42s ease, filter 0.15s ease, transform 0.15s ease;
+}
+.cell:hover { filter: brightness(1.12); transform: translateY(-1px); }
+.cell:focus-visible {
+  outline: 2px solid var(--mint);
+  outline-offset: 2px;
+  transform: translateY(-1px);
+}
+.empty {
+  background: var(--bg-deep);
+  border: 1px solid var(--border-soft);
+  cursor: default;
+}
+.empty:hover { filter: none; transform: none; }
+
+/* Solid score cells */
+.score.t_g { background: var(--mint); color: #06231a; }
+.score.t_t { background: color-mix(in srgb, var(--mint) 80%, #0b3a2c); color: #062620; }
+.score.t_a { background: var(--amber); color: #2e2607; }
+.score.t_o { background: color-mix(in srgb, var(--amber) 58%, var(--coral)); color: #2c1605; }
+.score.t_r { background: var(--coral); color: #2a0d09; }
+
+/* Outlined uplift cells */
+.uplift.t_g {
+  border-color: color-mix(in srgb, var(--mint) 62%, transparent);
+  background: color-mix(in srgb, var(--mint) 11%, transparent);
+  color: var(--mint);
+}
+.uplift.t_t {
+  border-color: color-mix(in srgb, var(--mint) 50%, transparent);
+  background: color-mix(in srgb, var(--mint) 9%, transparent);
+  color: color-mix(in srgb, var(--mint) 88%, #ffffff);
+}
+.uplift.t_a {
+  border-color: color-mix(in srgb, var(--amber) 55%, transparent);
+  background: color-mix(in srgb, var(--amber) 10%, transparent);
+  color: var(--amber);
+}
+.uplift.t_o {
+  border-color: color-mix(in srgb, var(--amber) 40%, var(--coral));
+  background: color-mix(in srgb, var(--coral) 9%, transparent);
+  color: color-mix(in srgb, var(--amber) 55%, var(--coral));
+}
+.uplift.t_r {
+  border-color: color-mix(in srgb, var(--coral) 58%, transparent);
+  background: color-mix(in srgb, var(--coral) 10%, transparent);
+  color: var(--coral);
+}
+
+/* ---------- Cell detail ---------- */
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(5, 5, 9, 0.72);
+  backdrop-filter: blur(3px);
+}
+.modal {
+  position: relative;
+  width: 100%;
+  max-width: 460px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--surface);
+  padding: 28px 28px 24px;
+  text-align: left;
+  box-shadow: 0 40px 100px rgba(0, 0, 0, 0.55);
+}
+.close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  border: 1px solid var(--border-soft);
+  background: transparent;
+  color: var(--text-2);
+  font-size: 17px;
+  line-height: 1;
+  cursor: pointer;
+}
+.close:hover { color: var(--text); border-color: var(--border); }
+
+.mScnTag {
+  display: inline-block;
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-weight: 600;
+  color: var(--mint);
+  border: 1px solid color-mix(in srgb, var(--mint) 40%, transparent);
+  border-radius: 3px;
+  padding: 2px 8px;
+  margin-bottom: 10px;
+}
+.mScnName {
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  margin-bottom: 14px;
+}
+.mCap {
+  font-family: var(--font-space-grotesk), sans-serif;
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  margin: 0 0 4px;
+}
+.mWho { font-size: 13px; color: var(--text-2); margin-bottom: 22px; }
+
+.mStats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  padding: 16px 0;
+  border-top: 1px solid var(--border-soft);
+  border-bottom: 1px solid var(--border-soft);
+}
+.stat { display: flex; flex-direction: column; gap: 5px; }
+.statLabel {
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+.statValue {
+  font-family: var(--font-space-grotesk), sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+}
+.statAccent { color: var(--mint); font-size: 19px; }
+
+.mTrajLabel {
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  margin: 18px 0 10px;
+}
+.mTraj { display: flex; flex-direction: column; gap: 7px; }
+.mTrajRow { display: grid; grid-template-columns: 14px 1fr 40px; align-items: center; gap: 10px; }
+.mTrajN { font-size: 10px; color: var(--text-3); font-variant-numeric: tabular-nums; }
+.mTrajBar { height: 6px; border-radius: 3px; background: var(--bg-deep); overflow: hidden; }
+.mTrajBar i {
+  display: block;
+  height: 100%;
+  border-radius: 3px;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--mint) 45%, transparent), var(--mint));
+}
+.mTrajV {
+  font-size: 11px;
+  color: var(--text-2);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.mNote { margin: 20px 0 0; font-size: 11.5px; color: var(--text-3); }
+
+/* ---------- Motion + responsive ---------- */
+@media (prefers-reduced-motion: reduce) {
+  .corner,
+  .scn,
+  .cap,
+  .user,
+  .cell {
+    transition: none;
+  }
+  .cell:hover { transform: none; }
+}
+
+@media (max-width: 1000px) {
+  /* Swipe the map rather than shrink the cells into texture. */
+  .wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+}
+@media (max-width: 680px) {
+  .modal { padding: 24px 20px 20px; }
+  .mStats { grid-template-columns: repeat(2, 1fr); gap: 14px; }
+}

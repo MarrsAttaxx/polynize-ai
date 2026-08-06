@@ -76,6 +76,17 @@ export const storyBeats: Beat[] = [
  */
 export const storyContent: MappingContent = {
   ...mappingContent,
+  /**
+   * The story page renders the matrix as live DOM rather than the screenshot, and
+   * its figures are synthetic, so the parent's "A real capability map" caption would
+   * be false here. Overridden rather than edited upstream, because /mapping still
+   * ships the genuine screenshot and that caption is true there.
+   */
+  matrixImage: {
+    ...mappingContent.matrixImage,
+    caption:
+      'An example capability map. Every person against every part of the work, scored and coloured, with the gaps showing up plainly. Select any cell to see how that capability was read. The figures shown are illustrative.',
+  },
   problem: {
     h2: 'You do not know where you are, or what good looks like.',
     paras: [

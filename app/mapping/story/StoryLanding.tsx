@@ -1,9 +1,9 @@
 import Link from 'next/link';
-import Image from 'next/image';
 import { DraftingGrid } from '../../_components/DraftingGrid';
 import { TrackedLink } from '../../_components/TrackedLink';
 import { SiteFooter } from '../../_components/SiteFooter';
 import { SiloGlyph, StageGlyph } from '../_icons';
+import { CapabilityMatrix } from './CapabilityMatrix';
 import { BOOKING_URL, type MappingContent } from '../content';
 import type { Beat } from './content';
 import s from './story.module.css';
@@ -107,16 +107,7 @@ export function StoryLanding({
             ))}
           </div>
           <figure className={`${s.matrixFigure} ${s.riseScale}`}>
-            <div className={s.matrixScroll}>
-              <Image
-                className={s.matrixImg}
-                src={c.matrixImage.src}
-                alt={c.matrixImage.alt}
-                width={c.matrixImage.width}
-                height={c.matrixImage.height}
-                sizes="(max-width: 680px) 900px, 1096px"
-              />
-            </div>
+            <CapabilityMatrix />
             <div className={s.legend}>
               <span className={s.legendItem}>
                 <i className={`${s.legendDot} ${s.dotMint}`} />Strong
