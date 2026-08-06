@@ -306,19 +306,26 @@
    NOTE: never put pathLength on these. pathLength rescales every distance-along-path
    value, which silently converts the dash pattern back into a solid line. That bug is
    why this route rendered solid for its first two versions. */
-.routeSeg {
+/* Dashes, not dots: a plotted route on a chart. Base and trail MUST share the same
+   dash pattern, cap and phase, because the trail is the same geometry drawn on top and
+   revealed by a growing clip. Any difference and the two would visibly disagree.
+   NOTE: never put pathLength on these. It rescales distance-along-path values and
+   silently turns the dash pattern back into a solid line. */
+.routeSeg,
+.routeTrail {
   fill: none;
-  stroke: color-mix(in srgb, var(--mint) 22%, transparent);
   stroke-width: 3.6;
-  stroke-linecap: round;
-  stroke-dasharray: 0.01 10;
-  transition: stroke 0.55s ease, stroke-width 0.55s ease;
+  stroke-linecap: butt;
+  stroke-dasharray: 15 10;
 }
-/* Travelled. Brighter and slightly heavier, so the contrast with the road ahead reads
-   without needing a second colour. */
-.routeSegOn {
+/* The road ahead. */
+.routeSeg {
+  stroke: color-mix(in srgb, var(--mint) 20%, transparent);
+}
+/* The trail behind you. Revealed by the clip rect in StoryPath, which grows with
+   scroll, so the line draws itself as the reader descends. */
+.routeTrail {
   stroke: var(--mint);
-  stroke-width: 4.4;
 }
 /* Grouping hook for a waypoint. .wpOn is toggled on this by StoryPath. */
 .wp { pointer-events: none; }
@@ -377,43 +384,7 @@
 .sheetTicksTop { top: 0; }
 .sheetTicksBottom { bottom: 0; transform: scaleY(-1); }
 
-/* ---------- Compass ----------
-   Sits with the route. The needle is off north while the reader is being told they are
-   lost, and swings to north when the route reaches the turn. It never spins and never
-   loops: one decisive movement is the payoff, a rotating needle is a toy. */
-.compass {
-  position: sticky;
-  top: 46vh;
-  margin-left: 34px;
-  width: 64px;
-  height: 64px;
-  opacity: 0.85;
-}
-.compRing { fill: none; stroke: color-mix(in srgb, var(--mint) 26%, transparent); stroke-width: 1; }
-.compRingInner { fill: none; stroke: color-mix(in srgb, var(--mint) 14%, transparent); stroke-width: 1; }
-.compTick { stroke: color-mix(in srgb, var(--mint) 45%, transparent); stroke-width: 1.4; stroke-linecap: round; }
-.compTickMinor { stroke: color-mix(in srgb, var(--mint) 22%, transparent); stroke-width: 1; stroke-linecap: round; }
-.compN {
-  fill: color-mix(in srgb, var(--mint) 70%, transparent);
-  font-family: var(--font-inter), monospace;
-  font-size: 7px;
-  letter-spacing: 0.1em;
-  text-anchor: middle;
-}
-.compHub { fill: var(--bg); stroke: color-mix(in srgb, var(--mint) 40%, transparent); stroke-width: 1; }
-.needleN { fill: var(--mint); }
-.needleS { fill: color-mix(in srgb, var(--text-3) 45%, transparent); }
-/* Off north until the route arrives. The rotation lives on the group so the two halves
-   stay rigid. Default here is the LOST state, which is also the no-JS state; that is
-   acceptable because a compass off north is still a legible compass. */
-.needle {
-  transform: rotate(-34deg);
-  transform-origin: 32px 32px;
-  transition: transform 1.15s cubic-bezier(0.16, 1, 0.3, 1);
-}
-.story[data-reached='2'] .needle { transform: rotate(-19deg); }
-.story[data-reached='3'] .needle { transform: rotate(-9deg); }
-.story[data-reached='4'] .needle { transform: rotate(0deg); }
+
 
 /* ---------- The three inputs ---------- */
 .inputs {
@@ -748,14 +719,12 @@
    deleting it on every laptop and phone would delete the idea. */
 @media (max-width: 1188px) {
   .rail { left: 50%; transform: translateX(-50%); opacity: 0.3; }
-  .compass { display: none; }
 }
 @media (max-width: 680px) {
   .rail { opacity: 0.22; }
 }
 @media (prefers-reduced-motion: reduce) {
-  /* Arrived, not lost: no swing to watch, and no hachure to sit through. */
-  .needle { transform: rotate(0deg); transition: none; }
+  /* Route fully drawn, no hachure to sit through. */
   .routeSeg { transition: none; }
   .story::before { transition: none; opacity: 0; }
 }
