@@ -5,6 +5,7 @@ import { SiteFooter } from '../../_components/SiteFooter';
 import { SiloGlyph, StageGlyph } from '../_icons';
 import { CapabilityMatrix } from './CapabilityMatrix';
 import { StoryPath } from './StoryPath';
+import { StoryMotion } from './StoryMotion';
 import { MapFrame } from './MapFurniture';
 import { ArtefactGlyph } from './ArtefactGlyph';
 import { BOOKING_URL, type MappingContent } from '../content';
@@ -37,6 +38,7 @@ export function StoryLanding({
       <DraftingGrid />
       {/* Outside .page so the fixed neatline is never affected by its overflow clip. */}
       <MapFrame />
+      <StoryMotion />
       <div className={s.page}>
         <StoryNav cta={c.finalCta.button} />
 

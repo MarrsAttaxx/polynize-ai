@@ -2,11 +2,15 @@
    Standalone from mapping.module.css on purpose: this is an experiment, and nothing
    here can affect the live /mapping page. Fold the two together if it wins.
 
-   MOTION POLICY (see the block at the bottom of this file):
-   - Pure CSS scroll-driven animations, no JavaScript.
-   - Gated behind @supports, so browsers without support render everything static.
-   - Disabled entirely under prefers-reduced-motion.
-   - Nothing is hidden by default, so content is never dependent on the animation. */
+   MOTION POLICY:
+   - Motion is owned by GSAP, in StoryMotion.tsx and StoryPath.tsx. It used to be CSS
+     scroll-driven animations behind @supports, which only fired for browsers with
+     animation-timeline and left a large minority of readers on a static page.
+   - Reveals use gsap.from(), so the element's stylesheet value IS the finished state.
+     No script, no GSAP, or a thrown error all leave the page fully visible.
+   - Nothing here may set opacity: 0 as a default. That is how the matrix once managed
+     to render blank with 200 invisible tabbable buttons.
+   - Everything is disabled under prefers-reduced-motion. */
 
 .page {
   position: relative;
@@ -322,10 +326,52 @@
 .routeSeg {
   stroke: color-mix(in srgb, var(--mint) 20%, transparent);
 }
-/* The trail behind you. Revealed by the clip rect in StoryPath, which grows with
-   scroll, so the line draws itself as the reader descends. */
+/* The trail behind you. Revealed by the clip rect in StoryPath, which GSAP scrubs
+   against scroll, so the line draws itself as the reader descends. */
 .routeTrail {
   stroke: var(--mint);
+}
+/* Glow, per the reference render. On the group rather than each path so the filter is
+   rasterised once instead of six times. */
+.trailGroup {
+  filter: drop-shadow(0 0 5px color-mix(in srgb, var(--mint) 55%, transparent))
+    drop-shadow(0 0 14px color-mix(in srgb, var(--mint) 22%, transparent));
+}
+
+/* Start point: a surveyed departure marker. */
+.startMark circle {
+  fill: none;
+  stroke: var(--mint);
+  stroke-width: 1.6;
+}
+.startMark .startCore {
+  fill: var(--mint);
+  stroke: none;
+}
+.startMark {
+  filter: drop-shadow(0 0 6px color-mix(in srgb, var(--mint) 45%, transparent));
+}
+
+/* X marks the destination. Planted on the turn beat, one section above the real map. */
+.xMark line {
+  stroke: var(--mint);
+  stroke-width: 4;
+  stroke-linecap: round;
+}
+.xMark {
+  filter: drop-shadow(0 0 8px color-mix(in srgb, var(--mint) 55%, transparent));
+}
+
+/* Survey scale down the edge of the rail. */
+.scaleRule line {
+  stroke: color-mix(in srgb, var(--mint) 26%, transparent);
+  stroke-width: 1;
+}
+.scaleNum {
+  fill: color-mix(in srgb, var(--text-3) 70%, transparent);
+  font-family: var(--font-inter), monospace;
+  font-size: 8px;
+  letter-spacing: 0.08em;
 }
 /* Grouping hook for a waypoint. .wpOn is toggled on this by StoryPath. */
 .wp { pointer-events: none; }
@@ -694,23 +740,10 @@
   to { opacity: 1; transform: none; }
 }
 
-@supports (animation-timeline: view()) {
-  @media (prefers-reduced-motion: no-preference) {
-    .rise,
-    .riseLate,
-    .riseScale {
-      animation: riseIn linear both;
-      animation-timeline: view();
-    }
-    .rise { animation-range: entry 6% entry 56%; }
-    /* Staggered: supporting text and panels land just after their headline. */
-    .riseLate { animation-range: entry 16% entry 72%; }
-    .riseScale {
-      animation-name: riseScaleIn;
-      animation-range: entry 4% entry 60%;
-    }
-  }
-}
+/* Reveals are driven by GSAP now (see StoryMotion.tsx). The old
+   @supports (animation-timeline: view()) block lived here and only fired for browsers
+   with scroll-driven CSS, which left a large minority of readers on a static page. */
+
 
 /* ---------- Responsive ---------- */
 /* Zero-overlap needs 860px of copy + 2 x 132px rail + 64px page padding = 1188px.

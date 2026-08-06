@@ -1,46 +1,44 @@
 'use client';
 
-import { useEffect, useId, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import gsap from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import s from './story.module.css';
 
 /**
- * The route: a plotted survey line down the left margin that DRAWS ITSELF as you
- * scroll, waypoint by waypoint.
+ * The plotted route: a survey chart rail that draws itself as you descend.
  *
- * Two layers. Underneath, the full route in faint dashes, so the road ahead is always
- * visible and the page still reads with no JavaScript at all. On top, the same
- * geometry in bright mint, clipped by a rectangle whose height tracks scroll position.
- * Growing a clip is how you can have BOTH a dash pattern and a progressive reveal:
- * stroke-dasharray is already spent on the dashes, so it cannot also do the drawing.
+ * Reference is Marrs's treasure-chart render: a start marker, a thick glowing dashed
+ * path, terrain, a scale ruler, and an X at the destination. Rendered in brand mint on
+ * our own dark ground rather than the reference's navy.
  *
- * Chaos to order is carried by the geometry itself. The route scribbles beside "you
- * are lost" and runs dead straight by the turn, so the argument survives a screenshot,
- * a reduced-motion reader and a failed script. Measured lateral wander per segment at
- * a 900px viewport: 62, 42, 23, 8, 0 px.
+ * WHY GSAP. This was hand-rolled twice, first on a raw scroll listener and then on
+ * IntersectionObserver, and both were either jittery or lost the drawing effect
+ * entirely. ScrollTrigger's `scrub` interpolates between frames, which is the
+ * difference between a line that snaps and one that feels drawn.
  *
- * Driven by a scroll listener rather than IntersectionObserver, deliberately. The
- * continuous draw is the thing that makes it feel alive; discrete per-beat stepping
- * was tried and it lost the whole effect.
+ * FAIL-SAFE. The faint full route is server-rendered and always visible, so the rail
+ * exists with no JavaScript at all. GSAP only ever adds the bright trail on top. And
+ * every text reveal uses gsap.from(), whose no-JS state is the FINAL state, so nothing
+ * on this page is hidden waiting for a script.
  */
 
-const W = 132; // rail width; must match .rail in story.module.css
+gsap.registerPlugin(ScrollTrigger);
+
+const W = 132;
 const CX = W / 2;
 const AMP_MAX = 46;
 
 /** Fixed wander table. Deterministic: a random value here is a hydration mismatch. */
 const SCRIBBLE = [1, -0.86, 0.58, -1, 0.42, -0.72, 0.94, -0.34, 0.66, -0.95, 0.5, -0.62];
 
-/** Wander decays to nothing by the final segment. */
-function decayFor(i: number, total: number) {
-  if (total <= 1) return 0;
-  return Math.pow(Math.max(0, 1 - i / (total - 1)), 1.5);
-}
+const decayFor = (i: number, total: number) =>
+  total <= 1 ? 0 : Math.pow(Math.max(0, 1 - i / (total - 1)), 1.5);
 
 /**
- * One segment, centreline to centreline so joins are invisible and waypoints sit on
- * the axis. Amplitude is proportional to segment height, because an absolute value
- * looks right at 400px and vanishes at the real 800px. A quadratic deviates by HALF
- * its control offset, hence the 2x.
+ * One segment, centreline to centreline. Amplitude scales with segment height so the
+ * wander holds its character from 375px to 1920px; a quadratic deviates by half its
+ * control offset, hence the 2x.
  */
 function segmentPath(y0: number, y1: number, decay: number, phase: number) {
   const h = Math.max(1, y1 - y0);
@@ -51,8 +49,7 @@ function segmentPath(y0: number, y1: number, decay: number, phase: number) {
   for (let i = 1; i <= wiggles; i++) {
     const y = y0 + i * step;
     const swing = SCRIBBLE[(phase + i) % SCRIBBLE.length];
-    const cx = CX + swing * amp * 2;
-    d += ` Q ${cx.toFixed(1)} ${(y - step / 2).toFixed(1)}, ${CX} ${y.toFixed(1)}`;
+    d += ` Q ${(CX + swing * amp * 2).toFixed(1)} ${(y - step / 2).toFixed(1)}, ${CX} ${y.toFixed(1)}`;
   }
   return d;
 }
@@ -61,12 +58,11 @@ export function StoryPath({ beatCount }: { beatCount: number }) {
   const hostRef = useRef<HTMLDivElement | null>(null);
   const clipRef = useRef<SVGRectElement | null>(null);
   const wpRefs = useRef<(SVGGElement | null)[]>([]);
+  const xRef = useRef<SVGGElement | null>(null);
   const [height, setHeight] = useState(0);
   const [waypoints, setWaypoints] = useState<number[]>([]);
-  const rawId = useId();
-  const clipId = `route-clip-${rawId.replace(/:/g, '')}`;
 
-  // Measure the section and where each beat sits inside it.
+  // Measure the section and each beat's centre.
   useEffect(() => {
     const host = hostRef.current;
     const section = host?.parentElement;
@@ -85,62 +81,70 @@ export function StoryPath({ beatCount }: { beatCount: number }) {
     };
 
     measure();
-    const ro = new ResizeObserver(measure);
+    const ro = new ResizeObserver(() => {
+      measure();
+      ScrollTrigger.refresh();
+    });
     ro.observe(section);
     (document as Document & { fonts?: FontFaceSet }).fonts?.ready.then(measure).catch(() => {});
     return () => ro.disconnect();
   }, [beatCount]);
 
-  // Draw the trail from scroll position.
+  // Draw the trail, light the waypoints, plant the X.
   useEffect(() => {
     const host = hostRef.current;
     const section = host?.parentElement;
-    const clip = clipRef.current;
-    if (!section || !clip || !height || !waypoints.length) return;
+    if (!section || !height || !waypoints.length) return;
 
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      clip.setAttribute('height', String(height));
-      wpRefs.current.forEach((g) => g?.classList.add(s.wpOn));
-      section.setAttribute('data-reached', String(waypoints.length - 1));
-      return;
-    }
+    const ctx = gsap.context(() => {
+      const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-    let frame = 0;
-    let lastReached = -1;
-
-    const update = () => {
-      frame = 0;
-      const r = section.getBoundingClientRect();
-      // 0 as the section top passes the middle of the viewport, 1 at its bottom.
-      const p = Math.max(0, Math.min(1, (window.innerHeight * 0.5 - r.top) / Math.max(1, r.height)));
-      const travelled = p * height;
-      clip.setAttribute('height', String(travelled));
-
-      let reached = -1;
-      for (let i = 0; i < waypoints.length; i++) {
-        const on = waypoints[i] <= travelled;
-        wpRefs.current[i]?.classList.toggle(s.wpOn, on);
-        if (on) reached = i;
+      if (reduce) {
+        gsap.set(clipRef.current, { attr: { height } });
+        wpRefs.current.forEach((g) => g && g.classList.add(s.wpOn));
+        gsap.set(xRef.current, { opacity: 1, scale: 1 });
+        section.setAttribute('data-reached', String(waypoints.length - 1));
+        return;
       }
-      // Monotonic: the hachure should not come back if you scroll up.
-      if (reached > lastReached) {
-        lastReached = reached;
-        section.setAttribute('data-reached', String(reached));
-      }
-    };
 
-    const onScroll = () => {
-      if (!frame) frame = requestAnimationFrame(update);
-    };
+      // The route inks in, scrubbed against scroll. scrub: 0.7 lets it lag slightly
+      // behind the wheel, which is what makes it feel drawn rather than dragged.
+      gsap.to(clipRef.current, {
+        attr: { height },
+        ease: 'none',
+        scrollTrigger: {
+          trigger: section,
+          start: 'top 55%',
+          end: 'bottom 65%',
+          scrub: 0.7,
+          onUpdate: (self) => {
+            const travelled = self.progress * height;
+            let reached = -1;
+            waypoints.forEach((y, i) => {
+              const on = y <= travelled;
+              wpRefs.current[i]?.classList.toggle(s.wpOn, on);
+              if (on) reached = i;
+            });
+            section.setAttribute('data-reached', String(reached));
+          },
+        },
+      });
 
-    update();
-    window.addEventListener('scroll', onScroll, { passive: true });
-    window.addEventListener('resize', onScroll);
-    return () => {
-      window.removeEventListener('scroll', onScroll);
-      window.removeEventListener('resize', onScroll);
-      if (frame) cancelAnimationFrame(frame);
-    };
+      // The destination lands on the turn beat, not at the very bottom.
+      gsap.fromTo(
+        xRef.current,
+        { opacity: 0, scale: 0.4, transformOrigin: 'center' },
+        {
+          opacity: 1,
+          scale: 1,
+          duration: 0.5,
+          ease: 'back.out(2)',
+          scrollTrigger: { trigger: section, start: 'bottom 78%', toggleActions: 'play none none reverse' },
+        }
+      );
+    }, hostRef);
+
+    return () => ctx.revert();
   }, [height, waypoints]);
 
   if (!height || !waypoints.length) {
@@ -153,6 +157,16 @@ export function StoryPath({ beatCount }: { beatCount: number }) {
     .slice(0, -1)
     .map((y0, i) => segmentPath(y0, nodes[i + 1], decayFor(i, segCount), i * 3));
 
+  // Survey scale down the edge of the rail, as in the reference render.
+  const ticks: { y: number; major: boolean; label?: string }[] = [];
+  for (let y = 60, n = 1; y < height - 40; y += 42, n++) {
+    const major = n % 5 === 0;
+    ticks.push({ y, major, label: major ? String(n * 2).padStart(2, '0') : undefined });
+  }
+
+  const startY = Math.max(10, nodes[0] + 6);
+  const endY = height - 8;
+
   return (
     <div className={s.rail} ref={hostRef} aria-hidden="true">
       <svg
@@ -164,21 +178,41 @@ export function StoryPath({ beatCount }: { beatCount: number }) {
         focusable="false"
       >
         <defs>
-          <clipPath id={clipId}>
-            {/* Height is written on scroll. Starts at 0 so the trail draws in. */}
+          <clipPath id="pn-route-clip">
             <rect ref={clipRef} x="0" y="0" width={W} height="0" />
           </clipPath>
         </defs>
 
-        {/* The road ahead. Always rendered, so the route exists without any script.
-            NOTE: never add pathLength here. It rescales distance-along-path values and
-            silently turns the dash pattern back into a solid line. */}
+        {/* Scale ruler */}
+        <g className={s.scaleRule}>
+          <line x1="10" y1={40} x2="10" y2={height - 30} />
+          {ticks.map((t, i) => (
+            <g key={i}>
+              <line x1="10" y1={t.y} x2={t.major ? 20 : 15} y2={t.y} />
+              {t.label && (
+                <text className={s.scaleNum} x="24" y={t.y + 3}>
+                  {t.label}
+                </text>
+              )}
+            </g>
+          ))}
+        </g>
+
+        {/* Start marker: a surveyed point of departure */}
+        <g className={s.startMark}>
+          <circle cx={CX} cy={startY} r="9" />
+          <circle cx={CX} cy={startY} r="3.5" className={s.startCore} />
+        </g>
+
+        {/* The road ahead. Always rendered, so the route exists with no script.
+            Never add pathLength: it rescales distance-along-path and silently turns
+            the dash pattern back into a solid line. */}
         {paths.map((d, i) => (
           <path key={`base-${i}`} className={s.routeSeg} d={d} />
         ))}
 
         {/* The trail behind you, revealed by the growing clip. */}
-        <g clipPath={`url(#${clipId})`}>
+        <g clipPath="url(#pn-route-clip)" className={s.trailGroup}>
           {paths.map((d, i) => (
             <path key={`trail-${i}`} className={s.routeTrail} d={d} />
           ))}
@@ -199,6 +233,12 @@ export function StoryPath({ beatCount }: { beatCount: number }) {
             </text>
           </g>
         ))}
+
+        {/* X marks the destination: the capability map, one section below. */}
+        <g className={s.xMark} ref={xRef}>
+          <line x1={CX - 9} y1={endY - 9} x2={CX + 9} y2={endY + 9} />
+          <line x1={CX + 9} y1={endY - 9} x2={CX - 9} y2={endY + 9} />
+        </g>
       </svg>
     </div>
   );
