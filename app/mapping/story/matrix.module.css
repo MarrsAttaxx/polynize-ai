@@ -19,20 +19,34 @@
   min-width: 900px;
 }
 
-/* ---------- Header cells ---------- */
+/* ---------- Header cells ----------
+   VISIBLE BY DEFAULT, deliberately. The previous version set opacity: 0 here
+   unconditionally and relied on a React state flip driven by IntersectionObserver to
+   reveal it, which meant that with scripts off, or in any environment where the
+   observer never delivers a callback, the payoff section of the page rendered blank
+   and a keyboard user could tab into two hundred invisible buttons.
+   Now the hidden state only exists once the component has armed itself, and a safety
+   timer in CapabilityMatrix clears it even if the observer never fires. */
 .corner,
 .scn,
 .cap,
 .user,
 .cell {
-  opacity: 0;
   transition: opacity 0.42s ease;
 }
-.on .corner,
-.on .scn,
-.on .cap,
-.on .user,
-.on .cell {
+.armed:not(.on) .corner,
+.armed:not(.on) .scn,
+.armed:not(.on) .cap,
+.armed:not(.on) .user,
+.armed:not(.on) .cell {
+  opacity: 0;
+}
+/* Never hold a focused control invisible. */
+.grid:focus-within .corner,
+.grid:focus-within .scn,
+.grid:focus-within .cap,
+.grid:focus-within .user,
+.grid:focus-within .cell {
   opacity: 1;
 }
 

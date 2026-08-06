@@ -40,23 +40,42 @@ const INPUTS: Silo[] = [
   { kind: 'technology', label: 'Technology', note: 'The tools and agents already in play.' },
 ];
 
+/**
+ * The five beats.
+ *
+ * Each one has a job: 1 condition, 2 cause, 3 diagnosis, 4 cost, 5 turn. The arc has
+ * to escalate and then pivot, so nothing here is interchangeable.
+ *
+ * DECISIONS THAT SHOULD NOT BE QUIETLY UNDONE:
+ * - Beat 1 uses the language of being lost on purpose. It is what licenses the route
+ *   beside it to scribble; without the word "lost" that animation is decoration.
+ * - Beat 2 is restored verbatim from commit 6c35c80. "Adoption is not capability" sat
+ *   here briefly and was rejected by Marrs on 2026-08-06 in favour of this line. Do
+ *   not reinstate it. Its best sentence, "you would not measure a chef by the gas they
+ *   burn", went with it and is worth finding another home for.
+ * - Beat 4 says "guess", not "opinion". Marrs's correction, and he is right: an opinion
+ *   is a position you can defend, a guess is what is left when you have no information.
+ * - Beat 5 gets no kicker and no sub. Kickers render in mint and the turn is the only
+ *   mint line in the arc, so a marker above it would spend that moment twice.
+ */
 export const storyBeats: Beat[] = [
   {
     kicker: 'The problem',
-    line: 'You are buying AI faster than you can tell who is any good at it.',
+    line: 'You are lost on your own AI journey.',
+    sub: 'Licences bought, pilots running, budget committed. None of it adds up to a direction.',
   },
   {
-    line: 'Adoption is not capability.',
-    sub: 'Seat counts and token spend tell you who logged in. They tell you nothing about who is producing anything worth having. You would not measure a chef by the gas they burn.',
+    line: 'The most ambiguous tool your organisation has ever bought.',
+    sub: 'Capable of going almost anywhere, which means nobody can say where it will actually pay.',
   },
   {
-    kicker: 'What you cannot see',
+    kicker: 'No landmarks',
     line: 'You do not know where you are, or what good looks like.',
-    sub: 'Almost no organisation holds real data on what its people can genuinely do with these tools, and fewer still hold a benchmark for what good would look like.',
+    sub: 'No real data on what your people can do with these tools. Nothing to measure it against.',
   },
   {
-    line: 'So every investment decision is an opinion.',
-    sub: 'Which licences to renew, which teams to back, where the next dollar goes. Without a position and without a destination, the call goes to whoever is most confident in the room.',
+    line: 'So every investment decision is a guess.',
+    sub: 'Which licences to renew, which teams to back, where the next dollar goes. The call goes to whoever is most confident in the room.',
   },
   {
     line: 'You cannot go where you need to go without a map.',

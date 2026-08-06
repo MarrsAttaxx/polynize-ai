@@ -16,9 +16,17 @@
   color: var(--text);
   font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
   --bg-deep: #0f0f17;
+  /* No overflow clip here on purpose. Clipping on .page would crop the full-bleed
+     pseudo-elements below back to the 1096px content box, which is the exact problem
+     they exist to solve. The scrollbar overshoot is absorbed by `overflow-x: clip` on
+     body in globals.css instead. */
 }
 
-/* ---------- Nav ---------- */
+/* ---------- Nav ----------
+   The bar itself stays in the centred column so its contents align with the content,
+   but its background is painted by a full-bleed pseudo-element. Previously the
+   background was on .nav, which is inside a 1096px box, so on a wide screen the page
+   scrolled visibly behind the top corners. */
 .nav {
   position: sticky;
   top: 0;
@@ -27,8 +35,19 @@
   align-items: center;
   justify-content: space-between;
   padding: 18px 0;
-  background: linear-gradient(var(--bg) 72%, rgba(10, 10, 15, 0));
-  backdrop-filter: blur(2px);
+}
+.nav::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: calc(50% - 50vw);
+  width: 100vw;
+  z-index: -1;
+  background: var(--bg);
+  opacity: 0.78;
+  border-bottom: 1px solid transparent;
+  backdrop-filter: blur(6px);
 }
 .wordmark {
   display: inline-flex;
@@ -78,10 +97,31 @@
 .ctaRow { display: flex; gap: 14px; flex-wrap: wrap; justify-content: center; margin-top: 30px; }
 
 /* ---------- Section scaffolding ---------- */
+/* Section boundaries are full-bleed scale rules rather than a hairline that stops at
+   the content box. Same fix as the nav, applied at every boundary: the page was
+   reproducing "boxed to the centre" seven more times below the header. */
 .section {
   padding: 68px 0;
-  border-top: 1px solid var(--border-soft);
   text-align: center;
+  position: relative;
+}
+.section::before,
+.story::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: calc(50% - 50vw);
+  width: 100vw;
+  height: 5px;
+  pointer-events: none;
+  background:
+    linear-gradient(var(--border-soft), var(--border-soft)) top left / 100% 1px no-repeat,
+    repeating-linear-gradient(
+        to right,
+        color-mix(in srgb, var(--mint) 16%, transparent) 0 1px,
+        transparent 1px 64px
+      )
+      top left / 100% 5px no-repeat;
 }
 .sectionHead { max-width: 780px; margin: 0 auto 34px; }
 .eyebrow {
@@ -156,7 +196,8 @@
 .videoCaption { font-size: 13px; color: var(--text-3); line-height: 1.5; margin: 0; max-width: 520px; text-align: left; }
 
 /* ---------- The story: one thought per screen ---------- */
-.story { border-top: 1px solid var(--border-soft); position: relative; }
+/* border-top removed: .story::after above draws the full-bleed rule instead. */
+.story { position: relative; }
 .beat {
   min-height: 78vh;
   display: flex;
@@ -165,7 +206,36 @@
   justify-content: center;
   text-align: center;
   padding: 48px 0;
+  /* .rail is positioned and .beat was not, so the route painted over the copy. */
+  position: relative;
+  z-index: 1;
 }
+
+/* Unsurveyed ground: hachure behind the beats that thins out as the route locates you.
+   Default is ZERO, i.e. the clean surveyed state. The chaos only ever appears once
+   StoryPath has written data-reached, so no-JS, reduced-motion and an observer that
+   never delivers all land on a legible page rather than a smudged one. */
+.story::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.9s ease;
+  background: repeating-linear-gradient(
+    45deg,
+    color-mix(in srgb, var(--text-3) 22%, transparent) 0 1px,
+    transparent 1px 10px
+  );
+  -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 26%, transparent 78%);
+  mask-image: linear-gradient(to bottom, #000 0%, #000 26%, transparent 78%);
+}
+.story[data-reached='0']::before { opacity: 0.8; }
+.story[data-reached='1']::before { opacity: 0.55; }
+.story[data-reached='2']::before { opacity: 0.32; }
+.story[data-reached='3']::before { opacity: 0.14; }
+.story[data-reached='4']::before { opacity: 0; }
 /* Chapter marker, not a label. It has to be readable at scrolling speed, so it is
    set at heading scale with rules either side rather than as a tiny eyebrow. */
 .kicker {
@@ -224,24 +294,31 @@
   left: 0;
   top: 0;
   bottom: 0;
-  width: 100px;
+  width: 132px;
   pointer-events: none;
+  z-index: 0;
 }
 .railSvg { display: block; overflow: visible; }
-.routeBase {
+
+/* Genuinely dotted. A zero-length dash with a round cap paints a circle of diameter
+   stroke-width, so 0.01 on a 9px pitch gives 3px dots. Use 0.01 rather than a literal
+   0, which some engines refuse to rasterise.
+   NOTE: never put pathLength on these. pathLength rescales every distance-along-path
+   value, which silently converts the dash pattern back into a solid line. That bug is
+   why this route rendered solid for its first two versions. */
+.routeSeg {
   fill: none;
-  stroke: color-mix(in srgb, var(--mint) 20%, transparent);
-  stroke-width: 1.5;
-  stroke-dasharray: 4 7;
+  stroke: color-mix(in srgb, var(--mint) 22%, transparent);
+  stroke-width: 3.6;
   stroke-linecap: round;
+  stroke-dasharray: 0.01 10;
+  transition: stroke 0.55s ease, stroke-width 0.55s ease;
 }
-.routeTrail {
-  fill: none;
+/* Travelled. Brighter and slightly heavier, so the contrast with the road ahead reads
+   without needing a second colour. */
+.routeSegOn {
   stroke: var(--mint);
-  stroke-width: 1.8;
-  stroke-linecap: round;
-  opacity: 0.9;
-  transition: stroke-dashoffset 0.12s linear;
+  stroke-width: 4.4;
 }
 /* Grouping hook for a waypoint. .wpOn is toggled on this by StoryPath. */
 .wp { pointer-events: none; }
@@ -269,6 +346,74 @@
 .wpOn .wpDot { fill: var(--mint); stroke: var(--mint); }
 .wpOn .wpHalo { opacity: 1; }
 .wpOn .wpNum { fill: var(--mint); opacity: 1; }
+
+/* ---------- The sheet: neatline and graticule ----------
+   The cheapest and strongest "this is a chart" signal available, and it answers "fill
+   the screen" without moving the copy off centre. Pure CSS on one fixed, aria-hidden
+   div. No SVG, no filter, no JS, no motion, so it is identical with scripts off. */
+/* Class doubled to raise specificity. app/tactile.css:171 sets
+   `body[data-depth="tactile"] > * { position: relative }`, which outranks a single
+   class and silently turned this fixed overlay into a relative box 14px wide of the
+   viewport, producing a horizontal scrollbar. */
+.sheet.sheet {
+  position: fixed;
+  inset: 14px;
+  z-index: 1;
+  pointer-events: none;
+  border: 1px solid color-mix(in srgb, var(--mint) 11%, transparent);
+  border-radius: 2px;
+}
+.sheetTicks {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 6px;
+  background-image: repeating-linear-gradient(
+    to right,
+    color-mix(in srgb, var(--mint) 20%, transparent) 0 1px,
+    transparent 1px 64px
+  );
+}
+.sheetTicksTop { top: 0; }
+.sheetTicksBottom { bottom: 0; transform: scaleY(-1); }
+
+/* ---------- Compass ----------
+   Sits with the route. The needle is off north while the reader is being told they are
+   lost, and swings to north when the route reaches the turn. It never spins and never
+   loops: one decisive movement is the payoff, a rotating needle is a toy. */
+.compass {
+  position: sticky;
+  top: 46vh;
+  margin-left: 34px;
+  width: 64px;
+  height: 64px;
+  opacity: 0.85;
+}
+.compRing { fill: none; stroke: color-mix(in srgb, var(--mint) 26%, transparent); stroke-width: 1; }
+.compRingInner { fill: none; stroke: color-mix(in srgb, var(--mint) 14%, transparent); stroke-width: 1; }
+.compTick { stroke: color-mix(in srgb, var(--mint) 45%, transparent); stroke-width: 1.4; stroke-linecap: round; }
+.compTickMinor { stroke: color-mix(in srgb, var(--mint) 22%, transparent); stroke-width: 1; stroke-linecap: round; }
+.compN {
+  fill: color-mix(in srgb, var(--mint) 70%, transparent);
+  font-family: var(--font-inter), monospace;
+  font-size: 7px;
+  letter-spacing: 0.1em;
+  text-anchor: middle;
+}
+.compHub { fill: var(--bg); stroke: color-mix(in srgb, var(--mint) 40%, transparent); stroke-width: 1; }
+.needleN { fill: var(--mint); }
+.needleS { fill: color-mix(in srgb, var(--text-3) 45%, transparent); }
+/* Off north until the route arrives. The rotation lives on the group so the two halves
+   stay rigid. Default here is the LOST state, which is also the no-JS state; that is
+   acceptable because a compass off north is still a legible compass. */
+.needle {
+  transform: rotate(-34deg);
+  transform-origin: 32px 32px;
+  transition: transform 1.15s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.story[data-reached='2'] .needle { transform: rotate(-19deg); }
+.story[data-reached='3'] .needle { transform: rotate(-9deg); }
+.story[data-reached='4'] .needle { transform: rotate(0deg); }
 
 /* ---------- The three inputs ---------- */
 .inputs {
@@ -597,9 +742,22 @@
 }
 
 /* ---------- Responsive ---------- */
-/* No room for the route rail beside the text, so it goes rather than crowd the copy. */
-@media (max-width: 1000px) {
-  .rail { display: none; }
+/* Zero-overlap needs 860px of copy + 2 x 132px rail + 64px page padding = 1188px.
+   Below that the rail would sit on the text, so it drops back behind it at low
+   opacity rather than disappearing: the route is the page's central metaphor and
+   deleting it on every laptop and phone would delete the idea. */
+@media (max-width: 1188px) {
+  .rail { left: 50%; transform: translateX(-50%); opacity: 0.3; }
+  .compass { display: none; }
+}
+@media (max-width: 680px) {
+  .rail { opacity: 0.22; }
+}
+@media (prefers-reduced-motion: reduce) {
+  /* Arrived, not lost: no swing to watch, and no hachure to sit through. */
+  .needle { transform: rotate(0deg); transition: none; }
+  .routeSeg { transition: none; }
+  .story::before { transition: none; opacity: 0; }
 }
 @media (max-width: 900px) {
   .stages { grid-template-columns: repeat(2, 1fr); }

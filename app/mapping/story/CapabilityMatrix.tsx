@@ -36,6 +36,8 @@ export function CapabilityMatrix() {
   const [reduced, setReduced] = useState(false);
   const [opened, setOpened] = useState<Opened>(null);
 
+  const [armed, setArmed] = useState(false);
+
   useEffect(() => {
     const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
     setReduced(mq.matches);
@@ -45,6 +47,8 @@ export function CapabilityMatrix() {
       setOn(true);
       return;
     }
+    // Arm only now, on the client, so the server-rendered markup is never hidden.
+    setArmed(true);
     const io = new IntersectionObserver(
       (entries) => {
         for (const e of entries) {
@@ -57,7 +61,13 @@ export function CapabilityMatrix() {
       { threshold: 0.12 }
     );
     io.observe(el);
-    return () => io.disconnect();
+    // Safety net. Some environments never deliver an observer callback at all, and a
+    // matrix that stays hidden waiting for one is a blank page, so reveal regardless.
+    const failsafe = window.setTimeout(() => setOn(true), 2000);
+    return () => {
+      io.disconnect();
+      window.clearTimeout(failsafe);
+    };
   }, []);
 
   // Escape closes the detail panel.
@@ -87,7 +97,7 @@ export function CapabilityMatrix() {
   return (
     <div className={s.wrap} ref={wrapRef}>
       <div
-        className={`${s.grid} ${on ? s.on : ''}`}
+        className={`${s.grid} ${armed ? s.armed : ''} ${on ? s.on : ''}`}
         style={{ gridTemplateColumns }}
         role="table"
         aria-label="Example team capability matrix"

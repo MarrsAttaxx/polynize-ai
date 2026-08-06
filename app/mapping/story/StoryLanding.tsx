@@ -5,6 +5,7 @@ import { SiteFooter } from '../../_components/SiteFooter';
 import { SiloGlyph, StageGlyph } from '../_icons';
 import { CapabilityMatrix } from './CapabilityMatrix';
 import { StoryPath } from './StoryPath';
+import { MapFrame, Compass } from './MapFurniture';
 import { ArtefactGlyph } from './ArtefactGlyph';
 import { BOOKING_URL, type MappingContent } from '../content';
 import { artefacts, artefactsFootnote, artefactsIntro, storyInputs, type Beat } from './content';
@@ -34,6 +35,8 @@ export function StoryLanding({
   return (
     <>
       <DraftingGrid />
+      {/* Outside .page so the fixed neatline is never affected by its overflow clip. */}
+      <MapFrame />
       <div className={s.page}>
         <StoryNav cta={c.finalCta.button} />
 
@@ -77,6 +80,7 @@ export function StoryLanding({
         {/* 2. The story, drawn as a route */}
         <section id="story" className={s.story} aria-label="The problem">
           <StoryPath beatCount={beats.length} />
+          <Compass />
           {beats.map((b, i) => (
             <div key={i} data-beat className={`${s.beat} ${b.turn ? s.beatTurn : ''}`}>
               {b.kicker && <div className={`${s.kicker} ${s.rise}`}>{b.kicker}</div>}

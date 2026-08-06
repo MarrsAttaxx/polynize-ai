@@ -28,6 +28,11 @@ body {
   font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  /* Lets full-bleed elements use 100vw without the vertical scrollbar's width
+     producing a horizontal scrollbar. `clip` rather than `hidden` on purpose: clip
+     does not create a scroll container, so position: sticky and position: fixed
+     descendants keep resolving against the viewport. */
+  overflow-x: clip;
 }
 
 /* Heat-map allocation tokens — semantic, do not remap.
