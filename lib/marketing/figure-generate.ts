@@ -17,6 +17,7 @@ import { randomUUID } from 'node:crypto';
 import { sanitiseFigure, FIGURE_STEP_CONTRACT, type PrezieFigure } from './figure';
 import { DraftError } from './draft';
 import { complete } from '@/lib/llm';
+import { resolveModel } from '@/lib/llm/openrouter';
 import { stripEmDashes } from '@/lib/em-dash';
 
 
@@ -141,6 +142,13 @@ Return ONLY a JSON object, no markdown and no code fences:
  * context), so the economics point the same way as the quality.
  */
 const figureModel = () => process.env.FIGURE_MODEL || undefined;
+
+/**
+ * WHICH MODEL THE FIGURE WORK IS ACTUALLY ON, resolved by the same function the call uses so
+ * the two can never disagree. Surfaced in the console because "did my env var take effect" is
+ * otherwise only answerable by digging through function logs mid-flow.
+ */
+export const figureModelInUse = () => resolveModel(figureModel());
 
 function parseLoose(raw: string): unknown {
   const t = raw.trim();

@@ -24,7 +24,12 @@ import {
   conceptSlugFromRef,
   type Prezie,
 } from '@/lib/marketing/prezie-store';
-import { discussFigure, generateFigure, type FigureTurn } from '@/lib/marketing/figure-generate';
+import {
+  discussFigure,
+  figureModelInUse,
+  generateFigure,
+  type FigureTurn,
+} from '@/lib/marketing/figure-generate';
 import { conceptBodyForPiece, DraftError } from '@/lib/marketing/draft';
 
 export const dynamic = 'force-dynamic';
@@ -136,7 +141,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         history,
         current
       );
-      return NextResponse.json({ ok: true, reply });
+      return NextResponse.json({ ok: true, reply, model: figureModelInUse() });
     }
 
     // DRAWING. The agreed conversation goes in with the ask, so what was settled while talking
@@ -159,7 +164,13 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       updated_at: new Date().toISOString(),
     };
     await savePrezie(next);
-    return NextResponse.json({ ok: true, note, figure_id: figure.figure_id, prezie: view(next) });
+    return NextResponse.json({
+      ok: true,
+      note,
+      figure_id: figure.figure_id,
+      prezie: view(next),
+      model: figureModelInUse(),
+    });
   } catch (e) {
     if (e instanceof DraftError && e.reason === 'empty') {
       return NextResponse.json(

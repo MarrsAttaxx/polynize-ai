@@ -116,6 +116,12 @@ export function PrezieScreen({
   const [ask, setAsk] = useState('');
   const [drawing, setDrawing] = useState(false);
   /**
+   * Which model actually served the last figure call, reported by the server from the same
+   * function that picks it. Shown because "did my env var take effect" should not require
+   * digging through function logs while trying to work.
+   */
+  const [model, setModel] = useState<string | null>(null);
+  /**
    * The conversation about the current figure. Marrs asked for this because drawing first was
    * trial and error: he tells her the CONCEPT, she says what she can draw, and only when they
    * agree does she build it. Talking costs a sentence; drawing costs a turn.
@@ -334,11 +340,14 @@ export function PrezieScreen({
           figure_id: figures[figSel]?.figure_id,
         }),
       });
-      const b = (await res.json().catch(() => null)) as { reply?: string; error?: string } | null;
+      const b = (await res.json().catch(() => null)) as
+        | { reply?: string; model?: string; error?: string }
+        | null;
       if (!res.ok || !b?.reply) {
         setError(b?.error ?? 'Could not reach her.');
         return;
       }
+      if (b.model) setModel(b.model);
       setThread([...sent, { role: 'april', text: b.reply }]);
     } catch {
       setError('Network error. Try again.');
@@ -373,12 +382,19 @@ export function PrezieScreen({
         }),
       });
       const b = (await res.json().catch(() => null)) as
-        | { prezie?: { figures?: FigureView[] }; note?: string; figure_id?: string; error?: string }
+        | {
+            prezie?: { figures?: FigureView[] };
+            note?: string;
+            figure_id?: string;
+            model?: string;
+            error?: string;
+          }
         | null;
       if (!res.ok || !b?.prezie?.figures) {
         setError(b?.error ?? 'Could not draw that.');
         return;
       }
+      if (b.model) setModel(b.model);
       const next = b.prezie.figures;
       setOpen({ ...open, figures: next });
       // Land on whatever was just drawn, so the preview shows the thing under discussion.
@@ -1108,6 +1124,7 @@ export function PrezieScreen({
             </p>
           </div>
           {note ? <p className={d.note}>April: {note}</p> : null}
+          {model ? <p className={d.modelTag}>drawn by {model}</p> : null}
           {error ? <p className={d.error}>{error}</p> : null}
         </section>
       </div>

@@ -12,12 +12,21 @@ const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions';
  */
 const DEFAULT_TIMEOUT_MS = 240_000;
 
+/**
+ * Resolve which model a call will actually use: the caller's choice, then the env default.
+ *
+ * Exported so a readout cannot disagree with the call. Marrs asked how to confirm April had
+ * moved onto the coding model, and the honest answer has to come from the same line of code
+ * that picks it; anything reconstructed elsewhere drifts the moment one of them changes.
+ */
+export function resolveModel(override?: string): string {
+  return override || process.env.OPENROUTER_MODEL || 'minimax/minimax-01';
+}
+
 export async function completeWithOpenRouter(args: CompleteArgs): Promise<string> {
   const apiKey = args.apiKey ?? process.env.OPENROUTER_API_KEY;
   if (!apiKey) throw new Error('OPENROUTER_API_KEY is not set');
-  // The caller's choice wins, then the env default. See CompleteArgs.model for why the caller
-  // gets a say: the figure work is a coding task and does not want the drafting model.
-  const model = args.model ?? process.env.OPENROUTER_MODEL ?? 'minimax/minimax-01';
+  const model = resolveModel(args.model);
   const referer = process.env.OPENROUTER_REFERER ?? 'https://polynize.ai';
   const title = process.env.OPENROUTER_TITLE ?? 'Polynize Agent Builder';
   const timeoutMs = Number(process.env.OPENROUTER_TIMEOUT_MS) || DEFAULT_TIMEOUT_MS;

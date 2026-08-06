@@ -635,3 +635,14 @@
   color: var(--mint) !important;
   border-color: var(--mint) !important;
 }
+
+/* Which model served the last call. Faint, because it is a fact to check rather than to read
+   every time, and answering "did my env var take" should not mean opening the function logs. */
+.modelTag {
+  margin: 0;
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  color: var(--text-3);
+  opacity: 0.75;
+}
