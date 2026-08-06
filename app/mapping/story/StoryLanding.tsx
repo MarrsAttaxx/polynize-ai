@@ -4,26 +4,25 @@ import { TrackedLink } from '../../_components/TrackedLink';
 import { SiteFooter } from '../../_components/SiteFooter';
 import { SiloGlyph, StageGlyph } from '../_icons';
 import { CapabilityMatrix } from './CapabilityMatrix';
+import { StoryPath } from './StoryPath';
+import { ArtefactGlyph } from './ArtefactGlyph';
 import { BOOKING_URL, type MappingContent } from '../content';
-import type { Beat } from './content';
+import { artefacts, artefactsFootnote, artefactsIntro, storyInputs, type Beat } from './content';
 import s from './story.module.css';
 
 /**
  * Scroll-story variant of the mapping page.
  *
- * Two differences from ../MappingLanding:
+ * Shape, after the 6 Aug founder call:
+ *   hero (video inside it) → the story, told as a route → the map → how it runs →
+ *   what you keep → proof → what comes next → CTA
  *
- * 1. The video lives INSIDE the hero. It is the hero. Anyone who would rather watch
- *    can press play and get the whole argument; the scroll story then serves everyone
- *    who keeps going. The story therefore starts below the video, not above it.
+ * Two things carry the narrative. The video is the hero, so anyone who would rather
+ * watch gets the whole argument without scrolling. And the story section is drawn as
+ * a journey (see StoryPath), so the turn line "you cannot go where you need to go
+ * without a map" hands directly to a section that answers it: "This is the map."
  *
- * 2. The problem section is told as beats, roughly one thought per screen, revealed
- *    on scroll.
- *
- * The motion is pure CSS (see story.module.css): scroll-driven animations behind an
- * @supports gate, disabled under prefers-reduced-motion. There is no JavaScript and
- * no client component, so every word is in the DOM and readable even if the animation
- * never runs. Motion is a layer on top of a page that already works.
+ * Example sessions and Who it is for were cut. Less is more, per the call.
  */
 export function StoryLanding({
   content: c,
@@ -75,32 +74,20 @@ export function StoryLanding({
           </div>
         </section>
 
-        {/* 2. The story. One thought per screen. */}
+        {/* 2. The story, drawn as a route */}
         <section id="story" className={s.story} aria-label="The problem">
+          <StoryPath beatCount={beats.length} />
           {beats.map((b, i) => (
-            <div key={i} className={`${s.beat} ${b.turn ? s.beatTurn : ''}`}>
+            <div key={i} data-beat className={`${s.beat} ${b.turn ? s.beatTurn : ''}`}>
               {b.kicker && <div className={`${s.kicker} ${s.rise}`}>{b.kicker}</div>}
               <p className={`${b.turn ? s.turnLine : s.beatLine} ${s.rise}`}>{b.line}</p>
               {b.sub && <p className={`${s.beatSub} ${s.riseLate}`}>{b.sub}</p>}
-              {b.panels && (
-                <div className={`${s.panels} ${s.riseLate}`}>
-                  {b.panels.map((p) => (
-                    <div key={p.label} className={s.panel}>
-                      <span className={s.panelIcon}>
-                        <SiloGlyph kind={p.kind} />
-                      </span>
-                      <div className={s.panelLabel}>{p.label}</div>
-                      <div className={s.panelNote}>{p.note}</div>
-                    </div>
-                  ))}
-                </div>
-              )}
             </div>
           ))}
         </section>
 
-        {/* 3. The payoff: the map itself */}
-        <Section eyebrow="What it is" h2={c.whatItIs.h2}>
+        {/* 3. The answer to the turn: the map itself */}
+        <Section eyebrow="Capability mapping" h2={c.whatItIs.h2}>
           <div className={`${s.prose} ${s.rise}`}>
             {c.whatItIs.paras.map((p, i) => (
               <p key={i}>{p}</p>
@@ -131,13 +118,13 @@ export function StoryLanding({
           </div>
         </Section>
 
-        {/* 4. The process */}
+        {/* 4. How it runs, now three steps */}
         <section id="how" className={s.section}>
-          <div className={s.sectionHead}>
+          <div className={`${s.sectionHead} ${s.rise}`}>
             <div className={s.eyebrow}>The process</div>
             <h2 className={s.h2}>{c.howItRuns.h2}</h2>
           </div>
-          <div className={s.stages}>
+          <div className={s.stages3}>
             {c.howItRuns.stages.map((st) => (
               <div key={st.n} className={`${s.stage} ${s.rise}`}>
                 <span className={s.stageIcon}>
@@ -153,24 +140,40 @@ export function StoryLanding({
               </div>
             ))}
           </div>
+          {/* The three inputs step 01 asks for, shown rather than only listed. */}
+          <div className={`${s.inputs} ${s.rise}`}>
+            {storyInputs.map((it) => (
+              <div key={it.label} className={s.input}>
+                <span className={s.inputIcon}>
+                  <SiloGlyph kind={it.kind} />
+                </span>
+                <div>
+                  <div className={s.inputLabel}>{it.label}</div>
+                  <div className={s.inputNote}>{it.note}</div>
+                </div>
+              </div>
+            ))}
+          </div>
           <p className={s.stagesLine}>{c.howItRuns.line}</p>
         </section>
 
         {/* 5. What you keep */}
         <Section eyebrow="What you keep" h2={c.walkaway.h2}>
-          <p className={s.leadLine}>{c.walkaway.intro}</p>
-          <div className={s.walkList}>
-            {c.walkaway.items.map((it) => (
-              <div key={it.n} className={`${s.walkItem} ${s.rise}`}>
-                <div className={s.walkNum}>{it.n}</div>
-                <div>
-                  <div className={s.walkTitle}>{it.title}</div>
-                  <div className={s.walkBody}>{it.body}</div>
+          <p className={s.leadLine}>{artefactsIntro}</p>
+          <div className={s.artefacts}>
+            {artefacts.map((a) => (
+              <div key={a.n} className={`${s.artefact} ${s.rise}`}>
+                <div className={s.artVisual}>
+                  <ArtefactGlyph kind={a.kind} />
                 </div>
+                <div className={s.artNum}>{a.n}</div>
+                <div className={s.artTitle}>{a.title}</div>
+                <div className={s.artBody}>{a.body}</div>
+                <div className={s.artUse}>{a.use}</div>
               </div>
             ))}
           </div>
-          <p className={s.walkFootnote}>{c.walkaway.footnote}</p>
+          <p className={s.walkFootnote}>{artefactsFootnote}</p>
         </Section>
 
         {/* 6. Proof */}
@@ -187,29 +190,7 @@ export function StoryLanding({
           </div>
         </section>
 
-        {/* 7. Example sessions */}
-        <Section eyebrow="Example sessions" h2={c.examples.h2}>
-          <p className={s.leadLine}>{c.examples.intro}</p>
-          <div className={s.cards2}>
-            {c.examples.cards.map((card) => (
-              <div key={card.title} className={`${s.card} ${s.rise}`}>
-                <div className={s.cardTitle}>{card.title}</div>
-                <div className={s.cardBody}>{card.body}</div>
-              </div>
-            ))}
-          </div>
-        </Section>
-
-        {/* 8. Who it is for */}
-        <Section eyebrow="Who it is for" h2={c.audience.h2}>
-          <div className={`${s.prose} ${s.rise}`}>
-            {c.audience.paras.map((p, i) => (
-              <p key={i}>{p}</p>
-            ))}
-          </div>
-        </Section>
-
-        {/* 9. Where it leads */}
+        {/* 7. Where it leads */}
         <Section eyebrow="What comes next" h2={c.leads.h2}>
           <div className={`${s.prose} ${s.rise}`}>
             {c.leads.paras.map((p, i) => (
@@ -221,7 +202,7 @@ export function StoryLanding({
           </Link>
         </Section>
 
-        {/* 10. Final CTA */}
+        {/* 8. Final CTA */}
         <section className={s.section}>
           <div className={`${s.finalCard} ${s.rise}`}>
             <div className={s.eyebrow}>Ready when you are</div>
@@ -245,9 +226,8 @@ export function StoryLanding({
   );
 }
 
-/* Deliberately a local copy rather than an import from ../MappingLanding, so that
-   nothing in this experiment can change the live /mapping page. Fold the two together
-   if this variant wins. */
+/* Local copy rather than an import from ../MappingLanding, so nothing in this
+   experiment can change the live /mapping page. Fold together if this variant wins. */
 function StoryNav({ cta }: { cta: string }) {
   return (
     <nav className={s.nav}>

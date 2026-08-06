@@ -156,7 +156,7 @@
 .videoCaption { font-size: 13px; color: var(--text-3); line-height: 1.5; margin: 0; max-width: 520px; text-align: left; }
 
 /* ---------- The story: one thought per screen ---------- */
-.story { border-top: 1px solid var(--border-soft); }
+.story { border-top: 1px solid var(--border-soft); position: relative; }
 .beat {
   min-height: 78vh;
   display: flex;
@@ -166,14 +166,25 @@
   text-align: center;
   padding: 48px 0;
 }
+/* Chapter marker, not a label. It has to be readable at scrolling speed, so it is
+   set at heading scale with rules either side rather than as a tiny eyebrow. */
 .kicker {
-  font-family: var(--font-inter), monospace;
-  font-size: 11px;
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+  font-family: var(--font-space-grotesk), sans-serif;
+  font-size: clamp(15px, 1.7vw, 20px);
   font-weight: 600;
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
+  letter-spacing: 0.01em;
   color: var(--mint);
-  margin-bottom: 22px;
+  margin-bottom: 28px;
+}
+.kicker::before,
+.kicker::after {
+  content: '';
+  width: 30px;
+  height: 1px;
+  background: color-mix(in srgb, var(--mint) 45%, transparent);
 }
 .beatLine {
   font-family: var(--font-space-grotesk), sans-serif;
@@ -182,7 +193,7 @@
   letter-spacing: -0.022em;
   line-height: 1.08;
   margin: 0;
-  max-width: 900px;
+  max-width: 860px;
 }
 .beatSub {
   margin: 26px auto 0;
@@ -200,55 +211,163 @@
   letter-spacing: -0.024em;
   line-height: 1.06;
   margin: 0;
-  max-width: 900px;
+  max-width: 860px;
   color: var(--mint);
 }
 
-/* The three-way argument */
-.panels {
+/* ---------- The route ----------
+   A dashed path down the left margin with a waypoint per beat and a mint trail that
+   fills in behind the reader. Sits in the slack beside the 860px text column, so the
+   copy stays centred. Purely decorative, hidden where there is no room. */
+.rail {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 100px;
+  pointer-events: none;
+}
+.railSvg { display: block; overflow: visible; }
+.routeBase {
+  fill: none;
+  stroke: color-mix(in srgb, var(--mint) 20%, transparent);
+  stroke-width: 1.5;
+  stroke-dasharray: 4 7;
+  stroke-linecap: round;
+}
+.routeTrail {
+  fill: none;
+  stroke: var(--mint);
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  opacity: 0.9;
+  transition: stroke-dashoffset 0.12s linear;
+}
+/* Grouping hook for a waypoint. .wpOn is toggled on this by StoryPath. */
+.wp { pointer-events: none; }
+.wpHalo {
+  fill: none;
+  stroke: color-mix(in srgb, var(--mint) 30%, transparent);
+  stroke-width: 1;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+.wpDot {
+  fill: var(--bg);
+  stroke: color-mix(in srgb, var(--mint) 45%, transparent);
+  stroke-width: 1.5;
+  transition: fill 0.4s ease, stroke 0.4s ease;
+}
+.wpNum {
+  fill: var(--text-3);
+  font-family: var(--font-inter), monospace;
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  opacity: 0.45;
+  transition: opacity 0.4s ease, fill 0.4s ease;
+}
+.wpOn .wpDot { fill: var(--mint); stroke: var(--mint); }
+.wpOn .wpHalo { opacity: 1; }
+.wpOn .wpNum { fill: var(--mint); opacity: 1; }
+
+/* ---------- The three inputs ---------- */
+.inputs {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 0 46px;
-  margin-top: 44px;
-  width: 100%;
+  gap: 14px;
+  margin-top: 22px;
 }
-.panel {
-  position: relative;
+.input {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  text-align: left;
   border: 1px solid var(--border-soft);
   border-radius: 12px;
   background: var(--surface);
-  padding: 24px 18px 22px;
+  padding: 16px 18px;
 }
-/* Dashed, not solid: three problems that do not join up. */
-.panel::after {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 100%;
-  width: 46px;
-  border-top: 1px dashed var(--border);
-  opacity: 0.7;
-}
-.panel:last-child::after { display: none; }
-.panelIcon {
+.inputIcon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 48px;
-  height: 48px;
-  border-radius: 12px;
+  width: 40px;
+  height: 40px;
+  flex: none;
+  border-radius: 10px;
   color: var(--text-2);
   background: var(--bg-deep);
   box-shadow: inset 0 0 0 1px var(--border-soft);
-  margin-bottom: 14px;
 }
-.panelLabel {
+.inputLabel {
   font-family: var(--font-space-grotesk), sans-serif;
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 600;
-  margin-bottom: 6px;
+  margin-bottom: 3px;
 }
-.panelNote { font-size: 13px; line-height: 1.5; color: var(--text-3); }
+.inputNote { font-size: 12.5px; line-height: 1.45; color: var(--text-3); }
+
+/* ---------- What you keep ---------- */
+.artefacts {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  text-align: left;
+}
+.artefact {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border-soft);
+  border-radius: 14px;
+  background: var(--surface);
+  padding: 0 0 22px;
+  overflow: hidden;
+}
+.artVisual {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 22px 16px 18px;
+  background: var(--bg-deep);
+  border-bottom: 1px solid var(--border-soft);
+}
+.artSvg { width: 100%; max-width: 190px; height: auto; }
+.artNum {
+  font-family: var(--font-inter), monospace;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  color: var(--mint);
+  margin: 20px 22px 8px;
+}
+.artTitle {
+  font-family: var(--font-space-grotesk), sans-serif;
+  font-size: 17px;
+  font-weight: 600;
+  margin: 0 22px 10px;
+}
+.artBody { font-size: 13.5px; line-height: 1.6; color: var(--text-2); margin: 0 22px; flex: 1; }
+.artUse {
+  margin: 16px 22px 0;
+  padding-top: 14px;
+  border-top: 1px solid var(--border-soft);
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: var(--text-3);
+}
+
+/* Artefact glyph internals. Diagrammatic, never screenshot-like. */
+.artCell { opacity: 0.9; }
+.art_mint { fill: color-mix(in srgb, var(--mint) 72%, transparent); }
+.art_amber { fill: color-mix(in srgb, var(--amber) 70%, transparent); }
+.art_coral { fill: color-mix(in srgb, var(--coral) 68%, transparent); }
+.artRail { fill: color-mix(in srgb, var(--text-3) 40%, transparent); }
+.artFrame { stroke: var(--border); stroke-width: 1.4; fill: none; }
+.artLine { fill: color-mix(in srgb, var(--text-3) 32%, transparent); }
+.artHead { fill: color-mix(in srgb, var(--mint) 60%, transparent); }
+.artArrow { stroke: var(--mint); stroke-width: 1.6; fill: none; }
+.artTrack { fill: color-mix(in srgb, var(--text-3) 22%, transparent); }
+.artFill { fill: var(--mint); }
+.artTick { stroke: var(--amber); stroke-width: 1.4; }
 
 /* ---------- Capability matrix ---------- */
 .matrixFigure { margin: 40px 0 0; }
@@ -333,6 +452,10 @@
 
 /* ---------- Process ---------- */
 .stages { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; }
+/* Three steps now, so they get room to breathe rather than five squeezed columns. */
+.stages3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.stages3 .stage { padding: 24px 20px 20px; }
+.stages3 .stageWhat { font-size: 13.5px; }
 .stage {
   border: 1px solid var(--border-soft);
   border-radius: 12px;
@@ -474,11 +597,17 @@
 }
 
 /* ---------- Responsive ---------- */
+/* No room for the route rail beside the text, so it goes rather than crowd the copy. */
+@media (max-width: 1000px) {
+  .rail { display: none; }
+}
 @media (max-width: 900px) {
   .stages { grid-template-columns: repeat(2, 1fr); }
+  .stages3 { grid-template-columns: 1fr; }
   .cards3 { grid-template-columns: 1fr; }
-  .panels { grid-template-columns: 1fr; gap: 14px 0; }
-  .panel::after { display: none; }
+  .inputs { grid-template-columns: 1fr; }
+  .artefacts { grid-template-columns: 1fr; }
+  .artSvg { max-width: 240px; }
 }
 @media (max-width: 680px) {
   .page { padding: 0 18px 32px; }

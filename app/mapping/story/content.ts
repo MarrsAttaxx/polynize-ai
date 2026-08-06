@@ -1,14 +1,22 @@
 /**
  * Copy for the scroll-story variant of /mapping.
  *
- * Everything the two pages share is imported from ../content rather than copied,
- * so a copy fix on /mapping cannot silently drift from /mapping/story. Only the
- * problem section differs (restated per Marrs), plus the story beats, which exist
- * only here.
+ * Rewritten to the 6 Aug founder call. Four decisions drive it:
+ *  1. Sharpen to AI. The page is now about what your people can do with AI, not
+ *     capability in general. Narrower door, deliberately.
+ *  2. "Map before you invest" is the spine, and the word invest earns its place.
+ *  3. Current state only. Leave them with the diagnosis so "how do we fix this"
+ *     becomes their question, which is what "What comes next" is for.
+ *  4. Less is more. Example sessions and Who it is for are gone.
  *
- * Same house rules as the parent: never "training", never "workshop" as the product
- * noun, never name the technology company, never a price, Australian spelling,
- * no em-dashes.
+ * The medical framing (MRI, clinic, diagnosis) stays internal per Shourov. It is
+ * not on this page.
+ *
+ * Shared sections still come from ../content so a fix there cannot drift; anything
+ * the story rewrites is overridden below.
+ *
+ * House rules unchanged: never "training", never "workshop" as the product noun,
+ * never name the technology company, never a price, Australian spelling, no em-dashes.
  */
 
 import { mappingContent, type MappingContent } from '../content';
@@ -16,52 +24,39 @@ import type { Silo } from '../SiloDiagram';
 
 /** One scroll beat. Roughly one thought per screen. */
 export type Beat = {
-  /** Small mono label above the line. */
+  /** Chapter marker above the line. Set large enough to read while scrolling. */
   kicker?: string;
-  /** The thought itself, set large. */
   line: string;
-  /** Optional supporting sentence underneath. */
   sub?: string;
-  /** Optional three-panel moment (the people / processes / technology argument). */
   panels?: Silo[];
-  /** The turn. Rendered in mint, and it lands the arc. */
+  /** The turn. Rendered in mint, and it hands over to the map. */
   turn?: boolean;
 };
 
-/** The three questions nobody in the room can answer. */
-const ARGUMENT: Silo[] = [
-  { kind: 'people', label: 'People', note: 'Can they actually do it?' },
-  { kind: 'process', label: 'Processes', note: 'Is this where the work breaks?' },
-  { kind: 'technology', label: 'Technology', note: 'Will any of this pay?' },
+/** The three inputs the engagement asks for, per the call. */
+const INPUTS: Silo[] = [
+  { kind: 'people', label: 'People', note: 'The roles, and what good looks like in each.' },
+  { kind: 'process', label: 'Process', note: 'The work as it is actually done.' },
+  { kind: 'technology', label: 'Technology', note: 'The tools and agents already in play.' },
 ];
 
 export const storyBeats: Beat[] = [
   {
     kicker: 'The problem',
-    line: 'You do not know where you are.',
+    line: 'You are buying AI faster than you can tell who is any good at it.',
   },
   {
-    line: 'And you do not know what good looks like.',
-    sub: 'Almost no organisation holds real data on what its people can actually do, and fewer still hold a benchmark for what good would look like.',
+    line: 'Adoption is not capability.',
+    sub: 'Seat counts and token spend tell you who logged in. They tell you nothing about who is producing anything worth having. You would not measure a chef by the gas they burn.',
   },
   {
-    line: 'So every decision is an opinion.',
-    sub: 'Without a position and without a destination, the call comes down to whoever is most confident in the room.',
+    kicker: 'What you cannot see',
+    line: 'You do not know where you are, or what good looks like.',
+    sub: 'Almost no organisation holds real data on what its people can genuinely do with these tools, and fewer still hold a benchmark for what good would look like.',
   },
   {
-    kicker: 'Then AI arrived',
-    line: 'The most ambiguous tool your organisation has ever bought.',
-    sub: 'Capable of going almost anywhere, which means nobody can say where it will actually pay.',
-  },
-  {
-    line: 'So the argument starts.',
-    sub: 'Three problems that are really one.',
-    panels: ARGUMENT,
-  },
-  {
-    kicker: 'And it keeps moving',
-    line: 'The work will not hold still.',
-    sub: 'A document is out of date the week it is written. You do not need a snapshot of your organisation, you need a live model of it.',
+    line: 'So every investment decision is an opinion.',
+    sub: 'Which licences to renew, which teams to back, where the next dollar goes. Without a position and without a destination, the call goes to whoever is most confident in the room.',
   },
   {
     line: 'You cannot go where you need to go without a map.',
@@ -69,32 +64,115 @@ export const storyBeats: Beat[] = [
   },
 ];
 
-/**
- * The shared sections, with the problem section restated. The prose version is kept
- * (not just the beats) so the page still reads without motion, and so search engines
- * and anyone with JS or scroll animations unavailable get the full argument.
- */
+/** What you keep. Fleshed out, and each one gets a visual. */
+export type ArtefactKind = 'matrix' | 'data' | 'report';
+export type Artefact = {
+  n: string;
+  kind: ArtefactKind;
+  title: string;
+  body: string;
+  /** One line on what you actually do with it. */
+  use: string;
+};
+
+export const artefacts: Artefact[] = [
+  {
+    n: '01',
+    kind: 'matrix',
+    title: 'The capability matrix',
+    body: 'Your team’s completed map, exactly as it was built. Every person against every part of the work, scored against the benchmark, with the gaps and the strengths showing up plainly. Open any cell and you can see how that reading was reached.',
+    use: 'Decide where the next dollar goes, and defend the decision.',
+  },
+  {
+    n: '02',
+    kind: 'data',
+    title: 'Your data, exported',
+    body: 'The full data set behind the model, exported and yours. Every scenario, every response, every score. Not a summary of the findings, the findings themselves.',
+    use: 'Take it into your own reporting, or hand it to your own analysts.',
+  },
+  {
+    n: '03',
+    kind: 'report',
+    title: 'The capability report',
+    body: 'Our read on what the map shows. Where the strength is, where the gaps are, what is worth investing in first and what is not worth investing in at all. Written by us, not generated.',
+    use: 'Put it in front of leadership without rewriting it.',
+  },
+];
+
+export const artefactsIntro = 'Three things, and none of them is a slide deck.';
+export const artefactsFootnote =
+  'Everyone who takes part also receives their own individual report.';
+
 export const storyContent: MappingContent = {
   ...mappingContent,
+
+  hero: {
+    h1: 'Map what your team can actually do with AI.',
+    subhead:
+      'Before you invest another dollar in AI, see what your people can genuinely do with it, benchmarked against what good looks like. We call it capability mapping.',
+    primaryCta: 'Book a demo',
+    secondaryLabel: 'See how it works',
+  },
+
   /**
-   * The story page renders the matrix as live DOM rather than the screenshot, and
-   * its figures are synthetic, so the parent's "A real capability map" caption would
-   * be false here. Overridden rather than edited upstream, because /mapping still
-   * ships the genuine screenshot and that caption is true there.
+   * The turn says you need a map. This section has to answer it immediately, so the
+   * eyebrow names the product and the heading hands straight over to the matrix.
+   */
+  whatItIs: {
+    h2: 'This is the map.',
+    paras: [
+      'We take your team through scenarios built from the work they actually do. They respond in their own words, in real situations, and the platform reads what capability they are genuinely demonstrating.',
+      'Documents and process maps are a snapshot. They are what people say about the work. This is what people do in the work, which is why the map is accurate.',
+    ],
+    cards: mappingContent.whatItIs.cards,
+  },
+
+  /**
+   * The story page renders the matrix as live DOM with synthetic figures, so the
+   * parent's "A real capability map" caption would be false here.
    */
   matrixImage: {
     ...mappingContent.matrixImage,
     caption:
       'An example capability map. Every person against every part of the work, scored and coloured, with the gaps showing up plainly. Select any cell to see how that capability was read. The figures shown are illustrative.',
   },
-  problem: {
-    h2: 'You do not know where you are, or what good looks like.',
-    paras: [
-      'Almost no organisation holds real data on what its people can actually do, and fewer still hold a benchmark for what good would look like. Without a position and without a destination, every decision about capability comes down to the most confident opinion in the room.',
-      'AI has made that harder. It is the most ambiguous tool your organisation has ever bought, capable of going almost anywhere, which means nobody can say where it will actually pay. That uncertainty lands as an argument between people, processes and technology, and the three get treated as separate problems when they are one.',
-      'Meanwhile the work keeps moving. A document is out of date the week it is written. You do not need a snapshot of your organisation, you need a live model of it.',
-      'You cannot go where you need to go without a map.',
+
+  /**
+   * Three steps, not five. Discovery and Agreement are sales cycle, not product,
+   * so they came off per the call. Renumbered from 01 rather than left at 03.
+   */
+  howItRuns: {
+    h2: 'How it runs.',
+    stages: [
+      {
+        n: '01',
+        title: 'Inputs',
+        what: 'Three things from you: people, process and technology. Drafts and internal working documents are fine. We would rather have the real imperfect material than a polished version.',
+        who: 'Your project lead',
+        icon: 'setup',
+      },
+      {
+        n: '02',
+        title: 'Scenarios',
+        what: 'Your team works through scenarios built from their real work. In the room together, or in their own time across a week if they are spread across time zones.',
+        who: 'Your team',
+        icon: 'session',
+      },
+      {
+        n: '03',
+        title: 'Readout',
+        what: 'We walk your leadership through the map, the report, and what we would do about it next.',
+        who: 'Your leadership',
+        icon: 'handover',
+      },
     ],
-    silos: ARGUMENT,
+    line: 'About an hour of each person’s time. We scope the number of roles with you up front.',
+  },
+
+  finalCta: {
+    ...mappingContent.finalCta,
+    button: 'Book a demo',
   },
 };
+
+export const storyInputs = INPUTS;
