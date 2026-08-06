@@ -29,9 +29,14 @@ export type Beat = {
   line: string;
   sub?: string;
   panels?: Silo[];
+  /** Small diagram that draws the beat's argument, shown under the sub-line. */
+  figure?: FigureKind;
   /** The turn. Rendered in mint, and it hands over to the map. */
   turn?: boolean;
 };
+
+/** The four story diagrams, one per beat before the turn. */
+export type FigureKind = 'scatter' | 'ambiguity' | 'coordinates' | 'guess';
 
 /** The three inputs the engagement asks for, per the call. */
 const INPUTS: Silo[] = [
@@ -49,10 +54,12 @@ const INPUTS: Silo[] = [
  * DECISIONS THAT SHOULD NOT BE QUIETLY UNDONE:
  * - Beat 1 uses the language of being lost on purpose. It is what licenses the route
  *   beside it to scribble; without the word "lost" that animation is decoration.
- * - Beat 2 is restored verbatim from commit 6c35c80. "Adoption is not capability" sat
- *   here briefly and was rejected by Marrs on 2026-08-06 in favour of this line. Do
- *   not reinstate it. Its best sentence, "you would not measure a chef by the gas they
- *   burn", went with it and is worth finding another home for.
+ * - Beat 1 opens with "We get it", which is deliberate: it makes the diagnosis
+ *   sympathetic rather than accusing, before the arc turns hard.
+ * - Beat 2 names AI as the subject outright. It went through "Adoption is not
+ *   capability" (rejected 2026-08-06) and an unnamed-subject version before landing
+ *   here. Do not reinstate either. The line "you would not measure a chef by the gas
+ *   they burn" was lost along the way and is worth another home.
  * - Beat 4 says "guess", not "opinion". Marrs's correction, and he is right: an opinion
  *   is a position you can defend, a guess is what is left when you have no information.
  * - Beat 5 gets no kicker and no sub. Kickers render in mint and the turn is the only
@@ -61,21 +68,25 @@ const INPUTS: Silo[] = [
 export const storyBeats: Beat[] = [
   {
     kicker: 'The problem',
-    line: 'You are lost on your own AI journey.',
+    line: 'We get it. Like most, you are lost on your AI journey.',
     sub: 'Licences bought, pilots running, budget committed. None of it adds up to a direction.',
+    figure: 'scatter',
   },
   {
-    line: 'The most ambiguous tool your organisation has ever bought.',
+    line: 'AI is the most ambiguous tool your organisation has ever bought.',
     sub: 'Capable of going almost anywhere, which means nobody can say where it will actually pay.',
+    figure: 'ambiguity',
   },
   {
     kicker: 'No landmarks',
     line: 'You do not know where you are, or what good looks like.',
     sub: 'No real data on what your people can do with these tools. Nothing to measure it against.',
+    figure: 'coordinates',
   },
   {
     line: 'So every investment decision is a guess.',
     sub: 'Which licences to renew, which teams to back, where the next dollar goes. The call goes to whoever is most confident in the room.',
+    figure: 'guess',
   },
   {
     line: 'You cannot go where you need to go without a map.',

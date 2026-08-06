@@ -2,12 +2,13 @@ import Link from 'next/link';
 import { DraftingGrid } from '../../_components/DraftingGrid';
 import { TrackedLink } from '../../_components/TrackedLink';
 import { SiteFooter } from '../../_components/SiteFooter';
-import { SiloGlyph, StageGlyph } from '../_icons';
+import { SiloGlyph, StageGlyph, MapGlyph } from '../_icons';
 import { CapabilityMatrix } from './CapabilityMatrix';
 import { StoryPath } from './StoryPath';
 import { StoryMotion } from './StoryMotion';
 import { MapFrame } from './MapFurniture';
 import { ArtefactGlyph } from './ArtefactGlyph';
+import { BeatFigure } from './BeatFigure';
 import { BOOKING_URL, type MappingContent } from '../content';
 import { artefacts, artefactsFootnote, artefactsIntro, storyInputs, type Beat } from './content';
 import s from './story.module.css';
@@ -45,6 +46,9 @@ export function StoryLanding({
         {/* 1. Hero, video included */}
         <section className={s.hero}>
           <div className={s.heroCopy}>
+            <span className={s.titleGlyph}>
+              <MapGlyph size={40} />
+            </span>
             <h1 className={s.h1}>{c.hero.h1}</h1>
             <p className={s.heroSub}>{c.hero.subhead}</p>
             {/* On its own line so the product name lands as a statement rather than
@@ -96,12 +100,13 @@ export function StoryLanding({
                   the line stranded at opacity 0. */}
               <p className={b.turn ? s.turnLine : s.beatLine}>{b.line}</p>
               {b.sub && <p className={`${s.beatSub} ${s.riseLate}`}>{b.sub}</p>}
+              {b.figure && <BeatFigure kind={b.figure} />}
             </div>
           ))}
         </section>
 
         {/* 3. The answer to the turn: the map itself */}
-        <Section eyebrow="Capability mapping" h2={c.whatItIs.h2}>
+        <Section eyebrow="Capability mapping" h2={c.whatItIs.h2} glyph>
           <div className={`${s.prose} ${s.rise}`}>
             {c.whatItIs.paras.map((p, i) => (
               <p key={i}>{p}</p>
@@ -271,17 +276,29 @@ function Section({
   h2,
   children,
   id,
+  glyph,
 }: {
   eyebrow: string;
   h2: string;
   children: React.ReactNode;
   id?: string;
+  /** Shows the map glyph beside the heading, tying it back to the hero. */
+  glyph?: boolean;
 }) {
   return (
     <section className={s.section} id={id}>
       <div className={`${s.sectionHead} ${s.rise}`}>
         <div className={s.eyebrow}>{eyebrow}</div>
-        <h2 className={s.h2}>{h2}</h2>
+        {glyph ? (
+          <h2 className={`${s.h2} ${s.h2WithGlyph}`}>
+            <span className={s.headGlyph}>
+              <MapGlyph size={32} />
+            </span>
+            {h2}
+          </h2>
+        ) : (
+          <h2 className={s.h2}>{h2}</h2>
+        )}
       </div>
       {children}
     </section>

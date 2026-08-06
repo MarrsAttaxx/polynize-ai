@@ -60,13 +60,14 @@ export function StoryMotion() {
               { ...from, immediateRender: false },
               {
                 opacity: 1,
+                x: 0,
                 y: 0,
                 scale: 1,
                 duration,
-                ease: 'power3.out',
-                stagger: 0.08,
+                ease: 'power2.out',
+                stagger: 0.07,
                 overwrite: 'auto',
-                clearProps: 'transform',
+                force3D: true,
               }
             ),
         });
@@ -75,18 +76,21 @@ export function StoryMotion() {
       // Headings and body land first.
       // Beat lines are excluded because they have their own cue below; an element in
       // two batches gets two competing tweens and overwrite strands it hidden.
-      reveal(`.${s.rise}:not(.${s.beatLine}):not(.${s.turnLine})`, { y: 26, opacity: 0 });
+      reveal(`.${s.rise}:not(.${s.beatLine}):not(.${s.turnLine})`, { x: 34, opacity: 0 });
 
       // Supporting text just behind its headline. Achieved with a later trigger point
       // rather than a delay, so a reader who scrolls straight past never waits on a
       // timer to see the words.
-      reveal(`.${s.riseLate}`, { y: 20, opacity: 0 }, 'top 84%');
+      reveal(`.${s.riseLate}`, { x: 28, opacity: 0 }, 'top 84%');
 
       // Figures get a touch of scale so they read as arriving rather than fading.
-      reveal(`.${s.riseScale}`, { y: 30, opacity: 0, scale: 0.975 }, 'top 90%', 0.8);
+      reveal(`.${s.riseScale}`, { y: 26, opacity: 0, scale: 0.978 }, 'top 90%', 0.8);
 
       // Beat lines are the spine of the page, so they get their own slower cue.
-      reveal(`.${s.beatLine}, .${s.turnLine}`, { y: 34, opacity: 0 }, 'top 82%', 0.82);
+      reveal(`.${s.beatLine}, .${s.turnLine}`, { x: 56, opacity: 0 }, 'top 82%', 0.9);
+
+      // The beat diagrams draw themselves in behind their line.
+      reveal(`.${s.figure} [data-fig-item]`, { x: 26, opacity: 0 }, 'top 86%', 0.7);
     });
 
     /**

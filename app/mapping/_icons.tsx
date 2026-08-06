@@ -75,6 +75,25 @@ export function StageGlyph({ kind }: { kind: StageIcon }) {
   );
 }
 
+/**
+ * A folded survey map. Sits beside the word "Map" in the hero and beside "This is the
+ * map", so the two moments are visibly the same object: the thing you are promised, and
+ * the thing you are handed.
+ */
+export function MapGlyph({ size = 28 }: { size?: number }) {
+  return (
+    <svg {...props} width={size} height={size} aria-hidden="true">
+      {/* three folded panels */}
+      <path d="M2.5 7.5 10 4.5v16L2.5 23.5z" />
+      <path d="M10 4.5 18 7.5v16l-8-3z" />
+      <path d="M18 7.5 25.5 4.5v16L18 23.5z" />
+      {/* a plotted route across the fold */}
+      <path d="M6 17.5q3.5-5 7-2t7-4" strokeDasharray="2.4 2.4" />
+      <circle cx="20" cy="11.5" r="1.9" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
+
 /** The three things every organisation holds separately. */
 export type SiloIcon = 'people' | 'process' | 'technology';
 

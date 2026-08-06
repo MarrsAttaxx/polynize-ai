@@ -177,7 +177,9 @@ export function StoryPath({ beatCount }: { beatCount: number }) {
           onUpdate: (self) => {
             const travelled = self.progress * box.h;
             let reached = -1;
-            waypoints.forEach((y, i) => {
+            // Checkpoints plus the destination X, which is below the final beat.
+            const marks = [...waypoints.slice(0, -1), box.h - 96];
+            marks.forEach((y, i) => {
               const on = y <= travelled;
               wpRefs.current[i]?.classList.toggle(s.wpOn, on);
               if (on) {
@@ -203,11 +205,20 @@ export function StoryPath({ beatCount }: { beatCount: number }) {
   const centre = 0.5;
   const xAt = (i: number) => w * (centre + (X_STOPS[i % X_STOPS.length] - centre) * spread);
 
-  // Departure point, then one stop per beat. The final beat is the turn and its marker
-  // is the X, so the route ENDS at the destination rather than running past it.
-  const stops: Pt[] = [{ x: xAt(0), y: 0 }, ...waypoints.map((y, i) => ({ x: xAt(i + 1), y }))];
+  /**
+   * Departure point, a numbered checkpoint on each beat EXCEPT the turn, then the X.
+   * The X is deliberately not on the turn line: it sits in the gap below it, between
+   * the copy and the next section, because that gap is the arrival moment and it needs
+   * its own room to land.
+   */
+  const checkpoints = waypoints.slice(0, -1);
+  const destination: Pt = { x: xAt(waypoints.length), y: h - 96 };
+  const stops: Pt[] = [
+    { x: xAt(0), y: 0 },
+    ...checkpoints.map((y, i) => ({ x: xAt(i + 1), y })),
+    destination,
+  ];
   const d = splinePath(buildRoute(w, stops));
-  const lastIndex = waypoints.length - 1;
 
   const ticks: { y: number; major: boolean; label?: string }[] = [];
   for (let y = 60, n = 1; y < h - 40; y += 42, n++) {
@@ -263,13 +274,12 @@ export function StoryPath({ beatCount }: { beatCount: number }) {
           <path className={s.routeTrail} d={d} />
         </g>
 
-        {waypoints.map((y, i) => {
+        {checkpoints.map((y, i) => {
           const x = xAt(i + 1);
-          const isDestination = i === lastIndex;
           return (
             <g
               key={`wp-${i}`}
-              className={`${s.wp} ${isDestination ? s.wpX : ''}`}
+              className={s.wp}
               ref={(el) => {
                 wpRefs.current[i] = el;
               }}
@@ -283,23 +293,38 @@ export function StoryPath({ beatCount }: { beatCount: number }) {
                   rippleRefs.current[i] = el;
                 }}
               />
-              {isDestination ? (
-                <g className={s.xGlyph}>
-                  <line x1={x - 20} y1={y - 20} x2={x + 20} y2={y + 20} />
-                  <line x1={x + 20} y1={y - 20} x2={x - 20} y2={y + 20} />
-                </g>
-              ) : (
-                <>
-                  <circle className={s.wpHalo} cx={x} cy={y} r={24} />
-                  <circle className={s.wpDot} cx={x} cy={y} r={9} />
-                  <text className={s.wpNum} x={x + 36} y={y + 5}>
-                    {String(i + 1).padStart(2, '0')}
-                  </text>
-                </>
-              )}
+              <circle className={s.wpHalo} cx={x} cy={y} r={24} />
+              <circle className={s.wpDot} cx={x} cy={y} r={9} />
+              <text className={s.wpNum} x={x + 36} y={y + 5}>
+                {String(i + 1).padStart(2, '0')}
+              </text>
             </g>
           );
         })}
+
+        {/* The landing. Below the turn line, in the gap before the map. */}
+        <g
+          className={`${s.wp} ${s.wpX}`}
+          ref={(el) => {
+            wpRefs.current[checkpoints.length] = el;
+          }}
+        >
+          <circle
+            className={s.wpRipple}
+            cx={destination.x}
+            cy={destination.y}
+            r={12}
+            ref={(el) => {
+              rippleRefs.current[checkpoints.length] = el;
+            }}
+          />
+          <circle className={s.xHalo} cx={destination.x} cy={destination.y} r={30} />
+          <g className={s.xGlyph}>
+            <line x1={destination.x - 20} y1={destination.y - 20} x2={destination.x + 20} y2={destination.y + 20} />
+            <line x1={destination.x + 20} y1={destination.y - 20} x2={destination.x - 20} y2={destination.y + 20} />
+          </g>
+        </g>
+
       </svg>
     </div>
   );

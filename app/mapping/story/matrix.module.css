@@ -176,13 +176,22 @@
   border: 1px solid transparent;
   cursor: pointer;
   padding: 0;
-  transition: opacity 0.42s ease, filter 0.15s ease, transform 0.15s ease;
+  transition: opacity 0.42s ease, filter 0.16s ease, transform 0.18s cubic-bezier(0.2, 0.8, 0.3, 1),
+    box-shadow 0.18s ease;
 }
-.cell:hover { filter: brightness(1.12); transform: translateY(-1px); }
+/* Hover has to say "this opens". A 1px lift did not, so the cell now grows out of the
+   grid, rings itself in mint and lifts above its neighbours. */
+.cell:hover,
+.cell:focus-visible {
+  filter: brightness(1.2);
+  transform: scale(1.35);
+  box-shadow: 0 0 0 1.5px var(--mint), 0 8px 20px rgba(0, 0, 0, 0.6);
+  position: relative;
+  z-index: 3;
+}
 .cell:focus-visible {
   outline: 2px solid var(--mint);
-  outline-offset: 2px;
-  transform: translateY(-1px);
+  outline-offset: 3px;
 }
 .empty {
   background: var(--bg-deep);
