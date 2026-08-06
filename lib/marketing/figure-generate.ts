@@ -15,6 +15,7 @@
 
 import { randomUUID } from 'node:crypto';
 import { sanitiseFigure, FIGURE_STEP_CONTRACT, type PrezieFigure } from './figure';
+import { parseFigureReply } from './figure-parse';
 import { DraftError } from './draft';
 import { complete } from '@/lib/llm';
 import { resolveModel } from '@/lib/llm/openrouter';
@@ -125,8 +126,19 @@ mark and nothing else on the screen.
 WHEN REVISING, change what was asked and leave everything else exactly as it is. The operator
 is building this up over several turns and expects what he already approved to stay put.
 
-Return ONLY a JSON object, no markdown and no code fences:
-{"note":"<one short sentence to the operator, as a reply in a conversation>","name":"<two or three words naming THIS PICTURE, e.g. \"question mark\" or \"the lever\", not the topic of the piece>","taps":<how many taps it takes to complete, 0 if none>,"interactive":<true only if the figure has its own drag or multiple hit targets, otherwise omit>,"css":"<the CSS>","html":"<the markup fragment, one root element>"}`;
+Return EXACTLY this, and nothing else. No JSON, no markdown, no code fences:
+
+NAME: <two or three words naming THIS PICTURE, like "question mark" or "the lever", not the topic of the piece>
+TAPS: <how many taps it takes to complete, 0 if none>
+INTERACTIVE: <yes only if the figure has its own control or several hit targets, otherwise no>
+NOTE: <one short sentence to the operator, as a reply in a conversation>
+---CSS---
+<the CSS, on as many lines as you like>
+---HTML---
+<the markup fragment, one root element, on as many lines as you like>
+
+The two blocks are read literally between their markers, so write normal multi-line CSS and HTML
+with real line breaks and quotes. NOTHING NEEDS ESCAPING and nothing should be on one line.`;
 
 
 /**
@@ -150,15 +162,8 @@ const figureModel = () => process.env.FIGURE_MODEL || undefined;
  */
 export const figureModelInUse = () => resolveModel(figureModel());
 
-function parseLoose(raw: string): unknown {
-  const t = raw.trim();
-  const fence = t.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
-  const c = fence ? fence[1] : t;
-  const a = c.indexOf('{');
-  const b = c.lastIndexOf('}');
-  if (a === -1 || b === -1) throw new Error('no JSON object');
-  return JSON.parse(c.slice(a, b + 1));
-}
+
+
 
 
 const DISCUSS_SYSTEM = `You are April, Polynize's visual-direction specialist, talking to the presenter about ONE figure for a touchscreen he performs to camera.
@@ -302,16 +307,19 @@ export async function generateFigure(
     throw new DraftError('llm-unavailable');
   }
 
-  let parsed: unknown;
-  try {
-    parsed = parseLoose(raw);
-  } catch {
+  const o = parseFigureReply(raw);
+  const html = o.html ?? '';
+  const css = o.css ?? '';
+  if (!html.trim()) {
+    // Log enough to diagnose the NEXT failure without guessing: the shape she actually sent.
+    console.error(
+      `[figure] no markup in the reply. length=${raw.length} ` +
+        `hasCssMarker=${/-{2,}\s*CSS\s*-{2,}/i.test(raw)} ` +
+        `hasHtmlMarker=${/-{2,}\s*HTML\s*-{2,}/i.test(raw)} ` +
+        `startsWith=${JSON.stringify(raw.slice(0, 120))}`
+    );
     throw new DraftError('empty');
   }
-  const o = parsed as Record<string, unknown>;
-  const html = typeof o.html === 'string' ? o.html : '';
-  const css = typeof o.css === 'string' ? o.css : '';
-  if (!html.trim()) throw new DraftError('empty');
 
   // The brief ACCUMULATES. Without this, turn three has no idea what turn one asked for and
   // quietly undoes it, which is exactly what makes an iterative loop feel broken.
@@ -319,20 +327,16 @@ export async function generateFigure(
 
   const figure = sanitiseFigure({
     figure_id: current?.figure_id ?? randomUUID(),
-    name: stripEmDashes(typeof o.name === 'string' && o.name ? o.name : current?.name || 'Figure'),
+    name: stripEmDashes(o.name || current?.name || 'Figure'),
     brief: stripEmDashes(brief),
     css,
     html: stripEmDashes(html),
-    taps: typeof o.taps === 'number' ? o.taps : Number(o.taps ?? 0),
+    taps: o.taps ?? 0,
+    interactive: o.interactive === true ? true : current?.interactive,
   });
 
   return {
     figure,
-    note:
-      typeof o.note === 'string' && o.note
-        ? stripEmDashes(o.note)
-        : current
-          ? 'Updated it.'
-          : 'Drew it.',
+    note: o.note ? stripEmDashes(o.note) : current ? 'Updated it.' : 'Drew it.',
   };
 }
