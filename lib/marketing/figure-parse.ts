@@ -71,7 +71,7 @@ export function parseFigureBlocks(raw: string): ParsedFigure {
  * it. Walks the text tracking whether it is inside a string, so only the characters that are
  * actually illegal get escaped.
  */
-function repairJsonControlChars(text: string): string {
+export function repairJsonControlChars(text: string): string {
   let out = '';
   let inString = false;
   let escaped = false;
