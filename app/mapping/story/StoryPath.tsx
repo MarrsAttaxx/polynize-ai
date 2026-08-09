@@ -28,7 +28,7 @@ import s from './story.module.css';
 gsap.registerPlugin(ScrollTrigger);
 
 /** Where the route sits horizontally at each stop, as a fraction of sheet width. */
-const X_STOPS = [0.3, 0.08, 0.44, 0.13, 0.36, 0.5];
+const X_STOPS = [0.5, 0.08, 0.44, 0.13, 0.36, 0.5];
 
 /** Fixed wander table. Deterministic: a random value here is a hydration mismatch. */
 const SCRIBBLE = [1, -0.86, 0.58, -1, 0.42, -0.72, 0.94, -0.34, 0.66, -0.95, 0.5, -0.62];
@@ -107,7 +107,7 @@ export function StoryPath({ beatCount }: { beatCount: number }) {
       const beats = Array.from(section.querySelectorAll('[data-beat]')) as HTMLElement[];
       const ys = beats.map((b) => {
         const r = b.getBoundingClientRect();
-        return r.top + window.scrollY - secTop + r.height / 2;
+        return r.top + window.scrollY - secTop + r.height * 0.84;
       });
       setWaypoints((prev) =>
         prev.length === ys.length && prev.every((v, i) => Math.abs(v - ys[i]) < 1) ? prev : ys

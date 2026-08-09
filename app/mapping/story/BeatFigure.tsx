@@ -2,201 +2,243 @@ import type { FigureKind } from './content';
 import s from './story.module.css';
 
 /**
- * One instrument per beat, in the ate.html idiom.
+ * One animation per beat, filling the space between the lines.
  *
- * THE GRAMMAR, taken from the deck: the frame of the measurement exists before any of
- * the measurement does, content washes in on a stagger far shorter than its own fade
- * (the deck runs 42ms against 450ms, so a dozen items are mid-fade at once and it reads
- * as one directional wipe rather than a staircase), and the last gesture is the one
- * that should deliver a reading. Here it never does. These sit in the PROBLEM section,
- * so every instrument fills itself in and then refuses to resolve.
+ * FAIL-SAFE BY CONSTRUCTION, which is why these are CSS keyframes and not GSAP. Every
+ * element is server-rendered at its finished geometry and the stylesheet base state is
+ * a complete, legible drawing. Animation exists only while `.play` is on the container.
+ * No script, no observer, a stalled ticker and reduced motion all land on something
+ * drawn. Nothing here rests at opacity 0.
  *
- * FAIL-SAFE BY CONSTRUCTION, and this is why the motion is CSS keyframes rather than
- * GSAP. Every element below is server-rendered at its FINISHED geometry, and the
- * stylesheet's base state is the finished drawing. Animation only exists while a
- * `.play` class is present, and a CSS animation returns the element to its base style.
- * So no script, no observer, a stalled ticker and reduced motion all land on the
- * completed figure. Nothing here may rest at opacity 0.
+ * NO NUMERALS AND NO WORDS. These sit before the product is introduced, so anything
+ * readable as a score or a benchmark figure would be inventing evidence.
  *
- * NO NUMERALS, NO WORDS, NO AXES, NO GRADING. These are drawn before the product is
- * introduced, so anything readable as a score, a benchmark or a result would be
- * inventing evidence. Neutral greys only: mint belongs to the route and the turn, and
- * amber and coral are spoken for by the matrix legend two sections down.
+ * ON THE VENDOR MARKS: beat 1 and beat 4 use neutral territory badges rather than real
+ * OpenAI / Anthropic / Gemini / Copilot logos. Drawing third-party trademarks from
+ * memory would be both inaccurate and a real trademark exposure on a commercial page.
+ * The badges are deliberately one component (`VendorMark`) so real assets can be
+ * dropped in once that call is made.
  */
 
 const VIEWBOX: Record<FigureKind, string> = {
-  scatter: '0 0 360 150',
-  ambiguity: '0 0 360 150',
-  coordinates: '0 0 360 150',
-  guess: '0 0 360 158',
+  scatter: '0 0 420 230',
+  ambiguity: '0 0 420 200',
+  coordinates: '0 0 420 200',
+  guess: '0 0 420 210',
 };
 
 export function BeatFigure({ kind }: { kind: FigureKind }) {
   return (
     <div className={s.figure} data-fig={kind} aria-hidden="true">
       <svg viewBox={VIEWBOX[kind]} className={s.figureSvg} focusable="false">
-        {kind === 'scatter' && <Fragments />}
-        {kind === 'ambiguity' && <Fan />}
-        {kind === 'coordinates' && <Reticle />}
-        {kind === 'guess' && <Ledger />}
+        {kind === 'scatter' && <AiWorld />}
+        {kind === 'ambiguity' && <Evaporate />}
+        {kind === 'coordinates' && <CompassBench />}
+        {kind === 'guess' && <Jumble />}
       </svg>
     </div>
   );
 }
 
-/* ------------------------------------------------------------------ beat 1
-   Activity that never joins up. Seven short runs of route, each with its own point of
-   departure, arriving in scattered order so the picture accumulates rather than
-   progresses. None of them meets another. Deliberately NOT a field of bars: bars on a
-   shared floor read as a distribution, which is a different (and unearned) claim. */
-const FRAGMENTS = [
-  { d: 'M 24 108 q 20 -24 46 -14', i: 3 },
-  { d: 'M 104 44 q 26 16 44 -6', i: 0 },
-  { d: 'M 60 74 q 22 -18 44 -8', i: 5 },
-  { d: 'M 178 116 q 24 -22 48 -8', i: 1 },
-  { d: 'M 232 52 q 22 20 46 2', i: 6 },
-  { d: 'M 150 80 q 20 18 42 0', i: 4 },
-  { d: 'M 288 98 q 20 -18 44 -6', i: 2 },
-];
-
-function Fragments() {
+/** Placeholder for a vendor mark. Swap for real assets if the trademark call is made. */
+function VendorMark({ x, y, i }: { x: number; y: number; i: number }) {
+  const glyphs = [
+    <circle key="a" cx={x} cy={y} r="5.5" />,
+    <rect key="b" x={x - 5} y={y - 5} width="10" height="10" rx="2.5" />,
+    <path key="c" d={`M ${x} ${y - 6} L ${x + 6} ${y + 5} L ${x - 6} ${y + 5} Z`} />,
+    <path key="d" d={`M ${x} ${y - 6.5} L ${x + 6.5} ${y} L ${x} ${y + 6.5} L ${x - 6.5} ${y} Z`} />,
+    <path key="e" d={`M ${x - 6} ${y} h 12 M ${x} ${y - 6} v 12`} />,
+  ];
   return (
-    <g>
-      {FRAGMENTS.map((f, k) => {
-        const [, x, y] = f.d.split(' ');
-        return (
-          <g key={k} className={s.figItem} style={{ ['--i' as string]: f.i }}>
-            <circle className={s.figSource} cx={x} cy={y} r="3.4" />
-            <path className={s.figDash} d={f.d} />
-          </g>
-        );
-      })}
+    <g className={s.figVendor}>
+      <circle className={s.figBadge} cx={x} cy={y} r="13" />
+      {glyphs[i % glyphs.length]}
     </g>
   );
 }
 
-/* ------------------------------------------------------------------ beat 2
-   One committed stem, then five equally plausible routes.
+/* ---------------------------------------------------------------- beat 1
+   A fictitious continent, drawn as a clean survey outline with territories staked out
+   across it. It arrives crisp and then goes soft and faint: the terrain you thought you
+   were navigating will not hold still long enough to be navigated.
+   Ends faded rather than gone, so the base state is never blank. */
+const TERRITORIES = [
+  { x: 118, y: 86 },
+  { x: 196, y: 62 },
+  { x: 262, y: 104 },
+  { x: 152, y: 142 },
+  { x: 316, y: 74 },
+  { x: 226, y: 160 },
+];
 
-   The choreography is the argument, and it is lifted from the deck's animateModel: its
-   cards arrive one at a time, then every connector lands AT ONCE, unstaggered. Drawing
-   branches in sequence would imply an order; landing them on the same frame says all of
-   these, and you cannot pick.
-
-   Each route is built from discrete dash segments rather than a dashed stroke, because
-   DrawSVGPlugin overwrites stroke-dasharray on every render and would finish a dashed
-   path as a solid one. Segment k of every route shares one delay, so the five grow
-   outward together. */
-const FAN_ENDS = [22, 50, 76, 102, 128];
-const SEGS = 7;
-const FORK = { x: 118, y: 76 };
-const FAN_END_X = 322;
-
-function Fan() {
+function AiWorld() {
   return (
-    <g>
-      <circle className={s.figSource} cx="26" cy="76" r="5.5" />
-      {/* the only committed stretch: the part nobody disputes */}
-      <path className={s.figStem} d="M 34 76 H 110" />
-      <circle className={s.figHollow} cx={FORK.x} cy={FORK.y} r="6" />
+    <g className={s.figWorld}>
+      {/* coastline */}
+      <path
+        className={s.figCoast}
+        d="M 74 118 C 66 84, 104 52, 148 48 C 190 44, 206 26, 250 34 C 300 43, 340 40, 356 68
+           C 372 96, 350 116, 344 140 C 338 166, 296 190, 248 186 C 200 182, 176 196, 140 184
+           C 100 170, 82 152, 74 118 Z"
+      />
+      {/* interior contour */}
+      <path
+        className={s.figContour}
+        d="M 106 116 C 108 92, 142 74, 180 76 C 224 78, 258 66, 290 82 C 320 97, 326 126, 306 146
+           C 284 168, 226 170, 186 162 C 146 154, 104 142, 106 116 Z"
+      />
+      {/* offshore */}
+      <path className={s.figContour} d="M 46 168 q 14 -12 28 -2 q -12 14 -28 2 Z" />
+      <path className={s.figContour} d="M 372 158 q 16 -10 28 2 q -14 12 -28 -2 Z" />
 
-      {FAN_ENDS.map((endY, r) => (
-        <g key={r}>
-          {Array.from({ length: SEGS }).map((_, k) => {
-            const t0 = k / SEGS;
-            const t1 = (k + 0.62) / SEGS;
-            const px = (t: number) => FORK.x + 8 + (FAN_END_X - FORK.x - 20) * t;
-            const py = (t: number) => FORK.y + (endY - FORK.y) * (t * t * 0.35 + t * 0.65);
-            return (
-              <line
-                key={k}
-                className={`${s.figSeg} ${s.figItem}`}
-                style={{ ['--i' as string]: k }}
-                x1={px(t0).toFixed(1)}
-                y1={py(t0).toFixed(1)}
-                x2={px(t1).toFixed(1)}
-                y2={py(t1).toFixed(1)}
-              />
-            );
-          })}
-          {/* destinations land together, and none is distinguished */}
-          <circle className={`${s.figHollow} ${s.figItem}`} style={{ ['--i' as string]: SEGS }} cx={FAN_END_X} cy={endY} r="5.5" />
-        </g>
+      {TERRITORIES.map((t, i) => (
+        <VendorMark key={i} x={t.x} y={t.y} i={i} />
       ))}
     </g>
   );
 }
 
-/* ------------------------------------------------------------------ beat 3
-   Two coordinates, neither of which resolves.
+/* ---------------------------------------------------------------- beat 2
+   Bots appearing among the people, and then the whole field evaporating: effort that
+   went in and left nothing behind that anyone can point at. */
+const PEOPLE = [
+  [54, 118], [96, 74], [138, 132], [180, 86], [222, 140], [264, 78], [306, 126], [348, 88],
+];
+const BOTS = [
+  [76, 96], [160, 108], [244, 100], [326, 150], [118, 158],
+];
 
-   A locator that tries three times to close on a position and stops short, off centre,
-   and a horizon that re-levels three times and settles at no particular height. Chosen
-   over a ruled table on purpose: a table with a name column and a per-row measurement
-   track is the capability matrix's own anatomy, and hand-drawing the product one
-   section before the real one appears is exactly what got the last attempt rejected. */
-function Reticle() {
+function Person({ x, y, i }: { x: number; y: number; i: number }) {
   return (
-    <g>
-      <g className={s.figLock}>
-        <circle className={s.figHollow} cx="96" cy="75" r="34" />
-        <circle className={s.figHollow} cx="96" cy="75" r="17" />
-      </g>
-      <path className={s.figCross} d="M 96 30 v -14 M 96 120 v 14 M 51 75 h -14 M 141 75 h 14" />
-      <circle className={s.figSource} cx="96" cy="75" r="2.6" />
-
-      <g className={s.figHorizon}>
-        <path className={s.figDash} d="M 208 62 H 340" />
-      </g>
-      <path className={s.figCross} d="M 208 118 H 340" />
-      <path className={s.figCross} d="M 208 32 H 340" />
+    <g className={`${s.figHuman} ${s.figPuff}`} style={{ ['--i' as string]: i }}>
+      <circle cx={x} cy={y - 9} r="5.6" />
+      <path d={`M ${x - 8.5} ${y + 12} a 8.5 9 0 0 1 17 0`} />
     </g>
   );
 }
 
-/* ------------------------------------------------------------------ beat 4
-   Three decisions, three ways each could go, nothing allocated.
+function Bot({ x, y, i }: { x: number; y: number; i: number }) {
+  return (
+    <g className={`${s.figBot} ${s.figPuff}`} style={{ ['--i' as string]: i + 8 }}>
+      <rect x={x - 8} y={y - 8} width="16" height="14" rx="3.5" />
+      <circle cx={x - 3.4} cy={y - 1.5} r="1.7" className={s.figBotEye} />
+      <circle cx={x + 3.4} cy={y - 1.5} r="1.7" className={s.figBotEye} />
+      <path d={`M ${x} ${y - 8} v -5 M ${x - 11} ${y - 2} h -3 M ${x + 11} ${y - 2} h 3`} />
+    </g>
+  );
+}
 
-   Rows wash down at the deck's animateCapMap cadence. Then one row tries each lane in
-   turn, borrowed from the train slide's fill tween: it commits faster than it lets go
-   (a 220ms wash against a 150ms drain), three times, and keeps none of them. The row
-   ends exactly as empty as it started.
-
-   Trimmed to three rows from the spec's six: eighteen outlined pills read as a table,
-   and the reader meets the real matrix two sections later. */
-const LEDGER_ROWS = [0, 1, 2];
-const LANES = [196, 252, 308];
-const TRY_ROW = 1;
-
-function Ledger() {
+function Evaporate() {
   return (
     <g>
-      <path className={s.figFrame} d="M 20 28 H 340" />
-      {LEDGER_ROWS.map((r) => {
-        const y = 56 + r * 38;
+      {PEOPLE.map(([x, y], i) => (
+        <Person key={`p${i}`} x={x} y={y} i={i} />
+      ))}
+      {BOTS.map(([x, y], i) => (
+        <Bot key={`b${i}`} x={x} y={y} i={i} />
+      ))}
+    </g>
+  );
+}
+
+/* ---------------------------------------------------------------- beat 3
+   Two instruments, both refusing to give a reading: a compass whose needle never
+   settles on north, and a set of bars climbing towards a benchmark none of them
+   reaches. No numerals: the benchmark is a line, not a score. */
+const BARS = [
+  { x: 244, h: 44, i: 0 },
+  { x: 274, h: 62, i: 1 },
+  { x: 304, h: 34, i: 2 },
+  { x: 334, h: 70, i: 3 },
+  { x: 364, h: 52, i: 4 },
+];
+const BENCH_Y = 46;
+const BAR_BASE = 158;
+
+function CompassBench() {
+  return (
+    <g>
+      {/* compass */}
+      <g className={s.figCompass}>
+        <circle className={s.figRing} cx="104" cy="100" r="62" />
+        <circle className={s.figRing} cx="104" cy="100" r="48" />
+        {Array.from({ length: 16 }).map((_, i) => {
+          const a = (i * Math.PI * 2) / 16;
+          const r0 = i % 4 === 0 ? 44 : 52;
+          return (
+            <line
+              key={i}
+              className={s.figTick}
+              x1={104 + Math.sin(a) * r0}
+              y1={100 - Math.cos(a) * r0}
+              x2={104 + Math.sin(a) * 60}
+              y2={100 - Math.cos(a) * 60}
+            />
+          );
+        })}
+        {/* eight-point rose */}
+        <path className={s.figRose} d="M 104 52 L 113 91 L 104 100 L 95 91 Z" />
+        <path className={s.figRoseDim} d="M 104 148 L 95 109 L 104 100 L 113 109 Z" />
+        <path className={s.figRoseDim} d="M 56 100 L 95 91 L 104 100 L 95 109 Z" />
+        <path className={s.figRoseDim} d="M 152 100 L 113 109 L 104 100 L 113 91 Z" />
+        <g className={s.figNeedle}>
+          <path className={s.figNeedleN} d="M 104 60 L 110 100 L 104 96 L 98 100 Z" />
+          <path className={s.figNeedleS} d="M 104 140 L 98 100 L 104 104 L 110 100 Z" />
+        </g>
+        <circle className={s.figHub} cx="104" cy="100" r="4" />
+      </g>
+
+      {/* the benchmark, and bars that never reach it */}
+      <path className={s.figBench} d={`M 226 ${BENCH_Y} H 392`} />
+      <path className={s.figAxis} d={`M 226 ${BAR_BASE} H 392`} />
+      {BARS.map((b) => (
+        <rect
+          key={b.x}
+          className={s.figGrow}
+          style={{ ['--i' as string]: b.i, ['--h' as string]: `${b.h}px` }}
+          x={b.x - 9}
+          y={BAR_BASE - b.h}
+          width="18"
+          height={b.h}
+          rx="2.5"
+        />
+      ))}
+    </g>
+  );
+}
+
+/* ---------------------------------------------------------------- beat 4
+   Everything from the beats above, jumbled together with the question that is actually
+   being asked: which of these is worth the money. Nothing resolves. */
+const JUMBLE = [
+  { k: 'v', x: 60, y: 62 },
+  { k: 'q', x: 118, y: 44 },
+  { k: 'h', x: 168, y: 74 },
+  { k: 'b', x: 224, y: 48 },
+  { k: 'q', x: 282, y: 70 },
+  { k: 'v', x: 340, y: 52 },
+  { k: 'h', x: 74, y: 130 },
+  { k: 'b', x: 132, y: 150 },
+  { k: 'q', x: 196, y: 134 },
+  { k: 'v', x: 252, y: 156 },
+  { k: 'h', x: 312, y: 132 },
+  { k: 'q', x: 366, y: 152 },
+];
+
+function Jumble() {
+  return (
+    <g>
+      {JUMBLE.map((j, i) => {
+        const style = { ['--i' as string]: i } as React.CSSProperties;
+        if (j.k === 'v') return <g key={i} className={s.figItem} style={style}><VendorMark x={j.x} y={j.y} i={i} /></g>;
+        if (j.k === 'h') return <g key={i} className={s.figItem} style={style}><Person x={j.x} y={j.y} i={i} /></g>;
+        if (j.k === 'b') return <g key={i} className={s.figItem} style={style}><Bot x={j.x} y={j.y} i={i} /></g>;
         return (
-          <g key={r} className={s.figItem} style={{ ['--i' as string]: r }}>
-            <rect className={s.figRule} x="20" y={y - 5} width={[104, 78, 122][r]} height="9" rx="4.5" />
-            {LANES.map((lx, k) => (
-              <g key={k}>
-                <rect className={s.figPill} x={lx - 24} y={y - 12} width="48" height="24" rx="5" />
-                {r === TRY_ROW && (
-                  <rect
-                    className={s.figTry}
-                    style={{ ['--k' as string]: k }}
-                    x={lx - 24}
-                    y={y - 12}
-                    width="48"
-                    height="24"
-                    rx="5"
-                  />
-                )}
-              </g>
-            ))}
-          </g>
+          <text key={i} className={`${s.figQuery} ${s.figItem}`} style={style} x={j.x} y={j.y + 8}>
+            ?
+          </text>
         );
       })}
-      <path className={s.figFrame} d="M 20 170 H 340" />
     </g>
   );
 }

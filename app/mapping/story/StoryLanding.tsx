@@ -47,7 +47,7 @@ export function StoryLanding({
         <section className={s.hero}>
           <div className={s.heroCopy}>
             <span className={s.titleGlyph}>
-              <MapGlyph size={40} />
+              <MapGlyph size={80} />
             </span>
             <h1 className={s.h1}>{c.hero.h1}</h1>
             <p className={s.heroSub}>{c.hero.subhead}</p>
@@ -292,7 +292,7 @@ function Section({
         {glyph ? (
           <h2 className={`${s.h2} ${s.h2WithGlyph}`}>
             <span className={s.headGlyph}>
-              <MapGlyph size={32} />
+              <MapGlyph size={64} />
             </span>
             {h2}
           </h2>

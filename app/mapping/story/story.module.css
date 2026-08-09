@@ -229,34 +229,9 @@
   z-index: 1;
 }
 
-/* Unsurveyed ground: hachure behind the beats that thins out as the route locates you.
-   Default is ZERO, i.e. the clean surveyed state. The chaos only ever appears once
-   StoryPath has written data-reached, so no-JS, reduced-motion and an observer that
-   never delivers all land on a legible page rather than a smudged one. */
-.story::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: calc(50% - 50vw);
-  width: 100vw;
-  z-index: 0;
-  pointer-events: none;
-  opacity: 0;
-  transition: opacity 0.9s ease;
-  background: repeating-linear-gradient(
-    45deg,
-    color-mix(in srgb, var(--text-3) 22%, transparent) 0 1px,
-    transparent 1px 10px
-  );
-  -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 26%, transparent 78%);
-  mask-image: linear-gradient(to bottom, #000 0%, #000 26%, transparent 78%);
-}
-.story[data-reached='0']::before { opacity: 0.8; }
-.story[data-reached='1']::before { opacity: 0.55; }
-.story[data-reached='2']::before { opacity: 0.32; }
-.story[data-reached='3']::before { opacity: 0.14; }
-.story[data-reached='4']::before { opacity: 0; }
+/* The diagonal hachure overlay that used to live here has been removed. It read as
+   noise rather than as unsurveyed ground, and the route now carries the map idea on
+   its own. data-reached is still written by StoryPath and still drives the checkpoints. */
 /* Chapter marker, not a label. It has to be readable at scrolling speed, so it is
    set at heading scale with rules either side rather than as a tiny eyebrow. */
 .kicker {
@@ -301,7 +276,8 @@
   line-height: 1.62;
   color: var(--text-2);
 }
-/* The turn. The only mint line in the arc, so it reads as the pivot.
+/* The turn. White rather than mint: at this size the mint read as a system colour
+   rather than a statement, and the X below it already carries the mint.
    The extra bottom padding is the landing: it is the room the X drops into, between
    the copy and the next section. Without it the X sat on top of the words. */
 .beatTurn {
@@ -316,7 +292,7 @@
   line-height: 1.06;
   margin: 0;
   max-width: 860px;
-  color: var(--mint);
+  color: var(--text);
 }
 
 /* ---------- Map glyph ----------
@@ -325,8 +301,8 @@
 .titleGlyph {
   display: block;
   color: var(--mint);
-  margin: 0 auto 18px;
-  width: 40px;
+  margin: 0 auto 22px;
+  width: 80px;
   filter: drop-shadow(0 0 10px color-mix(in srgb, var(--mint) 40%, transparent));
 }
 .h2WithGlyph {
@@ -343,126 +319,138 @@
 }
 
 /* ---------- Beat figures ----------
-   Four instruments in the ate.html idiom. Neutral greys only: mint is the route and the
-   turn, and amber and coral are spoken for by the matrix legend two sections down, so
-   spending either here would collide with a meaning the reader is given later.
+   Four animations, one per beat. Neutral greys: mint is the route and the turn, and
+   amber and coral are spoken for by the matrix legend two sections down.
 
-   MOTION POLICY, and it is the whole reason these are CSS keyframes and not GSAP.
-   The base style IS the finished drawing. Animation exists only while .play is on the
-   container, and a CSS animation hands the element back to its base style when it ends.
-   So no script, no observer, a stalled requestAnimationFrame and prefers-reduced-motion
-   all land on the completed figure. Nothing here rests at opacity 0. This page has
-   shipped invisible copy twice; it will not do it a third time. */
-.figure { width: 100%; max-width: 480px; margin: 40px auto 0; }
+   MOTION POLICY, and the reason these are CSS keyframes rather than GSAP: the base
+   style IS a complete drawing, and animation exists only while .play is on the
+   container. No script, no observer, a stalled ticker and reduced motion all land on
+   something drawn. Nothing here rests at opacity 0. */
+.figure { width: 100%; max-width: 520px; margin: 44px auto 0; }
 .figureSvg { display: block; width: 100%; height: auto; overflow: visible; }
 
-/* the instrument: rules and neatlines. never animated. */
-.figFrame {
-  fill: none;
-  stroke: color-mix(in srgb, var(--text-3) 42%, transparent);
-  stroke-width: 1.4;
+/* --- shared marks --- */
+.figVendor { fill: color-mix(in srgb, var(--text-3) 82%, transparent); stroke: none; }
+.figVendor path { stroke: color-mix(in srgb, var(--text-3) 82%, transparent); stroke-width: 1.6; }
+.figBadge {
+  fill: var(--bg);
+  stroke: color-mix(in srgb, var(--mint) 45%, var(--text-3));
+  stroke-width: 1.6;
 }
-/* content that is present but withheld: a bar standing in for a word */
-.figRule { fill: color-mix(in srgb, var(--text-3) 32%, transparent); }
-/* an empty slot */
-.figPill {
+.figHuman {
   fill: none;
-  stroke: color-mix(in srgb, var(--text-3) 45%, transparent);
-  stroke-width: 1.5;
-}
-/* route, unresolved */
-.figDash {
-  fill: none;
-  stroke: color-mix(in srgb, var(--text-3) 70%, transparent);
-  stroke-width: 2.6;
-  stroke-linecap: butt;
-  stroke-dasharray: 9 7;
-}
-/* one dash of a fanned route, drawn as geometry so a plugin cannot flatten it */
-.figSeg {
-  stroke: color-mix(in srgb, var(--text-3) 70%, transparent);
-  stroke-width: 2.6;
-  stroke-linecap: butt;
-}
-/* the committed stretch: the only thing not in question */
-.figStem {
-  fill: none;
-  stroke: color-mix(in srgb, var(--text-3) 92%, transparent);
-  stroke-width: 2.6;
-  stroke-linecap: butt;
-}
-.figSource { fill: color-mix(in srgb, var(--text-3) 88%, transparent); }
-.figHollow {
-  fill: none;
-  stroke: color-mix(in srgb, var(--text-3) 68%, transparent);
+  stroke: color-mix(in srgb, var(--text-3) 78%, transparent);
   stroke-width: 1.8;
-  stroke-dasharray: 5 5;
+  stroke-linecap: round;
 }
-.figCross {
+.figBot {
   fill: none;
-  stroke: color-mix(in srgb, var(--text-3) 50%, transparent);
-  stroke-width: 1.5;
-  stroke-dasharray: 3 4;
+  stroke: color-mix(in srgb, var(--mint) 55%, var(--text-3));
+  stroke-width: 1.8;
+  stroke-linecap: round;
+}
+.figBotEye { fill: color-mix(in srgb, var(--mint) 55%, var(--text-3)); stroke: none; }
+.figQuery {
+  fill: color-mix(in srgb, var(--text-3) 70%, transparent);
+  font-family: var(--font-space-grotesk), sans-serif;
+  font-size: 26px;
+  font-weight: 600;
+  text-anchor: middle;
 }
 
-/* --- the wash. The deck runs a stagger far shorter than its own fade, so a dozen
-       items are mid-fade at once and it reads as one directional wipe. 46ms into a
-       460ms fade holds that ratio. --- */
+/* the wash: a stagger far shorter than its own fade, so content wipes rather than pops */
 @keyframes figWash {
-  from { opacity: 0; transform: translateX(16px); }
+  from { opacity: 0; transform: translateY(12px); }
   to { opacity: 1; transform: none; }
 }
+.figItem { transform-box: fill-box; transform-origin: 50% 50%; }
 .play .figItem {
-  animation: figWash 460ms cubic-bezier(0.4, 0, 0.2, 1) both;
-  animation-delay: calc(var(--i, 0) * 46ms);
+  animation: figWash 480ms cubic-bezier(0.4, 0, 0.2, 1) both;
+  animation-delay: calc(var(--i, 0) * 52ms);
 }
 
-/* --- beat 3: a position fix that closes three times and never locks, and a horizon
-       that re-levels and settles nowhere in particular. Both end off true, which is
-       the point, and both end STATIC: nothing on this page loops. --- */
-@keyframes figLock {
-  0% { transform: scale(1.5); opacity: 0; }
-  22% { transform: scale(0.82); opacity: 1; }
-  40% { transform: scale(1.28); }
-  58% { transform: scale(0.9); }
-  76% { transform: scale(1.18); }
-  100% { transform: scale(1); opacity: 1; }
+/* --- beat 1: AI World. Arrives as a clean survey drawing, then goes soft and faint.
+       Ends faded, never gone, so the resting state is still a legible map. --- */
+.figCoast {
+  fill: none;
+  stroke: color-mix(in srgb, var(--text-3) 95%, transparent);
+  stroke-width: 2.6;
+  stroke-linejoin: round;
 }
-.play .figLock {
-  transform-origin: 96px 75px;
-  animation: figLock 2.1s cubic-bezier(0.4, 0, 0.2, 1) both;
+.figContour {
+  fill: none;
+  stroke: color-mix(in srgb, var(--text-3) 62%, transparent);
+  stroke-width: 1.6;
 }
-@keyframes figHorizon {
-  0% { transform: translateY(34px); opacity: 0; }
-  25% { transform: translateY(34px); opacity: 1; }
-  45% { transform: translateY(-18px); }
-  68% { transform: translateY(22px); }
-  100% { transform: none; }
+@keyframes figWorldSoften {
+  0% { opacity: 0; filter: blur(3px); }
+  26% { opacity: 1; filter: blur(0); }
+  66% { opacity: 1; filter: blur(0); }
+  100% { opacity: 0.45; filter: blur(1.8px); }
 }
-.play .figHorizon {
-  animation: figHorizon 2.2s cubic-bezier(0.4, 0, 0.2, 1) both;
+.play .figWorld { animation: figWorldSoften 3s cubic-bezier(0.4, 0, 0.2, 1) both; }
+
+/* --- beat 2: bots appear among the people, then the whole field evaporates. --- */
+.figPuff { transform-box: fill-box; transform-origin: 50% 50%; }
+@keyframes figPuff {
+  0% { opacity: 0; transform: translateY(10px) scale(0.86); }
+  20% { opacity: 1; transform: none; }
+  56% { opacity: 1; transform: none; filter: blur(0); }
+  100% { opacity: 0.3; transform: translateY(-14px) scale(1.06); filter: blur(1.4px); }
+}
+[data-fig='ambiguity'].play .figPuff {
+  animation: figPuff 2.9s cubic-bezier(0.4, 0, 0.2, 1) both;
+  animation-delay: calc(var(--i, 0) * 62ms);
 }
 
-/* --- beat 4: the trying. Commits faster than it lets go, three times, and keeps
-       nothing. Resting fill-opacity is 0 and the animation returns to 0, so there is
-       no code path where this leaves anything filled or anything hidden. --- */
-.figTry { fill: color-mix(in srgb, var(--text-3) 70%, transparent); fill-opacity: 0; }
-@keyframes figTryWash {
-  0% { fill-opacity: 0; }
-  36% { fill-opacity: 0.34; }
-  60% { fill-opacity: 0.34; }
-  100% { fill-opacity: 0; }
+/* --- beat 3: a compass that never settles, and bars that never reach the line. --- */
+.figRing { fill: none; stroke: color-mix(in srgb, var(--text-3) 34%, transparent); stroke-width: 1.3; }
+.figTick { stroke: color-mix(in srgb, var(--text-3) 42%, transparent); stroke-width: 1.3; }
+.figRose { fill: color-mix(in srgb, var(--text-3) 60%, transparent); }
+.figRoseDim { fill: color-mix(in srgb, var(--text-3) 26%, transparent); }
+.figNeedleN { fill: color-mix(in srgb, var(--text-3) 96%, transparent); }
+.figNeedleS { fill: color-mix(in srgb, var(--text-3) 40%, transparent); }
+.figHub { fill: var(--bg); stroke: color-mix(in srgb, var(--text-3) 55%, transparent); stroke-width: 1.4; }
+.figNeedle { transform-box: fill-box; transform-origin: 50% 50%; }
+@keyframes figHunt {
+  0% { transform: rotate(-62deg); }
+  22% { transform: rotate(28deg); }
+  44% { transform: rotate(-34deg); }
+  66% { transform: rotate(19deg); }
+  84% { transform: rotate(-14deg); }
+  100% { transform: rotate(-24deg); }
 }
-.play .figTry {
-  animation: figTryWash 620ms cubic-bezier(0.4, 0, 0.2, 1);
-  animation-delay: calc(900ms + var(--k, 0) * 520ms);
+.play .figNeedle { animation: figHunt 3.2s cubic-bezier(0.4, 0, 0.2, 1) both; }
+
+/* the benchmark is a line, never a number */
+.figBench {
+  fill: none;
+  stroke: color-mix(in srgb, var(--text-3) 78%, transparent);
+  stroke-width: 1.8;
+  stroke-dasharray: 7 6;
+}
+.figAxis { fill: none; stroke: color-mix(in srgb, var(--text-3) 34%, transparent); stroke-width: 1.4; }
+.figGrow {
+  fill: color-mix(in srgb, var(--text-3) 40%, transparent);
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+}
+@keyframes figGrow {
+  0% { transform: scaleY(0.04); }
+  72% { transform: scaleY(1.08); }
+  100% { transform: scaleY(1); }
+}
+.play .figGrow {
+  animation: figGrow 900ms cubic-bezier(0.4, 0, 0.2, 1) both;
+  animation-delay: calc(600ms + var(--i, 0) * 110ms);
 }
 
 @media (prefers-reduced-motion: reduce) {
   .play .figItem,
-  .play .figLock,
-  .play .figHorizon,
-  .play .figTry {
+  .play .figWorld,
+  [data-fig='ambiguity'].play .figPuff,
+  .play .figNeedle,
+  .play .figGrow {
     animation: none;
   }
 }
@@ -987,8 +975,10 @@
 }
 @media (max-width: 680px) {
   .figure { max-width: 320px; margin-top: 26px; }
-  .titleGlyph { width: 32px; margin-bottom: 14px; }
-  .page { padding: 0 18px 32px; }
+  .titleGlyph { width: 56px; margin-bottom: 16px; }
+  /* 18px put the headline hard against both edges on a phone. */
+  .page { padding: 0 26px 32px; }
+  .heroCopy { padding: 0 4px; }
   .section { padding: 52px 0; }
   .hero { padding: 28px 0 48px; }
   .cards2 { grid-template-columns: 1fr; }

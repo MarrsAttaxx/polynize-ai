@@ -68,13 +68,13 @@ const INPUTS: Silo[] = [
 export const storyBeats: Beat[] = [
   {
     kicker: 'The problem',
-    line: 'We get it. Like most, you are lost on your AI journey.',
-    sub: 'Licences bought, pilots running, budget committed. None of it adds up to a direction.',
+    line: 'Like most companies, you’re lost on your AI journey.',
+    sub: 'Subscriptions bought, pilots run, budgets committed but none of it adds up to a clear direction.',
     figure: 'scatter',
   },
   {
-    line: 'AI is the most ambiguous tool your organisation has ever bought.',
-    sub: 'Capable of going almost anywhere, which means nobody can say where it will actually pay.',
+    line: 'AI is the most ambiguous tool your organisation will ever buy.',
+    sub: 'Efforts go nowhere and nobody can show ROI anywhere.',
     figure: 'ambiguity',
   },
   {
@@ -137,9 +137,9 @@ export const storyContent: MappingContent = {
   ...mappingContent,
 
   hero: {
-    h1: 'Map what your team can actually do with AI.',
+    h1: 'Map AI Capabilities Across your Teams to Know Exactly Where Everyone’s At.',
     subhead:
-      'Before you invest another dollar in AI, see what your people can genuinely do with it, benchmarked against what good looks like.',
+      'Before you invest another dollar in AI, see what your people can actually do with it, benchmarked against industry standards.',
     primaryCta: 'Book a demo',
     secondaryLabel: 'See how it works',
   },
@@ -149,7 +149,7 @@ export const storyContent: MappingContent = {
    * eyebrow names the product and the heading hands straight over to the matrix.
    */
   whatItIs: {
-    h2: 'This is the map.',
+    h2: 'This is your map.',
     paras: [
       'We take your team through scenarios built from the work they actually do. They respond in their own words, in real situations, and the platform reads what capability they are genuinely demonstrating.',
       'Documents and process maps are a snapshot. They are what people say about the work. This is what people do in the work, which is why the map is accurate.',
