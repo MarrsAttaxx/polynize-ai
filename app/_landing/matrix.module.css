@@ -446,3 +446,55 @@
   border-radius: 2px;
   background: color-mix(in srgb, var(--mint) 60%, transparent);
 }
+
+/* ---------- The hotspot ----------
+   One column carries the problem, and it is framed so a reader who looks for two seconds
+   still leaves with the finding. The frame sits BEHIND the cells (z-index 0 against their
+   own stacking) and is inset with negative margins so it wraps the column rather than
+   crowding it.
+
+   Coral only, and only here. The token means "gap" everywhere else on the page and this
+   is the page's one real gap, so the colour is doing exactly its job. */
+.hot {
+  margin: -8px -7px;
+  border: 1px solid color-mix(in srgb, var(--coral) 45%, transparent);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--coral) 6%, transparent);
+  box-shadow: 0 0 34px color-mix(in srgb, var(--coral) 18%, transparent),
+    inset 0 0 26px color-mix(in srgb, var(--coral) 7%, transparent);
+  pointer-events: none;
+}
+/* Breathes, so the eye lands there first without anything moving. */
+@keyframes hotPulse {
+  0%, 100% {
+    box-shadow: 0 0 26px color-mix(in srgb, var(--coral) 12%, transparent),
+      inset 0 0 22px color-mix(in srgb, var(--coral) 5%, transparent);
+    border-color: color-mix(in srgb, var(--coral) 34%, transparent);
+  }
+  50% {
+    box-shadow: 0 0 48px color-mix(in srgb, var(--coral) 26%, transparent),
+      inset 0 0 30px color-mix(in srgb, var(--coral) 10%, transparent);
+    border-color: color-mix(in srgb, var(--coral) 60%, transparent);
+  }
+}
+.hot { animation: hotPulse 3.2s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .hot { animation: none; }
+}
+
+/* The flagged column's own heading, and its badge. */
+.scnHot .scnName { color: var(--text); }
+.scnFlag {
+  display: inline-block;
+  margin-top: 6px;
+  font-family: var(--font-inter), monospace;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--coral);
+  border: 1px solid color-mix(in srgb, var(--coral) 50%, transparent);
+  background: color-mix(in srgb, var(--coral) 12%, transparent);
+  border-radius: 999px;
+  padding: 3px 9px;
+}

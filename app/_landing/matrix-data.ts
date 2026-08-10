@@ -44,6 +44,8 @@ export type Scenario = {
   tag: string;
   name: string;
   cat: CapCat;
+  /** Badge on the column header. Set on the hotspot only: one flag, or it is not one. */
+  flag?: string;
   /** Two rows of up to three capabilities. null leaves an empty cell. */
   caps: [Array<string | null>, Array<string | null>];
 };
@@ -78,6 +80,7 @@ export const MATRIX_SCENARIOS: Scenario[] = [
     tag: 'Work scenario 3',
     name: 'Pricing and scoping the work using Copilot',
     cat: 'analytic',
+    flag: 'Issue',
     caps: [
       ['Estimate Reasoning', 'Assumption Testing', 'Model Scepticism'],
       ['Risk Framing', 'Numbers Discipline', null],
@@ -166,16 +169,31 @@ export const CAP_GLOSS: Record<string, string> = {
 export type ScenarioState = 'strong' | 'developing' | 'gap' | 'none';
 
 /**
+ * The column the problem lives in. Index into MATRIX_SCENARIOS, so 2 is work scenario 3.
+ */
+export const HOTSPOT = 2;
+
+/**
  * Deterministic, so the picture is stable between renders and server and client agree.
- * Weighted so the field reads as a real team: mostly moving, a meaningful minority
- * stuck, a few not yet measured.
+ *
+ * IT IS A HEAT MAP, NOT A SPRINKLE (Marrs, 10 Aug 2026). Red is confined to ONE column
+ * and every other column is green and amber, because a matrix with gaps scattered evenly
+ * across it says "everyone is a bit weak everywhere", which is a shrug. Concentrated in
+ * one scenario it says something a reader can act on: this team cannot price work with
+ * the tool they have been given, and that is where the money should go. The whole point
+ * of the artefact is turning a vague sense of weakness into one place to look.
+ *
+ * So: keep the hotspot column solid, and keep every other column clean of red. Sprinkling
+ * a gap elsewhere for realism would cost the figure its argument.
  */
 export function scenarioCell(u: number, j: number): ScenarioState {
-  const seed = (u * 37 + j * 19 + 7) % 100;
+  if (j === HOTSPOT) {
+    // Six gaps and two developing. Not eight: a column with no variation reads as a
+    // rendering bug rather than as a measurement.
+    return u === 2 || u === 6 ? 'developing' : 'gap';
+  }
   if ((u * 3 + j * 5) % 11 === 4) return 'none';
-  if (seed < 40) return 'strong';
-  if (seed < 74) return 'developing';
-  return 'gap';
+  return (u * 37 + j * 19 + 7) % 100 < 55 ? 'strong' : 'developing';
 }
 
 /** Cell is either a score ('sc') or an uplift percentage ('up'). */

@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   CAP_GLOSS,
   COHORT_SUMMARY,
+  HOTSPOT,
   MATRIX_SCENARIOS,
   MATRIX_USERS,
   cellDetail,
@@ -31,6 +32,13 @@ import s from './matrix.module.css';
  *   coral with a down arrow   a gap
  *   empty                     not completed. Blank rather than zero, because an empty
  *                             cell is a fact and a zero is a claim.
+ *
+ * IT READS AS A HEAT MAP, which is a decision about the data rather than the styling.
+ * Red is confined to one column and every other column is green and amber. A matrix with
+ * gaps scattered evenly says "everyone is a bit weak everywhere", which is a shrug;
+ * concentrated in one scenario it says this team cannot price work with the tool they
+ * have, and that is where the money should go. The column is framed and badged so a
+ * reader who looks for two seconds still leaves with the finding.
  *
  * Reveal is staggered via CSS transition-delay computed at render, so there are no
  * per-cell timers and no re-renders while it plays. Strong cells land first, which reads
@@ -148,14 +156,25 @@ export function CapabilityMatrix() {
             <span className={s.allSub}>{COHORT_SUMMARY}</span>
           </div>
 
+          {/* The frame around the hotspot column. Spans the header and every user row,
+              so the whole column reads as one finding rather than eight bad cells.
+              gridRow is counted, not written as 1 / -1: every row here is explicit and
+              -1 would resolve against a row template that does not exist. */}
+          <div
+            className={s.hot}
+            style={{ gridColumn: 2 + HOTSPOT, gridRow: `1 / ${MATRIX_USERS.length + 2}` }}
+            aria-hidden="true"
+          />
+
           {MATRIX_SCENARIOS.map((scn, j) => (
             <div
               key={`h${j}`}
-              className={s.scn}
+              className={`${s.scn} ${j === HOTSPOT ? s.scnHot : ''}`}
               style={{ gridRow: 1, gridColumn: 2 + j, ...delay(60 + j * 40) }}
             >
               <span className={s.scnTag}>{scn.tag}</span>
               <span className={s.scnName}>{scn.name}</span>
+              {scn.flag && <span className={s.scnFlag}>{scn.flag}</span>}
             </div>
           ))}
 
