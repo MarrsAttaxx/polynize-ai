@@ -7,6 +7,7 @@ import { SiloGlyph, StageGlyph, MapGlyph, GitHubMark } from '../_icons';
 import { CapabilityMatrix } from './CapabilityMatrix';
 import { StoryPath } from './StoryPath';
 import { StoryMotion } from './StoryMotion';
+import { FocusVeil } from './FocusVeil';
 import { ArtefactGlyph } from './ArtefactGlyph';
 import { BeatFigure } from './BeatFigure';
 import { BOOKING_URL, type MappingContent } from '../content';
@@ -38,6 +39,9 @@ export function StoryLanding({
     <>
       <DraftingGrid />
       <StoryMotion />
+      {/* Outside .page, so nothing in the content column can become its containing
+          block. A transform or filter on an ancestor breaks position: fixed. */}
+      <FocusVeil />
       <div className={s.page}>
         <StoryNav cta={c.finalCta.button} />
 

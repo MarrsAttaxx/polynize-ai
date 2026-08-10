@@ -100,6 +100,96 @@
 .btnGhost:hover { border-color: var(--border); color: var(--text); }
 .ctaRow { display: flex; gap: 14px; flex-wrap: wrap; justify-content: center; margin-top: 30px; }
 
+/* ---------- Depth of field ----------
+   The bottom half of the viewport is progressively blurred and dimmed, sharpening as
+   content rises to the middle. See FocusVeil.tsx for why it exists and why it has to
+   let go at both ends of the page.
+
+   CLASS DOUBLED, and it is not style. app/tactile.css:171 sets
+   `body[data-depth="tactile"] > * { position: relative }`, which outranks a single class
+   and would quietly turn this fixed overlay into a relative box in the flow. The old
+   .sheet neatline was bitten by exactly this.
+
+   FOUR LAYERS, not one. A single backdrop-filter behind a gradient mask cross fades a
+   blurred copy over a sharp one and the transition band ghosts. Stacking layers that
+   each blur harder over a narrower band ramps the RADIUS, which is what actually reads
+   as depth of field. */
+.veil.veil {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 52vh;
+  z-index: 20;
+  pointer-events: none;
+  /* Script raises this. Base 0 means no script, a thrown error or a dead ticker all
+     leave the page completely sharp, which is a perfectly good page. */
+  opacity: 0;
+}
+.veilLayer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.veilL1 {
+  backdrop-filter: blur(1.5px);
+  -webkit-backdrop-filter: blur(1.5px);
+  mask-image: linear-gradient(to bottom, transparent 0%, #000 26%);
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0%, #000 26%);
+}
+.veilL2 {
+  backdrop-filter: blur(3.5px);
+  -webkit-backdrop-filter: blur(3.5px);
+  mask-image: linear-gradient(to bottom, transparent 26%, #000 52%);
+  -webkit-mask-image: linear-gradient(to bottom, transparent 26%, #000 52%);
+}
+.veilL3 {
+  backdrop-filter: blur(7px);
+  -webkit-backdrop-filter: blur(7px);
+  mask-image: linear-gradient(to bottom, transparent 52%, #000 78%);
+  -webkit-mask-image: linear-gradient(to bottom, transparent 52%, #000 78%);
+}
+.veilL4 {
+  backdrop-filter: blur(13px);
+  -webkit-backdrop-filter: blur(13px);
+  mask-image: linear-gradient(to bottom, transparent 78%, #000 100%);
+  -webkit-mask-image: linear-gradient(to bottom, transparent 78%, #000 100%);
+}
+/* Carries the effect on its own where backdrop-filter is unsupported, and adds the
+   sink into the page colour everywhere else. Blur alone reads as a smear; blur plus a
+   little darkness reads as distance. */
+.veilScrim {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    to bottom,
+    transparent 0%,
+    color-mix(in srgb, var(--bg) 26%, transparent) 46%,
+    color-mix(in srgb, var(--bg) 62%, transparent) 100%
+  );
+}
+/* A phone is the device least able to afford four full width backdrop roots repainting
+   every scroll frame, and the one where the shallow viewport makes the ramp least
+   visible anyway. Two layers, softer. */
+@media (max-width: 680px) {
+  .veil.veil { height: 42vh; }
+  .veilL1,
+  .veilL3 { display: none; }
+  .veilL2 {
+    backdrop-filter: blur(2.5px);
+    -webkit-backdrop-filter: blur(2.5px);
+    mask-image: linear-gradient(to bottom, transparent 0%, #000 55%);
+    -webkit-mask-image: linear-gradient(to bottom, transparent 0%, #000 55%);
+  }
+  .veilL4 {
+    backdrop-filter: blur(7px);
+    -webkit-backdrop-filter: blur(7px);
+    mask-image: linear-gradient(to bottom, transparent 55%, #000 100%);
+    -webkit-mask-image: linear-gradient(to bottom, transparent 55%, #000 100%);
+  }
+}
+
 /* ---------- Section scaffolding ---------- */
 .section {
   padding: 68px 0;
@@ -1040,8 +1130,11 @@
    them at once. Three competing tweens per element and overwrite: 'auto' left the
    sub-lines and everything past the map stranded at opacity 0.
 
-   opacity: 1 is the honest declaration here: the resting state of a reveal target is
-   visible, and GSAP's inline styles override it while a tween runs. */
+   As of 10 Aug 2026 nothing drives them any more: the hold-until-centre reveal was
+   replaced by the focus veil, which leaves content visible and merely out of focus
+   until you reach it. The classes stay on the markup because removing them is a large
+   diff for no gain, and because they are the wiring if per-element reveals ever come
+   back. opacity: 1 is the honest resting state either way. */
 .rise,
 .riseLate,
 .riseScale {
