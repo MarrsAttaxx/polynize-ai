@@ -1,4 +1,4 @@
-import type { ArtefactKind } from './content';
+import type { ArtefactKind } from './content-base';
 import s from './story.module.css';
 
 /**

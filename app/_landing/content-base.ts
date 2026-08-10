@@ -11,12 +11,41 @@
  * company, never a price, Australian spelling, no em-dashes, human led.
  */
 
-import type { StageIcon } from './_icons';
-import type { SiloIcon } from './_icons';
+import type { StageIcon } from './icons';
+import type { SiloIcon } from './icons';
 
 /** People / process / technology, as a labelled item. Used by the story's Inputs row.
     It used to live in SiloDiagram, which was deleted with the old landing page. */
 export type Silo = { kind: SiloIcon; label: string; note: string };
+
+/**
+ * One scroll beat. Roughly one thought per screen.
+ *
+ * `figure` is a plain string rather than a union because each landing page brings its
+ * own figure registry (see BeatFigure). A page can only draw figures its own module
+ * declares, and naming one it did not supply renders nothing rather than throwing.
+ */
+export type Beat = {
+  /** Chapter marker above the line. Set large enough to read while scrolling. */
+  kicker?: string;
+  line: string;
+  sub?: string;
+  /** Diagram shown in its own band under the beat. Key into the page's registry. */
+  figure?: string;
+  /** The turn. Rendered in mint, and it hands over to the result section. */
+  turn?: boolean;
+};
+
+/** What the engagement leaves behind. Each page names its own three. */
+export type ArtefactKind = 'matrix' | 'data' | 'report' | 'workmodel' | 'capmap' | 'benchmark';
+export type Artefact = {
+  n: string;
+  kind: ArtefactKind;
+  title: string;
+  body: string;
+  /** One line on what you actually do with it. */
+  use: string;
+};
 
 export type Card = { title: string; body: string };
 export type WalkawayItem = { n: string; title: string; body: string };

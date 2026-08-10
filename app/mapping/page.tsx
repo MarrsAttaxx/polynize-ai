@@ -1,17 +1,23 @@
 import type { Metadata } from 'next';
-import { StoryLanding } from './_story/StoryLanding';
-import { storyContent, storyBeats } from './_story/content';
+import { StoryLanding } from '../_landing/StoryLanding';
+import { AI_FIGURES } from '../_landing/figures-ai';
+import { CapabilityMatrix } from '../_landing/CapabilityMatrix';
+import {
+  artefacts,
+  artefactsFootnote,
+  artefactsIntro,
+  storyBeats,
+  storyContent,
+  storyInputs,
+} from '../_landing/content-ai';
 
 /**
- * The capability mapping page.
+ * /mapping, the AI-capability narrative.
  *
- * This was built at /mapping/story as an experiment beside the original /mapping. It
- * won, so it is the page now: the original landing (MappingLanding, mapping.module.css,
- * SiloDiagram) has been deleted and /mapping/story 308s here from next.config.mjs.
- *
- * The implementation still lives in ./_story. The leading underscore makes it a private
- * folder in the App Router, so it can never become a route again no matter what files
- * end up in it.
+ * The layout lives in app/_landing, shared with the other landing pages. This file is
+ * only the wiring: which copy, which beats, which figures, and which artefact the turn
+ * line hands over to. Here that artefact is the capability MATRIX, every person against
+ * every capability a process asks of them.
  */
 export const metadata: Metadata = {
   title: 'Team Capability Mapping',
@@ -25,5 +31,17 @@ export const metadata: Metadata = {
 };
 
 export default function MappingPage() {
-  return <StoryLanding content={storyContent} beats={storyBeats} />;
+  return (
+    <StoryLanding
+      content={storyContent}
+      beats={storyBeats}
+      figures={AI_FIGURES}
+      result={<CapabilityMatrix />}
+      artefacts={artefacts}
+      artefactsIntro={artefactsIntro}
+      artefactsFootnote={artefactsFootnote}
+      inputs={storyInputs}
+      surface="mapping"
+    />
+  );
 }

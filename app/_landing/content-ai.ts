@@ -19,22 +19,15 @@
  * never name the technology company, never a price, Australian spelling, no em-dashes.
  */
 
-import { mappingContent, type MappingContent, type Silo } from '../content';
+import {
+  mappingContent,
+  type Artefact,
+  type Beat,
+  type MappingContent,
+  type Silo,
+} from './content-base';
 
-/** One scroll beat. Roughly one thought per screen. */
-export type Beat = {
-  /** Chapter marker above the line. Set large enough to read while scrolling. */
-  kicker?: string;
-  line: string;
-  sub?: string;
-  panels?: Silo[];
-  /** Small diagram that draws the beat's argument, shown under the sub-line. */
-  figure?: FigureKind;
-  /** The turn. Rendered in mint, and it hands over to the map. */
-  turn?: boolean;
-};
-
-/** The four story diagrams, one per beat before the turn. */
+/** The figures this page declares. See figures-ai.tsx for the registry. */
 export type FigureKind = 'scatter' | 'ambiguity' | 'coordinates' | 'guess';
 
 /** The three inputs the engagement asks for, per the call. */
@@ -97,16 +90,6 @@ export const storyBeats: Beat[] = [
 ];
 
 /** What you keep. Fleshed out, and each one gets a visual. */
-export type ArtefactKind = 'matrix' | 'data' | 'report';
-export type Artefact = {
-  n: string;
-  kind: ArtefactKind;
-  title: string;
-  body: string;
-  /** One line on what you actually do with it. */
-  use: string;
-};
-
 export const artefacts: Artefact[] = [
   {
     n: '01',

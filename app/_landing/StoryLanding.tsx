@@ -1,39 +1,67 @@
 import { Fragment } from 'react';
 import Link from 'next/link';
-import { DraftingGrid } from '../../_components/DraftingGrid';
-import { TrackedLink } from '../../_components/TrackedLink';
-import { SiteFooter } from '../../_components/SiteFooter';
-import { SiloGlyph, StageGlyph, MapGlyph, GitHubMark } from '../_icons';
-import { CapabilityMatrix } from './CapabilityMatrix';
+import { DraftingGrid } from '../_components/DraftingGrid';
+import { TrackedLink } from '../_components/TrackedLink';
+import { SiteFooter } from '../_components/SiteFooter';
+import { SiloGlyph, StageGlyph, MapGlyph, GitHubMark } from './icons';
 import { StoryPath } from './StoryPath';
 import { StoryMotion } from './StoryMotion';
 import { FocusVeil } from './FocusVeil';
 import { ArtefactGlyph } from './ArtefactGlyph';
-import { BeatFigure } from './BeatFigure';
-import { BOOKING_URL, type MappingContent } from '../content';
-import { artefacts, artefactsFootnote, artefactsIntro, storyInputs, type Beat } from './content';
+import { BeatFigure, type FigureRegistry } from './BeatFigure';
+import {
+  BOOKING_URL,
+  type Artefact,
+  type Beat,
+  type MappingContent,
+  type Silo,
+} from './content-base';
 import s from './story.module.css';
 
 /**
- * The capability mapping page, told as a scroll story.
+ * The landing page engine. One layout, several narratives.
  *
- * Shape, after the 6 Aug founder call:
- *   hero (video inside it) → the story, told as a route → the map → how it runs →
- *   what you keep → proof → what comes next → CTA
+ * Shape:
+ *   hero (video inside it) → the story, told as a route → THE RESULT → how it runs →
+ *   what you keep → proof → CTA
  *
- * Two things carry the narrative. The video is the hero, so anyone who would rather
- * watch gets the whole argument without scrolling. And the story section is drawn as
- * a journey (see StoryPath), so the turn line "you cannot go where you need to go
- * without a map" hands directly to a section that answers it: "This is the map."
+ * Two things carry every narrative. The video is the hero, so anyone who would rather
+ * watch gets the whole argument without scrolling. And the story section is drawn as a
+ * journey (see StoryPath), so the turn line hands directly to the section that answers
+ * it.
  *
- * Example sessions and Who it is for were cut. Less is more, per the call.
+ * WHAT VARIES BETWEEN PAGES, and therefore what is a prop: the beats, the figures those
+ * beats draw, and the RESULT, which is the artefact the turn line has just promised. On
+ * /mapping that is the capability matrix; on /capability-mapping it is the three lane
+ * capability map. Everything else is the same page, which is the point of sharing it.
+ *
+ * `surface` goes into the analytics event props so the three CTAs on each page stay
+ * distinguishable from the same CTAs on a sibling page.
  */
 export function StoryLanding({
   content: c,
   beats,
+  figures,
+  result,
+  resultEyebrow = 'Capability mapping',
+  artefacts,
+  artefactsIntro,
+  artefactsFootnote,
+  inputs,
+  surface,
 }: {
   content: MappingContent;
   beats: Beat[];
+  /** The figures this page's beats may name. See BeatFigure. */
+  figures: FigureRegistry;
+  /** The artefact the turn line promised: a matrix, a capability map, whatever comes next. */
+  result: React.ReactNode;
+  resultEyebrow?: string;
+  artefacts: Artefact[];
+  artefactsIntro: string;
+  artefactsFootnote: string;
+  inputs: Silo[];
+  surface: string;
 }) {
   return (
     <>
@@ -43,7 +71,7 @@ export function StoryLanding({
           block. A transform or filter on an ancestor breaks position: fixed. */}
       <FocusVeil />
       <div className={s.page}>
-        <StoryNav cta={c.finalCta.button} />
+        <StoryNav cta={c.finalCta.button} surface={surface} />
 
         {/* 1. Hero, video included */}
         <section className={s.hero}>
@@ -64,7 +92,7 @@ export function StoryLanding({
                 href={BOOKING_URL}
                 external
                 event="booking_click"
-                eventProps={{ surface: 'story_hero' }}
+                eventProps={{ surface: `${surface}_hero` }}
               >
                 {c.hero.primaryCta}
               </TrackedLink>
@@ -109,24 +137,21 @@ export function StoryLanding({
                 <p className={b.turn ? s.turnLine : s.beatLine}>{b.line}</p>
                 {b.sub && <p className={`${s.beatSub} ${s.riseLate}`}>{b.sub}</p>}
               </div>
-              {b.figure && <BeatFigure kind={b.figure} />}
+              {b.figure && <BeatFigure kind={b.figure} figures={figures} />}
             </Fragment>
           ))}
         </section>
 
-        {/* 3. The answer to the turn: the map itself */}
-        <Section eyebrow="Capability mapping" h2={c.whatItIs.h2} glyph>
+        {/* 3. The answer to the turn: whatever this page's result is */}
+        <Section eyebrow={resultEyebrow} h2={c.whatItIs.h2} glyph>
           <div className={`${s.prose} ${s.rise}`}>
             {c.whatItIs.paras.map((p, i) => (
               <p key={i}>{p}</p>
             ))}
           </div>
-          <figure className={`${s.matrixFigure} ${s.riseScale}`}>
-            {/* The key lives inside CapabilityMatrix now, above the grid, and the
-                caption came off: the grid explains itself and the paragraph under it was
-                a second explanation nobody read. */}
-            <CapabilityMatrix />
-          </figure>
+          {/* No caption underneath. The result explains itself and the paragraph that
+              used to sit here was a second explanation nobody read. */}
+          <figure className={`${s.matrixFigure} ${s.riseScale}`}>{result}</figure>
           <div className={s.cards3}>
             {c.whatItIs.cards.map((card) => (
               <div key={card.title} className={`${s.card} ${s.rise}`}>
@@ -161,7 +186,7 @@ export function StoryLanding({
           </div>
           {/* The three inputs step 01 asks for, shown rather than only listed. */}
           <div className={`${s.inputs} ${s.rise}`}>
-            {storyInputs.map((it) => (
+            {inputs.map((it) => (
               <div key={it.label} className={s.input}>
                 <span className={s.inputIcon}>
                   <SiloGlyph kind={it.kind} />
@@ -226,7 +251,7 @@ export function StoryLanding({
               href={BOOKING_URL}
               external
               event="booking_click"
-              eventProps={{ surface: 'story_final_cta' }}
+              eventProps={{ surface: `${surface}_final_cta` }}
             >
               {c.finalCta.button}
             </TrackedLink>
@@ -239,9 +264,8 @@ export function StoryLanding({
   );
 }
 
-/* The page's own nav. Was a local copy so the experiment could not disturb the live
-   /mapping page; that page is gone and this is /mapping now. */
-function StoryNav({ cta }: { cta: string }) {
+/* The landing pages' own nav, separate from the homepage's. */
+function StoryNav({ cta, surface }: { cta: string; surface: string }) {
   return (
     <nav className={s.nav}>
       <Link className={s.wordmark} href="/">
@@ -257,7 +281,7 @@ function StoryNav({ cta }: { cta: string }) {
         href={BOOKING_URL}
         external
         event="booking_click"
-        eventProps={{ surface: 'story_nav' }}
+        eventProps={{ surface: `${surface}_nav` }}
       >
         {cta}
       </TrackedLink>

@@ -1,315 +1,32 @@
-import type { FigureKind } from './content';
-import { VENDORS, VendorLogo, type VendorName } from './VendorLogos';
-import s from './story.module.css';
-
 /**
- * One figure per beat, occupying its own band between two blocks of copy.
+ * The four beat figures for /mapping, the AI-capability narrative.
  *
  * STYLE: instrument panel. Mint on near black, concentric arcs with gaps, dense radial
- * graduations, segmented rings, dashed bezels, corner brackets, wireframe terrain, and
- * a bloom on the bright elements. Marrs supplied HUD reference on 10 Aug 2026 and this
- * is built to it. It is not decoration for its own sake: the argument of these four
- * beats is that you are trying to navigate without instruments, so drawing actual
- * instruments that will not give a reading is the figure doing the work of the copy.
+ * graduations, segmented rings, wireframe terrain, bloom on the live elements. Marrs
+ * supplied HUD reference on 10 Aug 2026 and this is built to it. It is not decoration
+ * for its own sake: the argument of these beats is that you are navigating without
+ * instruments, so drawing instruments that will not give a reading is the figure doing
+ * the work of the copy.
  *
- * WHY THIS FILE LOOKS LIKE A GENERATOR AND NOT A DRAWING. The first two versions were
- * about fifteen hand-placed shapes each and read as exactly that: thin, flat, obviously
- * drawn by someone counting coordinates. Detail at this scale is a quantity problem, not
- * a craft one. A convincing bezel carries 120 graduations, four arc segments at three
- * radii and a segmented ring. Nobody draws that by hand and no design tool makes it
- * quick. You generate it. Everything below is procedural and deterministic, evaluated
- * once at module scope, so server and client agree and nothing shimmers between renders.
- *
- * BLOOM WITHOUT FILTERS. Glow is done by drawing the same path twice, a wide faint
- * stroke under a thin bright one (.hudBloom / .hudLine). An SVG blur filter over a
- * thousand-pixel group is expensive and animating inside one is worse, so drop-shadow
- * is reserved for the few elements that genuinely need to burn.
- *
- * NODE BUDGET. Anything that never animates on its own is merged into a single <path>
- * with many subpaths: a 120 tick graduation ring is one node, not a hundred and twenty.
+ * WHY THIS IS A GENERATOR AND NOT A DRAWING. The first two versions were about fifteen
+ * hand-placed shapes each and read as exactly that. Detail at this scale is a quantity
+ * problem, not a craft one: a convincing bezel carries 120 graduations, three arc
+ * segments at different radii and a 36 block segmented ring. You generate it.
  *
  * FAIL-SAFE BY CONSTRUCTION, which is why these are CSS keyframes and not GSAP. Every
- * element is server-rendered at its finished geometry and the stylesheet base state is a
- * complete, legible drawing. Animation exists only while `.play` is on the container. No
- * script, no observer, a stalled ticker and reduced motion all land on something drawn.
+ * element is server-rendered at its finished geometry and the stylesheet base state is
+ * a complete, legible drawing. Animation exists only while `.play` is on the container.
  *
  * NO NUMERALS AND NO WORDS, and this is the one place the reference is deliberately NOT
  * followed. Every HUD in the source material is covered in readouts (75%, LOADING, 93).
- * These figures sit before the product is introduced, so a number on a dial would be
- * inventing evidence for a claim the page has not earned yet. The dials carry their
- * meaning in how far the arc has filled and in nothing else.
- *
- * ON THE VENDOR MARKS: real assets now, supplied by Marrs on 10 Aug 2026, living in
- * VendorLogos.tsx. They render monochrome; the reasoning is in that file.
+ * These sit before the product is introduced, so a number on a dial would be inventing
+ * evidence the page has not earned. The dials say it in how far the arc has filled.
  */
 
-/* ================================================================== primitives */
-
-const f = (n: number) => n.toFixed(1);
-
-/** Deterministic PRNG. A random value here would be a hydration mismatch. */
-function rand(seed: number) {
-  let t = seed >>> 0;
-  return () => {
-    t = (t + 0x6d2b79f5) >>> 0;
-    let x = Math.imul(t ^ (t >>> 15), 1 | t);
-    x = (x + Math.imul(x ^ (x >>> 7), 61 | x)) ^ x;
-    return ((x ^ (x >>> 14)) >>> 0) / 4294967296;
-  };
-}
-
-/** Degrees, zero at the top, clockwise. Every angle in this file uses it. */
-const pol = (cx: number, cy: number, r: number, deg: number) => ({
-  x: cx + Math.sin((deg * Math.PI) / 180) * r,
-  y: cy - Math.cos((deg * Math.PI) / 180) * r,
-});
-
-function arc(cx: number, cy: number, r: number, d0: number, d1: number) {
-  const a = pol(cx, cy, r, d0);
-  const b = pol(cx, cy, r, d1);
-  const large = Math.abs(d1 - d0) > 180 ? 1 : 0;
-  return `M ${f(a.x)} ${f(a.y)} A ${r} ${r} 0 ${large} 1 ${f(b.x)} ${f(b.y)}`;
-}
-
-/** One annular sector. The building block of every segmented ring here. */
-function sector(cx: number, cy: number, r0: number, r1: number, d0: number, d1: number) {
-  const a0 = pol(cx, cy, r1, d0);
-  const a1 = pol(cx, cy, r1, d1);
-  const b1 = pol(cx, cy, r0, d1);
-  const b0 = pol(cx, cy, r0, d0);
-  const large = Math.abs(d1 - d0) > 180 ? 1 : 0;
-  return (
-    `M ${f(a0.x)} ${f(a0.y)} A ${r1} ${r1} 0 ${large} 1 ${f(a1.x)} ${f(a1.y)}` +
-    ` L ${f(b1.x)} ${f(b1.y)} A ${r0} ${r0} 0 ${large} 0 ${f(b0.x)} ${f(b0.y)} Z`
-  );
-}
-
-/** A ring of separated blocks, as one path. `from`/`to` fill only part of it. */
-function segRing(
-  cx: number,
-  cy: number,
-  r0: number,
-  r1: number,
-  count: number,
-  gap: number,
-  from = 0,
-  to = count
-) {
-  const step = 360 / count;
-  const d: string[] = [];
-  for (let i = from; i < to; i++) {
-    d.push(sector(cx, cy, r0, r1, i * step + gap / 2, (i + 1) * step - gap / 2));
-  }
-  return d.join(' ');
-}
-
-/** Radial graduations, as one path. `every` gives the long ones. */
-function tickRing(cx: number, cy: number, r0: number, r1: number, count: number, every = 0) {
-  const d: string[] = [];
-  for (let i = 0; i < count; i++) {
-    if (every && i % every !== 0) continue;
-    const a = (i * 360) / count;
-    const p = pol(cx, cy, r0, a);
-    const q = pol(cx, cy, r1, a);
-    d.push(`M ${f(p.x)} ${f(p.y)} L ${f(q.x)} ${f(q.y)}`);
-  }
-  return d.join(' ');
-}
-
-/** One path holding a whole background grid. */
-function graticule(w: number, h: number, step: number, inset: number) {
-  const d: string[] = [];
-  for (let x = inset; x <= w - inset; x += step) d.push(`M ${x} ${inset} V ${h - inset}`);
-  for (let y = inset; y <= h - inset; y += step) d.push(`M ${inset} ${y} H ${w - inset}`);
-  return d.join(' ');
-}
-
-/** Corner brackets. The cheapest way to make a rectangle read as a viewport. */
-function brackets(x: number, y: number, w: number, h: number, len: number) {
-  return [
-    `M ${x} ${y + len} V ${y} H ${x + len}`,
-    `M ${x + w - len} ${y} H ${x + w} V ${y + len}`,
-    `M ${x + w} ${y + h - len} V ${y + h} H ${x + w - len}`,
-    `M ${x + len} ${y + h} H ${x} V ${y + h - len}`,
-  ].join(' ');
-}
-
-/**
- * A perspective wireframe surface. Rows recede toward the top and narrow as they go,
- * and a pair of out-of-phase sines gives it terrain rather than a flat plane.
- */
-function mesh(
-  cx: number,
-  top: number,
-  w: number,
-  h: number,
-  cols: number,
-  rows: number,
-  seed: number,
-  amp = 20
-) {
-  const r = rand(seed);
-  const ph = [r() * 6.283, r() * 6.283];
-  const pt = (i: number, j: number) => {
-    const t = j / rows;
-    const persp = 0.3 + t * 0.7;
-    const x = cx + (i / cols - 0.5) * w * persp;
-    const wave =
-      (Math.sin((i / cols) * 6.5 + ph[0]) * Math.cos(t * 3.4 + ph[1]) +
-        Math.sin((i / cols) * 2.1 + ph[1]) * 0.6) *
-      amp *
-      persp;
-    return { x, y: top + Math.pow(t, 1.4) * h - wave };
-  };
-  const d: string[] = [];
-  for (let j = 0; j <= rows; j++) {
-    let seg = '';
-    for (let i = 0; i <= cols; i++) {
-      const p = pt(i, j);
-      seg += `${i ? ' L ' : 'M '}${f(p.x)} ${f(p.y)}`;
-    }
-    d.push(seg);
-  }
-  for (let i = 0; i <= cols; i++) {
-    let seg = '';
-    for (let j = 0; j <= rows; j++) {
-      const p = pt(i, j);
-      seg += `${j ? ' L ' : 'M '}${f(p.x)} ${f(p.y)}`;
-    }
-    d.push(seg);
-  }
-  return d.join(' ');
-}
-
-/** A wireframe globe, as one path: five latitudes and five meridians. */
-function globe(cx: number, cy: number, R: number) {
-  const d: string[] = [`M ${cx - R} ${cy} A ${R} ${R} 0 1 0 ${cx + R} ${cy} A ${R} ${R} 0 1 0 ${cx - R} ${cy}`];
-  for (const t of [-0.66, -0.34, 0, 0.34, 0.66]) {
-    const dy = R * t;
-    const rx = Math.sqrt(Math.max(0, R * R - dy * dy));
-    const ry = Math.max(2, rx * 0.26);
-    d.push(
-      `M ${f(cx - rx)} ${f(cy + dy)} A ${f(rx)} ${f(ry)} 0 1 0 ${f(cx + rx)} ${f(cy + dy)}` +
-        ` A ${f(rx)} ${f(ry)} 0 1 0 ${f(cx - rx)} ${f(cy + dy)}`
-    );
-  }
-  for (const w of [R, R * 0.62, R * 0.26]) {
-    d.push(
-      `M ${cx} ${f(cy - R)} A ${f(w)} ${R} 0 1 0 ${cx} ${f(cy + R)}` +
-        ` A ${f(w)} ${R} 0 1 0 ${cx} ${f(cy - R)}`
-    );
-  }
-  return d.join(' ');
-}
-
-
-/* ================================================================== component */
-
-/** Where the figure sits in its band. */
-type FigurePlace = 'wide' | 'right' | 'centre';
-
-const VIEWBOX: Record<FigureKind, string> = {
-  scatter: '0 0 620 580',
-  ambiguity: '0 0 1000 470',
-  coordinates: '0 0 1000 400',
-  guess: '0 0 1000 480',
-};
-
-const PLACE: Record<FigureKind, FigurePlace> = {
-  // A single object wants a frame it fills, not a wide canvas to float in.
-  scatter: 'centre',
-  // The route swings from the middle out to the left edge across this gap, so the
-  // figure sits right of centre rather than fighting it for the same space.
-  ambiguity: 'right',
-  coordinates: 'wide',
-  guess: 'wide',
-};
-
-const PLACE_CLASS: Record<FigurePlace, string> = {
-  wide: s.figWide,
-  right: s.figRight,
-  centre: s.figCentre,
-};
-
-export function BeatFigure({ kind }: { kind: FigureKind }) {
-  return (
-    <div className={s.figBand}>
-      <div
-        className={`${s.figure} ${PLACE_CLASS[PLACE[kind]]}`}
-        data-fig={kind}
-        aria-hidden="true"
-      >
-        <svg viewBox={VIEWBOX[kind]} className={s.figureSvg} focusable="false">
-          {kind === 'scatter' && <LoneCompass />}
-          {kind === 'ambiguity' && <VendorDrift />}
-          {kind === 'coordinates' && <BenchmarkBars />}
-          {kind === 'guess' && <SlotMachine />}
-        </svg>
-      </div>
-    </div>
-  );
-}
-
-function Person({ x, y, sc = 1 }: { x: number; y: number; sc?: number }) {
-  return (
-    <g transform={`translate(${f(x)} ${f(y)}) scale(${sc.toFixed(2)})`}>
-      <circle cx="0" cy="-10" r="5.6" />
-      <path d="M -9 13 a 9 9.5 0 0 1 18 0" />
-    </g>
-  );
-}
-
-function BotBody({ x, y, sc = 1 }: { x: number; y: number; sc?: number }) {
-  return (
-    <g transform={`translate(${f(x)} ${f(y)}) scale(${sc.toFixed(2)})`}>
-      <rect x="-8.5" y="-8.5" width="17" height="15" rx="3.5" />
-      <circle className={s.hudDot} cx="-3.6" cy="-1.8" r="1.8" />
-      <circle className={s.hudDot} cx="3.6" cy="-1.8" r="1.8" />
-      <path d="M 0 -8.5 v -5.5 M -12 -2 h -3 M 12 -2 h 3 M -5 6.5 v 4.5 M 5 6.5 v 4.5" />
-    </g>
-  );
-}
-
-/**
- * A bezel. Every dial in this file is one of these plus something in the middle, which
- * is what keeps the figures reading as one instrument family.
- */
-function Bezel({
-  cx,
-  cy,
-  r,
-  fill = 0.62,
-  seed = 1,
-  dense = true,
-}: {
-  cx: number;
-  cy: number;
-  r: number;
-  /** How far round the live arc has travelled, 0 to 1. Never 1: nothing completes. */
-  fill?: number;
-  seed?: number;
-  dense?: boolean;
-}) {
-  const rr = rand(seed);
-  const segs = dense ? 36 : 20;
-  const to = Math.max(2, Math.round(segs * fill));
-  const gapStart = 40 + rr() * 60;
-  return (
-    <g>
-      <circle className={s.hudDisc} cx={cx} cy={cy} r={r * 0.82} />
-      {dense && <path className={s.hudTickFine} d={tickRing(cx, cy, r * 0.86, r * 0.98, 120)} />}
-      <path className={s.hudTick} d={tickRing(cx, cy, r * 0.84, r * 1.0, 120, 10)} />
-      <path className={s.hudSegDim} d={segRing(cx, cy, r * 1.05, r * 1.16, segs, 3.4)} />
-      <path className={s.hudBloom} d={segRing(cx, cy, r * 1.05, r * 1.16, segs, 3.4, 0, to)} />
-      <path className={s.hudSeg} d={segRing(cx, cy, r * 1.05, r * 1.16, segs, 3.4, 0, to)} />
-      <circle className={s.hudRingThin} cx={cx} cy={cy} r={r * 1.01} />
-      <path className={s.hudBloom} d={arc(cx, cy, r * 1.26, gapStart, gapStart + 140)} />
-      <path className={s.hudLine} d={arc(cx, cy, r * 1.26, gapStart, gapStart + 140)} />
-      <path className={s.hudLineDim} d={arc(cx, cy, r * 1.26, gapStart + 168, gapStart + 300)} />
-      <circle className={s.hudRingDash} cx={cx} cy={cy} r={r * 1.36} />
-    </g>
-  );
-}
+import { VENDORS, VendorLogo, type VendorName } from './VendorLogos';
+import { Bezel, BotBody, Person, arc, brackets, f, graticule, pol, rand } from './hud';
+import type { FigureRegistry } from './BeatFigure';
+import s from './story.module.css';
 
 /* ================================================================== beat 1
    A compass, on its own.
@@ -658,3 +375,20 @@ function SlotMachine() {
     </g>
   );
 }
+
+/**
+ * The registry StoryLanding renders from. Keys are whatever a beat's `figure` says, so
+ * a page can only draw figures its own module declares.
+ */
+export const AI_FIGURES: FigureRegistry = {
+  scatter: { viewBox: '0 0 620 580', place: 'centre', render: () => <LoneCompass /> },
+  ambiguity: {
+    viewBox: '0 0 1000 470',
+    // The route swings from the middle out to the left edge across this gap, so the
+    // figure sits right of centre rather than fighting it for the same space.
+    place: 'right',
+    render: () => <VendorDrift />,
+  },
+  coordinates: { viewBox: '0 0 1000 400', place: 'wide', render: () => <BenchmarkBars /> },
+  guess: { viewBox: '0 0 1000 480', place: 'wide', render: () => <SlotMachine /> },
+};
