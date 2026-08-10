@@ -3,38 +3,54 @@ import { redirect } from 'next/navigation';
 import { getCurrentUser } from '@/lib/console-auth';
 import { listEpisodes } from '@/lib/marketing/podcast-store';
 import { isDescriptConfigured } from '@/lib/descript';
+import { isStreamId, streamLabel, DEFAULT_STREAM } from '@/lib/marketing/streams';
 import { NewEpisode } from './NewEpisode';
+import { DeleteEpisode } from './DeleteEpisode';
 import s from '../../_components/client-card.module.css';
 import l from '../../_components/launcher.module.css';
+import d from './podcast.module.css';
 
 export const dynamic = 'force-dynamic';
 
 /**
  * PODCAST EPISODES: the source material for the clip series.
  *
- * An episode sits beside concepts rather than inside one, because it is not an idea the business
- * argues, it is a recording that already exists. What comes OUT of it are ordinary pieces, so this
- * page is a mine head and not a parallel pipeline.
+ * Reached from a stream's Podcasts section rather than from the marketing dashboard, because an
+ * episode belongs to a stream the way a concept does (Marrs: "it actually belongs within the Polynize
+ * stream of content"). `?stream=` scopes the list and pre-picks the stream on the form; without it,
+ * every episode is listed.
  */
-export default async function PodcastPage() {
+export default async function PodcastPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ stream?: string; new?: string }>;
+}) {
+  const { stream: wanted, new: openNew } = await searchParams;
   const user = await getCurrentUser();
   if (!user) return null;
   if (user.scope.type === 'client') {
     redirect(`/console/${user.scope.slug}/blueprint`);
   }
 
-  const episodes = await listEpisodes(user.email).catch((err) => {
+  const stream = wanted && isStreamId(wanted) ? wanted : undefined;
+  const all = await listEpisodes(user.email).catch((err) => {
     console.error('[podcast] list failed:', err);
     return [];
   });
+  const episodes = stream
+    ? all.filter((e) => (e.stream || DEFAULT_STREAM) === stream)
+    : all;
 
   return (
     <>
       <div className={s.bgPattern} aria-hidden />
       <div className={s.dashboard}>
         <div className={s.header}>
-          <Link href="/console/marketing" className={s.marketingBack}>
-            ← Marketing
+          <Link
+            href={stream ? `/console/marketing/stream/${stream}` : '/console/marketing'}
+            className={s.marketingBack}
+          >
+            ← {stream ? streamLabel(stream) : 'Marketing'}
           </Link>
           <div className={s.eyebrow}>podcast clips</div>
           <h1 className={s.title}>Episodes</h1>
@@ -48,7 +64,7 @@ export default async function PodcastPage() {
           </p>
         ) : null}
 
-        <NewEpisode />
+        <NewEpisode defaultStream={stream} startOpen={openNew === '1'} />
 
         {episodes.length === 0 ? (
           <p className={l.placeholderNote}>
@@ -60,30 +76,39 @@ export default async function PodcastPage() {
             {episodes.map((ep) => {
               const proposed = ep.clips.length;
               const approved = ep.clips.filter(
-                (c) => c.status === 'approved' || c.status === 'assembling' || c.status === 'assembled'
+                (c) =>
+                  c.status === 'approved' ||
+                  c.status === 'assembling' ||
+                  c.status === 'assembled'
               ).length;
               const done = ep.clips.filter((c) => c.status === 'assembled').length;
               return (
-                <Link
-                  key={ep.episode_id}
-                  href={`/console/marketing/podcast/${ep.episode_id}`}
-                  className={l.card}
-                >
-                  <span className={l.cardEyebrow}>
-                    {ep.number ? `Episode ${ep.number}` : 'Episode'}
-                  </span>
-                  <span className={l.cardTitle}>{ep.title}</span>
-                  <span className={l.cardDesc}>
-                    {proposed === 0
-                      ? ep.transcript
-                        ? 'Transcript in. No clips proposed yet.'
-                        : 'No transcript yet.'
-                      : `${proposed} proposed · ${approved} approved · ${done} cut`}
-                  </span>
-                  <span className={l.cardArrow} aria-hidden>
-                    →
-                  </span>
-                </Link>
+                // The card and the delete control are SIBLINGS. Nesting a button inside the Link
+                // would put one interactive element inside another, which breaks keyboard use and
+                // makes the click target ambiguous.
+                <div key={ep.episode_id} className={d.cardWrap}>
+                  <Link
+                    href={`/console/marketing/podcast/${ep.episode_id}`}
+                    className={l.card}
+                  >
+                    <span className={l.cardEyebrow}>
+                      {ep.number ? `Episode ${ep.number}` : 'Episode'}
+                      {!stream ? ` · ${streamLabel(ep.stream || DEFAULT_STREAM)}` : ''}
+                    </span>
+                    <span className={l.cardTitle}>{ep.title}</span>
+                    <span className={l.cardDesc}>
+                      {proposed === 0
+                        ? ep.transcript_chars
+                          ? 'Transcript in. No clips proposed yet.'
+                          : 'No transcript yet.'
+                        : `${proposed} proposed · ${approved} approved · ${done} cut`}
+                    </span>
+                    <span className={l.cardArrow} aria-hidden>
+                      →
+                    </span>
+                  </Link>
+                  <DeleteEpisode episodeId={ep.episode_id} title={ep.title} />
+                </div>
               );
             })}
           </div>

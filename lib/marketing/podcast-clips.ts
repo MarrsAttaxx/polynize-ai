@@ -312,13 +312,14 @@ THE CUT
 
 ${framing}
 
-THE TITLE. Put this on screen as a title, near the TOP of the vertical frame, held for the first three
-seconds and then gone:
+THE TITLE. Put this on screen as a title, held for the first FIVE seconds and then gone:
 
   ${clip.title}
 
-Keep it to the words above. Do not rewrite it, do not add a subtitle, and do not cover either
-speaker's face with it.
+- Position it in the VERTICAL CENTRE of the frame, horizontally centred. Not at the top, not as a
+  lower third: the middle of the 1080x1920 canvas.
+- Keep it to the words above. Do not rewrite it and do not add a subtitle.
+- Big enough to read at a glance on a phone, and it may sit over the video: that is intended.
 
 THE CAPTIONS. Add burned-in captions for the whole clip.
 - They run CONTINUOUS, top to tail. Every spoken word is captioned and the captions never stop and

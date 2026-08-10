@@ -476,3 +476,49 @@
   color: var(--text);
   font-weight: 600;
 }
+
+/**
+ * The card and its delete control, side by side.
+ *
+ * The delete button is a SIBLING of the card link rather than a child: an interactive element inside
+ * another one breaks keyboard navigation and makes the click target ambiguous. It stays quiet until
+ * the row is hovered, because deleting an episode is rare and should not compete with opening one.
+ */
+.cardWrap {
+  position: relative;
+  display: flex;
+  align-items: stretch;
+}
+.cardWrap > a {
+  flex: 1;
+  min-width: 0;
+}
+.delBtn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  background: rgba(10, 10, 15, 0.7);
+  border: 1px solid rgba(244, 236, 228, 0.16);
+  border-radius: 8px;
+  padding: 5px 9px;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.12s;
+}
+.cardWrap:hover .delBtn,
+.delBtn:focus-visible {
+  opacity: 1;
+}
+.delBtn:hover {
+  color: var(--coral);
+  border-color: var(--coral);
+}
+.delBtn:disabled {
+  opacity: 1;
+  cursor: default;
+}

@@ -7,6 +7,7 @@ import { isStreamId, streamLabel, DEFAULT_STREAM } from '@/lib/marketing/streams
 import { getBrandVoiceForStream } from '@/lib/marketing/brand-voice-store';
 import { listTemplates } from '@/lib/marketing/template-store';
 import { listMediaForStream } from '@/lib/marketing/media-store';
+import { listEpisodes } from '@/lib/marketing/podcast-store';
 import { formatById } from '@/lib/marketing/output-plan';
 import { groupKeyOf } from '@/lib/marketing/dev-group';
 import { BackLink } from '@/app/console/marketing/_components/BackLink';
@@ -45,11 +46,11 @@ export default async function StreamPage({
     );
   }
 
-  // ALL FIVE LOADS AT ONCE. They are independent, and awaited one after another they
+  // ALL SIX LOADS AT ONCE. They are independent, and awaited one after another they
   // stacked five round trips (each of which was itself serial internally) into the time
   // to first byte: opening a stream took three to four seconds. Every one still degrades
   // on its own, so a single store being down costs its section and not the page.
-  const [conceptsRes, piecesRes, brandVoiceRes, templatesRes, mediaRes] = await Promise.all([
+  const [conceptsRes, piecesRes, brandVoiceRes, templatesRes, mediaRes, episodesRes] = await Promise.all([
     listConcepts(user.email).catch((err) => {
       console.error('[marketing.stream] concept list failed:', err);
       return [] as ConceptDoc[];
@@ -68,6 +69,10 @@ export default async function StreamPage({
     }),
     listMediaForStream(stream).catch((err) => {
       console.error('[marketing.stream] media list failed:', err);
+      return [];
+    }),
+    listEpisodes(user.email).catch((err) => {
+      console.error('[marketing.stream] episode list failed:', err);
       return [];
     }),
   ]);
@@ -100,6 +105,11 @@ export default async function StreamPage({
   const totalTemplates = templatesRes.length;
   const activeTemplates = templatesRes.filter((t) => t.status === 'active').length;
   const mediaCount = mediaRes.length;
+
+  // PODCAST EPISODES BELONG TO A STREAM, not to the marketing dashboard. Marrs: "it actually belongs
+  // within the Polynize stream of content." An episode is that stream's source material, the same way
+  // a concept is, and the clips it yields become that stream's pieces.
+  const episodes = episodesRes.filter((e) => (e.stream || DEFAULT_STREAM) === stream);
 
   return (
     <>
@@ -268,6 +278,60 @@ export default async function StreamPage({
               })}
             </div>
           )}
+        </section>
+
+        <section className={`${s.dashSection} ${s.panel}`}>
+          <div className={s.dashSectionHead}>
+            <h2 className={s.dashSectionTitle}>Podcasts</h2>
+            <span className={s.dashSectionCount}>{episodes.length}</span>
+          </div>
+          {episodes.length === 0 ? (
+            <p className={s.dashSectionEmpty}>
+              No episodes yet.{' '}
+              <Link href={`/console/marketing/podcast?stream=${stream}&new=1`}>
+                Add one
+              </Link>{' '}
+              to mine it for vertical clips.
+            </p>
+          ) : (
+            <div className={l.cards}>
+              {episodes.map((ep) => {
+                const cut = ep.clips.filter((c) => c.status === 'assembled').length;
+                const ruled = ep.clips.filter(
+                  (c) => c.status === 'approved' || c.status === 'assembling' || c.status === 'assembled'
+                ).length;
+                return (
+                  <Link
+                    key={ep.episode_id}
+                    href={`/console/marketing/podcast/${ep.episode_id}`}
+                    className={`${l.card} ${s.onPanelCard}`}
+                  >
+                    <span className={l.cardEyebrow}>
+                      {ep.number ? `episode ${ep.number}` : 'episode'}
+                    </span>
+                    <span className={l.cardTitle}>{ep.title}</span>
+                    <span className={l.cardDesc}>
+                      {ep.clips.length === 0
+                        ? ep.transcript_chars
+                          ? 'Transcript in. No clips proposed yet.'
+                          : 'No transcript yet.'
+                        : `${ep.clips.length} proposed · ${ruled} approved · ${cut} cut`}
+                    </span>
+                    <span className={l.cardArrow} aria-hidden>
+                      →
+                    </span>
+                  </Link>
+                );
+              })}
+            </div>
+          )}
+          {episodes.length ? (
+            <p className={s.dashSectionEmpty} style={{ marginTop: 12 }}>
+              <Link href={`/console/marketing/podcast?stream=${stream}`}>
+                All episodes
+              </Link>
+            </p>
+          ) : null}
         </section>
       </div>
     </>

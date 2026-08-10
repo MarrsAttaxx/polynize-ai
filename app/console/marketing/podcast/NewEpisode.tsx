@@ -14,13 +14,21 @@ import { STREAMS, DEFAULT_STREAM, type StreamId } from '@/lib/marketing/streams'
 import s from '../../_components/client-card.module.css';
 import d from './podcast.module.css';
 
-export function NewEpisode() {
+export function NewEpisode({
+  defaultStream,
+  startOpen,
+}: {
+  /** Pre-picked when arriving from a stream's Podcasts section. */
+  defaultStream?: StreamId;
+  /** Open immediately, so "Add one" from a stream lands on the form rather than a button. */
+  startOpen?: boolean;
+}) {
   const router = useRouter();
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(Boolean(startOpen));
   const [number, setNumber] = useState('');
   const [title, setTitle] = useState('');
   const [guest, setGuest] = useState('');
-  const [stream, setStream] = useState<StreamId>(DEFAULT_STREAM);
+  const [stream, setStream] = useState<StreamId>(defaultStream ?? DEFAULT_STREAM);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 

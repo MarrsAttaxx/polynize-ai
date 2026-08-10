@@ -65,11 +65,6 @@ export default async function MarketingPage() {
             <Link href="/console/marketing/calendar" className={s.startConceptCta}>
               Calendar
             </Link>
-            {/* Podcast episodes sit beside the streams rather than inside one: an episode is source
-                material shared across them, and the clips it produces become ordinary pieces. */}
-            <Link href="/console/marketing/podcast" className={s.startConceptCta}>
-              Podcast clips
-            </Link>
           </div>
         </div>
 
