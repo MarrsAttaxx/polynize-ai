@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
+  CAP_GLOSS,
   COHORT_SUMMARY,
   MATRIX_SCENARIOS,
   MATRIX_USERS,
@@ -26,7 +27,31 @@ import s from './matrix.module.css';
  * Under prefers-reduced-motion every delay collapses to zero and it is simply there.
  *
  * The numbers are synthetic (see matrix-data.ts). Caption accordingly.
+ *
+ * SIMPLIFIED 10 Aug 2026 on Marrs's note. The cells used to print figures (55.0, +31%)
+ * and it read as a spreadsheet a visitor had to decode before the point landed. Cells
+ * now carry a single arrow, so the grid is scanned as a picture: which way is this
+ * person going on this capability, and colour says how far along they are. The legend
+ * moved ABOVE the grid for the same reason, since a key underneath is a key you read
+ * after you have already given up.
  */
+
+/** Colour says how far along. The arrow says which way, and survives colour blindness. */
+const TIER_ARROW: Record<Tier, string> = {
+  g: '↗',
+  t: '↗',
+  a: '→',
+  o: '↘',
+  r: '↘',
+};
+
+const TIER_WORD: Record<Tier, string> = {
+  g: 'strong',
+  t: 'strong',
+  a: 'developing',
+  o: 'a gap',
+  r: 'a gap',
+};
 
 type Opened = { handle: string; cap: string; scenario: string; scenarioName: string } | null;
 
@@ -96,6 +121,20 @@ export function CapabilityMatrix() {
 
   return (
     <div className={s.wrap} ref={wrapRef}>
+      {/* Above the grid, not below it. A key underneath is a key you read after you have
+          already decided the picture is too complicated. */}
+      <div className={s.key}>
+        <span className={s.keyItem}>
+          <i className={`${s.keyDot} ${s.keyMint}`} />Strong
+        </span>
+        <span className={s.keyItem}>
+          <i className={`${s.keyDot} ${s.keyAmber}`} />Developing
+        </span>
+        <span className={s.keyItem}>
+          <i className={`${s.keyDot} ${s.keyCoral}`} />Gap
+        </span>
+        <span className={s.keyHint}>Select any cell</span>
+      </div>
       <div
         className={`${s.grid} ${armed ? s.armed : ''} ${on ? s.on : ''}`}
         style={{ gridTemplateColumns }}
@@ -104,7 +143,7 @@ export function CapabilityMatrix() {
       >
         {/* Corner */}
         <div className={s.corner} style={{ gridRow: '1 / span 3', gridColumn: 1, ...delay(40) }}>
-          <span className={s.allUsers}>All users</span>
+          <span className={s.allUsers}>Users</span>
           <span className={s.allSub}>{COHORT_SUMMARY}</span>
         </div>
 
@@ -187,11 +226,9 @@ export function CapabilityMatrix() {
                     onClick={() =>
                       setOpened({ handle: u.h, cap, scenario: scn.tag, scenarioName: scn.name })
                     }
-                    aria-label={`${u.h}, ${cap}, ${scn.name}: ${
-                      cell.t === 'sc' ? `score ${cell.v}` : `uplift ${cell.v} percent`
-                    }. Open detail.`}
+                    aria-label={`${u.h}, ${cap}, ${scn.name}: ${TIER_WORD[tier]}. Open detail.`}
                   >
-                    {cell.t === 'sc' ? cell.v.toFixed(1) : `↗ +${cell.v}%`}
+                    {TIER_ARROW[tier]}
                   </button>
                 );
               });
@@ -229,14 +266,13 @@ function CellDetail({ opened, onClose }: { opened: NonNullable<Opened>; onClose:
         <div className={s.mScnTag}>{opened.scenario}</div>
         <div className={s.mScnName}>{opened.scenarioName}</div>
         <h3 className={s.mCap}>{opened.cap}</h3>
+        {CAP_GLOSS[opened.cap] && <p className={s.mGloss}>{CAP_GLOSS[opened.cap]}</p>}
         <div className={s.mWho}>{opened.handle}</div>
 
-        <div className={s.mStats}>
-          <Stat label="CQ" value={String(d.cq)} accent />
-          <Stat label="Rank" value={`${d.rank} of 44`} />
-          <Stat label="Percentile" value={`${d.percentile}%`} />
-          <Stat label="Time" value={d.time} />
-        </div>
+        <p className={s.mLead}>
+          See how your people perform over time in scenarios built from the work they
+          actually do.
+        </p>
 
         <div className={s.mTrajLabel}>Attempts</div>
         <div className={s.mTraj}>
@@ -246,22 +282,18 @@ function CellDetail({ opened, onClose }: { opened: NonNullable<Opened>; onClose:
               <span className={s.mTrajBar}>
                 <i style={{ width: `${(a / peak) * 100}%` }} />
               </span>
-              <span className={s.mTrajV}>{a}</span>
             </div>
           ))}
         </div>
 
-        <p className={s.mNote}>Example data, shown to illustrate the format.</p>
-      </div>
-    </div>
-  );
-}
+        <ul className={s.mPoints}>
+          <li>Scored against the benchmark for the role, not against each other.</li>
+          <li>Every response is kept, so you can see how the reading was reached.</li>
+          <li>Run the map again later and watch the same cell move.</li>
+        </ul>
 
-function Stat({ label, value, accent }: { label: string; value: string; accent?: boolean }) {
-  return (
-    <div className={s.stat}>
-      <span className={s.statLabel}>{label}</span>
-      <span className={`${s.statValue} ${accent ? s.statAccent : ''}`}>{value}</span>
+        <p className={s.mNote}>An example cell, shown to illustrate the format.</p>
+      </div>
     </div>
   );
 }

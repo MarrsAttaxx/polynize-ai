@@ -312,8 +312,11 @@
   width: 80px;
   filter: drop-shadow(0 0 10px color-mix(in srgb, var(--mint) 40%, transparent));
 }
+/* flex, NOT inline-flex. inline-flex makes the h2 an inline-level box, so it flowed on
+   the same line as the inline-block eyebrow above it and the two overlapped on a wide
+   screen. */
 .h2WithGlyph {
-  display: inline-flex;
+  display: flex;
   align-items: center;
   gap: 14px;
   flex-wrap: wrap;
@@ -364,10 +367,12 @@
   --hud-4: color-mix(in srgb, var(--mint) 12%, transparent);
   --hud-5: color-mix(in srgb, var(--mint) 6%, transparent);
 }
-.figWide { max-width: 1040px; margin: 0 auto; }
+.figWide { max-width: 936px; margin: 0 auto; }
+/* A single object, so it gets a frame it fills rather than a wide canvas to float in. */
+.figCentre { max-width: 560px; margin: 0 auto; }
 /* Pulled right and held a little narrower, so the offset is actually visible inside a
    1096px column rather than being swallowed by it. */
-.figRight { max-width: 880px; margin: 0 0 0 auto; }
+.figRight { max-width: 792px; margin: 0 0 0 auto; }
 .figureSvg { display: block; width: 100%; height: auto; overflow: visible; }
 
 /* Depth planes. The reason the crowds read as rooms and not as icon rows. */
@@ -427,70 +432,7 @@
   text-anchor: middle;
 }
 
-/* ---- beat 1: a navigation display that will not hold a fix ---- */
-.hudMesh { fill: none; stroke: var(--hud-3); stroke-width: 1.2; }
-.hudGlobe { fill: none; stroke: var(--hud-2); stroke-width: 1.3; }
-.hudHorizon { fill: none; stroke: var(--hud-1); stroke-width: 1.6; }
-.hudSide { fill: none; }
-.hudStake { transform-box: fill-box; transform-origin: 50% 100%; }
-@keyframes hudStakeIn {
-  from { opacity: 0; transform: translateY(-22px); }
-  to { opacity: 1; transform: none; }
-}
-.play .hudStake {
-  animation: hudStakeIn 460ms cubic-bezier(0.2, 1.1, 0.4, 1) both;
-  animation-delay: calc(760ms + var(--i, 0) * 130ms);
-}
-@keyframes hudSpin { to { transform: rotate(360deg); } }
-.hudBezelDrift { transform-box: fill-box; transform-origin: 50% 50%; }
-.play .hudBezelDrift { animation: hudSpin 64s linear infinite; }
-/* Comes up sharp, holds, then loses lock. Ends faded, never gone, so the resting state
-   is a legible display rather than a hole in the page. */
-@keyframes hudLoseLock {
-  0% { opacity: 0; filter: blur(5px); }
-  20% { opacity: 1; filter: blur(0); }
-  68% { opacity: 1; filter: blur(0); }
-  100% { opacity: 0.5; filter: blur(2.4px); }
-}
-.play .hudWorld { animation: hudLoseLock 3.6s cubic-bezier(0.4, 0, 0.2, 1) both; }
-
-/* ---- beat 2: a scanner losing every contact it was tracking ---- */
-.hudTrack { fill: none; stroke: var(--hud-3); stroke-width: 1.4; }
-.hudDrop { transform-box: fill-box; transform-origin: 50% 50%; }
-@keyframes hudDrop {
-  0% { opacity: 0; transform: scale(0.82); }
-  14% { opacity: 1; transform: none; }
-  56% { opacity: 1; }
-  100% { opacity: 0.14; transform: scale(1.05); }
-}
-.play .hudDrop {
-  animation: hudDrop 3.4s cubic-bezier(0.4, 0, 0.2, 1) both;
-  animation-delay: calc(var(--i, 0) * 26ms);
-}
-/* A beam, not content. Absent is its correct resting state. */
-.hudSweepBeam {
-  fill: none;
-  stroke: var(--hud-1);
-  stroke-width: 3;
-  opacity: 0;
-  filter: drop-shadow(0 0 10px color-mix(in srgb, var(--mint) 60%, transparent));
-}
-.hudSweep { transform-box: view-box; transform-origin: 96px 434px; }
-@keyframes hudSweep {
-  0% { transform: rotate(0deg); opacity: 0; }
-  8% { opacity: 0.9; }
-  86% { opacity: 0.9; }
-  100% { transform: rotate(90deg); opacity: 0; }
-}
-.play .hudSweep .hudSweepBeam { opacity: 1; }
-.play .hudSweep { animation: hudSweep 3.2s cubic-bezier(0.3, 0, 0.4, 1) both; }
-@keyframes hudDrain {
-  0%, 40% { opacity: 1; }
-  100% { opacity: 0.16; }
-}
-.play .hudDrain { animation: hudDrain 3.4s ease-in both; }
-
-/* ---- beat 3: an instrument that will not settle, beside a target nothing meets ---- */
+/* ---- beat 1: a compass, on its own ---- */
 .hudRose { fill: var(--hud-3); }
 .hudRoseDim { fill: var(--hud-4); }
 .hudRoseFaint { fill: var(--hud-5); }
@@ -527,6 +469,8 @@
   stroke-width: 7;
   stroke-linecap: round;
 }
+/* At rest it points OFF the bearing. A still frame pointing due north would argue the
+   opposite of the copy it sits under. */
 .hudNeedle {
   transform-box: fill-box;
   transform-origin: 50% 50%;
@@ -543,14 +487,41 @@
 }
 .play .hudNeedle { animation: hudHunt 4.6s cubic-bezier(0.45, 0, 0.3, 1) infinite alternate both; }
 
-.hudChart { fill: none; }
-.hudGapLead { fill: none; stroke: var(--hud-4); stroke-width: 1; stroke-dasharray: 2 6; }
+/* ---- beat 2: the vendors, floating loose ---- */
+.hudVendor { color: var(--hud-1); }
+.hudFloat { transform-box: fill-box; transform-origin: 50% 50%; }
+@keyframes hudFloatIn {
+  from { opacity: 0; transform: scale(0.86); }
+  to { opacity: 1; transform: none; }
+}
+/* Nothing settles and nothing lines up, which is the beat. Each mark drifts on its own
+   clock so the field never resolves into a row. */
+@keyframes hudBob {
+  0%, 100% { transform: translateY(-7px); }
+  50% { transform: translateY(7px); }
+}
+.play .hudFloat {
+  animation:
+    hudFloatIn 520ms cubic-bezier(0.2, 1, 0.4, 1) both,
+    hudBob 4.2s ease-in-out infinite alternate;
+  animation-delay: calc(var(--i, 0) * 72ms), calc(var(--i, 0) * 311ms);
+}
+
+/* ---- beat 3: readouts climbing towards a benchmark they never meet ---- */
+.hudGrid2 { fill: none; stroke: var(--hud-5); stroke-width: 1; }
 .hudAxis { fill: none; stroke: var(--hud-2); stroke-width: 1.8; }
-.hudBarDim { fill: var(--hud-5); stroke: none; }
+.hudBarDim { fill: var(--hud-5); }
 .hudBarLit {
   fill: var(--hud-2);
-  stroke: none;
   filter: drop-shadow(0 0 3px color-mix(in srgb, var(--mint) 30%, transparent));
+}
+/* Painted in the page colour ON TOP of the bars, which is what turns a solid rect into
+   a stack of blocks. Scaling drawn blocks stretches them; scaling a solid bar behind
+   fixed rules does not. */
+.hudBlockRule {
+  fill: none;
+  stroke: var(--bg);
+  stroke-width: 4;
 }
 .hudTargetLine {
   fill: none;
@@ -559,34 +530,65 @@
   stroke-dasharray: 12 8;
 }
 .hudTargetCap { fill: none; stroke: var(--hud-0); stroke-width: 2.4; }
-.hudBar { transform-box: fill-box; transform-origin: 50% 100%; }
-@keyframes hudBarGrow {
+.hudBreathe { transform-box: fill-box; transform-origin: 50% 100%; }
+@keyframes hudBreathe {
+  0% { transform: scaleY(0.82); }
+  100% { transform: scaleY(1.14); }
+}
+@keyframes hudBarIn {
   from { transform: scaleY(0.04); opacity: 0; }
   to { transform: none; opacity: 1; }
 }
-.play .hudBar {
-  animation: hudBarGrow 900ms cubic-bezier(0.2, 0.9, 0.3, 1) both;
-  animation-delay: calc(var(--i, 0) * 78ms);
-}
-
-/* ---- beat 4: a wall of dials, none of them resolving ---- */
-.hudDial { transform-box: fill-box; transform-origin: 50% 50%; }
-@keyframes hudDialIn {
-  from { opacity: 0; transform: scale(0.9); }
-  to { opacity: 1; transform: none; }
-}
-/* Each one settles at a different opacity and keeps breathing, so the panel never
-   reaches a state you could call an answer. */
-@keyframes hudDialBreathe {
-  0%, 100% { opacity: 0.72; }
-  50% { opacity: 1; }
-}
-.play .hudDial {
+.play .hudBreathe {
   animation:
-    hudDialIn 520ms cubic-bezier(0.2, 1, 0.4, 1) both,
-    hudDialBreathe 3.4s ease-in-out infinite;
-  animation-delay: calc(var(--i, 0) * 78ms), calc(var(--i, 0) * 233ms);
+    hudBarIn 820ms cubic-bezier(0.2, 0.9, 0.3, 1) both,
+    hudBreathe var(--dur, 4s) ease-in-out infinite alternate;
+  animation-delay: calc(var(--i, 0) * 52ms), var(--delay, 0s);
 }
+/* The standard moves too, which is the quiet half of the point. */
+@keyframes hudTargetDrift {
+  0% { transform: translateY(-6px); }
+  100% { transform: translateY(7px); }
+}
+.hudTargetDrift { transform-box: view-box; }
+.play .hudTargetDrift { animation: hudTargetDrift 7.5s ease-in-out infinite alternate; }
+
+/* ---- beat 4: the slot machine ---- */
+.hudReelFrame {
+  fill: none;
+  stroke: var(--hud-2);
+  stroke-width: 2;
+}
+.hudPayline {
+  fill: none;
+  stroke: var(--hud-0);
+  stroke-width: 2.4;
+  filter: drop-shadow(0 0 6px color-mix(in srgb, var(--mint) 60%, transparent));
+}
+.hudLeverKnob {
+  fill: color-mix(in srgb, var(--mint) 14%, var(--bg));
+  stroke: var(--hud-1);
+  stroke-width: 2.4;
+}
+.hudMarquee circle {
+  fill: var(--hud-4);
+}
+@keyframes hudChase {
+  0%, 72% { fill: var(--hud-4); }
+  12% { fill: var(--hud-0); }
+}
+.play .hudMarquee circle {
+  animation: hudChase 1.6s linear infinite;
+  animation-delay: calc(var(--i, 0) * -120ms);
+}
+/* Seamless because each reel renders its symbol list twice and travels exactly one
+   list length. The distance comes from the component, so changing the symbol list
+   cannot desynchronise the loop. */
+@keyframes hudReel {
+  from { transform: translateY(0); }
+  to { transform: translateY(var(--travel, -768px)); }
+}
+.play .hudReel { animation: hudReel var(--dur, 5s) linear infinite; }
 
 /* ---------- The route ----------
    A dashed path down the left margin with a waypoint per beat and a mint trail that
@@ -1075,6 +1077,7 @@
   /* The right-placed figure has nowhere to be offset to once the column is this
      narrow, so it goes full width like the others. */
   .figRight { max-width: 100%; margin: 0 auto; }
+  .figCentre { max-width: 440px; }
   .stages { grid-template-columns: repeat(2, 1fr); }
   .stages3 { grid-template-columns: 1fr; }
   .cards3 { grid-template-columns: 1fr; }

@@ -1,4 +1,5 @@
 import type { FigureKind } from './content';
+import { VENDORS, VendorLogo, type VendorName } from './VendorLogos';
 import s from './story.module.css';
 
 /**
@@ -38,10 +39,8 @@ import s from './story.module.css';
  * inventing evidence for a claim the page has not earned yet. The dials carry their
  * meaning in how far the arc has filled and in nothing else.
  *
- * ON THE VENDOR MARKS: beats 1 and 4 use neutral badges rather than real OpenAI /
- * Anthropic / Gemini / Copilot logos. Drawing third-party trademarks from memory would
- * be both inaccurate and a real trademark exposure on a commercial page. They are one
- * component (`VendorMark`) so real assets can drop in once that call is made.
+ * ON THE VENDOR MARKS: real assets now, supplied by Marrs on 10 Aug 2026, living in
+ * VendorLogos.tsx. They render monochrome; the reasoning is in that file.
  */
 
 /* ================================================================== primitives */
@@ -114,6 +113,14 @@ function tickRing(cx: number, cy: number, r0: number, r1: number, count: number,
     const q = pol(cx, cy, r1, a);
     d.push(`M ${f(p.x)} ${f(p.y)} L ${f(q.x)} ${f(q.y)}`);
   }
+  return d.join(' ');
+}
+
+/** One path holding a whole background grid. */
+function graticule(w: number, h: number, step: number, inset: number) {
+  const d: string[] = [];
+  for (let x = inset; x <= w - inset; x += step) d.push(`M ${x} ${inset} V ${h - inset}`);
+  for (let y = inset; y <= h - inset; y += step) d.push(`M ${inset} ${y} H ${w - inset}`);
   return d.join(' ');
 }
 
@@ -195,20 +202,22 @@ function globe(cx: number, cy: number, R: number) {
   return d.join(' ');
 }
 
+
 /* ================================================================== component */
 
-/** Where the figure sits in its band. Beat 2 goes right, to balance the route. */
-type FigurePlace = 'wide' | 'right';
+/** Where the figure sits in its band. */
+type FigurePlace = 'wide' | 'right' | 'centre';
 
 const VIEWBOX: Record<FigureKind, string> = {
-  scatter: '0 0 1000 570',
-  ambiguity: '0 0 1000 500',
-  coordinates: '0 0 1000 500',
-  guess: '0 0 1000 520',
+  scatter: '0 0 620 580',
+  ambiguity: '0 0 1000 440',
+  coordinates: '0 0 1000 400',
+  guess: '0 0 1000 500',
 };
 
 const PLACE: Record<FigureKind, FigurePlace> = {
-  scatter: 'wide',
+  // A single object wants a frame it fills, not a wide canvas to float in.
+  scatter: 'centre',
   // The route swings from the middle out to the left edge across this gap, so the
   // figure sits right of centre rather than fighting it for the same space.
   ambiguity: 'right',
@@ -216,41 +225,28 @@ const PLACE: Record<FigureKind, FigurePlace> = {
   guess: 'wide',
 };
 
+const PLACE_CLASS: Record<FigurePlace, string> = {
+  wide: s.figWide,
+  right: s.figRight,
+  centre: s.figCentre,
+};
+
 export function BeatFigure({ kind }: { kind: FigureKind }) {
   return (
     <div className={s.figBand}>
       <div
-        className={`${s.figure} ${PLACE[kind] === 'right' ? s.figRight : s.figWide}`}
+        className={`${s.figure} ${PLACE_CLASS[PLACE[kind]]}`}
         data-fig={kind}
         aria-hidden="true"
       >
         <svg viewBox={VIEWBOX[kind]} className={s.figureSvg} focusable="false">
-          {kind === 'scatter' && <NavDisplay />}
-          {kind === 'ambiguity' && <ContactScan />}
-          {kind === 'coordinates' && <GaugeCluster />}
-          {kind === 'guess' && <DialWall />}
+          {kind === 'scatter' && <LoneCompass />}
+          {kind === 'ambiguity' && <VendorDrift />}
+          {kind === 'coordinates' && <BenchmarkBars />}
+          {kind === 'guess' && <SlotMachine />}
         </svg>
       </div>
     </div>
-  );
-}
-
-/** Placeholder for a vendor mark. Swap for real assets if the trademark call is made. */
-function VendorMark({ x, y, i, r = 15 }: { x: number; y: number; i: number; r?: number }) {
-  const k = r * 0.42;
-  const glyphs = [
-    <circle key="a" cx={x} cy={y} r={k * 0.9} />,
-    <rect key="b" x={x - k} y={y - k} width={k * 2} height={k * 2} rx={k * 0.4} />,
-    <path key="c" d={`M ${x} ${y - k * 1.2} L ${x + k * 1.1} ${y + k} L ${x - k * 1.1} ${y + k} Z`} />,
-    <path key="d" d={`M ${x} ${y - k * 1.25} L ${x + k * 1.25} ${y} L ${x} ${y + k * 1.25} L ${x - k * 1.25} ${y} Z`} />,
-    <path key="e" d={`M ${x - k * 1.2} ${y} h ${k * 2.4} M ${x} ${y - k * 1.2} v ${k * 2.4}`} />,
-    <path key="f" d={`M ${x - k} ${y - k} L ${x + k} ${y + k} M ${x + k} ${y - k} L ${x - k} ${y + k}`} />,
-  ];
-  return (
-    <g className={s.hudMark}>
-      <circle className={s.hudMarkDisc} cx={x} cy={y} r={r} />
-      {glyphs[i % glyphs.length]}
-    </g>
   );
 }
 
@@ -276,7 +272,7 @@ function BotBody({ x, y, sc = 1 }: { x: number; y: number; sc?: number }) {
 
 /**
  * A bezel. Every dial in this file is one of these plus something in the middle, which
- * is what makes the four figures read as one instrument family.
+ * is what keeps the figures reading as one instrument family.
  */
 function Bezel({
   cx,
@@ -301,9 +297,7 @@ function Bezel({
   return (
     <g>
       <circle className={s.hudDisc} cx={cx} cy={cy} r={r * 0.82} />
-      {dense && (
-        <path className={s.hudTickFine} d={tickRing(cx, cy, r * 0.86, r * 0.98, 120)} />
-      )}
+      {dense && <path className={s.hudTickFine} d={tickRing(cx, cy, r * 0.86, r * 0.98, 120)} />}
       <path className={s.hudTick} d={tickRing(cx, cy, r * 0.84, r * 1.0, 120, 10)} />
       <path className={s.hudSegDim} d={segRing(cx, cy, r * 1.05, r * 1.16, segs, 3.4)} />
       <path className={s.hudBloom} d={segRing(cx, cy, r * 1.05, r * 1.16, segs, 3.4, 0, to)} />
@@ -318,185 +312,14 @@ function Bezel({
 }
 
 /* ================================================================== beat 1
-   AI World, as a navigation display that will not hold a fix.
+   A compass, on its own.
 
-   A wireframe world under an instrument bezel, with six territories staked on it by
-   somebody else. It comes up sharp, holds, then loses lock: the bezel drifts, the
-   terrain softens, and the whole display fades back. The reader is looking at the
-   moment the instrument stops being trustworthy, which is the beat exactly. */
+   The beat says you are lost. The figure is the instrument you would reach for, and it
+   will not settle: the needle hunts past the bearing it is looking for and never lands
+   on it. That is the entire idea, and it did not need a landscape around it. Everything
+   else that used to be in this frame was atmosphere competing with the point. */
 
-const NAV = { cx: 500, cy: 214, r: 128 };
-const HORIZON_Y = 252;
-/* Wider than the frame on purpose. A surface that stops inside the viewport reads as an
-   object; one that runs off both edges reads as ground you are standing on. */
-const NAV_MESH = mesh(NAV.cx, HORIZON_Y, 1500, 300, 30, 14, 20260810, 30);
-
-/** Six claims, standing on the near ground so they read as staked rather than labelled. */
-const TERRITORIES = [
-  { x: 120, y: 520, h: 78 },
-  { x: 286, y: 466, h: 44 },
-  { x: 448, y: 512, h: 70 },
-  { x: 610, y: 462, h: 40 },
-  { x: 772, y: 516, h: 74 },
-  { x: 906, y: 470, h: 46 },
-];
-
-function NavDisplay() {
-  return (
-    <g className={s.hudScene}>
-      <path className={s.hudFrame} d={brackets(22, 22, 956, 526, 34)} />
-
-      <g className={s.hudWorld}>
-        <clipPath id="pn-nav-clip">
-          <rect x="30" y="30" width="940" height="510" />
-        </clipPath>
-        <g clipPath="url(#pn-nav-clip)">
-          <path className={s.hudMesh} d={NAV_MESH} />
-          <path className={s.hudBloom} d={`M 30 ${HORIZON_Y} H 970`} />
-          <path className={s.hudHorizon} d={`M 30 ${HORIZON_Y} H 970`} />
-
-          {/* Staked ground. A pole and a marker, so it reads as a claim, not a label. */}
-          {TERRITORIES.map((t, i) => (
-            <g key={i} className={s.hudStake} style={{ ['--i' as string]: i }}>
-              <circle className={s.hudDot} cx={t.x} cy={t.y} r={3.6} />
-              <path className={s.hudLineDim} d={`M ${t.x} ${t.y} V ${t.y - t.h}`} />
-              <VendorMark x={t.x} y={t.y - t.h - 17} i={i} r={17} />
-            </g>
-          ))}
-        </g>
-
-        {/* The display itself, sitting on the horizon. The globe goes AFTER the bezel:
-            Bezel paints its own dark disc, so anything drawn before it is covered. */}
-        <g className={s.hudBezelDrift}>
-          <Bezel cx={NAV.cx} cy={NAV.cy} r={NAV.r} fill={0.58} seed={7} />
-        </g>
-        <path className={s.hudGlobe} d={globe(NAV.cx, NAV.cy, NAV.r * 0.58)} />
-      </g>
-
-      {/* Side readouts. Segmented, so the eye reads instrumentation without a number. */}
-      <g className={s.hudSide}>
-        <path className={s.hudSegDim} d={ladder(52, 330, 26, 9, 12)} />
-        <path className={s.hudSeg} d={ladder(52, 330, 26, 9, 12, 5)} />
-        <path className={s.hudSegDim} d={ladder(922, 330, 26, 9, 12)} />
-        <path className={s.hudSeg} d={ladder(922, 330, 26, 9, 12, 3)} />
-        <path
-          className={s.hudLineDim}
-          d="M 52 100 h 26 M 52 114 h 26 M 52 128 h 16 M 922 100 h 26 M 922 114 h 16 M 922 128 h 26"
-        />
-      </g>
-    </g>
-  );
-}
-
-/** A vertical stack of blocks, filled from the bottom. One path. */
-function ladder(x: number, y: number, w: number, h: number, n: number, filled = n) {
-  const d: string[] = [];
-  for (let i = 0; i < n; i++) {
-    if (i >= filled) continue;
-    const yy = y + (n - 1 - i) * (h + 5);
-    d.push(`M ${x} ${yy} h ${w} v ${h} h ${-w} Z`);
-  }
-  return d.join(' ');
-}
-
-/* ================================================================== beat 2
-   A contact scanner losing everything it was tracking.
-
-   Humans and bots sit on the field as tracked contacts inside a HUD viewport. A sweep
-   passes, and behind it the contacts drop off one by one until the display is empty.
-   Effort went in; nothing is left that anyone can point at. */
-
-type Contact = { x: number; y: number; k: 'h' | 'b'; sc: number; layer: 0 | 1 | 2; i: number };
-
-const CONTACTS: Contact[] = (() => {
-  const r = rand(70707);
-  const rows: { y: number; n: number; sc: number; layer: 0 | 1 | 2 }[] = [
-    { y: 150, n: 14, sc: 0.6, layer: 0 },
-    { y: 250, n: 12, sc: 0.85, layer: 1 },
-    { y: 362, n: 9, sc: 1.12, layer: 2 },
-  ];
-  const out: Contact[] = [];
-  let i = 0;
-  for (const row of rows) {
-    for (let c = 0; c < row.n; c++) {
-      const span = 830 / row.n;
-      out.push({
-        x: 96 + span * (c + 0.5) + (r() - 0.5) * span * 0.46,
-        y: row.y + (r() - 0.5) * 32,
-        // Roughly one in four is a bot, never two adjacent, so it reads as seeded
-        // through the crowd rather than sorted into groups.
-        k: (c + row.layer) % 4 === 1 ? 'b' : 'h',
-        sc: row.sc * (0.92 + r() * 0.16),
-        layer: row.layer,
-        i: i++,
-      });
-    }
-  }
-  return out;
-})();
-
-const SCAN_GRID = (() => {
-  const d: string[] = [];
-  for (let x = 96; x <= 926; x += 34) d.push(`M ${x} 96 V 434`);
-  for (let y = 96; y <= 434; y += 34) d.push(`M 96 ${y} H 926`);
-  return d.join(' ');
-})();
-
-function ContactScan() {
-  return (
-    <g className={s.hudScene}>
-      <path className={s.hudFrame} d={brackets(40, 44, 920, 412, 30)} />
-      <path className={s.hudGrid} d={SCAN_GRID} />
-      <path className={s.hudLineDim} d="M 96 96 H 926 V 434 H 96 Z" />
-
-      {/* Range arcs from the sensor origin at the lower left. Clipped, because an arc
-          escaping the panel stops the panel reading as a screen. */}
-      <clipPath id="pn-scan-clip">
-        <rect x="96" y="96" width="830" height="338" />
-      </clipPath>
-      <g clipPath="url(#pn-scan-clip)">
-        {[150, 280, 410, 540, 680, 820].map((r, i) => (
-          <path key={i} className={s.hudArcFaint} d={arc(96, 434, r, 0, 90)} />
-        ))}
-      </g>
-
-      {CONTACTS.map((c) => (
-        <g
-          key={c.i}
-          className={`${c.k === 'b' ? s.hudBot : s.hudHuman} ${s.hudDrop} ${
-            c.layer === 0 ? s.figDeep : c.layer === 1 ? s.figMid : s.figNear
-          }`}
-          style={{ ['--i' as string]: c.i }}
-        >
-          {/* The tracking bracket is what makes it a contact and not an icon. */}
-          <path
-            className={s.hudTrack}
-            d={brackets(c.x - 15 * c.sc, c.y - 19 * c.sc, 30 * c.sc, 36 * c.sc, 7 * c.sc)}
-          />
-          {c.k === 'b' ? <BotBody x={c.x} y={c.y} sc={c.sc} /> : <Person x={c.x} y={c.y} sc={c.sc} />}
-        </g>
-      ))}
-
-      {/* The sweep. It passes once and the field is empty behind it. */}
-      <g className={s.hudSweep}>
-        <path className={s.hudSweepBeam} d="M 96 434 L 96 -106" />
-      </g>
-
-      <g className={s.hudSide}>
-        <path className={s.hudSegDim} d={ladder(940, 120, 24, 8, 14)} />
-        <path className={`${s.hudSeg} ${s.hudDrain}`} d={ladder(940, 120, 24, 8, 14, 11)} />
-      </g>
-    </g>
-  );
-}
-
-/* ================================================================== beat 3
-   The instrument cluster. A heading indicator whose needle hunts and never settles,
-   beside a bank of readouts climbing towards a target none of them reaches.
-
-   No numerals: the target is a line, not a score. */
-
-const C3 = { cx: 256, cy: 268, r: 168 };
+const C1 = { cx: 310, cy: 292, r: 196 };
 
 /** An eight-point rose, each point split light and dark down its spine. */
 function rosePoints(cx: number, cy: number, long: number, short: number, count: number) {
@@ -514,42 +337,14 @@ function rosePoints(cx: number, cy: number, long: number, short: number, count: 
   return out;
 }
 
-const ROSE8 = rosePoints(C3.cx, C3.cy, 112, 34, 8);
-const ROSE16 = rosePoints(C3.cx, C3.cy, 62, 16, 16);
+const ROSE8 = rosePoints(C1.cx, C1.cy, 130, 40, 8);
+const ROSE16 = rosePoints(C1.cx, C1.cy, 72, 19, 16);
 
-const BARS = [
-  { h: 86 }, { h: 158 }, { h: 62 }, { h: 196 }, { h: 118 },
-  { h: 74 }, { h: 172 }, { h: 104 }, { h: 142 },
-].map((b, i) => ({ ...b, x: 560 + i * 44, i }));
-const BASE_Y = 424;
-const TARGET_Y = 124;
-const BAR_W = 30;
-
-/** Each bar is a stack of lit blocks rather than a solid rectangle. One path per bar. */
-const barBlocks = (h: number, x: number) => {
-  const d: string[] = [];
-  for (let y = BASE_Y - 12; y > BASE_Y - h; y -= 15) {
-    d.push(`M ${x - BAR_W / 2} ${y} h ${BAR_W} v 11 h ${-BAR_W} Z`);
-  }
-  return d.join(' ');
-};
-
-/** The distance each one is short by, drawn as a faint dotted leader. */
-const BAR_GAPS = BARS.map((b) => `M ${b.x} ${BASE_Y - b.h - 8} V ${TARGET_Y + 8}`).join(' ');
-
-const CHART_GRID = (() => {
-  const d: string[] = [];
-  for (let y = BASE_Y - 50; y > TARGET_Y - 20; y -= 50) d.push(`M 534 ${y} H 962`);
-  return d.join(' ');
-})();
-
-function GaugeCluster() {
+function LoneCompass() {
   return (
     <g className={s.hudScene}>
-      <path className={s.hudFrame} d={brackets(24, 34, 952, 434, 30)} />
-
       <g className={s.hudGauge}>
-        <Bezel cx={C3.cx} cy={C3.cy} r={C3.r} fill={0.44} seed={3} />
+        <Bezel cx={C1.cx} cy={C1.cy} r={C1.r} fill={0.44} seed={3} />
 
         {ROSE16.map((p, i) => (
           <g key={`m${i}`}>
@@ -564,70 +359,81 @@ function GaugeCluster() {
           </g>
         ))}
 
-        {/* The reading it is looking for, and never lands on. Inside the bezel, so it
+        {/* The bearing it is looking for, and never lands on. Inside the bezel, so it
             cannot fall off the top of the frame. */}
         <g className={s.hudTarget}>
-          <circle cx={C3.cx} cy={C3.cy - C3.r + 22} r={10} />
-          <path d={`M ${C3.cx} ${C3.cy - C3.r + 4} v -14 M ${C3.cx - 18} ${C3.cy - C3.r + 22} h -14 M ${C3.cx + 18} ${C3.cy - C3.r + 22} h 14`} />
+          <circle cx={C1.cx} cy={C1.cy - C1.r + 26} r={11} />
+          <path
+            d={`M ${C1.cx} ${C1.cy - C1.r + 5} v -15 M ${C1.cx - 20} ${C1.cy - C1.r + 26} h -15 M ${
+              C1.cx + 20
+            } ${C1.cy - C1.r + 26} h 15`}
+          />
         </g>
 
         <g className={s.hudNeedle}>
-          <path className={s.hudNeedleGlow} d={`M ${C3.cx} ${C3.cy - 138} L ${C3.cx + 16} ${C3.cy - 4} L ${C3.cx} ${C3.cy - 24} L ${C3.cx - 16} ${C3.cy - 4} Z`} />
-          <path className={s.hudNeedleN} d={`M ${C3.cx} ${C3.cy - 138} L ${C3.cx + 16} ${C3.cy - 4} L ${C3.cx} ${C3.cy - 24} L ${C3.cx - 16} ${C3.cy - 4} Z`} />
-          <path className={s.hudNeedleS} d={`M ${C3.cx} ${C3.cy + 112} L ${C3.cx - 9} ${C3.cy + 8} L ${C3.cx} ${C3.cy + 20} L ${C3.cx + 9} ${C3.cy + 8} Z`} />
-          <circle className={s.hudNeedleS} cx={C3.cx} cy={C3.cy + 122} r="6.5" />
+          <path
+            className={s.hudNeedleGlow}
+            d={`M ${C1.cx} ${C1.cy - 160} L ${C1.cx + 18} ${C1.cy - 4} L ${C1.cx} ${C1.cy - 27} L ${
+              C1.cx - 18
+            } ${C1.cy - 4} Z`}
+          />
+          <path
+            className={s.hudNeedleN}
+            d={`M ${C1.cx} ${C1.cy - 160} L ${C1.cx + 18} ${C1.cy - 4} L ${C1.cx} ${C1.cy - 27} L ${
+              C1.cx - 18
+            } ${C1.cy - 4} Z`}
+          />
+          <path
+            className={s.hudNeedleS}
+            d={`M ${C1.cx} ${C1.cy + 130} L ${C1.cx - 10} ${C1.cy + 9} L ${C1.cx} ${C1.cy + 23} L ${
+              C1.cx + 10
+            } ${C1.cy + 9} Z`}
+          />
+          <circle className={s.hudNeedleS} cx={C1.cx} cy={C1.cy + 141} r="7.5" />
         </g>
-        <circle className={s.hudHub} cx={C3.cx} cy={C3.cy} r="13" />
-        <circle className={s.hudDot} cx={C3.cx} cy={C3.cy} r="3.6" />
-        <path className={s.hudGlass} d={`M ${C3.cx - 112} ${C3.cy - 84} A 142 142 0 0 1 ${C3.cx + 22} ${C3.cy - 140}`} />
-      </g>
-
-      <g className={s.hudChart}>
-        <path className={s.hudGrid} d={CHART_GRID} />
-        <path className={s.hudGapLead} d={BAR_GAPS} />
-        {BARS.map((b) => (
-          <g key={b.i} className={s.hudBar} style={{ ['--i' as string]: b.i }}>
-            <path className={s.hudBarDim} d={barBlocks(b.h + 40, b.x)} />
-            <path className={s.hudBloom} d={barBlocks(b.h, b.x)} />
-            <path className={s.hudBarLit} d={barBlocks(b.h, b.x)} />
-          </g>
-        ))}
-        <path className={s.hudAxis} d={`M 534 ${BASE_Y} H 962`} />
-        <path className={s.hudBloom} d={`M 534 ${TARGET_Y} H 962`} />
-        <path className={s.hudTargetLine} d={`M 534 ${TARGET_Y} H 962`} />
-        <path className={s.hudTargetCap} d={`M 534 ${TARGET_Y - 10} v 20 M 962 ${TARGET_Y - 10} v 20`} />
+        <circle className={s.hudHub} cx={C1.cx} cy={C1.cy} r="15" />
+        <circle className={s.hudDot} cx={C1.cx} cy={C1.cy} r="4" />
+        <path
+          className={s.hudGlass}
+          d={`M ${C1.cx - 130} ${C1.cy - 98} A 166 166 0 0 1 ${C1.cx + 26} ${C1.cy - 162}`}
+        />
       </g>
     </g>
   );
 }
 
-/* ================================================================== beat 4
-   A wall of dials, none of them resolving.
+/* ================================================================== beat 2
+   The vendors, floating loose, with the question nobody can answer.
 
-   Twelve instruments, every one part filled and stalled at a different place, each
-   reading a different thing. This is the beat where the copy says every investment
-   decision is a guess, and a panel of readouts that never complete is that sentence
-   drawn. Nothing here agrees with anything else and nothing finishes. */
+   Real marks now (see VendorLogos.tsx), because the beat is about a market you have
+   bought into without being able to tell what any of it is doing for you, and neutral
+   badges could not carry that. They drift, they never line up, and question marks sit
+   among them at the same weight. */
 
-type DialSpec = { cx: number; cy: number; r: number; fill: number; k: 'v' | 'h' | 'b' | 'q'; i: number };
+type Floater = { name: VendorName | null; x: number; y: number; size: number; plane: 0 | 1 | 2; i: number };
 
-const DIALS: DialSpec[] = (() => {
-  const r = rand(515151);
-  const cols = 4;
-  const rows = 3;
-  const out: DialSpec[] = [];
+const FLOATERS: Floater[] = (() => {
+  const r = rand(880811);
+  const rows: { y: number; n: number; size: number; plane: 0 | 1 | 2 }[] = [
+    { y: 96, n: 6, size: 34, plane: 0 },
+    { y: 216, n: 5, size: 52, plane: 1 },
+    { y: 336, n: 5, size: 44, plane: 2 },
+  ];
+  const out: Floater[] = [];
   let i = 0;
-  for (let y = 0; y < rows; y++) {
-    for (let x = 0; x < cols; x++) {
-      const kinds: DialSpec['k'][] = ['v', 'h', 'b', 'q'];
+  let v = 0;
+  for (const row of rows) {
+    for (let c = 0; c < row.n; c++) {
+      const span = 900 / row.n;
+      // Every third slot is the question rather than a logo, so the two read as the
+      // same kind of thing: another item in the pile you cannot account for.
+      const isQuery = (c + row.plane) % 3 === 2;
       out.push({
-        cx: 158 + x * 228,
-        cy: 136 + y * 156,
-        r: 48 + r() * 10,
-        // Never above 0.8. A dial that reads as complete would be answering the
-        // question this beat exists to leave open.
-        fill: 0.18 + r() * 0.6,
-        k: i % 3 === 0 ? 'q' : kinds[Math.floor(r() * 4)],
+        name: isQuery ? null : VENDORS[v++ % VENDORS.length],
+        x: 56 + span * (c + 0.5) + (r() - 0.5) * span * 0.34,
+        y: row.y + (r() - 0.5) * 42,
+        size: row.size * (0.88 + r() * 0.24),
+        plane: row.plane,
         i: i++,
       });
     }
@@ -635,31 +441,272 @@ const DIALS: DialSpec[] = (() => {
   return out;
 })();
 
-function DialWall() {
+function VendorDrift() {
   return (
     <g className={s.hudScene}>
-      <path className={s.hudFrame} d={brackets(24, 26, 952, 468, 30)} />
-      {DIALS.map((d) => (
-        <g key={d.i} className={s.hudDial} style={{ ['--i' as string]: d.i }}>
-          <Bezel cx={d.cx} cy={d.cy} r={d.r} fill={d.fill} seed={100 + d.i} dense={false} />
-          {d.k === 'q' && (
-            <text className={s.hudQuery} x={d.cx} y={d.cy + 13} style={{ fontSize: '34px' }}>
+      <path className={s.hudGrid} d={graticule(1000, 440, 44, 30)} />
+      <path className={s.hudFrame} d={brackets(26, 26, 948, 388, 28)} />
+      {FLOATERS.map((fl) => (
+        <g
+          key={fl.i}
+          className={`${s.hudFloat} ${
+            fl.plane === 0 ? s.figDeep : fl.plane === 1 ? s.figNear : s.figMid
+          }`}
+          style={{ ['--i' as string]: fl.i }}
+        >
+          {fl.name ? (
+            <g className={s.hudVendor}>
+              <VendorLogo name={fl.name} x={fl.x} y={fl.y} size={fl.size} />
+            </g>
+          ) : (
+            <text
+              className={s.hudQuery}
+              x={f(fl.x)}
+              y={f(fl.y + fl.size * 0.36)}
+              style={{ fontSize: `${(fl.size * 1.05).toFixed(0)}px` }}
+            >
               ?
             </text>
-          )}
-          {d.k === 'v' && <VendorMark x={d.cx} y={d.cy} i={d.i} r={15} />}
-          {d.k === 'h' && (
-            <g className={s.hudHuman}>
-              <Person x={d.cx} y={d.cy} sc={1.05} />
-            </g>
-          )}
-          {d.k === 'b' && (
-            <g className={s.hudBot}>
-              <BotBody x={d.cx} y={d.cy} sc={1.05} />
-            </g>
           )}
         </g>
       ))}
     </g>
   );
+}
+
+/* ================================================================== beat 3
+   Readouts climbing towards a benchmark, and never getting there.
+
+   The bars breathe and the benchmark drifts, which is the honest picture: neither your
+   capability nor the standard it is measured against holds still. The compass that used
+   to sit beside this moved to beat 1, where being lost is the actual subject.
+
+   HOW THE BLOCKS WORK, because it is not obvious and it is easy to break: each bar is a
+   SOLID rect that scales on Y, and the block separations are static background-coloured
+   rules drawn across the whole chart on top. Scaling a stack of drawn blocks stretches
+   them; scaling a solid bar behind fixed rules does not. */
+
+const BAR_COUNT = 14;
+const BAR_BASE = 336;
+const BAR_TARGET = 76;
+const BARS = Array.from({ length: BAR_COUNT }, (_, i) => {
+  const r = rand(4400 + i);
+  return {
+    i,
+    x: 62 + i * 64,
+    // Capped so that h * the 1.14 breathe peak still clears the benchmark. A bar that
+    // grows past the line while breathing argues the opposite of the copy.
+    h: 56 + r() * 136,
+    /** Every bar breathes on its own clock, so the field never pulses in unison. */
+    dur: 3.2 + r() * 2.6,
+    delay: r() * 2.4,
+  };
+});
+
+const BLOCK_RULES = (() => {
+  const d: string[] = [];
+  for (let y = BAR_BASE - 14; y > BAR_TARGET - 40; y -= 15) d.push(`M 30 ${y} H 970`);
+  return d.join(' ');
+})();
+
+const CHART_GRID = (() => {
+  const d: string[] = [];
+  for (let y = BAR_BASE - 52; y > BAR_TARGET; y -= 52) d.push(`M 40 ${y} H 962`);
+  return d.join(' ');
+})();
+
+function BenchmarkBars() {
+  return (
+    <g className={s.hudScene}>
+      <path className={s.hudFrame} d={brackets(24, 22, 952, 356, 28)} />
+      <path className={s.hudGrid} d={CHART_GRID} />
+
+      {/* The headroom each bar is not using. Static, and outside the breathing group, so
+          it can never scale up past the benchmark. */}
+      {BARS.map((b) => (
+        <rect
+          key={`g${b.i}`}
+          className={s.hudBarDim}
+          x={b.x - 20}
+          y={BAR_TARGET + 14}
+          width="40"
+          height={BAR_BASE - BAR_TARGET - 14}
+          rx="2"
+        />
+      ))}
+
+      {BARS.map((b) => (
+        <g
+          key={b.i}
+          className={s.hudBreathe}
+          style={{
+            ['--i' as string]: b.i,
+            ['--dur' as string]: `${b.dur.toFixed(2)}s`,
+            ['--delay' as string]: `${b.delay.toFixed(2)}s`,
+          }}
+        >
+          <rect className={s.hudBarLit} x={b.x - 20} y={BAR_BASE - b.h} width="40" height={b.h} rx="2" />
+        </g>
+      ))}
+
+      {/* The separations, painted in the page colour over the top of the bars. */}
+      <path className={s.hudBlockRule} d={BLOCK_RULES} />
+      <path className={s.hudAxis} d={`M 40 ${BAR_BASE} H 962`} />
+
+      {/* The benchmark. It drifts, because the standard moves too. */}
+      <g className={s.hudTargetDrift}>
+        <path className={s.hudBloom} d={`M 40 ${BAR_TARGET} H 962`} />
+        <path className={s.hudTargetLine} d={`M 40 ${BAR_TARGET} H 962`} />
+        <path className={s.hudTargetCap} d={`M 40 ${BAR_TARGET - 11} v 22 M 962 ${BAR_TARGET - 11} v 22`} />
+      </g>
+    </g>
+  );
+}
+
+/* ================================================================== beat 4
+   A slot machine.
+
+   The copy says every investment decision is a guess. Three reels turning and never
+   stopping is that sentence with nothing left to interpret: vendors, agents and people
+   going past, and you commit the budget to whatever happens to be in the window.
+
+   The reels loop seamlessly because each one renders its symbol list TWICE and travels
+   exactly one list length. Change the list and the travel distance follows it, so do
+   not hard code the translate.
+*/
+
+type Symb = VendorName | 'bot' | 'human' | 'query';
+
+const REEL_SYMBOLS: Symb[][] = [
+  ['openai', 'bot', 'gemini', 'human', 'claude', 'query', 'grok', 'bot'],
+  ['human', 'anthropic', 'query', 'copilot', 'bot', 'openclaw', 'human', 'gemini'],
+  ['query', 'grok', 'human', 'openai', 'bot', 'claude', 'copilot', 'query'],
+];
+
+const CELL_H = 96;
+const WIN = { y: 96, h: 288, w: 204 };
+const REEL_X = [250, 500, 750];
+/** Each reel turns at its own speed. Three identical reels read as one moving object. */
+const REEL_DUR = ['5.4s', '3.9s', '6.7s'];
+
+function ReelSymbol({ kind, y }: { kind: Symb; y: number }) {
+  if (kind === 'query') {
+    return (
+      <text className={s.hudQuery} x="0" y={y + 18} style={{ fontSize: '52px' }}>
+        ?
+      </text>
+    );
+  }
+  if (kind === 'bot') {
+    return (
+      <g className={s.hudBot}>
+        <BotBody x={0} y={y} sc={2} />
+      </g>
+    );
+  }
+  if (kind === 'human') {
+    return (
+      <g className={s.hudHuman}>
+        <Person x={0} y={y} sc={2} />
+      </g>
+    );
+  }
+  return (
+    <g className={s.hudVendor}>
+      <VendorLogo name={kind} x={0} y={y} size={52} />
+    </g>
+  );
+}
+
+function SlotMachine() {
+  const travel = REEL_SYMBOLS[0].length * CELL_H;
+  return (
+    <g className={s.hudScene}>
+      <path className={s.hudFrame} d={brackets(72, 26, 856, 434, 30)} />
+
+      {/* Marquee: a row of lights across the top, chasing. */}
+      <g className={s.hudMarquee}>
+        {Array.from({ length: 16 }).map((_, i) => (
+          <circle key={i} cx={128 + i * 50} cy={64} r={6.5} style={{ ['--i' as string]: i }} />
+        ))}
+      </g>
+
+      <defs>
+        <clipPath id="pn-reel-clip">
+          <rect x={0} y={WIN.y} width={WIN.w} height={WIN.h} />
+        </clipPath>
+      </defs>
+
+      {REEL_X.map((rx, r) => (
+        <g key={r} transform={`translate(${rx - WIN.w / 2} 0)`}>
+          <rect
+            className={s.hudDisc}
+            x={0}
+            y={WIN.y}
+            width={WIN.w}
+            height={WIN.h}
+            rx="8"
+          />
+          <g clipPath="url(#pn-reel-clip)">
+            <g
+              className={s.hudReel}
+              style={{ ['--travel' as string]: `${-travel}px`, ['--dur' as string]: REEL_DUR[r] }}
+              transform={`translate(${WIN.w / 2} 0)`}
+            >
+              {[0, 1].map((pass) =>
+                REEL_SYMBOLS[r].map((sym, i) => (
+                  <ReelSymbol
+                    key={`${pass}-${i}`}
+                    kind={sym}
+                    y={WIN.y + 48 + (pass * REEL_SYMBOLS[r].length + i) * CELL_H}
+                  />
+                ))
+              )}
+            </g>
+          </g>
+          <rect
+            className={s.hudReelFrame}
+            x={0}
+            y={WIN.y}
+            width={WIN.w}
+            height={WIN.h}
+            rx="8"
+          />
+        </g>
+      ))}
+
+      {/* The payline. Whatever is sitting on it when you stop is what you funded. */}
+      <path className={s.hudBloom} d={`M 110 ${WIN.y + WIN.h / 2} H 890`} />
+      <path className={s.hudPayline} d={`M 110 ${WIN.y + WIN.h / 2} H 890`} />
+      <path
+        className={s.hudTargetCap}
+        d={`M 110 ${WIN.y + WIN.h / 2 - 13} v 26 M 890 ${WIN.y + WIN.h / 2 - 13} v 26`}
+      />
+
+      {/* The lever, on the right, permanently mid pull. */}
+      <g className={s.hudLever}>
+        <path className={s.hudLineDim} d={`M 940 ${WIN.y + 44} V ${WIN.y + 156}`} />
+        <circle className={s.hudLeverKnob} cx={940} cy={WIN.y + 34} r={17} />
+      </g>
+
+      {/* A readout that never settles on a figure. */}
+      <g className={s.hudSide}>
+        <path className={s.hudSegDim} d={ladder(148, 412, 30, 8, 3)} />
+        <path className={s.hudSegDim} d={ladder(398, 412, 30, 8, 3)} />
+        <path className={s.hudSegDim} d={ladder(648, 412, 30, 8, 3)} />
+        <path className={s.hudSegDim} d={ladder(822, 412, 30, 8, 3)} />
+      </g>
+    </g>
+  );
+}
+
+/** A vertical stack of blocks, filled from the bottom. One path. */
+function ladder(x: number, y: number, w: number, h: number, n: number, filled = n) {
+  const d: string[] = [];
+  for (let i = 0; i < n; i++) {
+    if (i >= filled) continue;
+    const yy = y + (n - 1 - i) * (h + 5);
+    d.push(`M ${x} ${yy} h ${w} v ${h} h ${-w} Z`);
+  }
+  return d.join(' ');
 }

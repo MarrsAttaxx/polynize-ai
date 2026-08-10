@@ -118,18 +118,8 @@ export function StoryLanding({
             ))}
           </div>
           <figure className={`${s.matrixFigure} ${s.riseScale}`}>
+            {/* The key lives inside CapabilityMatrix now, above the grid. */}
             <CapabilityMatrix />
-            <div className={s.legend}>
-              <span className={s.legendItem}>
-                <i className={`${s.legendDot} ${s.dotMint}`} />Strong
-              </span>
-              <span className={s.legendItem}>
-                <i className={`${s.legendDot} ${s.dotAmber}`} />Developing
-              </span>
-              <span className={s.legendItem}>
-                <i className={`${s.legendDot} ${s.dotCoral}`} />Gap
-              </span>
-            </div>
             <figcaption className={s.matrixCaption}>{c.matrixImage.caption}</figcaption>
           </figure>
           <div className={s.cards3}>

@@ -95,18 +95,60 @@ export const MATRIX_SCENARIOS: Scenario[] = [
   },
 ];
 
+/**
+ * First names only. Handles (@chen_l) read as a system export and made the row label
+ * the least legible thing on the page; a first name is what a reader actually scans a
+ * team list by. Deliberately varied, and no surname, so no row can be mistaken for a
+ * real person's record.
+ */
 export const MATRIX_USERS: MatrixUser[] = [
-  { h: '@chen_l', up: 48 },
-  { h: '@osei_m', up: 42 },
-  { h: '@rivera_j', up: 39 },
-  { h: '@park_d', up: 37 },
-  { h: '@haddad_r', up: 35 },
-  { h: '@novak_s', up: 33 },
-  { h: '@tanaka_y', up: 31 },
-  { h: '@okafor_b', up: 29 },
+  { h: 'Priya', up: 48 },
+  { h: 'Marcus', up: 42 },
+  { h: 'Sofia', up: 39 },
+  { h: 'Daniel', up: 37 },
+  { h: 'Amara', up: 35 },
+  { h: 'Jonas', up: 33 },
+  { h: 'Yuki', up: 31 },
+  { h: 'Tom', up: 29 },
 ];
 
 export const COHORT_SUMMARY = '44 users · Completed 29 / 44';
+
+/**
+ * What each capability actually means, in one line.
+ *
+ * Added because "Signal vs Noise" on its own does not tell a reader anything, which was
+ * Marrs's note on 10 Aug 2026. The label has to stay short to fit a 54px column, so the
+ * explanation lives in the cell detail instead. Every gloss is about the USE of AI in
+ * that step, never the step in the abstract.
+ */
+export const CAP_GLOSS: Record<string, string> = {
+  'Prompt Framing': 'Asking the model the question that actually gets you the answer you need.',
+  'Source Checking': 'Verifying what the model handed back before any of it leaves the building.',
+  'Signal vs Noise': 'Telling the two or three things that matter from the twenty it returned.',
+  'Brief Synthesis': 'Turning a pile of raw research into something a colleague can act on.',
+  'Claim Verification': 'Catching the confident sentence that is not actually true.',
+  'Context Loading': 'Giving the model enough of your world that the draft is usable.',
+  'Draft Direction': 'Steering a draft rather than accepting the first thing it produces.',
+  'Voice Control': 'Keeping the output sounding like your firm and not like a model.',
+  'Scope Accuracy': 'Making sure the proposal describes work you can actually deliver.',
+  'Editing Judgment': 'Knowing which parts of a generated draft to keep and which to cut.',
+  'Estimate Reasoning': 'Building a number you can defend, not one the model suggested.',
+  'Assumption Testing': 'Naming what the estimate quietly assumes, and checking it.',
+  'Model Scepticism': 'Knowing when the model is guessing and treating it accordingly.',
+  'Risk Framing': 'Saying what could go wrong in terms the client understands.',
+  'Numbers Discipline': 'Not letting a generated figure into a document unchecked.',
+  'Objection Handling': 'Answering the hard question in the room without reaching for a tool.',
+  'Live Reframing': 'Changing the argument mid conversation when it is not landing.',
+  'Reading the Room': 'Noticing what is not being said and adjusting to it.',
+  'Evidence Recall': 'Having the proof to hand rather than promising to send it later.',
+  'Plain Language': 'Explaining the work without hiding behind the jargon.',
+  'Audience Framing': 'Knowing who the piece is for before anything is generated.',
+  'Channel Judgment': 'Choosing where this belongs, and what it has to become to work there.',
+  'Brand Consistency': 'Holding one voice across everything the tools produce.',
+  'Message Testing': 'Putting the claim in front of someone before it goes out.',
+  'Output Triage': 'Deciding fast which of ten generated options is worth finishing.',
+};
 
 /** Cell is either a score ('sc') or an uplift percentage ('up'). */
 export type Cell = { t: 'sc' | 'up'; v: number };
