@@ -1,0 +1,234 @@
+/* The capability map, as the result section of /capability-mapping.
+
+   Anatomy ported from app/blueprint/BlueprintDoc.tsx on purpose: a visitor who books a
+   call should recognise the thing they are handed. Rendered in the landing palette
+   rather than the blueprint one.
+
+   THE THREE LANES CARRY THE BRAND MEANING and must not be remapped. Coral is human,
+   amber is hybrid, mint is agent. That is the token contract, and the matrix on the
+   sibling page asserts the same thing. */
+
+.wrap {
+  width: 100%;
+  max-width: 900px;
+  margin: 0 auto;
+  text-align: left;
+}
+
+/* ---------- Key, above the map ----------
+   Same reasoning as the matrix: a visitor meets three coloured lanes before they know
+   what the colours mean, and a key underneath is a key they read after they have
+   already decided it is too complicated. */
+.key {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 10px 26px;
+  margin: 0 0 20px;
+}
+.keyItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--text-2);
+}
+.keyDot { width: 12px; height: 12px; border-radius: 3px; display: inline-block; }
+.kHuman { background: var(--coral); }
+.kHybrid { background: var(--amber); }
+.kAgentic { background: var(--mint); }
+
+/* ---------- The map ---------- */
+.map {
+  border: 1px solid var(--border-soft);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--mint) 2%, var(--bg-deep, #0f0f17));
+  padding: 6px 0 0;
+  overflow: hidden;
+}
+
+.head,
+.row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 92px 92px 92px;
+  align-items: center;
+  gap: 0;
+}
+.head { padding: 12px 18px 10px; }
+.hCell {
+  font-family: var(--font-inter), monospace;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  text-align: center;
+}
+.hFirst { text-align: left; color: var(--text-3); }
+.hHuman { color: var(--coral); }
+.hHybrid { color: var(--amber); }
+.hAgentic { color: var(--mint); }
+
+.cluster {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 18px 18px 8px;
+  border-top: 1px solid var(--border-soft);
+}
+.clusterName {
+  font-family: var(--font-space-grotesk), sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+}
+.clusterNote { font-size: 12.5px; color: var(--text-3); }
+
+/* ---------- Rows ----------
+   Armed only on the client, so the server-rendered markup is never hidden. See the
+   component: the same failure that took the matrix down once. */
+.capWrap {
+  transition: opacity 0.4s ease;
+  border-bottom: 1px solid color-mix(in srgb, var(--border-soft) 55%, transparent);
+}
+.capWrap:last-child { border-bottom: 0; }
+.armed:not(.on) .capWrap { opacity: 0; }
+/* Never hold a focused control invisible. */
+.map:focus-within .capWrap { opacity: 1; }
+
+.row {
+  width: 100%;
+  padding: 11px 18px;
+  background: none;
+  border: 0;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  position: relative;
+}
+.row:hover { background: color-mix(in srgb, var(--mint) 4%, transparent); }
+.row:focus-visible { outline: 2px solid var(--mint); outline-offset: -2px; }
+
+.rowLabel { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.chev {
+  font-size: 13px;
+  line-height: 1;
+  color: var(--text-3);
+  transition: transform 0.18s ease;
+  flex: none;
+}
+.chevOpen { transform: rotate(180deg); }
+.rowId {
+  font-family: var(--font-inter), monospace;
+  font-size: 10.5px;
+  letter-spacing: 0.1em;
+  color: var(--text-3);
+  flex: none;
+}
+.rowName {
+  font-size: 14.5px;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* The lane cells. Unlit cells stay visible as empty slots, because the map is a
+   statement about which lane this capability is in, and you cannot read that without
+   seeing the lanes it is not in. */
+.cell {
+  height: 22px;
+  margin: 0 auto;
+  width: 58px;
+  border-radius: 4px;
+  border: 1px solid color-mix(in srgb, var(--text-3) 20%, transparent);
+  background: color-mix(in srgb, var(--text-3) 5%, transparent);
+}
+.lit.lHuman {
+  background: var(--coral);
+  border-color: var(--coral);
+  box-shadow: 0 0 14px color-mix(in srgb, var(--coral) 35%, transparent);
+}
+.lit.lHybrid {
+  background: var(--amber);
+  border-color: var(--amber);
+  box-shadow: 0 0 14px color-mix(in srgb, var(--amber) 35%, transparent);
+}
+.lit.lAgentic {
+  background: var(--mint);
+  border-color: var(--mint);
+  box-shadow: 0 0 14px color-mix(in srgb, var(--mint) 35%, transparent);
+}
+
+/* ---------- The opened row ---------- */
+.detail {
+  padding: 2px 18px 18px 40px;
+  display: grid;
+  gap: 12px;
+}
+.detailLine { margin: 0; font-size: 14px; line-height: 1.6; color: var(--text-2); }
+.tasks { margin: 0; padding: 0; list-style: none; display: grid; gap: 7px; }
+.tasks li {
+  display: flex;
+  gap: 9px;
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--text-2);
+}
+.plus { color: var(--mint); flex: none; }
+.why {
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: var(--text-2);
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--mint) 6%, transparent);
+  border: 1px solid color-mix(in srgb, var(--mint) 20%, transparent);
+}
+.whyLabel {
+  display: block;
+  font-family: var(--font-inter), monospace;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--mint);
+  margin-bottom: 6px;
+}
+/* The lane accent on an opened row, so the colour follows you into the detail. */
+.lHuman .why { background: color-mix(in srgb, var(--coral) 6%, transparent); border-color: color-mix(in srgb, var(--coral) 22%, transparent); }
+.lHuman .whyLabel { color: var(--coral); }
+.lHuman .plus { color: var(--coral); }
+.lHybrid .why { background: color-mix(in srgb, var(--amber) 6%, transparent); border-color: color-mix(in srgb, var(--amber) 22%, transparent); }
+.lHybrid .whyLabel { color: var(--amber); }
+.lHybrid .plus { color: var(--amber); }
+
+.foot {
+  padding: 14px 18px;
+  border-top: 1px solid var(--border-soft);
+  font-size: 12.5px;
+  color: var(--text-3);
+}
+.foot b { color: var(--text-2); font-weight: 600; }
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+@media (max-width: 680px) {
+  .head,
+  .row { grid-template-columns: minmax(0, 1fr) 52px 52px 52px; }
+  .cell { width: 40px; }
+  .head { padding: 12px 12px 10px; }
+  .row { padding: 11px 12px; }
+  .cluster { padding: 16px 12px 8px; }
+  .detail { padding: 2px 12px 16px 30px; }
+  .hCell { font-size: 9px; letter-spacing: 0.1em; }
+}

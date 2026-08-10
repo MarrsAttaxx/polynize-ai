@@ -673,6 +673,50 @@
 }
 .play .hudReel { animation: hudReel var(--dur, 5s) linear infinite; }
 
+/* ---- /capability-mapping beat 2: the black box ----
+   The interior is deliberately unreadable. Two devices do it: the scramble never
+   resolves into steps, and a screen sits over the top so what little shape there is
+   reads as something you are looking AT rather than something you can read. */
+.hudBoxFill { fill: color-mix(in srgb, var(--mint) 4%, #05050a); stroke: none; }
+.hudScrambleBlock { fill: var(--hud-4); stroke: none; }
+.hudScrambleLink { fill: none; stroke: var(--hud-4); stroke-width: 1.2; }
+.hudBoxScreen {
+  fill: color-mix(in srgb, #05050a 74%, transparent);
+  stroke: var(--hud-3);
+  stroke-width: 1.4;
+}
+@keyframes hudChurn {
+  0%, 100% { opacity: 0.55; transform: translateY(-4px); }
+  50% { opacity: 1; transform: translateY(4px); }
+}
+.hudScramble { transform-box: view-box; }
+.play .hudScramble { animation: hudChurn 6s ease-in-out infinite; }
+
+/* ---- /capability-mapping beat 3: the amplifier ----
+   The two traces share one generator and one defect, so they cannot drift apart. The
+   output is the input, bigger. If a future edit makes the right-hand trace cleaner than
+   the left, the figure has started arguing the opposite of the copy. */
+.hudWaveIn { fill: none; stroke: var(--hud-2); stroke-width: 2.4; stroke-linejoin: round; }
+.hudWaveOut {
+  fill: none;
+  stroke: var(--hud-0);
+  stroke-width: 3;
+  stroke-linejoin: round;
+  filter: drop-shadow(0 0 6px color-mix(in srgb, var(--mint) 55%, transparent));
+}
+.hudAmpBody {
+  fill: color-mix(in srgb, var(--mint) 5%, transparent);
+  stroke: var(--hud-2);
+  stroke-width: 2;
+  stroke-linejoin: round;
+}
+.hudAmpStep { fill: none; stroke: var(--hud-1); stroke-width: 2.6; stroke-linecap: round; }
+@keyframes hudGain {
+  0%, 100% { opacity: 0.45; }
+  50% { opacity: 1; }
+}
+.play .hudAmpStep { animation: hudGain 2.4s ease-in-out infinite; }
+
 /* ---------- The route ----------
    A dashed path down the left margin with a waypoint per beat and a mint trail that
    fills in behind the reader. Sits in the slack beside the 860px text column, so the
@@ -903,6 +947,7 @@
 .art_mint { fill: color-mix(in srgb, var(--mint) 72%, transparent); }
 .art_amber { fill: color-mix(in srgb, var(--amber) 70%, transparent); }
 .art_coral { fill: color-mix(in srgb, var(--coral) 68%, transparent); }
+.artCellOff { fill: color-mix(in srgb, var(--text-3) 12%, transparent); }
 .artRail { fill: color-mix(in srgb, var(--text-3) 40%, transparent); }
 .artFrame { stroke: var(--border); stroke-width: 1.4; fill: none; }
 .artLine { fill: color-mix(in srgb, var(--text-3) 32%, transparent); }

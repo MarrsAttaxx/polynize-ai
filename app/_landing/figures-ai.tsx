@@ -57,7 +57,8 @@ function rosePoints(cx: number, cy: number, long: number, short: number, count: 
 const ROSE8 = rosePoints(C1.cx, C1.cy, 130, 40, 8);
 const ROSE16 = rosePoints(C1.cx, C1.cy, 72, 19, 16);
 
-function LoneCompass() {
+/** Reused by /capability-mapping: being unable to describe your work is being lost. */
+export function LoneCompass() {
   return (
     <g className={s.hudScene}>
       <g className={s.hudGauge}>
@@ -326,7 +327,8 @@ function ReelSymbol({ kind, y }: { kind: Symb; y: number }) {
   );
 }
 
-function SlotMachine() {
+/** Reused by /capability-mapping: the beat about deciding on a guess is the same beat. */
+export function SlotMachine() {
   const travel = REEL_SYMBOLS[0].length * CELL_H;
   return (
     <g className={s.hudScene}>
