@@ -6,7 +6,6 @@ import { SiloGlyph, StageGlyph, MapGlyph } from '../_icons';
 import { CapabilityMatrix } from './CapabilityMatrix';
 import { StoryPath } from './StoryPath';
 import { StoryMotion } from './StoryMotion';
-import { MapFrame } from './MapFurniture';
 import { ArtefactGlyph } from './ArtefactGlyph';
 import { BeatFigure } from './BeatFigure';
 import { BOOKING_URL, type MappingContent } from '../content';
@@ -14,7 +13,7 @@ import { artefacts, artefactsFootnote, artefactsIntro, storyInputs, type Beat } 
 import s from './story.module.css';
 
 /**
- * Scroll-story variant of the mapping page.
+ * The capability mapping page, told as a scroll story.
  *
  * Shape, after the 6 Aug founder call:
  *   hero (video inside it) → the story, told as a route → the map → how it runs →
@@ -37,8 +36,6 @@ export function StoryLanding({
   return (
     <>
       <DraftingGrid />
-      {/* Outside .page so the fixed neatline is never affected by its overflow clip. */}
-      <MapFrame />
       <StoryMotion />
       <div className={s.page}>
         <StoryNav cta={c.finalCta.button} />
@@ -245,8 +242,8 @@ export function StoryLanding({
   );
 }
 
-/* Local copy rather than an import from ../MappingLanding, so nothing in this
-   experiment can change the live /mapping page. Fold together if this variant wins. */
+/* The page's own nav. Was a local copy so the experiment could not disturb the live
+   /mapping page; that page is gone and this is /mapping now. */
 function StoryNav({ cta }: { cta: string }) {
   return (
     <nav className={s.nav}>

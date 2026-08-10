@@ -27,6 +27,10 @@ import s from './story.module.css';
 
 gsap.registerPlugin(ScrollTrigger);
 
+/** How far down the departure marker sits. The route starts at this exact point so the
+    line leaves from the centre of the circle rather than from above it. */
+const START_Y = 26;
+
 /** Where the route sits horizontally at each stop, as a fraction of sheet width. */
 const X_STOPS = [0.5, 0.08, 0.44, 0.13, 0.36, 0.5];
 
@@ -214,7 +218,7 @@ export function StoryPath({ beatCount }: { beatCount: number }) {
   const checkpoints = waypoints.slice(0, -1);
   const destination: Pt = { x: xAt(waypoints.length), y: h - 96 };
   const stops: Pt[] = [
-    { x: xAt(0), y: 0 },
+    { x: xAt(0), y: START_Y },
     ...checkpoints.map((y, i) => ({ x: xAt(i + 1), y })),
     destination,
   ];
@@ -259,9 +263,11 @@ export function StoryPath({ beatCount }: { beatCount: number }) {
         </g>
 
         {/* Departure point */}
+        {/* Concentric with the first point of the route, so the line emerges from the
+            middle of the marker. */}
         <g className={s.startMark}>
-          <circle cx={start.x} cy={start.y + 20} r="18" />
-          <circle cx={start.x} cy={start.y + 20} r="7" className={s.startCore} />
+          <circle cx={start.x} cy={start.y} r="18" />
+          <circle cx={start.x} cy={start.y} r="7" className={s.startCore} />
         </g>
 
         {/* The road ahead. Always rendered, so the route exists with no script.

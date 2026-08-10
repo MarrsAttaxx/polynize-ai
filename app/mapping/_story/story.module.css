@@ -1,6 +1,6 @@
-/* Scroll-story variant of the mapping page.
-   Standalone from mapping.module.css on purpose: this is an experiment, and nothing
-   here can affect the live /mapping page. Fold the two together if it wins.
+/* /mapping, told as a scroll story.
+   This is the whole page. It began as an experiment beside the original landing page,
+   which has since been deleted along with mapping.module.css.
 
    MOTION POLICY:
    - Motion is owned by GSAP, in StoryMotion.tsx and StoryPath.tsx. It used to be CSS
@@ -109,8 +109,7 @@
   text-align: center;
   position: relative;
 }
-.section::before,
-.story::after {
+.section::before {
   content: '';
   position: absolute;
   top: 0;
@@ -127,6 +126,12 @@
       )
       top left / 100% 5px no-repeat;
 }
+/* The story section carries no horizontal rules, top or bottom. They read as leftover
+   map furniture rather than as boundaries, and the story is meant to be one unbroken
+   expanse with nothing in it but the route. The vertical scale rule with its markers
+   (.scaleRule, inside the rail SVG) is the only ruled edge that survives here. */
+.story + .section::before { display: none; }
+
 .sectionHead { max-width: 780px; margin: 0 auto 34px; }
 .eyebrow {
   display: inline-block;
@@ -590,37 +595,10 @@
   filter: drop-shadow(0 0 8px color-mix(in srgb, var(--mint) 60%, transparent));
 }
 
-/* ---------- The sheet: neatline and graticule ----------
-   The cheapest and strongest "this is a chart" signal available, and it answers "fill
-   the screen" without moving the copy off centre. Pure CSS on one fixed, aria-hidden
-   div. No SVG, no filter, no JS, no motion, so it is identical with scripts off. */
-/* Class doubled to raise specificity. app/tactile.css:171 sets
-   `body[data-depth="tactile"] > * { position: relative }`, which outranks a single
-   class and silently turned this fixed overlay into a relative box 14px wide of the
-   viewport, producing a horizontal scrollbar. */
-.sheet.sheet {
-  position: fixed;
-  inset: 14px;
-  z-index: 1;
-  pointer-events: none;
-  border: 1px solid color-mix(in srgb, var(--mint) 11%, transparent);
-  border-radius: 2px;
-}
-.sheetTicks {
-  position: absolute;
-  left: 0;
-  right: 0;
-  height: 6px;
-  background-image: repeating-linear-gradient(
-    to right,
-    color-mix(in srgb, var(--mint) 20%, transparent) 0 1px,
-    transparent 1px 64px
-  );
-}
-.sheetTicksTop { top: 0; }
-.sheetTicksBottom { bottom: 0; transform: scaleY(-1); }
-
-
+/* The fixed neatline and its graticule ticks were removed. They drew a horizontal
+   ruled line across the top and bottom of every screen, which read as leftover grid
+   furniture. The left-hand scale rule inside the rail SVG (.scaleRule) stays: it is
+   the one ruled edge that carries markers and looks deliberate. */
 
 /* ---------- The three inputs ---------- */
 .inputs {

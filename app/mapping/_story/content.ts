@@ -1,5 +1,5 @@
 /**
- * Copy for the scroll-story variant of /mapping.
+ * Copy for /mapping.
  *
  * Rewritten to the 6 Aug founder call. Four decisions drive it:
  *  1. Sharpen to AI. The page is now about what your people can do with AI, not
@@ -19,8 +19,7 @@
  * never name the technology company, never a price, Australian spelling, no em-dashes.
  */
 
-import { mappingContent, type MappingContent } from '../content';
-import type { Silo } from '../SiloDiagram';
+import { mappingContent, type MappingContent, type Silo } from '../content';
 
 /** One scroll beat. Roughly one thought per screen. */
 export type Beat = {
@@ -137,7 +136,7 @@ export const storyContent: MappingContent = {
   ...mappingContent,
 
   hero: {
-    h1: 'Map AI Capabilities Across your Teams to Know Exactly Where Everyone’s At.',
+    h1: 'Map AI Capabilities Across Your Teams.',
     subhead:
       'Before you invest another dollar in AI, see what your people can actually do with it, benchmarked against industry standards.',
     primaryCta: 'Book a demo',

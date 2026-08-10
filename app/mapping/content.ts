@@ -12,7 +12,11 @@
  */
 
 import type { StageIcon } from './_icons';
-import type { Silo } from './SiloDiagram';
+import type { SiloIcon } from './_icons';
+
+/** People / process / technology, as a labelled item. Used by the story's Inputs row.
+    It used to live in SiloDiagram, which was deleted with the old landing page. */
+export type Silo = { kind: SiloIcon; label: string; note: string };
 
 export type Card = { title: string; body: string };
 export type WalkawayItem = { n: string; title: string; body: string };

@@ -7,6 +7,9 @@ const nextConfig = {
       // capability blueprint. Old links, shared URLs and the /blueprints email
       // footer all land on the replacement.
       { source: '/agents', destination: '/blueprint', permanent: true },
+      // The scroll-story variant of /mapping replaced the original, so it is /mapping
+      // now. The experiment URL was shared while it was being judged.
+      { source: '/mapping/story', destination: '/mapping', permanent: true },
     ];
   },
   async rewrites() {
