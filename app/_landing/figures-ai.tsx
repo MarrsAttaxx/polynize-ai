@@ -131,24 +131,31 @@ export function LoneCompass() {
 type Floater = { name: VendorName | 'q'; x: number; y: number; size: number; i: number };
 
 /**
- * Hand placed, not generated, and that is the point: a loop produces rows, and rows
- * read as an ordered set. This is a pile of things you have bought that do not line up
- * with each other. One of each mark, never repeated, because a duplicate reads as a
- * pattern; the question repeats instead, since that IS the recurring thing.
+ * Hand placed, not generated, and that is the point: a loop produces rows, and rows read
+ * as an ordered set. This is a pile of things you have bought that do not line up with
+ * each other. One of each mark, never repeated, because a duplicate reads as a pattern;
+ * the question repeats instead, since that IS the recurring thing.
+ *
+ * PLACED ON A JITTERED 4 x 3 LATTICE covering the whole frame, not scattered freehand.
+ * The first version clumped toward the middle and left the corners empty, which read as
+ * a cluster rather than as a field (Marrs, 10 Aug 2026). A lattice guarantees even
+ * coverage; the per-item offsets and the size spread from 58 to 110 stop it looking like
+ * a grid. Anything moved here should keep both properties: reach the edges, and never
+ * line up with its neighbours on either axis.
  */
 const FLOATERS: Floater[] = [
-  { name: 'openai', x: 132, y: 118, size: 96, i: 0 },
-  { name: 'anthropic', x: 336, y: 74, size: 80, i: 1 },
-  { name: 'q', x: 476, y: 178, size: 76, i: 2 },
-  { name: 'gemini', x: 606, y: 88, size: 88, i: 3 },
-  { name: 'claude', x: 842, y: 132, size: 92, i: 4 },
-  { name: 'q', x: 246, y: 262, size: 64, i: 5 },
-  { name: 'copilot', x: 432, y: 322, size: 104, i: 6 },
-  { name: 'q', x: 694, y: 258, size: 82, i: 7 },
-  { name: 'grok', x: 148, y: 366, size: 84, i: 8 },
-  { name: 'q', x: 906, y: 306, size: 70, i: 9 },
-  { name: 'openclaw', x: 616, y: 392, size: 78, i: 10 },
-  { name: 'q', x: 800, y: 404, size: 58, i: 11 },
+  { name: 'openai', x: 108, y: 96, size: 104, i: 0 },
+  { name: 'anthropic', x: 352, y: 66, size: 74, i: 1 },
+  { name: 'q', x: 598, y: 104, size: 92, i: 2 },
+  { name: 'gemini', x: 886, y: 74, size: 82, i: 3 },
+  { name: 'q', x: 196, y: 252, size: 62, i: 4 },
+  { name: 'claude', x: 438, y: 218, size: 110, i: 5 },
+  { name: 'copilot', x: 682, y: 262, size: 96, i: 6 },
+  { name: 'q', x: 912, y: 226, size: 70, i: 7 },
+  { name: 'grok', x: 96, y: 386, size: 88, i: 8 },
+  { name: 'q', x: 330, y: 418, size: 58, i: 9 },
+  { name: 'openclaw', x: 566, y: 388, size: 78, i: 10 },
+  { name: 'q', x: 824, y: 412, size: 100, i: 11 },
 ];
 
 function VendorDrift() {
@@ -385,10 +392,12 @@ export function SlotMachine() {
 export const AI_FIGURES: FigureRegistry = {
   scatter: { viewBox: '0 0 620 580', place: 'centre', render: () => <LoneCompass /> },
   ambiguity: {
-    viewBox: '0 0 1000 470',
-    // The route swings from the middle out to the left edge across this gap, so the
-    // figure sits right of centre rather than fighting it for the same space.
-    place: 'right',
+    viewBox: '0 0 1000 480',
+    // Centred and full width. It was placed right to keep clear of the route, but the
+    // narrower column squeezed the marks together and the offset made the whole field
+    // look like it had drifted off to one side. Spread across the full width it reads as
+    // a field, and the route passing behind it is what a route on a chart does anyway.
+    place: 'wide',
     render: () => <VendorDrift />,
   },
   coordinates: { viewBox: '0 0 1000 400', place: 'wide', render: () => <BenchmarkBars /> },

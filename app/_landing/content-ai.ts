@@ -59,6 +59,9 @@ const INPUTS: Silo[] = [
  *   move together if either changes.
  * - Beat 5 gets no kicker and no sub. Kickers render in mint and the turn is the only
  *   mint line in the arc, so a marker above it would spend that moment twice.
+ * - Beat 5 is Marrs's line as written (10 Aug 2026). It replaced "You cannot go where
+ *   you need to go without a map", which said the same thing in more words and repeated
+ *   "go" twice. "Anywhere meaningful" is doing the work now. Do not paraphrase it.
  */
 export const storyBeats: Beat[] = [
   {
@@ -84,7 +87,7 @@ export const storyBeats: Beat[] = [
     figure: 'guess',
   },
   {
-    line: 'You cannot go where you need to go without a map.',
+    line: 'You can’t get anywhere meaningful without a map.',
     turn: true,
   },
 ];

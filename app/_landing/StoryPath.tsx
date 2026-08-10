@@ -9,7 +9,7 @@ import s from './story.module.css';
  * The plotted route: a full-width expedition line that draws itself as you descend.
  *
  * Reads as departure point, four numbered checkpoints, then X. The X sits on the turn
- * beat ("you cannot go where you need to go without a map"), so the destination is
+ * beat ("you can't get anywhere meaningful without a map"), so the destination is
  * reached exactly as the copy asks for one and the next section answers it with the
  * real map. Arriving at any checkpoint is an event: the marker pops and a ring rides
  * out from it.
