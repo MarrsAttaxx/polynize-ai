@@ -1,4 +1,35 @@
-# Podcast Clip Extraction — method + prompt (developing)
+# Podcast Clip Extraction — method + prompt
+
+> **BUILT IN THE CONSOLE 2026-08-10** at `/console/marketing/podcast`. The method below is unchanged
+> and is what the build implements; what follows here is what shipped and what the build settled.
+>
+> **Descript has a REST API.** `descriptapi.com/v1`, personal token in `DESCRIPT_API_TOKEN`, with
+> transcript export, project listing and the same natural-language agent used to prove assembly. This
+> is the finding that made a full loop possible: assembly had only ever been driven through the MCP,
+> which the console cannot reach from Vercel. Client is `lib/descript.ts`.
+>
+> **The pipeline:** add an episode, point it at its Descript project, pull the transcript (or paste
+> one), April proposes ranked clips, Marrs approves, Descript cuts. Store is
+> `lib/marketing/podcast-store.ts`; the proposal prompt and the assembly instruction are in
+> `lib/marketing/podcast-clips.ts`.
+>
+> **Job states, checked and counter-intuitive:** `queued`, `running`, `stopped`, `cancelled`.
+> **`stopped` does not mean success.** It means no longer running, and the outcome is in
+> `result.status`. `jobOutcome` normalises this; a stopped job with no status is treated as FAILED
+> because the alternative reading reports failed cuts as finished clips.
+>
+> **The vertical problem, and how Marrs removed it.** A 9:16 clip from a landscape source needs speaker
+> tracking, and Descript's "Center active speaker" is a manual toggle. He solved it upstream instead:
+> he exports from Final Cut already 16:9 with both speakers centred, so a plain centre crop keeps them
+> both. That is the `pre_framed` flag on an episode, and it is an **operator declaration, not a
+> detection** because a landscape frame carries no signal about whether its subjects were placed for a
+> vertical crop. With it set, the assembly prompt centre-crops and forbids reframing; without it, the
+> cautious speaker-tracking instruction applies and any clip the agent could not finish is flagged
+> `needs_reframe` in the UI. **None of this is needed if the podcast is ever recorded 9:16 at source.**
+>
+> **Captions and title are part of the cut now**, per the house craft in `content-series-examples.md`:
+> continuous top to tail, added last so they match the locked cut, plain white, clear of the bottom
+> strip. The title is the clip's own title, top of frame, three seconds.
 
 **Status (2026-07-15):** the intelligence for the first video series, **Podcast Clips**. Loop chosen by Marrs: **agent proposes strong clips → human approves → Descript assembles → enrich (captions, thumbnail) → publish** (through the calendar + Metricool tail already proven). This doc is being developed **prompt-first**: get the editorial judgment right and validated on real episodes *before* wiring Descript to execute the cuts.
 
@@ -93,14 +124,39 @@ The approved EDL is executed by Descript's MCP `prompt_project_agent` (a natural
 
 ---
 
-## Open questions (to settle with Marrs as we iterate)
+## Settled by the build (2026-08-10)
 
-- **How many candidates per episode** — a fixed top-N, or "as many as clear the bar"?
-- **Hook criteria** — should this pull from the existing hook-writing skill (`april-skills/hook-writing-v1.0.md`) so "hook" means the same thing across the system?
-- **EDL → Descript ops** — the exact mapping from a proposed cut list to Descript's cut/silence-removal operations (the assembly build).
-- **Multi-topic overlap** — when a strong line belongs to two themes, does it seed one clip or two?
-- **Test material** — the current Descript fixture is a short, already-edited explainer; a genuine raw long-form episode is needed to validate the method properly.
+- **How many candidates** — "as many as clear the bar", capped at 12 so a runaway reply cannot flood
+  the review. The prompt says three great clips beat ten weak ones and to rank strongest first.
+- **EDL to Descript ops** — the EDL goes to the agent as a numbered list of verbatim spans with their
+  timecodes, and the agent maps them to the timeline. The proof was that it follows this faithfully,
+  including taking the hook from mid-episode and placing it first.
+- **Test material** — Ep06 (56m03s, 1080p) is the first episode run through the built pipeline.
 
----
+Still open, and genuinely worth deciding rather than defaulting:
 
-*Developing. The prompt above is a first draft; iterate it against real episode output until the proposals match what Marrs would have picked, then build the Descript assembly.*
+- **Hook criteria** — whether this should pull from `april-skills/hook-writing-v1.0.md` so "hook" means
+  the same thing across the system. Currently the clip prompt carries its own definition (the blunt
+  declarative line), which matches Marrs's pick on clip 1 but is a second source of truth.
+- **Multi-topic overlap** — when a strong line belongs to two themes, one clip or two.
+- **An approved clip becoming a piece**, so it flows into the calendar and Metricool tail rather than
+  ending at a Descript composition. The store already carries `piece_id` for this.
+
+## Guardrails the build added, and why
+
+- **Proposing again never destroys.** Only untouched proposals are replaced; anything approved, cut or
+  rejected survives. Re-running is normal when a first pass misses a theme, and a second opinion must
+  not eat a decision.
+- **Paste is first-class alongside the pull.** The editorial half is the valuable half and a 56-minute
+  upload takes half an hour, so clips can be proposed from a transcript in hand meanwhile.
+- **A cut is polled, not awaited.** An agent job outlives its request, so the job id is persisted or a
+  reload orphans a cut that is running and being paid for. A failed POLL is reported as still running,
+  because marking it failed would strand a composition that exists.
+- **Cutting is gated behind explicit approval**, at roughly 34 Descript credits a clip.
+- **Anchor count is checked and surfaced.** A transcript with no timecodes can still be proposed from
+  but cannot be cut, and saying so up front beats discovering it after eight approvals.
+- **The transcript never reaches the browser.** Hundreds of kilobytes the page has no use for.
+- **The hook is corrected to EDL[0]** when the two disagree, because the EDL is what gets cut and a
+  review card that does not describe the clip it builds is worse than no card.
+- **Review is a readable text block, never the EDL** (his instruction, and a typography decision as
+  much as a data one).
