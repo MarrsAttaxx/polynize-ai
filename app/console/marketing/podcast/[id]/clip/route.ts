@@ -143,7 +143,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     const started = await startAgentJob({
       projectId: ep.descript_project_id,
       compositionId: ep.descript_composition_id,
-      prompt: assemblyPrompt(clip, episodeLabel),
+      prompt: assemblyPrompt(clip, episodeLabel, { preFramed: ep.pre_framed }),
     });
     const updated = withClip(ep, {
       ...clip,
@@ -200,7 +200,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     typeof job.result?.message === 'string'
       ? job.result.message
       : JSON.stringify(job.result ?? {});
-  const framing = readAssemblyReport(report);
+  const framing = readAssemblyReport(report, { preFramed: ep.pre_framed });
 
   const next: ClipProposal =
     outcome === 'done'

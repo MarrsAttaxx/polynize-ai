@@ -129,6 +129,26 @@ export function EpisodeScreen({ episode, descriptConnected }: Props) {
     }
   };
 
+  /** Declare that the export is already composed for a centre crop. */
+  const setPreFramed = async (on: boolean) => {
+    setEp((e) => ({ ...e, pre_framed: on }));
+    try {
+      const res = await fetch(`${base}/transcript`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ pre_framed: on }),
+      });
+      if (!res.ok) {
+        // Put it back rather than leave the checkbox lying about what the server holds.
+        setEp((e) => ({ ...e, pre_framed: !on }));
+        setError('Could not save that.');
+      }
+    } catch {
+      setEp((e) => ({ ...e, pre_framed: !on }));
+      setError('Network error. Try again.');
+    }
+  };
+
   /** Ask April for proposals, reading her progress as it arrives. */
   const propose = async () => {
     if (working) return;
@@ -362,6 +382,23 @@ export function EpisodeScreen({ episode, descriptConnected }: Props) {
             )}
           </div>
         ) : null}
+
+        {/* THE FRAMING DECLARATION. Not detectable and not guessable: a landscape frame gives no clue
+            whether its subjects were placed for a vertical crop. Only the person who made the export
+            knows, so he says it once per episode and every clip inherits it. */}
+        <label className={d.check}>
+          <input
+            type="checkbox"
+            checked={Boolean(ep.pre_framed)}
+            onChange={(e) => void setPreFramed(e.target.checked)}
+            disabled={pulling}
+          />
+          <span>
+            <b>Already framed for vertical.</b> The 16:9 export has both speakers in the centre, so a
+            straight centre crop keeps them both and no speaker tracking is needed. Tick this for a
+            Final Cut export composed for shorts; leave it clear for a raw landscape recording.
+          </span>
+        </label>
 
         {showPaste ? (
           <div className={d.pasteBox}>

@@ -453,3 +453,26 @@
 .newStream {
   flex: none;
 }
+
+/* The framing declaration. A statement about the export, so it reads as a sentence with a box. */
+.check {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  margin-top: 16px;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--text-2);
+  cursor: pointer;
+}
+.check input {
+  margin-top: 3px;
+  flex: none;
+  accent-color: var(--mint);
+  width: 15px;
+  height: 15px;
+}
+.check b {
+  color: var(--text);
+  font-weight: 600;
+}

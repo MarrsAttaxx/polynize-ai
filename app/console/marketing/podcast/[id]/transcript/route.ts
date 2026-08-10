@@ -30,6 +30,14 @@ const Schema = z.object({
   /** Pull path. */
   descript_project_id: z.string().trim().max(120).optional(),
   descript_composition_id: z.string().trim().max(120).optional(),
+  /**
+   * The export is already composed so a centre crop to 9:16 keeps both speakers.
+   *
+   * Set here rather than inferred, because it CANNOT be inferred: a landscape frame gives no clue
+   * whether its subjects were deliberately placed for a vertical crop. It is a statement about the
+   * export, and only the person who made the export knows it.
+   */
+  pre_framed: z.boolean().optional(),
 });
 
 /** How many anchors the transcript actually carries. Zero means the EDL cannot be built. */
@@ -53,6 +61,12 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
   const ep = await getEpisode(user.email, id);
   if (!ep) return NextResponse.json({ error: 'episode not found' }, { status: 404 });
+
+  // The flag can be toggled by itself, without touching the transcript.
+  if (body.pre_framed !== undefined && !body.transcript && !body.descript_project_id) {
+    await saveEpisode({ ...ep, pre_framed: body.pre_framed, updated_at: new Date().toISOString() });
+    return NextResponse.json({ ok: true, pre_framed: body.pre_framed });
+  }
 
   let transcript = (body.transcript ?? '').trim();
   let source: 'pasted' | 'descript' = 'pasted';
@@ -104,6 +118,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const anchors = countAnchors(transcript);
   await saveEpisode({
     ...ep,
+    pre_framed: body.pre_framed ?? ep.pre_framed,
     descript_project_id: projectId,
     descript_composition_id: compositionId,
     transcript,

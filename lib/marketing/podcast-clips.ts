@@ -255,10 +255,45 @@ export function parseClips(raw: string): ClipProposal[] {
  * NON-DESTRUCTIVE IS STATED TWICE ON PURPOSE. The source composition is the released episode and
  * there is no undo across an API boundary, so it must not be touched.
  */
-export function assemblyPrompt(clip: ClipProposal, episodeTitle: string): string {
+export function assemblyPrompt(
+  clip: ClipProposal,
+  episodeTitle: string,
+  opts?: {
+    /** The export is already composed for a centre crop, so speaker tracking is not needed. */
+    preFramed?: boolean;
+  }
+): string {
   const spans = clip.edl
     .map((s, i) => `${i + 1}. [${s.at}] "${s.text}"`)
     .join('\n');
+
+  /**
+   * TWO DIFFERENT FRAMING INSTRUCTIONS, because the answer genuinely differs.
+   *
+   * The hard case is a raw landscape recording, where a centre crop cuts whoever is not centred out
+   * of shot and only speaker tracking saves it. The easy case is an export Marrs has already composed
+   * in Final Cut with both speakers inside the centre, where a plain centre crop is not a compromise
+   * but the intended result. Sending the cautious instruction for a pre-framed export would produce
+   * hedging and a manual-step warning for work that is already done.
+   */
+  const framing = opts?.preFramed
+    ? `THE FRAME. The finished clip is 9:16 VERTICAL, 1080x1920.
+- The source is 16:9 and has ALREADY been composed for this: both speakers sit inside the centre of
+  the frame, deliberately, so that a straight centre crop keeps both of them.
+- So set the composition to a 9:16 canvas and CENTRE CROP the source. That is correct here.
+- Do NOT apply speaker tracking, auto-reframe, or any "center active speaker" effect. The framing was
+  decided upstream and moving it would undo that decision.
+- Do not letterbox, do not add blurred side bars, and do not scale the video down to fit.`
+    : `THE FRAME. The finished clip is for TikTok, Reels and Shorts, so it must be 9:16 VERTICAL, 1080x1920.
+- First CHECK the source media's aspect ratio. Do not assume it, and do not take my word for it.
+- If the source is already 9:16, leave the framing alone. Do not crop or reframe it.
+- If the source is 16:9 or any landscape ratio, set the composition to a 9:16 canvas and reframe so
+  the SPEAKER stays in frame, following whoever is talking. In Descript this is the "Center active
+  speaker" behaviour under the Look Good AI tools. A fixed centre crop is NOT acceptable on a
+  two-person podcast, because it cuts whoever is not in the middle out of the shot.
+- If you cannot apply speaker tracking yourself, DO NOT silently fall back to a static centre crop.
+  Set the 9:16 canvas, leave the framing as it is, and say clearly that speaker tracking still needs
+  to be switched on by hand.`;
 
   return `Build a VERTICAL SHORT as a NEW composition. Do NOT modify or trim the existing source composition: leave it exactly as it is.
 
@@ -275,23 +310,32 @@ THE CUT
 - End on the last span. Do not add an outro, and do not pad with silence to reach any length.
 - Do not add content the speaker did not say.
 
-THE FRAME. The finished clip is for TikTok, Reels and Shorts, so it must be 9:16 VERTICAL, 1080x1920.
-- First CHECK the source media's aspect ratio. Do not assume it, and do not take my word for it.
-- If the source is already 9:16, leave the framing alone. Do not crop or reframe it.
-- If the source is 16:9 or any landscape ratio, set the composition to a 9:16 canvas and reframe so
-  the SPEAKER stays in frame, following whoever is talking. In Descript this is the "Center active
-  speaker" behaviour under the Look Good AI tools. A fixed centre crop is NOT acceptable on a
-  two-person podcast, because it cuts whoever is not in the middle out of the shot.
-- If you cannot apply speaker tracking yourself, DO NOT silently fall back to a static centre crop.
-  Set the 9:16 canvas, leave the framing as it is, and say clearly that speaker tracking still needs
-  to be switched on by hand.
+${framing}
+
+THE TITLE. Put this on screen as a title, near the TOP of the vertical frame, held for the first three
+seconds and then gone:
+
+  ${clip.title}
+
+Keep it to the words above. Do not rewrite it, do not add a subtitle, and do not cover either
+speaker's face with it.
+
+THE CAPTIONS. Add burned-in captions for the whole clip.
+- They run CONTINUOUS, top to tail. Every spoken word is captioned and the captions never stop and
+  start between sections.
+- Lower third, centred, comfortably clear of the bottom edge where platform UI sits.
+- A word or a short phrase at a time, big enough to read on a phone at arm's length.
+- Plain white text. No word-by-word colour highlighting, no karaoke effect, no emoji, no bouncing.
+- Captions come LAST, after the cut is locked, so they match the final edit and not the original.
 
 THEN REPORT, as plain labelled lines:
 - COMPOSITION: the new composition's id and name
 - DURATION: its final duration in seconds
 - SOURCE ASPECT: the aspect ratio you actually found on the source media
 - CANVAS: the aspect ratio the new composition is set to
-- SPEAKER TRACKING: applied, not needed, or needs doing by hand`;
+- SPEAKER TRACKING: applied, not needed, or needs doing by hand
+- CAPTIONS: added or not added
+- TITLE: added or not added`;
 }
 
 /**
@@ -307,9 +351,14 @@ THEN REPORT, as plain labelled lines:
  * Deliberately pessimistic: anything other than a clear "applied" or "not needed" is treated as
  * still needing a human, because assuming it worked is the one reading with a bad failure mode.
  */
-export function readAssemblyReport(text: string): {
+export function readAssemblyReport(
+  text: string,
+  opts?: { preFramed?: boolean }
+): {
   source_aspect?: '9:16' | '16:9' | 'unknown';
   needs_reframe: boolean;
+  captions?: boolean;
+  title?: boolean;
 } {
   const t = String(text ?? '');
   const aspectLine = t.match(/SOURCE ASPECT\s*:?\s*([^\n]*)/i)?.[1] ?? '';
@@ -324,10 +373,20 @@ export function readAssemblyReport(text: string): {
   const trackingLine = t.match(/SPEAKER TRACKING\s*:?\s*([^\n]*)/i)?.[1] ?? '';
   const settled = /\bapplied\b|\bnot needed\b|\balready\b/i.test(trackingLine);
 
+  const said = (label: string) => {
+    const line = t.match(new RegExp(label + '\\s*:?\\s*([^\\n]*)', 'i'))?.[1] ?? '';
+    if (!line.trim()) return undefined;
+    return !/\bnot\b|\bno\b|\bcould not\b|\bunable\b|\bfailed\b/i.test(line);
+  };
+
   return {
     source_aspect,
-    // A vertical source needs nothing. Anything else needs a human unless the agent said outright
-    // that it handled it.
-    needs_reframe: source_aspect === '9:16' ? false : !settled,
+    // A vertical source needs nothing, and neither does a PRE-FRAMED landscape export: Marrs put both
+    // speakers in the centre in Final Cut, so the centre crop is the intended framing rather than a
+    // compromise. Everything else needs a human unless the agent said outright that it handled it.
+    needs_reframe:
+      source_aspect === '9:16' || opts?.preFramed ? false : !settled,
+    captions: said('CAPTIONS'),
+    title: said('TITLE'),
   };
 }

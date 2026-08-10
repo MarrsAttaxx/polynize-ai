@@ -111,10 +111,25 @@ export type PodcastEpisode = {
   transcript_chars?: number;
   /**
    * Source aspect, REPORTED not assumed (a clip-1 review learning: he misremembered a 16:9 source
-   * as 9:16). A 16:9 source needs Descript's "Center active speaker", which is a manual toggle and
-   * not exposed to automation, so this field is what tells the operator a clip is not done yet.
+   * as 9:16). A 16:9 source normally needs Descript's "Center active speaker", which is a manual
+   * toggle and not exposed to automation, so this field is what tells the operator a clip is not
+   * done yet. Unless `pre_framed` below says the framing problem was already solved upstream.
    */
   source_aspect?: '9:16' | '16:9' | 'unknown';
+  /**
+   * TRUE when the source is 16:9 but ALREADY COMPOSED so that a plain centre crop to 9:16 works.
+   *
+   * Marrs solved the hardest part of this pipeline in Final Cut rather than in software: "I'll export
+   * the version of the podcast out of Final Cut Pro, already at 16:9 with Shourov and I centred. All
+   * we have to do is cut the clip and put the captions and the title." Both speakers sit inside the
+   * centre of the frame, so the crop that would normally lose one of them is safe.
+   *
+   * This is the difference between a clip needing a manual toggle and the pipeline being fully
+   * automatic, so it is an explicit operator statement about the export rather than something
+   * inferred. It cannot be detected: a landscape frame gives no clue whether its subjects were
+   * deliberately placed for a vertical crop.
+   */
+  pre_framed?: boolean;
   clips: ClipProposal[];
   created_at: string;
   updated_at?: string;
