@@ -717,6 +717,32 @@
 }
 .play .hudAmpStep { animation: hudGain 2.4s ease-in-out infinite; }
 
+/* ---- /capability-mapping beat 4: the misfit ----
+   Every box the same, every line the same, and the work drawn OVER the top of them. If
+   an edit ever tucks the crossing shape neatly inside a lane, the figure has started
+   arguing the opposite of the copy it sits under. */
+.hudOrg { opacity: 0.85; }
+.hudOrgBox {
+  fill: color-mix(in srgb, var(--mint) 3%, transparent);
+  stroke: var(--hud-3);
+  stroke-width: 1.4;
+}
+.hudOrgLine { fill: none; stroke: var(--hud-4); stroke-width: 1.3; }
+.hudCross {
+  fill: none;
+  stroke: var(--hud-0);
+  stroke-width: 3.4;
+  stroke-linecap: round;
+  filter: drop-shadow(0 0 8px color-mix(in srgb, var(--mint) 60%, transparent));
+  stroke-dasharray: 2000;
+  stroke-dashoffset: 0;
+}
+@keyframes hudCrossDraw {
+  from { stroke-dashoffset: 2000; }
+  to { stroke-dashoffset: 0; }
+}
+.play .hudCross { animation: hudCrossDraw 2.2s cubic-bezier(0.4, 0, 0.2, 1) both; }
+
 /* ---------- The route ----------
    A dashed path down the left margin with a waypoint per beat and a mint trail that
    fills in behind the reader. Sits in the slack beside the 860px text column, so the

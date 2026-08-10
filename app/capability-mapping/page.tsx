@@ -42,7 +42,7 @@ export default function CapabilityMappingPage() {
       beats={workBeats}
       figures={WORK_FIGURES}
       result={<CapabilityMapExample />}
-      resultEyebrow="The capability map"
+      resultEyebrow="The fix"
       artefacts={workArtefacts}
       artefactsIntro={workArtefactsIntro}
       artefactsFootnote={workArtefactsFootnote}

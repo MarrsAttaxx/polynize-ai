@@ -15,29 +15,72 @@
   text-align: left;
 }
 
-/* ---------- Key, above the map ----------
-   Same reasoning as the matrix: a visitor meets three coloured lanes before they know
-   what the colours mean, and a key underneath is a key they read after they have
-   already decided it is too complicated. */
-.key {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-wrap: wrap;
-  gap: 10px 26px;
-  margin: 0 0 20px;
+/* ---------- The empty state ----------
+   The section opens on one button, not on a finished map. A map sitting there fully drawn
+   reads as a product screenshot and gets scrolled past; a reader who picks their own team
+   out of an org chart is looking at THEIR map by the time it appears. */
+.empty {
+  display: grid;
+  justify-items: center;
+  gap: 18px;
+  padding: 40px 0 24px;
+  text-align: center;
 }
-.keyItem {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
+.bigCta {
+  font-family: var(--font-space-grotesk), sans-serif;
+  font-size: clamp(17px, 2vw, 21px);
+  font-weight: 600;
+  color: #06231a;
+  background: var(--mint);
+  border: 0;
+  border-radius: 999px;
+  padding: 20px 44px;
+  cursor: pointer;
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--mint) 60%, transparent),
+    0 0 44px color-mix(in srgb, var(--mint) 34%, transparent);
+  transition: transform 0.18s cubic-bezier(0.2, 0.8, 0.3, 1), box-shadow 0.18s ease;
+}
+.bigCta:hover { transform: translateY(-2px); }
+.emptyNote { margin: 0; font-size: 14px; color: var(--text-3); max-width: 420px; }
+
+/* The glow breathes so the button reads as the one thing to do here. Held to a glow and
+   a hair of scale: a button that bounces reads as an advert. */
+@keyframes ctaPulse {
+  0%, 100% {
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--mint) 60%, transparent),
+      0 0 30px color-mix(in srgb, var(--mint) 24%, transparent);
+  }
+  50% {
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--mint) 80%, transparent),
+      0 0 60px color-mix(in srgb, var(--mint) 48%, transparent);
+  }
+}
+.pulse { animation: ctaPulse 2.6s ease-in-out infinite; }
+
+/* ---------- The control, where the legend used to be ---------- */
+.controls { display: flex; justify-content: center; margin: 0 0 20px; }
+.swapCta {
+  font-family: var(--font-inter), sans-serif;
   font-size: 13px;
-  color: var(--text-2);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--mint);
+  background: color-mix(in srgb, var(--mint) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--mint) 40%, transparent);
+  border-radius: 999px;
+  padding: 10px 22px;
+  cursor: pointer;
+  transition: background 0.18s ease, border-color 0.18s ease;
 }
-.keyDot { width: 12px; height: 12px; border-radius: 3px; display: inline-block; }
-.kHuman { background: var(--coral); }
-.kHybrid { background: var(--amber); }
-.kAgentic { background: var(--mint); }
+.swapCta:hover {
+  background: color-mix(in srgb, var(--mint) 16%, transparent);
+  border-color: var(--mint);
+}
+@keyframes ctaPulseSoft {
+  0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--mint) 34%, transparent); }
+  50% { box-shadow: 0 0 0 7px color-mix(in srgb, var(--mint) 0%, transparent); }
+}
+.pulseSoft { animation: ctaPulseSoft 2.4s ease-out infinite; }
 
 /* ---------- The map ---------- */
 .map {
@@ -88,14 +131,22 @@
 /* ---------- Rows ----------
    Armed only on the client, so the server-rendered markup is never hidden. See the
    component: the same failure that took the matrix down once. */
+/* The rows land in sequence. No observer and no armed/on dance is needed any more: the
+   map is rendered only after a reader has clicked for it, so it is on screen the moment
+   it exists. `both` holds the from-state before the delay elapses, and the animation
+   ends at opacity 1, so a stalled ticker cannot leave a row hidden. */
+@keyframes rowIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
+}
 .capWrap {
-  transition: opacity 0.4s ease;
   border-bottom: 1px solid color-mix(in srgb, var(--border-soft) 55%, transparent);
+  animation: rowIn 420ms cubic-bezier(0.2, 0.8, 0.3, 1) both;
 }
 .capWrap:last-child { border-bottom: 0; }
-.armed:not(.on) .capWrap { opacity: 0; }
-/* Never hold a focused control invisible. */
-.map:focus-within .capWrap { opacity: 1; }
+@media (prefers-reduced-motion: reduce) {
+  .capWrap { animation: none; }
+}
 
 .row {
   width: 100%;
@@ -231,4 +282,190 @@
   .cluster { padding: 16px 12px 8px; }
   .detail { padding: 2px 12px 16px 30px; }
   .hCell { font-size: 9px; letter-spacing: 0.1em; }
+}
+
+/* ---------- The team name above the map ---------- */
+.mapHead {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 16px 18px 4px;
+}
+.mapTeam {
+  font-family: var(--font-space-grotesk), sans-serif;
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--mint);
+}
+.mapTeamNote { font-size: 12.5px; color: var(--text-3); }
+
+/* ---------- The picker ---------- */
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: color-mix(in srgb, #05050a 78%, transparent);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+.modal {
+  position: relative;
+  width: 100%;
+  max-width: 880px;
+  max-height: 88vh;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: var(--surface, #14141c);
+  padding: 30px 30px 24px;
+  text-align: center;
+}
+.close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid var(--border-soft);
+  background: transparent;
+  color: var(--text-2);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+}
+.close:hover { color: var(--text); border-color: var(--border); }
+
+.pickHead { max-width: 560px; margin: 0 auto 26px; }
+.pickEyebrow {
+  display: block;
+  font-family: var(--font-inter), monospace;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--mint);
+  margin-bottom: 12px;
+}
+.pickTitle {
+  font-family: var(--font-space-grotesk), sans-serif;
+  font-size: clamp(20px, 2.6vw, 26px);
+  font-weight: 600;
+  margin: 0 0 10px;
+  color: var(--text);
+}
+.pickNote { margin: 0; font-size: 14px; line-height: 1.6; color: var(--text-2); }
+.pickFoot { margin: 22px 0 0; font-size: 12px; color: var(--text-3); }
+
+/* ---------- The org chart ----------
+   Real buttons with CSS connectors, not an SVG. Every box is keyboard reachable and
+   announced, and a pseudo-element cannot trap focus the way an SVG hit area can. */
+.org { display: grid; justify-items: center; }
+.orgBox {
+  display: grid;
+  gap: 4px;
+  text-align: left;
+  border: 1px solid var(--border-soft);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--mint) 3%, transparent);
+  padding: 12px 14px;
+  cursor: pointer;
+  transition: border-color 0.16s ease, background 0.16s ease, transform 0.16s ease;
+}
+.orgBox:hover,
+.orgBox:focus-visible {
+  border-color: var(--mint);
+  background: color-mix(in srgb, var(--mint) 10%, transparent);
+  transform: translateY(-2px);
+}
+.orgBox:focus-visible { outline: 2px solid var(--mint); outline-offset: 2px; }
+.orgName {
+  font-family: var(--font-space-grotesk), sans-serif;
+  font-size: 14.5px;
+  font-weight: 600;
+  color: var(--text);
+}
+.orgNote { font-size: 11.5px; line-height: 1.4; color: var(--text-3); }
+.orgLead {
+  min-width: 260px;
+  border-color: color-mix(in srgb, var(--mint) 40%, transparent);
+  background: color-mix(in srgb, var(--mint) 8%, transparent);
+}
+/* The vertical drop, the horizontal bus, and a stub over each function. */
+.orgBus {
+  width: 100%;
+  height: 26px;
+  position: relative;
+}
+.orgBus::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 0;
+  width: 1px;
+  height: 14px;
+  background: var(--border);
+}
+.orgBus::after {
+  content: '';
+  position: absolute;
+  left: 8%;
+  right: 8%;
+  top: 14px;
+  height: 1px;
+  background: var(--border);
+}
+.orgRow {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  width: 100%;
+}
+.orgTeam { position: relative; }
+/* Only the first row hangs off the bus. The second row sits under the first, so a stub
+   there would point up into the box above it rather than at a reporting line. */
+.orgTeam:nth-child(-n + 3)::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: -14px;
+  width: 1px;
+  height: 14px;
+  background: var(--border);
+}
+
+/* ---------- The modelling beat ---------- */
+.thinking { display: grid; justify-items: center; gap: 14px; padding: 46px 0 40px; }
+.spinner { position: relative; width: 62px; height: 62px; display: block; }
+.spinner i {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  border-top-color: var(--mint);
+  animation: spin 1.1s linear infinite;
+}
+.spinner i:nth-child(2) { inset: 9px; border-top-color: color-mix(in srgb, var(--mint) 55%, transparent); animation-duration: 1.6s; animation-direction: reverse; }
+.spinner i:nth-child(3) { inset: 18px; border-top-color: color-mix(in srgb, var(--mint) 30%, transparent); animation-duration: 2.1s; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.spinnerStill i { animation: none; border-top-color: color-mix(in srgb, var(--mint) 55%, transparent); }
+.thinkingLine {
+  margin: 0;
+  font-family: var(--font-space-grotesk), sans-serif;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text);
+}
+.thinkingNote { margin: 0; font-size: 13.5px; color: var(--text-3); }
+
+@media (max-width: 680px) {
+  .orgRow { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .orgLead { min-width: 0; width: 100%; }
+  .modal { padding: 24px 18px 20px; }
+  .bigCta { padding: 17px 30px; }
 }

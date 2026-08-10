@@ -53,27 +53,32 @@ const INPUTS: Silo[] = [
  * every line is about the work rather than about the tools.
  *
  * DECISIONS THAT SHOULD NOT BE QUIETLY UNDONE:
- * - Beat 1 is Marrs's own line, verbatim (10 Aug 2026), and it replaced "Most
- *   organisations cannot describe their own work." The new one names the decision the
- *   reader is actually stuck on rather than the diagnosis behind it; the sub-line still
- *   supplies the diagnosis underneath. Do not paraphrase it.
+ * - Beats 1, 2, 4 and 5 are Marrs's own lines (10 Aug 2026). Beat 1 went through "Most
+ *   organisations cannot describe their own work" and then "don't know where AI fits in
+ *   their work" before landing on "lost in their AI journey". Do not paraphrase any of
+ *   them. The SUB-LINES under 1, 2 and 4 are mine, written to the brief he gave for
+ *   each, and are the parts most likely to want his hand.
  * - Beat 3 is the load-bearing one. Amplification is the mechanism that turns an
  *   unmapped process from a slow problem into a fast one, and it is the reason the
  *   sequence has to be model, then train, then deploy rather than any other order.
+ * - Beat 4 is the pivot of the whole page: the reader arrived believing they have a
+ *   technology problem, and this is the line that tells them they do not. Its sub-line
+ *   has to say WHY, which is that AI cuts across the org structure rather than sitting
+ *   inside it. Weaken that and the beat becomes an assertion.
  * - Beat 5 gets no kicker and no sub, same as its sibling page: kickers render in mint
  *   and the turn is the only mint line in the arc.
  */
 export const workBeats: Beat[] = [
   {
     kicker: 'The problem',
-    line: 'Most organisations don’t know where AI fits in their work.',
-    sub: 'You know the job titles and the department names. Not the capabilities inside them, and not who or what is doing each one today.',
+    line: 'Most organisations are lost in their AI journey.',
+    sub: 'Tools bought, pilots run, budgets committed. No agreed picture of where any of it belongs in the work.',
     figure: 'lost',
   },
   {
-    line: 'So AI gets pointed at the work on a guess.',
-    sub: 'Licences issued, tools bought, pilots run. None of it aimed at a part of the work anyone has actually broken down.',
-    figure: 'blackbox',
+    line: 'Too many tools, too many options, too many opinions.',
+    sub: 'One expert says start with the tooling. The next says start with the people. Everyone in the room has a view and none of them is based on your work.',
+    figure: 'options',
   },
   {
     kicker: 'What it costs',
@@ -82,12 +87,12 @@ export const workBeats: Beat[] = [
     figure: 'amplify',
   },
   {
-    line: 'And the training gets built for the job as it used to be.',
-    sub: 'The work changes the moment an agent touches it. Anything designed before that is designed for a version of the job that has already gone.',
-    figure: 'gamble',
+    line: 'This is not a technology problem. It is an organisation design problem.',
+    sub: 'AI does not fit the shape your company is already in. It cuts across the roles and the reporting lines you have, which is exactly why putting it inside them keeps not working.',
+    figure: 'misfit',
   },
   {
-    line: 'You cannot decide where AI goes until you can see the work.',
+    line: 'You can’t decide where AI fits until you map the work.',
     turn: true,
   },
 ];
@@ -141,10 +146,15 @@ export const workContent: MappingContent = {
    * The turn says you cannot decide until you can see the work. This section has to
    * answer it immediately, so the heading hands straight over to the map.
    */
+  /**
+   * The eyebrow is "The fix" rather than the product name: the four beats above have
+   * just spent the reader's attention on a problem, and what they want next is the
+   * answer, not a noun.
+   */
   whatItIs: {
-    h2: 'This is the capability map.',
+    h2: 'This is your map.',
     paras: [
-      'We take one bottleneck, break it into the capabilities it is actually made of, and allocate each one: human, hybrid or agentic. Every allocation carries the reasoning behind it, so you can argue with it.',
+      'We map one team at a time. Every capability the work asks of them, broken out and allocated: human, hybrid or agentic. Every allocation carries the reasoning behind it, so you can argue with it.',
     ],
     cards: [
       {
@@ -152,8 +162,8 @@ export const workContent: MappingContent = {
         body: 'Documents, frameworks, half-finished spreadsheets. Everything the map says traces back to something you gave us.',
       },
       {
-        title: 'One bottleneck first',
-        body: 'Not a top-down inventory of the whole company. Map the work that is costing you, then scale the same method outward.',
+        title: 'One team at a time',
+        body: 'Not a top-down inventory of the whole company in one go. Map a team properly, then run the same method across the next one.',
       },
       {
         title: 'The human column matters',

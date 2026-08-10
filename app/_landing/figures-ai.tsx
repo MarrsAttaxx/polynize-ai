@@ -158,7 +158,8 @@ const FLOATERS: Floater[] = [
   { name: 'q', x: 824, y: 412, size: 100, i: 11 },
 ];
 
-function VendorDrift() {
+/** Reused by /capability-mapping: too many tools, too many options, too many opinions. */
+export function VendorDrift() {
   return (
     <g className={s.hudScene}>
       {FLOATERS.map((fl) => (
