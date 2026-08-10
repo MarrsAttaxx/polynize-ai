@@ -15,7 +15,13 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { clipAsProse, type ClipProposal, type PodcastEpisode } from '@/lib/marketing/podcast-store';
+import {
+  clipAsProse,
+  DEFAULT_CLIP_STYLE,
+  type ClipProposal,
+  type ClipStyle,
+  type PodcastEpisode,
+} from '@/lib/marketing/podcast-store';
 import s from '../../piece/[id]/script.module.css';
 import d from '../podcast.module.css';
 
@@ -70,6 +76,9 @@ export function EpisodeScreen({ episode, descriptConnected }: Props) {
   const [busyClip, setBusyClip] = useState<string | null>(null);
   /** Her reply about the last revision, per clip. Cleared when a new revision starts. */
   const [replies, setReplies] = useState<Record<string, string>>({});
+  /** The house standard, edited here and inherited by every clip cut from this episode. */
+  const [style, setStyle] = useState<ClipStyle>({ ...DEFAULT_CLIP_STYLE, ...(episode.style ?? {}) });
+  const [showStyle, setShowStyle] = useState(false);
 
   const base = `/console/marketing/podcast/${ep.episode_id}`;
 
@@ -243,6 +252,52 @@ export function EpisodeScreen({ episode, descriptConnected }: Props) {
     }
   };
 
+  /** Save the house standard. Debounced by the caller committing on blur rather than per keystroke. */
+  const saveStyle = async (next: ClipStyle) => {
+    setStyle(next);
+    try {
+      const res = await fetch(`${base}/transcript`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ style: next }),
+      });
+      if (!res.ok) setError('Could not save the clip standard.');
+    } catch {
+      setError('Network error. Try again.');
+    }
+  };
+
+  /** Delete a clip, and by default stop her proposing that section again. */
+  const removeClip = async (clip: ClipProposal) => {
+    if (
+      !window.confirm(
+        `Delete "${clip.title}"?\n\nShe will not propose that section again. Anything already cut stays in Descript.`
+      )
+    ) {
+      return;
+    }
+    setError(null);
+    setNote(null);
+    try {
+      const res = await fetch(`${base}/clip`, {
+        method: 'DELETE',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ clip_id: clip.clip_id, remember: true }),
+      });
+      const b = (await res.json().catch(() => null)) as
+        | { clips?: ClipProposal[]; note?: string; error?: string }
+        | null;
+      if (!res.ok || !b?.clips) {
+        setError(b?.error ?? 'Could not delete it.');
+        return;
+      }
+      setClips(b.clips);
+      setNote(b.note ?? 'Deleted.');
+    } catch {
+      setError('Network error. Try again.');
+    }
+  };
+
   /** Ask April for proposals, reading her progress as it arrives. */
   const propose = async () => {
     if (working) return;
@@ -295,14 +350,14 @@ export function EpisodeScreen({ episode, descriptConnected }: Props) {
     }
   };
 
-  const cut = async (clip: ClipProposal) => {
+  const cut = async (clip: ClipProposal, action: 'cut' | 'finish' = 'cut') => {
     setError(null);
     setNote(null);
     try {
       const res = await fetch(`${base}/clip`, {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ clip_id: clip.clip_id }),
+        body: JSON.stringify({ clip_id: clip.clip_id, action }),
       });
       const b = (await res.json().catch(() => null)) as
         | { clips?: ClipProposal[]; error?: string }
@@ -312,7 +367,11 @@ export function EpisodeScreen({ episode, descriptConnected }: Props) {
         setError(b?.error ?? 'Descript would not take the cut.');
         return;
       }
-      setNote('Descript is cutting it. This takes a few minutes.');
+      setNote(
+        action === 'finish'
+          ? 'Descript is adding the title and captions. This takes a few minutes.'
+          : 'Descript is cutting it. This takes a few minutes.'
+      );
     } catch {
       setError('Network error. Try again.');
     }
@@ -461,6 +520,98 @@ export function EpisodeScreen({ episode, descriptConnected }: Props) {
           </span>
         </label>
 
+        {/* THE HOUSE STANDARD. "Preferably, when I open it, it's already done, and I can set a
+            standard for that." So the finish is configuration, set once and inherited by every clip. */}
+        <button
+          type="button"
+          className={d.ghostBtn}
+          style={{ marginTop: 14 }}
+          onClick={() => setShowStyle((v) => !v)}
+        >
+          {showStyle ? 'Hide the clip standard' : 'Clip standard'}
+        </button>
+        {showStyle ? (
+          <div className={d.styleBox}>
+            <label className={d.check}>
+              <input
+                type="checkbox"
+                checked={style.remove_filler}
+                onChange={(e) => void saveStyle({ ...style, remove_filler: e.target.checked })}
+              />
+              <span>
+                <b>Cut filler words.</b> Runs Descript&apos;s own filler removal over the clip.
+              </span>
+            </label>
+            <label className={d.check}>
+              <input
+                type="checkbox"
+                checked={style.remove_silences}
+                onChange={(e) => void saveStyle({ ...style, remove_silences: e.target.checked })}
+              />
+              <span>
+                <b>Close the silences.</b> Takes out the dead air within and between the spans so it
+                plays as one thought.
+              </span>
+            </label>
+            <label className={d.check}>
+              <input
+                type="checkbox"
+                checked={style.captions}
+                onChange={(e) => void saveStyle({ ...style, captions: e.target.checked })}
+              />
+              <span>
+                <b>Burned-in captions.</b> Continuous, lower third, plain white, no karaoke.
+              </span>
+            </label>
+            <div className={d.styleRow}>
+              <span className={d.styleLabel}>Title held for</span>
+              <input
+                className={d.styleNum}
+                type="number"
+                min={0}
+                max={15}
+                value={style.title_seconds}
+                onChange={(e) =>
+                  setStyle({ ...style, title_seconds: Number(e.target.value) || 0 })
+                }
+                onBlur={() => void saveStyle(style)}
+                aria-label="Title seconds"
+              />
+              <span className={d.styleLabel}>seconds, centred. 0 for no title.</span>
+            </div>
+            <div className={d.styleRow}>
+              <span className={d.styleLabel}>Music bed</span>
+              <input
+                className={d.styleText}
+                value={style.music_file ?? ''}
+                onChange={(e) => setStyle({ ...style, music_file: e.target.value })}
+                onBlur={() => void saveStyle(style)}
+                placeholder="Clip Bed.wav"
+                aria-label="Music file name"
+              />
+              <span className={d.styleLabel}>at</span>
+              <input
+                className={d.styleNum}
+                type="number"
+                min={-60}
+                max={0}
+                value={style.music_gain_db ?? -20}
+                onChange={(e) =>
+                  setStyle({ ...style, music_gain_db: Number(e.target.value) || -20 })
+                }
+                onBlur={() => void saveStyle(style)}
+                aria-label="Music level in dB"
+              />
+              <span className={d.styleLabel}>dB</span>
+            </div>
+            <p className={d.hint}>
+              The music file has to be in the Descript project already: drop it into the project once
+              and put its exact filename here. If she cannot find it she adds no music and says so,
+              rather than substituting a different track.
+            </p>
+          </div>
+        ) : null}
+
         {showPaste ? (
           <div className={d.pasteBox}>
             <textarea
@@ -582,6 +733,27 @@ export function EpisodeScreen({ episode, descriptConnected }: Props) {
               {/* The words on this card have changed since the video was cut. Said rather than fixed:
                   deleting a composition in Descript is not this system's call, and a new cut list
                   sitting beside a link to the old video is the more dangerous state. */}
+              {/* WHAT THE FINISH ACTUALLY DID. Reported rather than assumed, because the combined pass
+                  claimed a title and captions that were not on the timeline. */}
+              {c.finish ? (
+                <p className={c.finish.captions === false || c.finish.title === false ? d.manual : d.finishLine}>
+                  {[
+                    c.finish.title === true ? 'title on' : c.finish.title === false ? 'NO title' : null,
+                    c.finish.captions === true
+                      ? 'captions on'
+                      : c.finish.captions === false
+                        ? 'NO captions'
+                        : null,
+                    c.finish.music === true
+                      ? 'music bed on'
+                      : c.finish.music === false
+                        ? 'music file not found'
+                        : null,
+                  ]
+                    .filter(Boolean)
+                    .join(' · ') || 'Finished, but it did not say what it did.'}
+                </p>
+              ) : null}
               {c.recut_needed ? (
                 <p className={d.manual}>
                   This has changed since it was cut, so the composition in Descript is the OLD version.
@@ -626,7 +798,28 @@ export function EpisodeScreen({ episode, descriptConnected }: Props) {
                     </button>
                   </>
                 ) : null}
-                {c.status === 'assembling' ? <span className={d.cutting}>Cutting…</span> : null}
+                {c.status === 'assembling' ? (
+                  <span className={d.cutting}>
+                    {c.stage === 'finishing' ? 'Adding title and captions…' : 'Cutting…'}
+                  </span>
+                ) : null}
+                {/* THE FINISH PASS, on its own button. A missed caption track needs the finish run
+                    again, not the whole clip re-cut, which would cost the credits twice. */}
+                {c.status === 'assembled' ? (
+                  <button
+                    type="button"
+                    className={d.btn}
+                    onClick={() => void cut(c, 'finish')}
+                    disabled={!c.descript_composition_id}
+                    title={
+                      c.descript_composition_id
+                        ? 'Add the title, captions and music bed to the cut'
+                        : 'This was cut before the composition was being recorded. Cut it again first.'
+                    }
+                  >
+                    {c.finish ? 'Redo title and captions' : 'Add title and captions'}
+                  </button>
+                ) : null}
                 {c.descript_url ? (
                   <a
                     className={d.btn}
@@ -654,6 +847,15 @@ export function EpisodeScreen({ episode, descriptConnected }: Props) {
                   onClick={() => setShowEdl(showEdl === c.clip_id ? null : c.clip_id)}
                 >
                   {showEdl === c.clip_id ? 'Hide the cut list' : 'Cut list'}
+                </button>
+                <button
+                  type="button"
+                  className={d.delInline}
+                  onClick={() => void removeClip(c)}
+                  disabled={c.status === 'assembling' || busyClip !== null}
+                  title="Delete this clip and stop her proposing that section again"
+                >
+                  Delete
                 </button>
               </div>
 

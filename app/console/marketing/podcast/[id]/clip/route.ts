@@ -21,9 +21,17 @@ import {
   getEpisode,
   saveEpisode,
   withClip,
+  DEFAULT_CLIP_STYLE,
   type ClipProposal,
 } from '@/lib/marketing/podcast-store';
-import { assemblyPrompt, readAssemblyReport } from '@/lib/marketing/podcast-clips';
+import {
+  assemblyPrompt,
+  finishPrompt,
+  readAssemblyReport,
+  readFinishReport,
+  readCompositionId,
+  compositionUrl,
+} from '@/lib/marketing/podcast-clips';
 import { startAgentJob, getJob, jobOutcome, DescriptError } from '@/lib/descript';
 import { stripEmDashes } from '@/lib/em-dash';
 
@@ -38,7 +46,30 @@ const PatchSchema = z.object({
   operator_note: z.string().trim().max(2000).optional(),
 });
 
-const AssembleSchema = z.object({ clip_id: z.string().trim().min(1).max(200) });
+const DeleteSchema = z.object({
+  clip_id: z.string().trim().min(1).max(200),
+  /**
+   * Remember the section so it is not proposed again.
+   *
+   * Marrs: "if it's just a section that I don't like, I can delete it, and then she won't suggest that
+   * same section again." Deleting the card is half of that; this is the half that makes it stick.
+   * Defaults ON, because a delete that quietly allows the same suggestion back is the surprising
+   * behaviour, not the useful one.
+   */
+  remember: z.boolean().default(true),
+});
+
+const AssembleSchema = z.object({
+  clip_id: z.string().trim().min(1).max(200),
+  /**
+   * 'cut' builds the composition; 'finish' dresses one that already exists.
+   *
+   * Two passes rather than one prompt asking for everything, because the single combined pass reported
+   * adding a title and captions that were not there. Separately runnable is what a missed finish
+   * actually needs: re-cutting to fix a caption track would be absurd and would cost the credits again.
+   */
+  action: z.enum(['cut', 'finish']).default('cut'),
+});
 
 async function load(owner: string, id: string, clipId: string) {
   const ep = await getEpisode(owner, id);
@@ -126,6 +157,48 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   if (clip.status === 'assembling') {
     return NextResponse.json({ error: 'That cut is already running.' }, { status: 409 });
   }
+
+  const style = { ...DEFAULT_CLIP_STYLE, ...(ep.style ?? {}) };
+
+  // ---- THE FINISH PASS: title, captions, music, on a composition that already exists ----
+  if (body.action === 'finish') {
+    if (!clip.descript_composition_id) {
+      return NextResponse.json(
+        {
+          error:
+            'There is no cut to finish yet. Cut the clip first, or re-cut it if it was made before the composition id was being recorded.',
+        },
+        { status: 400 }
+      );
+    }
+    try {
+      const started = await startAgentJob({
+        projectId: ep.descript_project_id,
+        // Targeted at the CLIP, not the project, so the pass cannot wander onto the source episode.
+        compositionId: clip.descript_composition_id,
+        prompt: finishPrompt({
+          clipTitle: clip.title,
+          compositionId: clip.descript_composition_id,
+          style,
+        }),
+      });
+      const updated = withClip(ep, {
+        ...clip,
+        status: 'assembling',
+        stage: 'finishing',
+        job_id: started.job_id,
+        assembly_error: undefined,
+      });
+      await saveEpisode(updated);
+      return NextResponse.json({ ok: true, job_id: started.job_id, clips: updated.clips });
+    } catch (e) {
+      const message = e instanceof DescriptError ? e.message : 'Descript would not take the finish.';
+      console.error('[podcast.clip] finish failed:', e);
+      const updated = withClip(ep, { ...clip, assembly_error: message });
+      await saveEpisode(updated).catch(() => {});
+      return NextResponse.json({ error: message, clips: updated.clips }, { status: 502 });
+    }
+  }
   // Cutting costs Descript credits (about 34 per clip), so it is gated on an explicit approval
   // rather than being available from a proposal card.
   if (clip.status !== 'approved') {
@@ -143,11 +216,12 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     const started = await startAgentJob({
       projectId: ep.descript_project_id,
       compositionId: ep.descript_composition_id,
-      prompt: assemblyPrompt(clip, episodeLabel, { preFramed: ep.pre_framed }),
+      prompt: assemblyPrompt(clip, episodeLabel, { preFramed: ep.pre_framed, style }),
     });
     const updated = withClip(ep, {
       ...clip,
       status: 'assembling',
+      stage: 'cutting',
       job_id: started.job_id,
       descript_url: started.project_url,
       assembly_error: undefined,
@@ -194,35 +268,64 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     return NextResponse.json({ ok: true, state: 'assembling', clips: ep.clips });
   }
 
-  // What the agent SAID it managed decides whether the clip is publishable. The report is whatever
-  // free text came back on the job, so it is searched rather than parsed strictly.
   const report =
-    typeof job.result?.message === 'string'
-      ? job.result.message
-      : JSON.stringify(job.result ?? {});
-  const framing = readAssemblyReport(report, { preFramed: ep.pre_framed });
+    typeof job.result?.agent_response === 'string'
+      ? job.result.agent_response
+      : typeof job.result?.message === 'string'
+        ? job.result.message
+        : JSON.stringify(job.result ?? {});
 
-  const next: ClipProposal =
-    outcome === 'done'
-      ? {
-          ...clip,
-          status: 'assembled',
-          descript_url: job.project_url ?? clip.descript_url,
-          assembly_error: undefined,
-          source_aspect: framing.source_aspect,
-          needs_reframe: framing.needs_reframe || undefined,
-        }
-      : {
-          ...clip,
-          status: 'approved',
-          job_id: undefined,
-          assembly_error:
-            outcome === 'cancelled'
-              ? 'That cut was cancelled in Descript.'
-              : typeof job.result?.message === 'string'
-                ? job.result.message
-                : 'Descript could not finish that cut.',
-        };
+  let next: ClipProposal;
+
+  if (outcome !== 'done') {
+    next = {
+      ...clip,
+      status: clip.stage === 'finishing' ? 'assembled' : 'approved',
+      stage: undefined,
+      job_id: undefined,
+      assembly_error:
+        outcome === 'cancelled'
+          ? 'That was cancelled in Descript.'
+          : typeof job.result?.message === 'string'
+            ? job.result.message
+            : clip.stage === 'finishing'
+              ? 'Descript could not finish the title and captions.'
+              : 'Descript could not finish that cut.',
+    };
+  } else if (clip.stage === 'finishing') {
+    // THE FINISH PASS. What it reports is recorded rather than believed, because the combined pass
+    // asserted a title and captions that were not on the timeline and there was no way to tell.
+    const finish = readFinishReport(report);
+    next = {
+      ...clip,
+      status: 'assembled',
+      stage: undefined,
+      job_id: undefined,
+      finish,
+      assembly_error: undefined,
+    };
+  } else {
+    // THE CUT. The composition id comes out of the report, which is the only place it appears: the job
+    // itself only ever returns a PROJECT url, and opening a project opens the full episode.
+    const framing = readAssemblyReport(report, { preFramed: ep.pre_framed });
+    const compositionId = readCompositionId(report) ?? clip.descript_composition_id;
+    next = {
+      ...clip,
+      status: 'assembled',
+      stage: undefined,
+      job_id: undefined,
+      descript_composition_id: compositionId,
+      descript_url: ep.descript_project_id
+        ? compositionUrl(ep.descript_project_id, compositionId)
+        : (job.project_url ?? clip.descript_url),
+      assembly_error: undefined,
+      source_aspect: framing.source_aspect,
+      needs_reframe: framing.needs_reframe || undefined,
+      // A fresh cut has not been dressed yet, so any previous finish report is not about this cut.
+      finish: undefined,
+      recut_needed: undefined,
+    };
+  }
 
   const updated = withClip(ep, next);
   await saveEpisode(updated).catch((err) =>
@@ -233,5 +336,73 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     state: next.status,
     error: next.assembly_error,
     clips: updated.clips,
+  });
+}
+
+/** Delete one clip, and by default remember the section so it is not offered again. */
+export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const user = await getCurrentUser();
+  if (!user || user.scope.type !== 'team') {
+    return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
+  }
+
+  let body: z.infer<typeof DeleteSchema>;
+  try {
+    body = DeleteSchema.parse(await req.json());
+  } catch {
+    return NextResponse.json({ error: 'invalid request' }, { status: 400 });
+  }
+
+  const found = await load(user.email, id, body.clip_id);
+  if ('error' in found) return found.error;
+  const { ep, clip } = found;
+
+  if (clip.status === 'assembling') {
+    return NextResponse.json(
+      { error: 'Descript is working on that one. Wait for it to finish first.' },
+      { status: 409 }
+    );
+  }
+
+  // THE EXCLUSION OUTLIVES THE CLIP. That is the whole point: the card goes, the reason stays, and the
+  // next proposal pass is told not to offer this ground again. It carries the theme, the hook and the
+  // timecode so an OVERLAPPING suggestion is recognisable and not only an identical one.
+  const excluded = body.remember
+    ? [
+        ...(ep.excluded ?? []),
+        {
+          theme: clip.theme || clip.title,
+          hook: clip.hook.text,
+          at: clip.hook.at,
+          excluded_at: new Date().toISOString(),
+        },
+      ].slice(-60)
+    : ep.excluded;
+
+  const next = {
+    ...ep,
+    excluded,
+    clips: ep.clips.filter((c) => c.clip_id !== clip.clip_id),
+    updated_at: new Date().toISOString(),
+  };
+
+  try {
+    await saveEpisode(next);
+  } catch (err) {
+    console.error('[podcast.clip] delete failed:', err);
+    return NextResponse.json({ error: 'could not delete it' }, { status: 502 });
+  }
+  return NextResponse.json({
+    ok: true,
+    clips: next.clips,
+    excluded_count: (excluded ?? []).length,
+    // Said back, because "she will not suggest it again" is a promise worth confirming out loud. The
+    // composition, if one was already cut, is untouched in Descript.
+    note: body.remember
+      ? clip.descript_composition_id
+        ? 'Deleted, and she will not propose that section again. The composition already cut is still in Descript.'
+        : 'Deleted, and she will not propose that section again.'
+      : 'Deleted.',
   });
 }

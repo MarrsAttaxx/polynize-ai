@@ -54,7 +54,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const run = async (onProgress?: (d: { reasoning?: string; content?: string }) => void) => {
     const proposals = await proposeClips(
       ep.transcript!,
-      { title: ep.title, guest: ep.guest, number: ep.number },
+      { title: ep.title, guest: ep.guest, number: ep.number, excluded: ep.excluded },
       onProgress
     );
 

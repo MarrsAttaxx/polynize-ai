@@ -38,6 +38,17 @@ const Schema = z.object({
    * export, and only the person who made the export knows it.
    */
   pre_framed: z.boolean().optional(),
+  /** The house standard for every clip cut from this episode. Saved on its own, like pre_framed. */
+  style: z
+    .object({
+      title_seconds: z.number().int().min(0).max(15),
+      captions: z.boolean(),
+      music_file: z.string().trim().max(200).optional(),
+      music_gain_db: z.number().min(-60).max(0).optional(),
+      remove_filler: z.boolean(),
+      remove_silences: z.boolean(),
+    })
+    .optional(),
 });
 
 /** How many anchors the transcript actually carries. Zero means the EDL cannot be built. */
@@ -62,10 +73,15 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const ep = await getEpisode(user.email, id);
   if (!ep) return NextResponse.json({ error: 'episode not found' }, { status: 404 });
 
-  // The flag can be toggled by itself, without touching the transcript.
-  if (body.pre_framed !== undefined && !body.transcript && !body.descript_project_id) {
-    await saveEpisode({ ...ep, pre_framed: body.pre_framed, updated_at: new Date().toISOString() });
-    return NextResponse.json({ ok: true, pre_framed: body.pre_framed });
+  // Settings can be saved on their own, without touching the transcript.
+  if ((body.pre_framed !== undefined || body.style) && !body.transcript && !body.descript_project_id) {
+    await saveEpisode({
+      ...ep,
+      pre_framed: body.pre_framed ?? ep.pre_framed,
+      style: body.style ? { ...(ep.style ?? {}), ...body.style } : ep.style,
+      updated_at: new Date().toISOString(),
+    });
+    return NextResponse.json({ ok: true, pre_framed: body.pre_framed ?? ep.pre_framed });
   }
 
   let transcript = (body.transcript ?? '').trim();

@@ -20,7 +20,7 @@ import { resolveModel } from '@/lib/llm/openrouter';
 import { repairJsonControlChars } from './figure-parse';
 import { stripEmDashes } from '@/lib/em-dash';
 import { DraftError } from './draft';
-import type { ClipProposal, ClipSpan } from './podcast-store';
+import type { ClipProposal, ClipSpan, ClipStyle, ClipExclusion } from './podcast-store';
 
 /**
  * The model this work runs on.
@@ -146,7 +146,19 @@ function toClip(raw: RawClip): Omit<ClipProposal, 'rank'> | null {
  */
 export async function proposeClips(
   transcript: string,
-  context: { title: string; guest?: string; number?: string },
+  context: {
+    title: string;
+    guest?: string;
+    number?: string;
+    /**
+     * Sections he has already turned down.
+     *
+     * Without these a second pass happily hands back a section he deleted, as a fresh idea, and the
+     * delete button means nothing. Marrs: "if it's just a section that I don't like, I can delete it,
+     * and then she won't suggest that same section again."
+     */
+    excluded?: ClipExclusion[];
+  },
   onProgress?: (d: StreamDelta) => void
 ): Promise<ClipProposal[]> {
   const body = transcript.trim();
@@ -160,12 +172,20 @@ export async function proposeClips(
     .filter(Boolean)
     .join(' ');
 
+  // Stated as a rule rather than a list of titles, so an OVERLAPPING proposal is refused too and not
+  // merely a duplicate one.
+  const turnedDown = (context.excluded ?? []).length
+    ? `\n\nSECTIONS HE HAS ALREADY TURNED DOWN. Do not propose these again, and do not propose a clip that covers the same ground from a different angle. Find different material:\n${(context.excluded ?? [])
+        .map((e) => `- [${e.at}] ${e.theme || 'no theme given'}${e.hook ? ` (opened: "${e.hook}")` : ''}`)
+        .join('\n')}`
+    : '';
+
   const call = {
     system: SYSTEM,
     messages: [
       {
         role: 'user' as const,
-        content: `EPISODE: ${heading}\n\nTRANSCRIPT:\n"""\n${body}\n"""`,
+        content: `EPISODE: ${heading}${turnedDown}\n\nTRANSCRIPT:\n"""\n${body}\n"""`,
       },
     ],
     // A long transcript in and a set of full EDLs out, on a model that reasons before answering.
@@ -394,6 +414,8 @@ export function assemblyPrompt(
   opts?: {
     /** The export is already composed for a centre crop, so speaker tracking is not needed. */
     preFramed?: boolean;
+    /** The house standard, for the tightening that belongs with the cut. */
+    style?: ClipStyle;
   }
 ): string {
   const spans = clip.edl
@@ -409,6 +431,26 @@ export function assemblyPrompt(
    * but the intended result. Sending the cautious instruction for a pre-framed export would produce
    * hedging and a manual-step warning for work that is already done.
    */
+  /**
+   * THE TIGHTENING, named as DESCRIPT'S OWN TOOLS rather than as a desired outcome.
+   *
+   * "Remove silences and filler words" was already in this prompt and Marrs still asked for it, which
+   * says the instruction was not landing. Descript has dedicated features for both, so asking for the
+   * feature by name is far more likely to be honoured than describing the result and hoping.
+   */
+  const tightenParts = [
+    'THE TIGHTENING. Use Descript\'s OWN tools for this rather than editing by hand, because they are built for it and they are what the operator would reach for:',
+    opts?.style?.remove_filler === false
+      ? '- Leave filler words alone on this clip.'
+      : '- Run REMOVE FILLER WORDS across the whole new composition: the "um", "uh", "you know", "like", "I mean" and "sort of" that survive a first pass. Be thorough. This is the single biggest difference between a clip that feels edited and one that feels raw.',
+    opts?.style?.remove_silences === false
+      ? '- Leave the gaps as they are on this clip.'
+      : '- Then close the DEAD AIR, with shorten-word-gaps or remove-gaps, across both the joins between spans and the pauses inside them, so the whole thing plays as one continuous thought rather than four pieces stitched together. Leave the breath that makes speech sound human; remove the waiting.',
+    '- Also drop any false start or repeated word left inside a span you kept.',
+    '- SAY WHAT YOU ACTUALLY RAN and how many seconds it removed. Do not report having tightened it if the duration did not change.',
+  ];
+  const tightening = tightenParts.join('\n');
+
   const framing = opts?.preFramed
     ? `THE FRAME. The finished clip is 9:16 VERTICAL, 1080x1920.
 - The source is 16:9 and has ALREADY been composed for this: both speakers sit inside the centre of
@@ -438,29 +480,13 @@ ${spans}
 
 THE CUT
 - Keep only these spans. Everything between them is cut.
-- Remove silences, filler words and false starts inside the spans you keep.
 - Hard cuts only. No fades, no dissolves, no transitions.
 - End on the last span. Do not add an outro, and do not pad with silence to reach any length.
 - Do not add content the speaker did not say.
 
+${tightening}
+
 ${framing}
-
-THE TITLE. Put this on screen as a title, held for the first FIVE seconds and then gone:
-
-  ${clip.title}
-
-- Position it in the VERTICAL CENTRE of the frame, horizontally centred. Not at the top, not as a
-  lower third: the middle of the 1080x1920 canvas.
-- Keep it to the words above. Do not rewrite it and do not add a subtitle.
-- Big enough to read at a glance on a phone, and it may sit over the video: that is intended.
-
-THE CAPTIONS. Add burned-in captions for the whole clip.
-- They run CONTINUOUS, top to tail. Every spoken word is captioned and the captions never stop and
-  start between sections.
-- Lower third, centred, comfortably clear of the bottom edge where platform UI sits.
-- A word or a short phrase at a time, big enough to read on a phone at arm's length.
-- Plain white text. No word-by-word colour highlighting, no karaoke effect, no emoji, no bouncing.
-- Captions come LAST, after the cut is locked, so they match the final edit and not the original.
 
 THEN REPORT, as plain labelled lines:
 - COMPOSITION: the new composition's id and name
@@ -468,8 +494,130 @@ THEN REPORT, as plain labelled lines:
 - SOURCE ASPECT: the aspect ratio you actually found on the source media
 - CANVAS: the aspect ratio the new composition is set to
 - SPEAKER TRACKING: applied, not needed, or needs doing by hand
-- CAPTIONS: added or not added
-- TITLE: added or not added`;
+- TIGHTENING: which tools you ran, and how many seconds they removed`;
+}
+
+/**
+ * THE FINISH PASS: title, captions and the music bed on an already-cut clip.
+ *
+ * A SEPARATE AGENT CALL FROM THE CUT, and that is the fix rather than a tidy-up. It used to be one
+ * prompt asking for the cut, the canvas, the title and the captions together; the agent reported doing
+ * all four and Marrs opened the clip to find the finish missing. Two things follow from splitting it:
+ * the finish is RE-RUNNABLE on its own, which is exactly what a missed caption track needs, and each
+ * pass is small enough that its report can be checked.
+ *
+ * It also targets the CLIP's composition explicitly. The cut's job only ever returned a project url,
+ * and opening a project opens its default composition, which is the 56-minute source.
+ */
+export function finishPrompt(args: {
+  clipTitle: string;
+  compositionId: string;
+  style: ClipStyle;
+}): string {
+  const { clipTitle, compositionId, style } = args;
+  const lines: string[] = [];
+
+  lines.push(
+    `Finish the vertical short in composition ${compositionId}. Work ONLY on that composition. Do not touch any other composition in this project, and do not re-cut, re-order or re-trim what is already there: the edit is locked and you are dressing it.`
+  );
+
+  if (style.title_seconds > 0) {
+    lines.push(`THE TITLE. Put this text on screen:
+
+  ${clipTitle}
+
+- Held from 0 to ${style.title_seconds} seconds, then gone.
+- Positioned in the VERTICAL CENTRE of the frame, horizontally centred. Not at the top, not a lower
+  third: the middle of the 1080x1920 canvas.
+- Font: Space Grotesk, Bold, white. If Space Grotesk is not available in this project, use the closest
+  clean geometric sans and SAY WHICH ONE YOU USED. Do not silently pick a default.
+- Big and readable at a glance on a phone. It may sit over the video: that is intended.
+- Exactly the words above. Do not rewrite it and do not add a subtitle.`);
+  } else {
+    lines.push('THE TITLE. No title on this clip. Do not add one.');
+  }
+
+  if (style.captions) {
+    lines.push(`THE CAPTIONS. Add burned-in captions to the video for the whole clip.
+- BURNED IN, meaning visible in the rendered video, not a caption track that has to be switched on.
+  If Descript distinguishes between the two, choose the one that appears in the exported file.
+- CONTINUOUS, top to tail. Every spoken word is captioned and they never stop and start between spans.
+- Lower third, centred, comfortably clear of the bottom edge where platform UI sits, and clear of the
+  title while the title is up.
+- A word or short phrase at a time, big enough to read on a phone at arm's length.
+- Plain white. No word-by-word colour highlighting, no karaoke effect, no emoji, no bouncing.
+- Font: Space Grotesk, Medium, white. Same rule as above if it is unavailable: say what you used.`);
+  } else {
+    lines.push('THE CAPTIONS. No captions on this clip. Do not add any.');
+  }
+
+  if (style.music_file) {
+    lines.push(`THE MUSIC BED. Lay the audio file named "${style.music_file}" under the whole clip.
+- Start it at 0 seconds and let it run to the end. Trim it to the clip's length; do not loop it and do
+  not let it run past the last word.
+- Set its level to about ${style.music_gain_db ?? -20} dB relative to the voice, so it sits UNDER the
+  speech and is felt rather than heard. The voice must never have to compete with it.
+- Bring it out at the very end rather than cutting it dead on the last frame.
+- IF THAT FILE IS NOT IN THIS PROJECT, add no music at all and say so plainly. Do not substitute
+  another track, do not use stock music, and do not generate anything. The wrong bed is worse than
+  none.`);
+  }
+
+  lines.push(`THEN VERIFY, do not assume. Re-read the composition after your edits and confirm what is actually on it now. Report as plain labelled lines:
+- CAPTIONS: added, or not added and why
+- TITLE: added, or not added and why
+- MUSIC: added, not requested, or file not found
+- FONT: the font you actually used
+- DURATION: the composition's duration in seconds, which must be unchanged by this pass`);
+
+  return lines.join('\n\n');
+}
+
+/**
+ * What the finish pass reported.
+ *
+ * Read rather than trusted, because the first version of this system asserted that it had added
+ * captions and a title, and it had not been possible to tell the difference from the console.
+ */
+export function readFinishReport(text: string): {
+  captions?: boolean;
+  title?: boolean;
+  music?: boolean;
+  report: string;
+} {
+  const t = String(text ?? '');
+  const said = (label: string) => {
+    const line = t.match(new RegExp(label + '\\s*:?\\s*([^\\n]*)', 'i'))?.[1] ?? '';
+    if (!line.trim()) return undefined;
+    if (/\bnot found\b|\bnot requested\b/i.test(line)) return false;
+    return !/\bnot\b|\bno\b|\bcould not\b|\bunable\b|\bfailed\b|\bskipped\b/i.test(line);
+  };
+  return {
+    captions: said('CAPTIONS'),
+    title: said('TITLE'),
+    music: said('MUSIC'),
+    // The whole report is kept so a surprising outcome can be read rather than guessed at later.
+    report: t.slice(0, 4000),
+  };
+}
+
+/**
+ * The composition id out of an agent report, so the console can deep-link to the CLIP.
+ *
+ * Descript's short id in a web url is the first five characters of the composition uuid, which is how
+ * `web.descript.com/{project}/{short}` is built.
+ */
+export function readCompositionId(text: string): string | undefined {
+  const m = String(text ?? '').match(
+    /COMPOSITION\s*:?\s*([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i
+  );
+  return m ? m[1].toLowerCase() : undefined;
+}
+
+/** The url that opens one composition rather than the project's default (the full episode). */
+export function compositionUrl(projectId: string, compositionId?: string): string {
+  const base = `https://web.descript.com/${projectId}`;
+  return compositionId ? `${base}/${compositionId.slice(0, 5)}` : base;
 }
 
 /**

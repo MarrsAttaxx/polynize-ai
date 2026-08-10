@@ -85,9 +85,27 @@ export type ClipProposal = {
   recut_needed?: boolean;
   /** The Descript agent job, while it runs and after it finishes. */
   job_id?: string;
+  /**
+   * The composition the cut actually landed in, read out of the agent's report.
+   *
+   * WITHOUT THIS THE LINK IS WRONG, and it was. The job only returns a PROJECT url, and opening a
+   * project opens its default composition, which here is the full 56-minute episode. So "Open in
+   * Descript" sent Marrs to the untouched source to look for a title and captions that were on a
+   * different timeline. My bug, not Descript's.
+   */
   descript_composition_id?: string;
   descript_url?: string;
   assembly_error?: string;
+  /**
+   * WHICH PASS IS RUNNING, because the cut and the finish are now separate agent calls.
+   *
+   * They were one prompt asking for the cut, the canvas, the title and the captions together, and the
+   * agent reported doing all of it. Splitting them makes the finish re-runnable on its own, which is
+   * what a missed caption track actually needs, and it makes each pass small enough to verify.
+   */
+  stage?: 'cutting' | 'finishing';
+  /** What the finish pass reported, so a missing caption track is visible rather than assumed. */
+  finish?: { captions?: boolean; title?: boolean; music?: boolean; report?: string };
   /**
    * TRUE when the cut exists but is not publishable yet, because a landscape source needs Descript's
    * speaker-tracking reframe and that is a manual toggle rather than something automation can apply.
@@ -102,6 +120,66 @@ export type ClipProposal = {
   piece_id?: string;
   created_at: string;
   updated_at?: string;
+};
+
+/**
+ * THE HOUSE STANDARD for clips cut from an episode.
+ *
+ * Marrs: "Preferably, when I open it, it's already done, and I can set a standard for that." So the
+ * finish is configuration rather than something re-typed per clip, and every clip inherits it.
+ *
+ * Kept on the episode rather than global because the answer genuinely differs per show, and because a
+ * value that silently changes the look of every past episode is the wrong kind of setting.
+ */
+export type ClipStyle = {
+  /** Seconds the title card holds before it goes. 0 turns the title off. */
+  title_seconds: number;
+  /** Burned-in captions for the whole clip. */
+  captions: boolean;
+  /**
+   * The music bed's FILENAME as it appears in the Descript project's media, e.g. "Clip Bed.wav".
+   *
+   * A name rather than an upload, because the file already has to be in the project for Descript to
+   * place it, and asking the agent to find a named file it can see is far more reliable than pushing
+   * bytes through the console. If it is not there the agent is told to say so and add nothing, since a
+   * substituted track is worse than a silent clip.
+   */
+  music_file?: string;
+  /**
+   * How far the bed sits under the voice, in dB. Negative. Around -20 is a bed you feel rather than
+   * hear; -12 starts competing with speech.
+   */
+  music_gain_db?: number;
+  /** Run Descript's filler-word removal over the cut ("um", "uh", "you know", "like"). */
+  remove_filler: boolean;
+  /** Close the dead air between words and spans. */
+  remove_silences: boolean;
+};
+
+export const DEFAULT_CLIP_STYLE: ClipStyle = {
+  title_seconds: 5,
+  captions: true,
+  music_gain_db: -20,
+  remove_filler: true,
+  remove_silences: true,
+};
+
+/**
+ * A section he has turned down, kept so it is not proposed again.
+ *
+ * Marrs: "If it's just a section that I don't like, I can delete it, and then she won't suggest that
+ * same section again." This is the part that makes a delete mean something: without it the propose
+ * prompt has no idea what he threw away, so a second pass can hand back the same section as a fresh
+ * idea. Deleting the clip removes the card; this is the memory of WHY.
+ */
+export type ClipExclusion = {
+  /** The theme in his words or hers, which is what a future proposal is matched against. */
+  theme: string;
+  /** The hook line that opened it, so an overlapping proposal is recognisable. */
+  hook: string;
+  /** Where it sat, so a nearby proposal can be spotted. */
+  at: string;
+  excluded_at: string;
 };
 
 export type PodcastEpisode = {
@@ -147,6 +225,16 @@ export type PodcastEpisode = {
    * deliberately placed for a vertical crop.
    */
   pre_framed?: boolean;
+  /** The house standard for every clip cut from this episode. See `ClipStyle`. */
+  style?: ClipStyle;
+  /**
+   * Sections turned down, so they are not proposed again.
+   *
+   * OUTLIVES THE CLIPS THAT PRODUCED THEM, which is the whole point: a deleted card must not come back
+   * as a fresh suggestion. Capped at the most recent 60 so an episode worked over many times cannot
+   * grow an unbounded prompt.
+   */
+  excluded?: ClipExclusion[];
   clips: ClipProposal[];
   created_at: string;
   updated_at?: string;

@@ -177,7 +177,17 @@ export type DescriptJob = {
   project_id?: string;
   project_url?: string;
   stopped_at?: string;
-  result?: { status?: string; message?: string; [k: string]: unknown };
+  /**
+   * `status` decides success. `agent_response` is where the editing agent's own report lands, which is
+   * the only place the new composition's id and what it actually did appear.
+   */
+  result?: {
+    status?: string;
+    message?: string;
+    agent_response?: string;
+    ai_credits_used?: number;
+    [k: string]: unknown;
+  };
 };
 
 export type JobOutcome = 'running' | 'done' | 'failed' | 'cancelled';
