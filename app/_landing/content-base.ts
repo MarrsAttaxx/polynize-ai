@@ -49,7 +49,20 @@ export type Artefact = {
 
 export type Card = { title: string; body: string };
 export type WalkawayItem = { n: string; title: string; body: string };
-export type Stage = { n: string; title: string; what: string; who: string; icon: StageIcon };
+export type Stage = {
+  n: string;
+  title: string;
+  what: string;
+  who: string;
+  icon: StageIcon;
+  /**
+   * Where the phase sits on the timeline, as inclusive 1-indexed working days out of
+   * ten. `[1, 3]` is the first three days. Ten because two weeks is the engagement and
+   * days give enough resolution to overlap phases honestly; a phase that hands over
+   * mid-week should look like it does.
+   */
+  span?: [number, number];
+};
 export type Person = { name: string; src: string };
 
 export type MappingContent = {
@@ -63,7 +76,16 @@ export type MappingContent = {
   whatItIs: { h2: string; paras: string[]; cards: Card[] };
   matrixImage: { src: string; alt: string; caption: string; width: number; height: number };
   walkaway: { h2: string; intro: string; items: WalkawayItem[]; footnote: string };
-  howItRuns: { h2: string; stages: Stage[]; line: string };
+  howItRuns: {
+    h2: string;
+    stages: Stage[];
+    line: string;
+    /**
+     * The lane that runs the whole way across the chart, drawn dashed above the phases.
+     * Optional: a page with nothing genuinely continuous should not invent one.
+     */
+    spanning?: { label: string; note: string; text: string };
+  };
   video: {
     eyebrow: string;
     h2: string;

@@ -174,28 +174,26 @@ export function StoryLanding({
           </div>
         </Section>
 
-        {/* 4. How it runs, now three steps */}
+        {/* 4. How it runs, drawn as a timeline */}
         <section id="how" className={s.section}>
           <div className={`${s.sectionHead} ${s.rise}`}>
             <div className={s.eyebrow}>The process</div>
             <h2 className={s.h2}>{c.howItRuns.h2}</h2>
           </div>
-          <div className={s.stages3}>
+
+          <Timeline howItRuns={c.howItRuns} />
+
+          {/* What each phase actually involves. The chart says when and who; this says
+              what, which is the one thing a bar cannot carry. */}
+          <div className={`${s.phaseNotes} ${s.rise}`}>
             {c.howItRuns.stages.map((st) => (
-              <div key={st.n} className={`${s.stage} ${s.rise}`}>
-                <span className={s.stageIcon}>
-                  <StageGlyph kind={st.icon} />
-                </span>
-                <div className={s.stageNum}>{st.n}</div>
-                <div className={s.stageTitle}>{st.title}</div>
-                <div className={s.stageWhat}>{st.what}</div>
-                <div className={s.stageWho}>
-                  <span className={s.stageWhoLabel}>In the room</span>
-                  {st.who}
-                </div>
+              <div key={st.n} className={s.phaseNote}>
+                <span className={s.phaseNoteN}>{st.n}</span>
+                <p>{st.what}</p>
               </div>
             ))}
           </div>
+
           {/* The three inputs step 01 asks for, shown rather than only listed. */}
           <div className={`${s.inputs} ${s.rise}`}>
             {inputs.map((it) => (
@@ -276,6 +274,105 @@ export function StoryLanding({
         <SiteFooter />
       </div>
     </>
+  );
+}
+
+/**
+ * "How it runs", drawn as a timeline rather than as three cards.
+ *
+ * The cards said what happened but not WHEN, and the single most common question about
+ * an engagement is how long it takes and how much of your people's time it eats. A
+ * Gantt answers both in one glance, which three cards in a row never did.
+ *
+ * TEN COLUMNS, ONE PER WORKING DAY across a two week engagement. Days rather than weeks
+ * because phases overlap, and a phase that hands over mid-week should look like it does
+ * rather than being rounded to a clean boundary. The week rules are drawn behind the
+ * lanes so the eye still reads it as two weeks.
+ *
+ * A phase with no `span` falls back to an even share of the ten days, so adding a fourth
+ * phase to a page's content cannot produce a broken chart.
+ *
+ * WHAT EACH PART CARRIES: the label column has the phase number, its icon and its name;
+ * the bar has WHO is in the room while it runs; and `what` sits underneath the chart,
+ * because it is a sentence and a bar cannot hold a sentence.
+ */
+const DAYS = 10;
+
+function Timeline({ howItRuns }: { howItRuns: MappingContent['howItRuns'] }) {
+  const { stages, spanning } = howItRuns;
+  const share = Math.max(1, Math.round(DAYS / Math.max(1, stages.length)));
+  /**
+   * EVERY ROW IS PLACED EXPLICITLY, and it has to be. The rules element spans all the
+   * lanes, and auto-placement flows around an explicitly placed item: leave the lanes on
+   * auto and they get pushed past the rules into rows of their own, which is exactly
+   * what happened first time (the rules appeared as an empty band above the lanes).
+   *
+   * The row count is also counted rather than written as `1 / -1`, because -1 resolves
+   * to the last EXPLICIT row line and there is no explicit row template here, so the
+   * element collapsed to zero height and the rules never drew at all.
+   */
+  const firstLane = 2;
+  const spanRow = spanning ? firstLane : 0;
+  const stageRow = (i: number) => firstLane + (spanning ? 1 : 0) + i;
+  const lastRow = stageRow(stages.length);
+
+  return (
+    <div className={`${s.gantt} ${s.rise}`}>
+      <div className={s.ganttScroll}>
+        <div className={s.ganttGrid}>
+          {/* Week headers. Two cells, five days each. */}
+          <div className={s.ganttSpacer} />
+          <div className={s.ganttWeek} style={{ gridColumn: '2 / 7' }}>
+            Week one
+          </div>
+          <div className={s.ganttWeek} style={{ gridColumn: '7 / 12' }}>
+            Week two
+          </div>
+
+          {/* The week rules, drawn behind every lane. */}
+          <div
+            className={s.ganttRules}
+            style={{ gridRow: `${firstLane} / ${lastRow}` }}
+            aria-hidden="true"
+          />
+
+          {spanning && (
+            <>
+              <div className={s.ganttLabel} style={{ gridRow: spanRow }}>
+                <span className={s.ganttLabelTitle}>{spanning.label}</span>
+                <span className={s.ganttLabelNote}>{spanning.note}</span>
+              </div>
+              <div className={s.ganttSpanBar} style={{ gridRow: spanRow, gridColumn: '2 / 12' }}>
+                {spanning.text}
+              </div>
+            </>
+          )}
+
+          {stages.map((st, i) => {
+            const [from, to] = st.span ?? [i * share + 1, Math.min(DAYS, (i + 1) * share)];
+            return (
+              <Fragment key={st.n}>
+                <div className={s.ganttLabel} style={{ gridRow: stageRow(i) }}>
+                  <span className={s.ganttLabelPhase}>
+                    <span className={s.ganttLabelIcon}>
+                      <StageGlyph kind={st.icon} />
+                    </span>
+                    Phase {st.n}
+                  </span>
+                  <span className={s.ganttLabelTitle}>{st.title}</span>
+                </div>
+                <div
+                  className={`${s.ganttBar} ${s[`ganttP${(i % 3) + 1}`]}`}
+                  style={{ gridRow: stageRow(i), gridColumn: `${from + 1} / ${to + 2}` }}
+                >
+                  <span className={s.ganttBarWho}>{st.who}</span>
+                </div>
+              </Fragment>
+            );
+          })}
+        </div>
+      </div>
+    </div>
   );
 }
 

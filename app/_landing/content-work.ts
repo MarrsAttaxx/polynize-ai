@@ -162,13 +162,30 @@ export const workContent: MappingContent = {
     ],
   },
 
-  /** The fixed sequence from the thesis: model, then train, then deploy. */
+  /**
+   * The fixed sequence from the thesis: model, then train, then deploy.
+   *
+   * ON THE TIMELINE, AND THIS NEEDS A DECISION. The chart frames two weeks, which is
+   * honest for Model and is the length of a mapping engagement. Train and Deploy are the
+   * rest of the transformation and plainly do not finish inside a fortnight; they are
+   * drawn here because Marrs asked for the same treatment on both pages and to keep the
+   * existing data. Flagged to him on 10 Aug 2026. The better version is probably Model
+   * filling the frame with the other two running off the right-hand edge, which would
+   * say "mapping fits in two weeks and the rest follows" rather than implying all three
+   * do. Do not quietly harden this into a delivery promise.
+   */
   howItRuns: {
     h2: 'The sequence is fixed.',
+    spanning: {
+      label: 'Working sessions',
+      note: 'Throughout',
+      text: 'Built with your people in the room',
+    },
     stages: [
       {
         n: '01',
         title: 'Model',
+        span: [1, 6],
         what: 'We take your inputs in whatever state they are in, pick the bottleneck, and build the work model. Then the capability map, then the benchmark.',
         who: 'Your project lead',
         icon: 'setup',
@@ -176,6 +193,7 @@ export const workContent: MappingContent = {
       {
         n: '02',
         title: 'Train',
+        span: [5, 9],
         what: 'Lift the human capability the map says has to stay human. This comes second on purpose. Doing it first builds for a job the agents are about to change.',
         who: 'Your team',
         icon: 'session',
@@ -183,6 +201,7 @@ export const workContent: MappingContent = {
       {
         n: '03',
         title: 'Deploy',
+        span: [8, 10],
         what: 'Agents take the capabilities the map allocated to them, designed around the people who own the rest. Only possible once the gaps are known.',
         who: 'Your leadership',
         icon: 'handover',

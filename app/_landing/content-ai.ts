@@ -155,12 +155,23 @@ export const storyContent: MappingContent = {
    * Three steps, not five. Discovery and Agreement are sales cycle, not product,
    * so they came off per the call. Renumbered from 01 rather than left at 03.
    */
+  /**
+   * Drawn as a timeline (see StoryLanding's Timeline). Spans are inclusive working days
+   * out of ten. They overlap on purpose: inputs keep arriving while the first scenarios
+   * are already running, which is how the engagement actually behaves.
+   */
   howItRuns: {
     h2: 'How it runs.',
+    spanning: {
+      label: 'Platform access',
+      note: 'Throughout',
+      text: 'The Polynize platform, live for your team',
+    },
     stages: [
       {
         n: '01',
         title: 'Inputs',
+        span: [1, 3],
         what: 'Three things from you: people, process and technology. Drafts and internal working documents are fine. We would rather have the real imperfect material than a polished version.',
         who: 'Your project lead',
         icon: 'setup',
@@ -168,6 +179,7 @@ export const storyContent: MappingContent = {
       {
         n: '02',
         title: 'Scenarios',
+        span: [3, 8],
         what: 'Your team works through scenarios built from their real work. In the room together, or in their own time across a week if they are spread across time zones.',
         who: 'Your team',
         icon: 'session',
@@ -175,6 +187,7 @@ export const storyContent: MappingContent = {
       {
         n: '03',
         title: 'Readout',
+        span: [8, 10],
         what: 'We walk your leadership through the map, the report, and what we would do about it next.',
         who: 'Your leadership',
         icon: 'handover',

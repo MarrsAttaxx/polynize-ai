@@ -1096,6 +1096,164 @@
 }
 .stagesLine { margin-top: 24px; font-size: 14px; color: var(--text-3); }
 
+/* ---------- "How it runs", as a timeline ----------
+   Ten columns, one per working day across a two week engagement. Days rather than weeks
+   because phases overlap, and a phase that hands over mid-week should look like it does.
+
+   The label column is a fixed width rather than a fraction, so the ten day columns stay
+   equal to each other. If they were fractions the bars would stop being comparable,
+   which is the only thing a Gantt is for. */
+.gantt { margin: 0 0 28px; }
+.ganttScroll { overflow-x: auto; -webkit-overflow-scrolling: touch; padding-bottom: 4px; }
+.ganttGrid {
+  display: grid;
+  grid-template-columns: 176px repeat(10, minmax(52px, 1fr));
+  align-items: center;
+  gap: 10px 0;
+  min-width: 720px;
+  position: relative;
+  text-align: left;
+}
+.ganttSpacer { grid-column: 1; }
+.ganttWeek {
+  font-family: var(--font-inter), monospace;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  text-align: center;
+  padding-bottom: 12px;
+}
+/* Week boundaries, drawn behind every lane. Spans the whole chart so the rules run the
+   full height rather than stopping at each row. */
+.ganttRules {
+  grid-column: 2 / 12;
+  /* grid-row comes from the component: see the note there on why -1 does not work. */
+  align-self: stretch;
+  pointer-events: none;
+  border-left: 1px solid var(--border);
+  border-right: 1px solid var(--border);
+  background-image: linear-gradient(to right, var(--border) 1px, transparent 1px);
+  background-size: 50% 100%;
+}
+
+.ganttLabel {
+  grid-column: 1;
+  display: grid;
+  gap: 3px;
+  padding-right: 20px;
+}
+.ganttLabelPhase {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-family: var(--font-inter), monospace;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--mint);
+}
+.ganttLabelIcon { display: inline-flex; width: 16px; height: 16px; color: var(--mint); }
+.ganttLabelIcon svg { width: 100%; height: 100%; }
+.ganttLabelTitle {
+  font-family: var(--font-space-grotesk), sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+}
+.ganttLabelNote {
+  font-family: var(--font-inter), monospace;
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+
+/* The bar that runs the whole way across: dashed, so it reads as a condition rather
+   than as a phase with a start and an end. */
+.ganttSpanBar {
+  position: relative;
+  z-index: 1;
+  min-height: 46px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 16px;
+  border: 1px dashed color-mix(in srgb, var(--mint) 45%, transparent);
+  border-radius: 9px;
+  background: color-mix(in srgb, var(--mint) 6%, transparent);
+  font-size: 13.5px;
+  color: var(--mint);
+  text-align: center;
+}
+
+.ganttBar {
+  position: relative;
+  z-index: 1;
+  min-height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 14px;
+  border-radius: 10px;
+  border: 1px solid;
+  font-size: 13.5px;
+  text-align: center;
+}
+.ganttBarWho { color: var(--text); }
+/* Mint, amber, coral in sequence: the same three the map and the matrix use, so a
+   reader who has learned the palette upstairs does not have to learn a second one. */
+.ganttP1 {
+  border-color: color-mix(in srgb, var(--mint) 55%, transparent);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--mint) 16%, transparent), color-mix(in srgb, var(--mint) 6%, transparent));
+  box-shadow: 0 0 22px color-mix(in srgb, var(--mint) 12%, transparent);
+}
+.ganttP2 {
+  border-color: color-mix(in srgb, var(--amber) 55%, transparent);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--amber) 16%, transparent), color-mix(in srgb, var(--amber) 6%, transparent));
+  box-shadow: 0 0 22px color-mix(in srgb, var(--amber) 12%, transparent);
+}
+.ganttP3 {
+  border-color: color-mix(in srgb, var(--coral) 55%, transparent);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--coral) 16%, transparent), color-mix(in srgb, var(--coral) 6%, transparent));
+  box-shadow: 0 0 22px color-mix(in srgb, var(--coral) 12%, transparent);
+}
+
+/* What each phase involves. The chart says when and who; a bar cannot hold a sentence. */
+.phaseNotes {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+  margin: 0 0 26px;
+  text-align: left;
+}
+.phaseNote {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 12px;
+  align-items: start;
+}
+.phaseNote p { margin: 0; font-size: 13.5px; line-height: 1.6; color: var(--text-2); }
+.phaseNoteN {
+  font-family: var(--font-inter), monospace;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--mint);
+  padding-top: 2px;
+}
+
+@media (max-width: 900px) {
+  .phaseNotes { grid-template-columns: 1fr; gap: 14px; }
+}
+@media (max-width: 680px) {
+  .ganttGrid { grid-template-columns: 132px repeat(10, minmax(38px, 1fr)); min-width: 560px; }
+  .ganttLabelTitle { font-size: 13.5px; }
+  .ganttBar, .ganttSpanBar { font-size: 12px; min-height: 44px; padding: 0 8px; }
+}
+
 /* ---------- One bottleneck, then the organisation ----------
    Three widening bars. The width is the argument: the method is identical at every
    scope, only the amount of the organisation inside it changes. */
