@@ -32,7 +32,7 @@ import {
   readCompositionId,
   compositionUrl,
 } from '@/lib/marketing/podcast-clips';
-import { startAgentJob, getJob, jobOutcome, DescriptError } from '@/lib/descript';
+import { startAgentJob, getJob, jobOutcome, resolveComposition, DescriptError } from '@/lib/descript';
 import { stripEmDashes } from '@/lib/em-dash';
 
 export const dynamic = 'force-dynamic';
@@ -162,11 +162,27 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
   // ---- THE FINISH PASS: title, captions, music, on a composition that already exists ----
   if (body.action === 'finish') {
-    if (!clip.descript_composition_id) {
+    // RESOLVED HERE TOO, not just required. Clips cut before the id was captured reliably have none
+    // stored, and making him re-cut those (paying the credits twice) to fix a caption track would be
+    // absurd when the composition is sitting in the project waiting to be found by name.
+    let compositionId = clip.descript_composition_id;
+    if (!compositionId) {
+      const resolved = await resolveComposition({
+        projectId: ep.descript_project_id,
+        clipTitle: clip.title,
+        sourceCompositionId: ep.descript_composition_id,
+        claimed: ep.clips
+          .filter((c) => c.clip_id !== clip.clip_id && c.descript_composition_id)
+          .map((c) => c.descript_composition_id!),
+      });
+      compositionId = resolved.id;
+      console.log(`[podcast.clip] finish resolved composition by ${resolved.how}: ${compositionId ?? 'none'}`);
+    }
+    if (!compositionId) {
       return NextResponse.json(
         {
           error:
-            'There is no cut to finish yet. Cut the clip first, or re-cut it if it was made before the composition id was being recorded.',
+            'Could not find this clip\'s composition in Descript. Open the project and check it is there, or cut the clip again.',
         },
         { status: 400 }
       );
@@ -175,10 +191,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       const started = await startAgentJob({
         projectId: ep.descript_project_id,
         // Targeted at the CLIP, not the project, so the pass cannot wander onto the source episode.
-        compositionId: clip.descript_composition_id,
+        compositionId,
         prompt: finishPrompt({
           clipTitle: clip.title,
-          compositionId: clip.descript_composition_id,
+          compositionId,
           style,
         }),
       });
@@ -187,6 +203,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         status: 'assembling',
         stage: 'finishing',
         job_id: started.job_id,
+        // Recorded now, so the link is right even before the finish comes back.
+        descript_composition_id: compositionId,
+        descript_url: compositionUrl(ep.descript_project_id, compositionId),
         assembly_error: undefined,
       });
       await saveEpisode(updated);
@@ -308,7 +327,21 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     // THE CUT. The composition id comes out of the report, which is the only place it appears: the job
     // itself only ever returns a PROJECT url, and opening a project opens the full episode.
     const framing = readAssemblyReport(report, { preFramed: ep.pre_framed });
-    const compositionId = readCompositionId(report) ?? clip.descript_composition_id;
+    // The report is a HINT. The project's own composition list decides, because the report's
+    // formatting has already proved unreliable and a wrong link sends him to the full episode.
+    const resolved = await resolveComposition({
+      projectId: ep.descript_project_id!,
+      reported: readCompositionId(report),
+      clipTitle: clip.title,
+      sourceCompositionId: ep.descript_composition_id,
+      claimed: ep.clips
+        .filter((c) => c.clip_id !== clip.clip_id && c.descript_composition_id)
+        .map((c) => c.descript_composition_id!),
+    });
+    if (resolved.how !== 'reported') {
+      console.log(`[podcast.clip] composition resolved by ${resolved.how}: ${resolved.id ?? 'none'}`);
+    }
+    const compositionId = resolved.id ?? clip.descript_composition_id;
     next = {
       ...clip,
       status: 'assembled',

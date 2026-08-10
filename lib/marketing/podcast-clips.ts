@@ -607,11 +607,26 @@ export function readFinishReport(text: string): {
  * Descript's short id in a web url is the first five characters of the composition uuid, which is how
  * `web.descript.com/{project}/{short}` is built.
  */
+const UUID = '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}';
+
 export function readCompositionId(text: string): string | undefined {
-  const m = String(text ?? '').match(
-    /COMPOSITION\s*:?\s*([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i
-  );
-  return m ? m[1].toLowerCase() : undefined;
+  const t = String(text ?? '');
+
+  // The agent decorates its own labels on a whim. One cut reported `COMPOSITION: <uuid>` and the next
+  // reported `**COMPOSITION:** <uuid>`, and the second did not match, so the clip lost its composition
+  // id, the link fell back to the project (which opens the 56-minute source) and the finish button
+  // greyed out. Markdown is stripped and anything up to 40 non-uuid characters is allowed between the
+  // label and the id, so decoration cannot break this again.
+  const plain = t.replace(/[*_`]/g, '');
+  const labelled = plain.match(new RegExp(`COMPOSITION\\s*:?[^0-9a-f]{0,40}?(${UUID})`, 'i'));
+  if (labelled) return labelled[1].toLowerCase();
+
+  // Descript's agent also emits `<target compositionId="...">` around the composition it touched,
+  // which is machine-written rather than prose and therefore a better source when it is present.
+  const tagged = t.match(new RegExp(`compositionId\\s*=\\s*"(${UUID})"`, 'i'));
+  if (tagged) return tagged[1].toLowerCase();
+
+  return undefined;
 }
 
 /** The url that opens one composition rather than the project's default (the full episode). */

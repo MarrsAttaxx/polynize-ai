@@ -213,3 +213,60 @@ export function jobOutcome(job: DescriptJob): JobOutcome {
 export async function getJob(jobId: string) {
   return call<DescriptJob>(`/jobs/${jobId}`);
 }
+
+/**
+ * WHICH COMPOSITION A CLIP ACTUALLY LANDED IN, resolved against the project rather than trusted from
+ * the agent's prose.
+ *
+ * The report was the only source and it turned out to be a bad one: one cut reported
+ * `COMPOSITION: <uuid>` and the next `**COMPOSITION:** <uuid>`, so the id was captured intermittently
+ * on the agent's formatting whim. When it was missed, "Open in Descript" fell back to the project url,
+ * which opens the project's DEFAULT composition, i.e. the untouched 56-minute episode. Marrs kept
+ * landing on the long-form video and reasonably concluded the edit had not happened.
+ *
+ * The project's own composition list cannot be wrong, so it decides. In order of trust:
+ *   1. the reported id, but only if the project really has it;
+ *   2. an exact name match, since the agent is told to name the composition the clip's title;
+ *   3. the only composition that is neither the source nor already claimed by another clip.
+ *
+ * Returns undefined rather than guessing when none of those is unambiguous, because linking a clip to
+ * the wrong composition is worse than linking to nothing.
+ */
+export async function resolveComposition(args: {
+  projectId: string;
+  reported?: string;
+  clipTitle?: string;
+  /** The long-form episode composition, which is never the answer. */
+  sourceCompositionId?: string;
+  /** Composition ids other clips already own, so two clips cannot claim the same one. */
+  claimed?: string[];
+}): Promise<{ id?: string; how: 'reported' | 'name' | 'only-candidate' | 'unresolved' }> {
+  let comps: DescriptComposition[] = [];
+  try {
+    comps = (await getProject(args.projectId)).compositions ?? [];
+  } catch (err) {
+    console.error('[descript] resolveComposition could not read the project:', err);
+    // The reported id is still better than nothing when the project cannot be read.
+    return args.reported ? { id: args.reported, how: 'reported' } : { how: 'unresolved' };
+  }
+
+  const reported = args.reported?.toLowerCase();
+  if (reported && comps.some((c) => c.id.toLowerCase() === reported)) {
+    return { id: reported, how: 'reported' };
+  }
+
+  const claimed = new Set((args.claimed ?? []).map((c) => c.toLowerCase()));
+  const source = args.sourceCompositionId?.toLowerCase();
+  const candidates = comps.filter(
+    (c) => c.id.toLowerCase() !== source && !claimed.has(c.id.toLowerCase())
+  );
+
+  const title = args.clipTitle?.trim().toLowerCase();
+  if (title) {
+    const named = candidates.find((c) => c.name.trim().toLowerCase() === title);
+    if (named) return { id: named.id.toLowerCase(), how: 'name' };
+  }
+
+  if (candidates.length === 1) return { id: candidates[0].id.toLowerCase(), how: 'only-candidate' };
+  return { how: 'unresolved' };
+}

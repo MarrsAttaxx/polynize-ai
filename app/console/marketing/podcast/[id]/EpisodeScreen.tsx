@@ -810,12 +810,8 @@ export function EpisodeScreen({ episode, descriptConnected }: Props) {
                     type="button"
                     className={d.btn}
                     onClick={() => void cut(c, 'finish')}
-                    disabled={!c.descript_composition_id}
-                    title={
-                      c.descript_composition_id
-                        ? 'Add the title, captions and music bed to the cut'
-                        : 'This was cut before the composition was being recorded. Cut it again first.'
-                    }
+                    disabled={busyClip !== null}
+                    title="Add the title, captions and music bed to the cut"
                   >
                     {c.finish ? 'Redo title and captions' : 'Add title and captions'}
                   </button>
