@@ -1,3 +1,4 @@
+import { Fragment } from 'react';
 import Link from 'next/link';
 import { DraftingGrid } from '../../_components/DraftingGrid';
 import { TrackedLink } from '../../_components/TrackedLink';
@@ -89,16 +90,23 @@ export function StoryLanding({
         <section id="story" className={s.story} aria-label="The problem">
           <StoryPath beatCount={beats.length} />
           {beats.map((b, i) => (
-            <div key={i} data-beat className={`${s.beat} ${b.turn ? s.beatTurn : ''}`}>
-              {b.kicker && <div className={`${s.kicker} ${s.rise}`}>{b.kicker}</div>}
-              {/* No .rise here on purpose. StoryMotion animates beat lines on their
-                  own slower cue, and carrying both classes put the element in two GSAP
-                  batches at once, where overwrite killed one tween mid-flight and left
-                  the line stranded at opacity 0. */}
-              <p className={b.turn ? s.turnLine : s.beatLine}>{b.line}</p>
-              {b.sub && <p className={`${s.beatSub} ${s.riseLate}`}>{b.sub}</p>}
+            /* The figure is a SIBLING of the beat, not a child of it. Inside the beat
+               it read as a small caption to the text above; in its own band it is
+               centred in the gap between one thought and the next, which is where a
+               diagram belongs. It also keeps the checkpoint numeral on the copy, since
+               StoryPath measures [data-beat] to place them. */
+            <Fragment key={i}>
+              <div data-beat className={`${s.beat} ${b.turn ? s.beatTurn : ''}`}>
+                {b.kicker && <div className={`${s.kicker} ${s.rise}`}>{b.kicker}</div>}
+                {/* No .rise here on purpose. StoryMotion animates beat lines on their
+                    own slower cue, and carrying both classes put the element in two GSAP
+                    batches at once, where overwrite killed one tween mid-flight and left
+                    the line stranded at opacity 0. */}
+                <p className={b.turn ? s.turnLine : s.beatLine}>{b.line}</p>
+                {b.sub && <p className={`${s.beatSub} ${s.riseLate}`}>{b.sub}</p>}
+              </div>
               {b.figure && <BeatFigure kind={b.figure} />}
-            </div>
+            </Fragment>
           ))}
         </section>
 

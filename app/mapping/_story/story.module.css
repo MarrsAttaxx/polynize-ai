@@ -222,7 +222,9 @@
 /* border-top removed: .story::after above draws the full-bleed rule instead. */
 .story { position: relative; }
 .beat {
-  min-height: 78vh;
+  /* 78vh when the figure lived inside the beat. The figure now has its own band, so
+     the beat only has to hold its own copy. */
+  min-height: 58vh;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -323,141 +325,267 @@
   filter: drop-shadow(0 0 8px color-mix(in srgb, var(--mint) 35%, transparent));
 }
 
-/* ---------- Beat figures ----------
-   Four animations, one per beat. Neutral greys: mint is the route and the turn, and
-   amber and coral are spoken for by the matrix legend two sections down.
+/* ---------- Beat figures: the instrument panel ----------
+   Style set from Marrs's HUD reference, 10 Aug 2026. Mint on near black, concentric
+   arcs with gaps, dense graduations, segmented rings, bloom on the live elements.
 
-   MOTION POLICY, and the reason these are CSS keyframes rather than GSAP: the base
-   style IS a complete drawing, and animation exists only while .play is on the
-   container. No script, no observer, a stalled ticker and reduced motion all land on
-   something drawn. Nothing here rests at opacity 0. */
-.figure { width: 100%; max-width: 520px; margin: 44px auto 0; }
+   Each figure gets its own band between two blocks of copy, so it is centred in the gap
+   rather than tacked under a sub-line. That is the whole reason .figBand exists: the
+   figures used to sit inside .beat and read as small captions to the text above them.
+
+   PALETTE. Mint only, in five weights, plus the page background. Coral and amber are
+   never spent here, because the matrix legend two sections down asserts they mean gap
+   and developing, and an instrument bezel glowing amber would quietly contradict it.
+
+   BLOOM WITHOUT FILTERS. Glow is a wide faint stroke (.hudBloom) drawn under a thin
+   bright one. An SVG blur over a thousand-pixel group is expensive and animating inside
+   one is worse, so drop-shadow is reserved for the few elements that must actually burn.
+
+   MOTION POLICY, and the reason these are CSS keyframes rather than GSAP: the base style
+   IS a complete drawing, and animation exists only while .play is on the container. No
+   script, no observer, a stalled ticker and reduced motion all land on something drawn.
+   Nothing here rests at opacity 0 except .hudSweepBeam, which is a scanning beam rather
+   than content: absent is its correct resting state. */
+.figBand {
+  display: flex;
+  align-items: center;
+  min-height: 62vh;
+  padding: 12px 0 20px;
+  position: relative;
+  z-index: 1;
+  width: 100%;
+}
+.figure {
+  width: 100%;
+  --hud-0: color-mix(in srgb, var(--mint) 88%, white);
+  --hud-1: color-mix(in srgb, var(--mint) 72%, transparent);
+  --hud-2: color-mix(in srgb, var(--mint) 44%, transparent);
+  --hud-3: color-mix(in srgb, var(--mint) 30%, transparent);
+  --hud-4: color-mix(in srgb, var(--mint) 12%, transparent);
+  --hud-5: color-mix(in srgb, var(--mint) 6%, transparent);
+}
+.figWide { max-width: 1040px; margin: 0 auto; }
+/* Pulled right and held a little narrower, so the offset is actually visible inside a
+   1096px column rather than being swallowed by it. */
+.figRight { max-width: 880px; margin: 0 0 0 auto; }
 .figureSvg { display: block; width: 100%; height: auto; overflow: visible; }
 
-/* --- shared marks --- */
-.figVendor { fill: color-mix(in srgb, var(--text-3) 82%, transparent); stroke: none; }
-.figVendor path { stroke: color-mix(in srgb, var(--text-3) 82%, transparent); stroke-width: 1.6; }
-.figBadge {
-  fill: var(--bg);
-  stroke: color-mix(in srgb, var(--mint) 45%, var(--text-3));
+/* Depth planes. The reason the crowds read as rooms and not as icon rows. */
+.figDeep { opacity: 0.4; }
+.figMid { opacity: 0.68; }
+.figNear { opacity: 1; }
+
+/* ---- the kit ---- */
+.hudScene { fill: none; }
+.hudFrame { fill: none; stroke: var(--hud-2); stroke-width: 1.8; stroke-linecap: square; }
+.hudGrid { fill: none; stroke: var(--hud-5); stroke-width: 1; }
+.hudDisc { fill: color-mix(in srgb, var(--mint) 4%, var(--bg)); stroke: none; }
+.hudDiscDeep { fill: color-mix(in srgb, var(--mint) 7%, #05050a); stroke: none; }
+.hudTickFine { fill: none; stroke: var(--hud-4); stroke-width: 1; }
+.hudTick { fill: none; stroke: var(--hud-2); stroke-width: 1.8; }
+.hudSegDim { fill: var(--hud-4); stroke: none; }
+.hudSeg {
+  fill: var(--hud-1);
+  stroke: none;
+  filter: drop-shadow(0 0 4px color-mix(in srgb, var(--mint) 50%, transparent));
+}
+/* One class, used under both filled sectors and open arcs, so it must never set a fill:
+   a fill on an open arc paints the chord. */
+.hudBloom {
+  fill: none;
+  stroke: var(--hud-3);
+  stroke-width: 8;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+.hudRingThin { fill: none; stroke: var(--hud-3); stroke-width: 1.2; }
+.hudRingDash { fill: none; stroke: var(--hud-3); stroke-width: 1.4; stroke-dasharray: 3 9; }
+.hudLine {
+  fill: none;
+  stroke: var(--hud-0);
+  stroke-width: 3;
+  stroke-linecap: round;
+  filter: drop-shadow(0 0 5px color-mix(in srgb, var(--mint) 55%, transparent));
+}
+.hudLineDim { fill: none; stroke: var(--hud-2); stroke-width: 1.6; stroke-linecap: round; }
+.hudArcFaint { fill: none; stroke: var(--hud-4); stroke-width: 1.2; stroke-dasharray: 6 8; }
+.hudDot { fill: var(--hud-0); stroke: none; }
+.hudMark { fill: var(--hud-1); stroke: none; }
+.hudMark path { fill: none; stroke: var(--hud-1); stroke-width: 1.8; }
+.hudMarkDisc {
+  fill: color-mix(in srgb, var(--mint) 8%, var(--bg));
+  stroke: var(--hud-2);
   stroke-width: 1.6;
 }
-.figHuman {
-  fill: none;
-  stroke: color-mix(in srgb, var(--text-3) 78%, transparent);
-  stroke-width: 1.8;
-  stroke-linecap: round;
-}
-.figBot {
-  fill: none;
-  stroke: color-mix(in srgb, var(--mint) 55%, var(--text-3));
-  stroke-width: 1.8;
-  stroke-linecap: round;
-}
-.figBotEye { fill: color-mix(in srgb, var(--mint) 55%, var(--text-3)); stroke: none; }
-.figQuery {
-  fill: color-mix(in srgb, var(--text-3) 70%, transparent);
+.hudHuman { fill: none; stroke: var(--hud-1); stroke-width: 1.9; stroke-linecap: round; }
+.hudBot { fill: none; stroke: var(--hud-0); stroke-width: 1.9; stroke-linecap: round; }
+.hudQuery {
+  fill: var(--hud-1);
+  stroke: none;
   font-family: var(--font-space-grotesk), sans-serif;
-  font-size: 26px;
   font-weight: 600;
   text-anchor: middle;
 }
 
-/* the wash: a stagger far shorter than its own fade, so content wipes rather than pops */
-@keyframes figWash {
-  from { opacity: 0; transform: translateY(12px); }
+/* ---- beat 1: a navigation display that will not hold a fix ---- */
+.hudMesh { fill: none; stroke: var(--hud-3); stroke-width: 1.2; }
+.hudGlobe { fill: none; stroke: var(--hud-2); stroke-width: 1.3; }
+.hudHorizon { fill: none; stroke: var(--hud-1); stroke-width: 1.6; }
+.hudSide { fill: none; }
+.hudStake { transform-box: fill-box; transform-origin: 50% 100%; }
+@keyframes hudStakeIn {
+  from { opacity: 0; transform: translateY(-22px); }
   to { opacity: 1; transform: none; }
 }
-.figItem { transform-box: fill-box; transform-origin: 50% 50%; }
-.play .figItem {
-  animation: figWash 480ms cubic-bezier(0.4, 0, 0.2, 1) both;
-  animation-delay: calc(var(--i, 0) * 52ms);
+.play .hudStake {
+  animation: hudStakeIn 460ms cubic-bezier(0.2, 1.1, 0.4, 1) both;
+  animation-delay: calc(760ms + var(--i, 0) * 130ms);
 }
+@keyframes hudSpin { to { transform: rotate(360deg); } }
+.hudBezelDrift { transform-box: fill-box; transform-origin: 50% 50%; }
+.play .hudBezelDrift { animation: hudSpin 64s linear infinite; }
+/* Comes up sharp, holds, then loses lock. Ends faded, never gone, so the resting state
+   is a legible display rather than a hole in the page. */
+@keyframes hudLoseLock {
+  0% { opacity: 0; filter: blur(5px); }
+  20% { opacity: 1; filter: blur(0); }
+  68% { opacity: 1; filter: blur(0); }
+  100% { opacity: 0.5; filter: blur(2.4px); }
+}
+.play .hudWorld { animation: hudLoseLock 3.6s cubic-bezier(0.4, 0, 0.2, 1) both; }
 
-/* --- beat 1: AI World. Arrives as a clean survey drawing, then goes soft and faint.
-       Ends faded, never gone, so the resting state is still a legible map. --- */
-.figCoast {
+/* ---- beat 2: a scanner losing every contact it was tracking ---- */
+.hudTrack { fill: none; stroke: var(--hud-3); stroke-width: 1.4; }
+.hudDrop { transform-box: fill-box; transform-origin: 50% 50%; }
+@keyframes hudDrop {
+  0% { opacity: 0; transform: scale(0.82); }
+  14% { opacity: 1; transform: none; }
+  56% { opacity: 1; }
+  100% { opacity: 0.14; transform: scale(1.05); }
+}
+.play .hudDrop {
+  animation: hudDrop 3.4s cubic-bezier(0.4, 0, 0.2, 1) both;
+  animation-delay: calc(var(--i, 0) * 26ms);
+}
+/* A beam, not content. Absent is its correct resting state. */
+.hudSweepBeam {
   fill: none;
-  stroke: color-mix(in srgb, var(--text-3) 95%, transparent);
-  stroke-width: 2.6;
+  stroke: var(--hud-1);
+  stroke-width: 3;
+  opacity: 0;
+  filter: drop-shadow(0 0 10px color-mix(in srgb, var(--mint) 60%, transparent));
+}
+.hudSweep { transform-box: view-box; transform-origin: 96px 434px; }
+@keyframes hudSweep {
+  0% { transform: rotate(0deg); opacity: 0; }
+  8% { opacity: 0.9; }
+  86% { opacity: 0.9; }
+  100% { transform: rotate(90deg); opacity: 0; }
+}
+.play .hudSweep .hudSweepBeam { opacity: 1; }
+.play .hudSweep { animation: hudSweep 3.2s cubic-bezier(0.3, 0, 0.4, 1) both; }
+@keyframes hudDrain {
+  0%, 40% { opacity: 1; }
+  100% { opacity: 0.16; }
+}
+.play .hudDrain { animation: hudDrain 3.4s ease-in both; }
+
+/* ---- beat 3: an instrument that will not settle, beside a target nothing meets ---- */
+.hudRose { fill: var(--hud-3); }
+.hudRoseDim { fill: var(--hud-4); }
+.hudRoseFaint { fill: var(--hud-5); }
+.hudTarget {
+  fill: none;
+  stroke: var(--hud-2);
+  stroke-width: 1.8;
+  stroke-dasharray: 3 4;
+}
+@keyframes hudPulse {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
+}
+.play .hudTarget { animation: hudPulse 2.6s ease-in-out infinite; }
+.hudNeedleGlow {
+  fill: none;
+  stroke: var(--hud-3);
+  stroke-width: 9;
   stroke-linejoin: round;
 }
-.figContour {
-  fill: none;
-  stroke: color-mix(in srgb, var(--text-3) 62%, transparent);
-  stroke-width: 1.6;
+.hudNeedleN {
+  fill: var(--hud-0);
+  filter: drop-shadow(0 0 10px color-mix(in srgb, var(--mint) 80%, transparent));
 }
-@keyframes figWorldSoften {
-  0% { opacity: 0; filter: blur(3px); }
-  26% { opacity: 1; filter: blur(0); }
-  66% { opacity: 1; filter: blur(0); }
-  100% { opacity: 0.45; filter: blur(1.8px); }
-}
-.play .figWorld { animation: figWorldSoften 3s cubic-bezier(0.4, 0, 0.2, 1) both; }
-
-/* --- beat 2: bots appear among the people, then the whole field evaporates. --- */
-.figPuff { transform-box: fill-box; transform-origin: 50% 50%; }
-@keyframes figPuff {
-  0% { opacity: 0; transform: translateY(10px) scale(0.86); }
-  20% { opacity: 1; transform: none; }
-  56% { opacity: 1; transform: none; filter: blur(0); }
-  100% { opacity: 0.3; transform: translateY(-14px) scale(1.06); filter: blur(1.4px); }
-}
-[data-fig='ambiguity'].play .figPuff {
-  animation: figPuff 2.9s cubic-bezier(0.4, 0, 0.2, 1) both;
-  animation-delay: calc(var(--i, 0) * 62ms);
-}
-
-/* --- beat 3: a compass that never settles, and bars that never reach the line. --- */
-.figRing { fill: none; stroke: color-mix(in srgb, var(--text-3) 34%, transparent); stroke-width: 1.3; }
-.figTick { stroke: color-mix(in srgb, var(--text-3) 42%, transparent); stroke-width: 1.3; }
-.figRose { fill: color-mix(in srgb, var(--text-3) 60%, transparent); }
-.figRoseDim { fill: color-mix(in srgb, var(--text-3) 26%, transparent); }
-.figNeedleN { fill: color-mix(in srgb, var(--text-3) 96%, transparent); }
-.figNeedleS { fill: color-mix(in srgb, var(--text-3) 40%, transparent); }
-.figHub { fill: var(--bg); stroke: color-mix(in srgb, var(--text-3) 55%, transparent); stroke-width: 1.4; }
-.figNeedle { transform-box: fill-box; transform-origin: 50% 50%; }
-@keyframes figHunt {
-  0% { transform: rotate(-62deg); }
-  22% { transform: rotate(28deg); }
-  44% { transform: rotate(-34deg); }
-  66% { transform: rotate(19deg); }
-  84% { transform: rotate(-14deg); }
-  100% { transform: rotate(-24deg); }
-}
-.play .figNeedle { animation: figHunt 3.2s cubic-bezier(0.4, 0, 0.2, 1) both; }
-
-/* the benchmark is a line, never a number */
-.figBench {
-  fill: none;
-  stroke: color-mix(in srgb, var(--text-3) 78%, transparent);
+.hudNeedleS { fill: var(--hud-3); }
+.hudHub {
+  fill: color-mix(in srgb, var(--mint) 8%, var(--bg));
+  stroke: var(--hud-2);
   stroke-width: 1.8;
-  stroke-dasharray: 7 6;
 }
-.figAxis { fill: none; stroke: color-mix(in srgb, var(--text-3) 34%, transparent); stroke-width: 1.4; }
-.figGrow {
-  fill: color-mix(in srgb, var(--text-3) 40%, transparent);
+.hudGlass {
+  fill: none;
+  stroke: color-mix(in srgb, var(--text) 11%, transparent);
+  stroke-width: 7;
+  stroke-linecap: round;
+}
+.hudNeedle {
   transform-box: fill-box;
-  transform-origin: 50% 100%;
+  transform-origin: 50% 50%;
+  transform: rotate(-22deg);
 }
-@keyframes figGrow {
-  0% { transform: scaleY(0.04); }
-  72% { transform: scaleY(1.08); }
-  100% { transform: scaleY(1); }
+@keyframes hudHunt {
+  0% { transform: rotate(-62deg); }
+  16% { transform: rotate(36deg); }
+  32% { transform: rotate(-25deg); }
+  48% { transform: rotate(44deg); }
+  64% { transform: rotate(-12deg); }
+  80% { transform: rotate(29deg); }
+  100% { transform: rotate(-19deg); }
 }
-.play .figGrow {
-  animation: figGrow 900ms cubic-bezier(0.4, 0, 0.2, 1) both;
-  animation-delay: calc(600ms + var(--i, 0) * 110ms);
+.play .hudNeedle { animation: hudHunt 4.6s cubic-bezier(0.45, 0, 0.3, 1) infinite alternate both; }
+
+.hudChart { fill: none; }
+.hudGapLead { fill: none; stroke: var(--hud-4); stroke-width: 1; stroke-dasharray: 2 6; }
+.hudAxis { fill: none; stroke: var(--hud-2); stroke-width: 1.8; }
+.hudBarDim { fill: var(--hud-5); stroke: none; }
+.hudBarLit {
+  fill: var(--hud-2);
+  stroke: none;
+  filter: drop-shadow(0 0 3px color-mix(in srgb, var(--mint) 30%, transparent));
+}
+.hudTargetLine {
+  fill: none;
+  stroke: var(--hud-0);
+  stroke-width: 2.4;
+  stroke-dasharray: 12 8;
+}
+.hudTargetCap { fill: none; stroke: var(--hud-0); stroke-width: 2.4; }
+.hudBar { transform-box: fill-box; transform-origin: 50% 100%; }
+@keyframes hudBarGrow {
+  from { transform: scaleY(0.04); opacity: 0; }
+  to { transform: none; opacity: 1; }
+}
+.play .hudBar {
+  animation: hudBarGrow 900ms cubic-bezier(0.2, 0.9, 0.3, 1) both;
+  animation-delay: calc(var(--i, 0) * 78ms);
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .play .figItem,
-  .play .figWorld,
-  [data-fig='ambiguity'].play .figPuff,
-  .play .figNeedle,
-  .play .figGrow {
-    animation: none;
-  }
+/* ---- beat 4: a wall of dials, none of them resolving ---- */
+.hudDial { transform-box: fill-box; transform-origin: 50% 50%; }
+@keyframes hudDialIn {
+  from { opacity: 0; transform: scale(0.9); }
+  to { opacity: 1; transform: none; }
+}
+/* Each one settles at a different opacity and keeps breathing, so the panel never
+   reaches a state you could call an answer. */
+@keyframes hudDialBreathe {
+  0%, 100% { opacity: 0.72; }
+  50% { opacity: 1; }
+}
+.play .hudDial {
+  animation:
+    hudDialIn 520ms cubic-bezier(0.2, 1, 0.4, 1) both,
+    hudDialBreathe 3.4s ease-in-out infinite;
+  animation-delay: calc(var(--i, 0) * 78ms), calc(var(--i, 0) * 233ms);
 }
 
 /* ---------- The route ----------
@@ -944,6 +1072,9 @@
   .story::before { transition: none; opacity: 0; }
 }
 @media (max-width: 900px) {
+  /* The right-placed figure has nowhere to be offset to once the column is this
+     narrow, so it goes full width like the others. */
+  .figRight { max-width: 100%; margin: 0 auto; }
   .stages { grid-template-columns: repeat(2, 1fr); }
   .stages3 { grid-template-columns: 1fr; }
   .cards3 { grid-template-columns: 1fr; }
@@ -952,7 +1083,6 @@
   .artSvg { max-width: 240px; }
 }
 @media (max-width: 680px) {
-  .figure { max-width: 320px; margin-top: 26px; }
   .titleGlyph { width: 56px; margin-bottom: 16px; }
   /* 18px put the headline hard against both edges on a phone. */
   .page { padding: 0 26px 32px; }
@@ -963,8 +1093,9 @@
   .stages { grid-template-columns: 1fr; }
   .walkItem { gap: 14px; }
   .proof, .finalCard { padding: 32px 22px; }
-  /* Shorter beats on a phone: 78vh of viewport is a lot of thumb travel. */
-  .beat { min-height: 66vh; padding: 36px 0; }
+  /* Shorter beats on a phone: a full screen each is a lot of thumb travel. */
+  .beat { min-height: 48vh; padding: 36px 0; }
+  .figBand { min-height: 46vh; }
   .beatTurn { min-height: 72vh; }
   .matrixScroll { overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: 14px; }
   .matrixImg { min-width: 900px; }
