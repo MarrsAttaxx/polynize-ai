@@ -12,10 +12,21 @@
  * When a real anonymised export exists, swap `cellFor` for a lookup and the rest
  * of the component keeps working unchanged.
  *
- * Scenarios use the cyber security risk set, which Marrs judged more relatable
- * than the delivery/BA set the deck shipped with. Capability labels are trimmed to
- * fit a ~54px column without breaking mid-word, so a few are shorter than the
- * product's own wording.
+ * Scenarios trace ONE commercial process end to end: research the account, draft the
+ * proposal, price the work, pitch it, then turn the win into a campaign. That is
+ * deliberate and it is the point of the whole figure. The page argues that AI is
+ * ambiguous because nobody can see what their people can actually do with it, so the
+ * matrix has to show a process a reader recognises being measured column by column,
+ * not five unrelated exercises. It replaced a cyber security set for that reason.
+ *
+ * Every capability is about the USE of AI in that step, never the step in the
+ * abstract. "Source Checking" is whether they verify what the model handed back;
+ * "Voice Control" is whether the draft still sounds like the firm. A label that would
+ * read the same on a pre-AI competency framework does not belong here.
+ *
+ * Capability labels are trimmed to fit a ~54px column without breaking mid-word, so a
+ * few are shorter than the product's own wording. Keep new ones under about 20
+ * characters.
  */
 
 /** Capability chip colour family. */
@@ -39,47 +50,47 @@ export type MatrixUser = {
 export const MATRIX_SCENARIOS: Scenario[] = [
   {
     tag: 'Scenario 1',
-    name: 'Spotting a cyber attack',
+    name: 'Researching a new account',
     cat: 'analytic',
     caps: [
-      ['Threat Evaluation', 'Incident Deduction', 'Focused Response'],
-      ['Detection Accuracy', 'Log Perception', null],
+      ['Prompt Framing', 'Source Checking', 'Signal vs Noise'],
+      ['Brief Synthesis', 'Claim Verification', null],
     ],
   },
   {
     tag: 'Scenario 2',
-    name: 'Vulnerability analysis brief',
+    name: 'Drafting the proposal',
     cat: 'functional',
     caps: [
-      ['Priority Recall', 'Briefing Clarity', 'Plain Language'],
-      ['Criticality', 'Risk Synthesis', null],
+      ['Context Loading', 'Draft Direction', 'Voice Control'],
+      ['Scope Accuracy', 'Editing Judgment', null],
     ],
   },
   {
     tag: 'Scenario 3',
-    name: 'Communicating risk to leadership',
-    cat: 'collaboration',
+    name: 'Pricing and scoping the work',
+    cat: 'analytic',
     caps: [
-      ['Executive Clarity', 'Business Impact', 'Reading the Room'],
-      ['Risk Persuasion', 'Concise Risk Summary', null],
+      ['Estimate Reasoning', 'Assumption Testing', 'Model Scepticism'],
+      ['Risk Framing', 'Numbers Discipline', null],
     ],
   },
   {
     tag: 'Scenario 4',
-    name: 'Selecting cyber controls',
-    cat: 'analytic',
+    name: 'Pitching it to the client',
+    cat: 'collaboration',
     caps: [
-      ['Framework Recall', 'Control Evaluation', 'Analytical Deduction'],
-      ['Integrated Rationale', 'Open Evaluation', null],
+      ['Objection Handling', 'Live Reframing', 'Reading the Room'],
+      ['Evidence Recall', 'Plain Language', null],
     ],
   },
   {
     tag: 'Scenario 5',
-    name: 'Incident report escalation',
+    name: 'Turning the win into a campaign',
     cat: 'functional',
     caps: [
-      ['Standards Recall', 'Board Report Clarity', 'Board Structure'],
-      ['Incident Detail', 'Open Board Reporting', null],
+      ['Audience Framing', 'Channel Judgment', 'Brand Consistency'],
+      ['Message Testing', 'Output Triage', null],
     ],
   },
 ];

@@ -163,7 +163,7 @@ export const storyContent: MappingContent = {
   matrixImage: {
     ...mappingContent.matrixImage,
     caption:
-      'An example capability map. Every person against every part of the work, scored and coloured, with the gaps showing up plainly. Select any cell to see how that capability was read. The figures shown are illustrative.',
+      'An example capability map, tracking one process end to end: research the account, draft the proposal, price the work, pitch it, then turn the win into a campaign. Every person against every capability that process asks of them, scored and coloured, with the gaps showing up plainly. Select any cell to see how it was read. The figures shown are illustrative.',
   },
 
   /**

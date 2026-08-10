@@ -46,15 +46,27 @@ gsap.registerPlugin(ScrollTrigger);
 
 const useIsomorphicLayoutEffect = typeof window !== 'undefined' ? useLayoutEffect : useEffect;
 
+/** Every element the reveals touch. Shared by the tweens and the watchdog below. */
+const HIDDEN_SELECTOR = () =>
+  `.${s.rise}, .${s.riseLate}, .${s.riseScale}, .${s.beatLine}, .${s.turnLine}, [data-fig]`;
+
 export function StoryMotion() {
   useIsomorphicLayoutEffect(() => {
     // Reduced motion: do nothing at all, and in particular do not hide anything. Every
     // element keeps its stylesheet value, which is the finished state.
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 
-    const ctx = gsap.context(() => {
+    /**
+     * The context is created empty and filled inside a try/catch, which is not
+     * defensive habit but a specific hole this design opens. Hiding is the FIRST thing
+     * that happens; if anything after it throws, the page is left blank and the
+     * liveness failsafe below cannot help, because frames are being served perfectly
+     * well. revert() undoes the hiding along with everything else.
+     */
+    const ctx = gsap.context(() => {});
+    const build = () => {
       const SPINE = `.${s.beatLine}, .${s.turnLine}`;
-      const ALL = `.${s.rise}, .${s.riseLate}, .${s.riseScale}, ${SPINE}, [data-fig]`;
+      const ALL = HIDDEN_SELECTOR();
 
       // Hold everything back. Inside the context, so ctx.revert() puts it all back.
       gsap.set(ALL, { opacity: 0 });
@@ -148,7 +160,17 @@ export function StoryMotion() {
           if (s.play) document.querySelectorAll('[data-fig]').forEach((el) => el.classList.add(s.play));
         },
       });
-    });
+    };
+
+    try {
+      ctx.add(build);
+    } catch (err) {
+      // The hole this closes: hiding is the first thing build() does, so a throw
+      // anywhere after it leaves the page blank while frames are served perfectly well,
+      // which is exactly the case the liveness failsafe below cannot detect.
+      ctx.revert();
+      throw err;
+    }
 
     /**
      * Liveness failsafe, and it is not theoretical: a reveal tween applies its start
@@ -168,9 +190,48 @@ export function StoryMotion() {
       if (!ticked) ctx.revert();
     }, 1200);
 
+    /**
+     * Watchdog for the one failure this design cannot otherwise survive: ScrollTrigger
+     * builds its triggers without throwing, but never fires them, because scroll events
+     * are not delivered. Frames are being served, so the liveness failsafe stays quiet,
+     * and the reader scrolls through a blank page until the bottom sweep rescues it.
+     *
+     * The check is deliberately not a second animation system. It only ever reveals an
+     * element that is ALREADY past its trigger line, which is a state ScrollTrigger
+     * should have resolved on its own, so when everything is working this never acts.
+     *
+     * It reads el.style.opacity, the inline value GSAP writes, rather than
+     * getComputedStyle, so polling costs no style recalculation. Each element leaves the
+     * pending set once revealed, and the interval stops when the set empties.
+     */
+    const pending = new Set<HTMLElement>(
+      Array.from(document.querySelectorAll<HTMLElement>(HIDDEN_SELECTOR()))
+    );
+    const watchdog = window.setInterval(() => {
+      const stuck: HTMLElement[] = [];
+      for (const el of pending) {
+        if (el.style.opacity !== '0') {
+          pending.delete(el);
+          continue;
+        }
+        if (el.getBoundingClientRect().top < window.innerHeight * 0.55) {
+          stuck.push(el);
+          pending.delete(el);
+        }
+      }
+      if (stuck.length) {
+        gsap.to(stuck, { opacity: 1, duration: 0.5, overwrite: 'auto' });
+        if (s.play) {
+          stuck.forEach((el) => el.hasAttribute('data-fig') && el.classList.add(s.play));
+        }
+      }
+      if (!pending.size) window.clearInterval(watchdog);
+    }, 900);
+
     return () => {
       cancelAnimationFrame(raf);
       window.clearTimeout(failsafe);
+      window.clearInterval(watchdog);
       ctx.revert();
     };
   }, []);
