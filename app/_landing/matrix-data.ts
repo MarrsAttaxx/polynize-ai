@@ -24,9 +24,17 @@
  * "Voice Control" is whether the draft still sounds like the firm. A label that would
  * read the same on a pre-AI competency framework does not belong here.
  *
- * Capability labels are trimmed to fit a ~54px column without breaking mid-word, so a
- * few are shorter than the product's own wording. Keep new ones under about 20
- * characters.
+ * THE CAPABILITIES ARE NO LONGER DRAWN ON THE GRID (Marrs, 10 Aug 2026). The matrix
+ * used to print all five as chips above each scenario and score every one of them per
+ * person, which is 200 cells and reads as a spreadsheet you have to decode before the
+ * point lands. It is now one cell per person per scenario. The capabilities did not go
+ * away: they are what the cell is a reading OF, and they are listed with their
+ * explanations when a cell is opened. Keep writing them, keep them under about 20
+ * characters, and keep them about the USE of AI in that step.
+ *
+ * The scenario names carry the tool now, because the page's argument is about what
+ * people can do with AI and a scenario that does not name one is measuring something
+ * else.
  */
 
 /** Capability chip colour family. */
@@ -50,7 +58,7 @@ export type MatrixUser = {
 export const MATRIX_SCENARIOS: Scenario[] = [
   {
     tag: 'Work scenario 1',
-    name: 'Researching a new account',
+    name: 'Researching a new account using Gemini',
     cat: 'analytic',
     caps: [
       ['Prompt Framing', 'Source Checking', 'Signal vs Noise'],
@@ -59,7 +67,7 @@ export const MATRIX_SCENARIOS: Scenario[] = [
   },
   {
     tag: 'Work scenario 2',
-    name: 'Drafting the proposal',
+    name: 'Drafting the proposal using Claude',
     cat: 'functional',
     caps: [
       ['Context Loading', 'Draft Direction', 'Voice Control'],
@@ -68,7 +76,7 @@ export const MATRIX_SCENARIOS: Scenario[] = [
   },
   {
     tag: 'Work scenario 3',
-    name: 'Pricing and scoping the work',
+    name: 'Pricing and scoping the work using Copilot',
     cat: 'analytic',
     caps: [
       ['Estimate Reasoning', 'Assumption Testing', 'Model Scepticism'],
@@ -77,7 +85,7 @@ export const MATRIX_SCENARIOS: Scenario[] = [
   },
   {
     tag: 'Work scenario 4',
-    name: 'Pitching it to the client',
+    name: 'Pitching it to the client on Fireflies.ai',
     cat: 'collaboration',
     caps: [
       ['Objection Handling', 'Live Reframing', 'Reading the Room'],
@@ -86,7 +94,7 @@ export const MATRIX_SCENARIOS: Scenario[] = [
   },
   {
     tag: 'Work scenario 5',
-    name: 'Turning the win into a campaign',
+    name: 'Turning the win into a campaign using ChatGPT',
     cat: 'functional',
     caps: [
       ['Audience Framing', 'Channel Judgment', 'Brand Consistency'],
@@ -149,6 +157,26 @@ export const CAP_GLOSS: Record<string, string> = {
   'Message Testing': 'Putting the claim in front of someone before it goes out.',
   'Output Triage': 'Deciding fast which of ten generated options is worth finishing.',
 };
+
+/**
+ * One reading per person per scenario. Four states, and the fourth matters: a person
+ * who has not completed a scenario shows nothing rather than a zero, because an empty
+ * cell is honest and a zero is a claim.
+ */
+export type ScenarioState = 'strong' | 'developing' | 'gap' | 'none';
+
+/**
+ * Deterministic, so the picture is stable between renders and server and client agree.
+ * Weighted so the field reads as a real team: mostly moving, a meaningful minority
+ * stuck, a few not yet measured.
+ */
+export function scenarioCell(u: number, j: number): ScenarioState {
+  const seed = (u * 37 + j * 19 + 7) % 100;
+  if ((u * 3 + j * 5) % 11 === 4) return 'none';
+  if (seed < 40) return 'strong';
+  if (seed < 74) return 'developing';
+  return 'gap';
+}
 
 /** Cell is either a score ('sc') or an uplift percentage ('up'). */
 export type Cell = { t: 'sc' | 'up'; v: number };

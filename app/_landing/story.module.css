@@ -1096,6 +1096,41 @@
 }
 .stagesLine { margin-top: 24px; font-size: 14px; color: var(--text-3); }
 
+/* ---------- One bottleneck, then the organisation ----------
+   Three widening bars. The width is the argument: the method is identical at every
+   scope, only the amount of the organisation inside it changes. */
+.scaleRun {
+  list-style: none;
+  margin: 0 auto 30px;
+  padding: 0;
+  max-width: 620px;
+  display: grid;
+  gap: 14px;
+}
+.scaleStep {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 18px;
+}
+.scaleBar {
+  height: 12px;
+  border-radius: 6px;
+  /* Each step is wider than the one above it, and brighter. */
+  width: calc(38% + var(--i, 0) * 31%);
+  justify-self: start;
+  background: color-mix(in srgb, var(--mint) calc(26% + var(--i, 0) * 26%), transparent);
+  box-shadow: 0 0 18px color-mix(in srgb, var(--mint) calc(8% + var(--i, 0) * 12%), transparent);
+}
+.scaleLabel {
+  font-family: var(--font-space-grotesk), sans-serif;
+  font-size: 14.5px;
+  font-weight: 500;
+  color: var(--text-2);
+  text-align: right;
+  white-space: nowrap;
+}
+
 /* ---------- Proof ---------- */
 /* Centred ABOVE the eyebrow, not beside it. inline-flex put it on the same line as the
    inline-block eyebrow, so the mark sat off to the left of the word PROOF. It takes the

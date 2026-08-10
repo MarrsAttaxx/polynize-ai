@@ -48,6 +48,7 @@ export function StoryLanding({
   artefactsIntro,
   artefactsFootnote,
   inputs,
+  scale,
   surface,
 }: {
   content: MappingContent;
@@ -61,6 +62,12 @@ export function StoryLanding({
   artefactsIntro: string;
   artefactsFootnote: string;
   inputs: Silo[];
+  /**
+   * Optional. Sits between the result and the proof, and says the thing a reader is
+   * thinking the moment they finish reading the result: this was one team and one
+   * process, does it go wider.
+   */
+  scale?: ScaleBlock;
   surface: string;
 }) {
   return (
@@ -149,9 +156,14 @@ export function StoryLanding({
               <p key={i}>{p}</p>
             ))}
           </div>
+          {/* data-veil-stop: the focus veil releases here. Everything from the result
+              down is reference material you read across rather than one thought at a
+              time, and softening it fights the reader. See FocusVeil. */}
           {/* No caption underneath. The result explains itself and the paragraph that
               used to sit here was a second explanation nobody read. */}
-          <figure className={`${s.matrixFigure} ${s.riseScale}`}>{result}</figure>
+          <figure className={`${s.matrixFigure} ${s.riseScale}`} data-veil-stop>
+            {result}
+          </figure>
           <div className={s.cards3}>
             {c.whatItIs.cards.map((card) => (
               <div key={card.title} className={`${s.card} ${s.rise}`}>
@@ -220,7 +232,10 @@ export function StoryLanding({
           <p className={s.walkFootnote}>{artefactsFootnote}</p>
         </Section>
 
-        {/* 6. Proof */}
+        {/* 6. From one map to a model of the whole organisation */}
+        {scale && <ScaleSection scale={scale} />}
+
+        {/* 7. Proof */}
         <section className={s.section}>
           <div className={`${s.proof} ${s.rise}`}>
             {/* The client is never named in the copy, per the standing rule. The mark
@@ -239,7 +254,7 @@ export function StoryLanding({
           </div>
         </section>
 
-        {/* 7. Final CTA. "Where it leads" came off: the diagnosis is the point, and
+        {/* 8. Final CTA. "Where it leads" came off: the diagnosis is the point, and
             a second forward-looking section before the CTA blunted it. */}
         <section className={s.section}>
           <div className={`${s.finalCard} ${s.rise}`}>
@@ -261,6 +276,46 @@ export function StoryLanding({
         <SiteFooter />
       </div>
     </>
+  );
+}
+
+/**
+ * One bottleneck, then the whole organisation.
+ *
+ * A reader who has just understood the result immediately wants to know whether it goes
+ * wider, and if the page does not answer it there they leave assuming it does not. The
+ * steps are drawn as a widening run rather than a list, because the claim is that the
+ * METHOD does not change as the scope grows, only how much is in it.
+ */
+export type ScaleBlock = {
+  eyebrow: string;
+  h2: string;
+  paras: string[];
+  /** Three widening scopes, smallest first. */
+  steps: string[];
+};
+
+function ScaleSection({ scale }: { scale: ScaleBlock }) {
+  return (
+    <section className={s.section}>
+      <div className={`${s.sectionHead} ${s.rise}`}>
+        <div className={s.eyebrow}>{scale.eyebrow}</div>
+        <h2 className={s.h2}>{scale.h2}</h2>
+      </div>
+      <ol className={`${s.scaleRun} ${s.rise}`}>
+        {scale.steps.map((step, i) => (
+          <li key={step} className={s.scaleStep} style={{ ['--i' as string]: i }}>
+            <span className={s.scaleBar} aria-hidden="true" />
+            <span className={s.scaleLabel}>{step}</span>
+          </li>
+        ))}
+      </ol>
+      <div className={`${s.prose} ${s.rise}`}>
+        {scale.paras.map((p, i) => (
+          <p key={i}>{p}</p>
+        ))}
+      </div>
+    </section>
   );
 }
 

@@ -29,14 +29,12 @@
    timer in CapabilityMatrix clears it even if the observer never fires. */
 .corner,
 .scn,
-.cap,
 .user,
 .cell {
   transition: opacity 0.42s ease;
 }
 .armed:not(.on) .corner,
 .armed:not(.on) .scn,
-.armed:not(.on) .cap,
 .armed:not(.on) .user,
 .armed:not(.on) .cell {
   opacity: 0;
@@ -44,7 +42,6 @@
 /* Never hold a focused control invisible. */
 .grid:focus-within .corner,
 .grid:focus-within .scn,
-.grid:focus-within .cap,
 .grid:focus-within .user,
 .grid:focus-within .cell {
   opacity: 1;
@@ -74,7 +71,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
+  gap: 7px;
   padding: 2px 4px 6px;
 }
 .scnTag {
@@ -89,6 +86,7 @@
   white-space: nowrap;
 }
 .scnName {
+  hyphens: none;
   font-size: 8.5px;
   letter-spacing: 0.05em;
   text-transform: uppercase;
@@ -98,42 +96,10 @@
   font-weight: 600;
 }
 
-.cap {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  font-size: 7px;
-  letter-spacing: 0;
-  text-transform: uppercase;
-  line-height: 1.15;
-  font-weight: 600;
-  border-radius: 3px;
-  padding: 3px 2px;
-  min-height: 24px;
-  /* Columns are only ~54px, so labels must wrap inside the chip rather than spill
-     over the neighbour. break-word (not anywhere) keeps whole words together and
-     splits only when a single word genuinely cannot fit. */
-  overflow: hidden;
-  overflow-wrap: break-word;
-}
-.analytic {
-  color: var(--amber);
-  background: color-mix(in srgb, var(--amber) 14%, transparent);
-  border: 1px solid color-mix(in srgb, var(--amber) 35%, transparent);
-}
-.functional {
-  color: var(--mint);
-  background: color-mix(in srgb, var(--mint) 14%, transparent);
-  border: 1px solid color-mix(in srgb, var(--mint) 35%, transparent);
-}
-.collaboration {
-  color: color-mix(in srgb, var(--mint) 70%, #ffffff);
-  background: color-mix(in srgb, var(--mint) 10%, transparent);
-  border: 1px solid color-mix(in srgb, var(--mint) 28%, transparent);
-}
+/* The capability chips that used to sit above every scenario were removed on
+   10 Aug 2026. They are listed inside the opened cell now (.mCaps). See the component
+   for why: fifteen columns of chips is a spreadsheet, five columns is a picture. */
 
-/* ---------- User rows ---------- */
 .user {
   display: flex;
   flex-direction: column;
@@ -167,9 +133,9 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 23px;
-  border-radius: 3px;
-  font-size: 13px;
+  min-height: 42px;
+  border-radius: 5px;
+  font-size: 17px;
   line-height: 1;
   font-weight: 700;
   white-space: nowrap;
@@ -185,7 +151,7 @@
 .cell:hover,
 .cell:focus-visible {
   filter: brightness(1.2);
-  transform: scale(1.35);
+  transform: scale(1.12);
   box-shadow: 0 0 0 1.5px var(--mint), 0 8px 20px rgba(0, 0, 0, 0.6);
   position: relative;
   z-index: 3;
@@ -202,38 +168,49 @@
 .empty:hover { filter: none; transform: none; }
 
 /* Solid score cells */
-.score.t_g { background: var(--mint); color: #06231a; }
-.score.t_t { background: color-mix(in srgb, var(--mint) 80%, #0b3a2c); color: #062620; }
-.score.t_a { background: var(--amber); color: #2e2607; }
-.score.t_o { background: color-mix(in srgb, var(--amber) 58%, var(--coral)); color: #2c1605; }
-.score.t_r { background: var(--coral); color: #2a0d09; }
+/* One reading per person per scenario, in four states. Colour says how far along, the
+   arrow says direction and survives colour blindness, and empty means not completed
+   rather than zero, because an empty cell is a fact and a zero is a claim. */
+.sStrong {
+  background: var(--mint);
+  color: #06231a;
+  border-color: var(--mint);
+}
+.sDeveloping {
+  background: var(--amber);
+  color: #2e2607;
+  border-color: var(--amber);
+}
+.sGap {
+  background: var(--coral);
+  color: #2a0d09;
+  border-color: var(--coral);
+}
+.sNone {
+  background: var(--bg-deep);
+  border: 1px solid var(--border-soft);
+  cursor: default;
+}
+.sNone:hover { filter: none; transform: none; box-shadow: none; }
 
-/* Outlined uplift cells */
-.uplift.t_g {
-  border-color: color-mix(in srgb, var(--mint) 62%, transparent);
-  background: color-mix(in srgb, var(--mint) 11%, transparent);
+/* The capability list inside an opened cell: where the chips went. */
+.mCaps {
+  margin: 0 0 22px;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 11px;
+}
+.mCaps li { display: grid; gap: 3px; }
+.mCapName {
+  font-family: var(--font-inter), monospace;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
   color: var(--mint);
 }
-.uplift.t_t {
-  border-color: color-mix(in srgb, var(--mint) 50%, transparent);
-  background: color-mix(in srgb, var(--mint) 9%, transparent);
-  color: color-mix(in srgb, var(--mint) 88%, #ffffff);
-}
-.uplift.t_a {
-  border-color: color-mix(in srgb, var(--amber) 55%, transparent);
-  background: color-mix(in srgb, var(--amber) 10%, transparent);
-  color: var(--amber);
-}
-.uplift.t_o {
-  border-color: color-mix(in srgb, var(--amber) 40%, var(--coral));
-  background: color-mix(in srgb, var(--coral) 9%, transparent);
-  color: color-mix(in srgb, var(--amber) 55%, var(--coral));
-}
-.uplift.t_r {
-  border-color: color-mix(in srgb, var(--coral) 58%, transparent);
-  background: color-mix(in srgb, var(--coral) 10%, transparent);
-  color: var(--coral);
-}
+.mCapGloss { font-size: 13.5px; line-height: 1.5; color: var(--text-2); }
 
 /* ---------- Cell detail ---------- */
 .overlay {
@@ -250,7 +227,9 @@
 .modal {
   position: relative;
   width: 100%;
-  max-width: 460px;
+  max-width: 480px;
+  max-height: 86vh;
+  overflow-y: auto;
   border: 1px solid var(--border);
   border-radius: 16px;
   background: var(--surface);
@@ -400,6 +379,25 @@
   border-left: 1px solid var(--border-soft);
   padding-left: 26px;
 }
+
+/* The capability list inside an opened cell: where the chips went. */
+.mCaps {
+  margin: 0 0 22px;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 11px;
+}
+.mCaps li { display: grid; gap: 3px; }
+.mCapName {
+  font-family: var(--font-inter), monospace;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--mint);
+}
+.mCapGloss { font-size: 13.5px; line-height: 1.5; color: var(--text-2); }
 
 /* ---------- Cell detail: an explanation, not a fake report ----------
    The four stats (CQ, rank, percentile, time) came out on 10 Aug 2026. They were

@@ -190,3 +190,24 @@ export const storyContent: MappingContent = {
 };
 
 export const storyInputs = INPUTS;
+
+/**
+ * The section between the matrix and the proof.
+ *
+ * It answers the question a reader has the moment they finish reading the matrix: that
+ * was one team against one process, does this go wider. Marrs asked for it on 10 Aug
+ * 2026 and he is right that its absence was reading as an answer.
+ *
+ * The claim is deliberately about the METHOD being unchanged rather than about size.
+ * "We can do it bigger" is a capacity boast; "nothing about the process changes" is the
+ * thing that makes it believable, and it is also true.
+ */
+export const storyScale = {
+  eyebrow: 'At scale',
+  h2: 'This scales to the whole organisation.',
+  steps: ['One process', 'One team', 'Every team'],
+  paras: [
+    'What you have just read is one team against one process. The same method runs wider: more roles, more of the work, the same benchmark underneath all of it. Nothing about the process changes, only how much of the organisation is inside it.',
+    'That wider version is capability modelling. Mapping is the diagnostic step inside it, and it comes first on purpose, because a model of an entire organisation built before the method has been proven on a single piece of real work is a very expensive guess.',
+  ],
+};

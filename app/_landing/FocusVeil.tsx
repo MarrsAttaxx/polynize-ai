@@ -19,11 +19,18 @@ import s from './story.module.css';
  * Four stacked layers, each blurring harder over a narrower band, ramp the radius
  * itself. That is the whole reason for the nested divs.
  *
- * IT MUST GET OUT OF THE WAY AT BOTH ENDS, and both are real failures rather than
+ * IT MUST GET OUT OF THE WAY AT THREE POINTS, and each is a real failure rather than
  * polish. At the top, the hero's primary CTA sits inside the bottom half of the first
  * screen, so a veil that is on at scroll 0 blurs the button you most want pressed. At
  * the bottom, the last screenful IS the final CTA and the footer, and a veil that stays
  * on leaves them permanently out of focus with no scroll left to fix it.
+ *
+ * And in the middle, at the RESULT. The veil earns its keep through the story, where the
+ * job is holding one thought in focus at a time. The matrix and the capability map are
+ * the opposite kind of object: things you read across, scan, hover and open. Softening
+ * their lower half fights the reader (Marrs, 10 Aug 2026). So the veil fades out as the
+ * result comes up and stays off for the rest of the page, which is all reference
+ * material from that point on.
  *
  * NEVER FADE THE WRAPPER. Per Filter Effects, an ancestor with opacity < 1 establishes
  * a Backdrop Root, so a descendant's backdrop-filter can only see content INSIDE that
@@ -66,7 +73,22 @@ export function FocusVeil() {
       const max = Math.max(0, document.documentElement.scrollHeight - h);
       const engage = (y - h * 0.16) / (h * 0.4);
       const release = (max - y) / (h * 0.75);
-      const v = Math.max(0, Math.min(1, engage, release));
+
+      /**
+       * Query every frame rather than caching the node, because the result section is
+       * rendered by whichever page mounted this and can arrive after the first paint.
+       * It is one selector against a small document; caching it is a correctness risk
+       * for no measurable gain.
+       */
+      const stop = document.querySelector('[data-veil-stop]');
+      let arrive = 1;
+      if (stop) {
+        // Fades out over the half screen before the result reaches the middle, and
+        // stays at 0 once its top has gone past, so everything below is sharp.
+        arrive = (stop.getBoundingClientRect().top - h * 0.5) / (h * 0.5);
+      }
+
+      const v = Math.max(0, Math.min(1, engage, release, arrive));
       el.style.setProperty('--veil-k', v.toFixed(3));
     };
 

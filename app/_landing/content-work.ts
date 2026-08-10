@@ -53,9 +53,10 @@ const INPUTS: Silo[] = [
  * every line is about the work rather than about the tools.
  *
  * DECISIONS THAT SHOULD NOT BE QUIETLY UNDONE:
- * - Beat 1 says "describe", not "measure". The claim is not that they measure badly,
- *   it is that they cannot articulate the work at all, which is a harder and more
- *   uncomfortable thing to be told and is what the thesis actually says.
+ * - Beat 1 is Marrs's own line, verbatim (10 Aug 2026), and it replaced "Most
+ *   organisations cannot describe their own work." The new one names the decision the
+ *   reader is actually stuck on rather than the diagnosis behind it; the sub-line still
+ *   supplies the diagnosis underneath. Do not paraphrase it.
  * - Beat 3 is the load-bearing one. Amplification is the mechanism that turns an
  *   unmapped process from a slow problem into a fast one, and it is the reason the
  *   sequence has to be model, then train, then deploy rather than any other order.
@@ -65,7 +66,7 @@ const INPUTS: Silo[] = [
 export const workBeats: Beat[] = [
   {
     kicker: 'The problem',
-    line: 'Most organisations cannot describe their own work.',
+    line: 'Most organisations don’t know where AI fits in their work.',
     sub: 'You know the job titles and the department names. Not the capabilities inside them, and not who or what is doing each one today.',
     figure: 'lost',
   },
@@ -121,6 +122,12 @@ export const workArtefactsFootnote =
 
 export const workContent: MappingContent = {
   ...mappingContent,
+
+  /**
+   * A different frame of the same video: 1:02, where the matrix is up on the screen
+   * behind him. Overridden here rather than in content-base so /mapping keeps its own.
+   */
+  video: { ...mappingContent.video, poster: '/mapping/poster-1m02.jpg' },
 
   hero: {
     h1: 'See How Your Work Actually Works.',
