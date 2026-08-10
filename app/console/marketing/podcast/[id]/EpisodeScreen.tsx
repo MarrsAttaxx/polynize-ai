@@ -58,11 +58,24 @@ export function EpisodeScreen({ episode, descriptConnected }: Props) {
   const [think, setThink] = useState<{ phase: 'thinking' | 'writing'; text: string } | null>(null);
   const [model, setModel] = useState<string | null>(null);
   const [showEdl, setShowEdl] = useState<string | null>(null);
+  /**
+   * THE REVISION LOOP, one clip at a time.
+   *
+   * Marrs asked for the prezie loop in here: "the ability to read, alter, or give a bit more direction
+   * on the clip." One box open at a time and one call in flight, because a revision replaces the cut he
+   * is looking at and two overlapping ones would race for the same clip.
+   */
+  const [openBox, setOpenBox] = useState<string | null>(null);
+  const [direction, setDirection] = useState('');
+  const [busyClip, setBusyClip] = useState<string | null>(null);
+  /** Her reply about the last revision, per clip. Cleared when a new revision starts. */
+  const [replies, setReplies] = useState<Record<string, string>>({});
 
   const base = `/console/marketing/podcast/${ep.episode_id}`;
 
+  const inFlight = working || busyClip !== null;
   useEffect(() => {
-    if (!working) {
+    if (!inFlight) {
       setElapsed(0);
       setThink(null);
       return;
@@ -71,7 +84,88 @@ export function EpisodeScreen({ episode, descriptConnected }: Props) {
     const started = Date.now();
     const t = setInterval(() => setElapsed(Math.round((Date.now() - started) / 1000)), 1000);
     return () => clearInterval(t);
-  }, [working]);
+  }, [inFlight]);
+
+  /**
+   * Read one of the console's newline-delimited progress streams.
+   *
+   * Shared by proposing and revising rather than written twice: they are the same protocol, and two
+   * copies of a stream reader is two places for a partial-line bug to hide.
+   */
+  const readStream = async (
+    res: Response,
+    onOk: (ev: Record<string, unknown>) => void
+  ): Promise<string | null> => {
+    if (!res.ok || !res.body || !(res.headers.get('content-type') ?? '').includes('ndjson')) {
+      const b = (await res.json().catch(() => null)) as { error?: string } | null;
+      return b?.error ?? 'Could not reach her.';
+    }
+    const reader = res.body.getReader();
+    const dec = new TextDecoder();
+    let buf = '';
+    let failed: string | null = null;
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buf += dec.decode(value, { stream: true });
+      let nl: number;
+      while ((nl = buf.indexOf('\n')) !== -1) {
+        const line = buf.slice(0, nl).trim();
+        buf = buf.slice(nl + 1);
+        if (!line) continue;
+        let ev: Record<string, unknown>;
+        try {
+          ev = JSON.parse(line) as Record<string, unknown>;
+        } catch {
+          continue;
+        }
+        if (ev.t === 'think') {
+          setThink({
+            phase: (ev.phase as 'thinking' | 'writing') ?? 'thinking',
+            text: (ev.d as string) ?? '',
+          });
+        } else if (ev.t === 'err') {
+          failed = (ev.error as string) ?? 'She could not finish that.';
+        } else if (ev.t === 'ok') {
+          onOk(ev);
+        }
+      }
+    }
+    return failed;
+  };
+
+  /** Ask April to re-cut one clip. */
+  const revise = async (clip: ClipProposal) => {
+    const said = direction.trim();
+    if (!said || busyClip) return;
+    setBusyClip(clip.clip_id);
+    setError(null);
+    setNote(null);
+    setReplies((r) => {
+      const { [clip.clip_id]: _drop, ...rest } = r;
+      return rest;
+    });
+    try {
+      const res = await fetch(`${base}/clip/revise`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ clip_id: clip.clip_id, direction: said, stream: true }),
+      });
+      const failed = await readStream(res, (ev) => {
+        if (Array.isArray(ev.clips)) setClips(ev.clips as ClipProposal[]);
+        if (typeof ev.model === 'string') setModel(ev.model);
+        if (typeof ev.note === 'string') {
+          setReplies((r) => ({ ...r, [clip.clip_id]: ev.note as string }));
+        }
+        setDirection('');
+      });
+      if (failed) setError(failed);
+    } catch {
+      setError('Network error. Try again.');
+    } finally {
+      setBusyClip(null);
+    }
+  };
 
   /** Pull the Descript project list once, on demand. */
   const loadProjects = async () => {
@@ -161,51 +255,18 @@ export function EpisodeScreen({ episode, descriptConnected }: Props) {
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ stream: true }),
       });
-      if (!res.ok || !res.body || !(res.headers.get('content-type') ?? '').includes('ndjson')) {
-        const b = (await res.json().catch(() => null)) as { error?: string } | null;
-        setError(b?.error ?? 'Could not reach her.');
-        return;
-      }
-      const reader = res.body.getReader();
-      const dec = new TextDecoder();
-      let buf = '';
-      for (;;) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        buf += dec.decode(value, { stream: true });
-        let nl: number;
-        while ((nl = buf.indexOf('\n')) !== -1) {
-          const line = buf.slice(0, nl).trim();
-          buf = buf.slice(nl + 1);
-          if (!line) continue;
-          let ev: {
-            t?: string;
-            phase?: 'thinking' | 'writing';
-            d?: string;
-            error?: string;
-            added?: number;
-            kept?: number;
-            clips?: ClipProposal[];
-            model?: string;
-          };
-          try {
-            ev = JSON.parse(line) as typeof ev;
-          } catch {
-            continue;
-          }
-          if (ev.t === 'think') setThink({ phase: ev.phase ?? 'thinking', text: ev.d ?? '' });
-          else if (ev.t === 'err') setError(ev.error ?? 'She could not finish that.');
-          else if (ev.t === 'ok') {
-            if (ev.clips) setClips(ev.clips);
-            if (ev.model) setModel(ev.model);
-            setNote(
-              `${ev.added ?? 0} clip${ev.added === 1 ? '' : 's'} proposed${
-                ev.kept ? `, ${ev.kept} you had already ruled on kept as they were` : ''
-              }.`
-            );
-          }
-        }
-      }
+      const failed = await readStream(res, (ev) => {
+        if (Array.isArray(ev.clips)) setClips(ev.clips as ClipProposal[]);
+        if (typeof ev.model === 'string') setModel(ev.model);
+        const added = Number(ev.added ?? 0);
+        const kept = Number(ev.kept ?? 0);
+        setNote(
+          `${added} clip${added === 1 ? '' : 's'} proposed${
+            kept ? `, ${kept} you had already ruled on kept as they were` : ''
+          }.`
+        );
+      });
+      if (failed) setError(failed);
     } catch {
       setError('Network error. Try again.');
     } finally {
@@ -518,6 +579,15 @@ export function EpisodeScreen({ episode, descriptConnected }: Props) {
                   with speaker tracking, and that is a manual toggle in Descript. Said out loud
                   because a clip that merely LOOKS finished is the dangerous outcome: published with
                   a speaker cropped out of shot. */}
+              {/* The words on this card have changed since the video was cut. Said rather than fixed:
+                  deleting a composition in Descript is not this system's call, and a new cut list
+                  sitting beside a link to the old video is the more dangerous state. */}
+              {c.recut_needed ? (
+                <p className={d.manual}>
+                  This has changed since it was cut, so the composition in Descript is the OLD version.
+                  Cut it again when you are happy with the words below.
+                </p>
+              ) : null}
               {c.needs_reframe ? (
                 <p className={d.manual}>
                   Not publishable yet. The source is{' '}
@@ -570,11 +640,85 @@ export function EpisodeScreen({ episode, descriptConnected }: Props) {
                 <button
                   type="button"
                   className={d.ghostBtn}
+                  onClick={() => {
+                    setOpenBox(openBox === c.clip_id ? null : c.clip_id);
+                    setDirection('');
+                  }}
+                  disabled={busyClip !== null}
+                >
+                  {openBox === c.clip_id ? 'Cancel' : 'Change it'}
+                </button>
+                <button
+                  type="button"
+                  className={d.ghostBtn}
                   onClick={() => setShowEdl(showEdl === c.clip_id ? null : c.clip_id)}
                 >
                   {showEdl === c.clip_id ? 'Hide the cut list' : 'Cut list'}
                 </button>
               </div>
+
+              {/* WHAT HE HAS ALREADY ASKED FOR. Shown because every one of these still applies on the
+                  next revision, so he should be able to see them rather than remember them. */}
+              {c.directions?.length ? (
+                <ol className={d.directions}>
+                  {c.directions.map((dir, i) => (
+                    <li key={`${c.clip_id}-dir-${i}`}>{dir}</li>
+                  ))}
+                </ol>
+              ) : null}
+
+              {replies[c.clip_id] ? <p className={d.reply}>{replies[c.clip_id]}</p> : null}
+
+              {/* THE REVISION BOX. She gets the whole transcript back, so a direction can send her
+                  anywhere in the episode: that is the point of it. */}
+              {openBox === c.clip_id ? (
+                <div className={d.reviseBox}>
+                  <textarea
+                    className={d.paste}
+                    value={direction}
+                    onChange={(e) => setDirection(e.target.value)}
+                    placeholder="Tell her what to change. She has the whole episode, so you can send her to a section this clip does not touch yet: for example, later on I name three classes, the AI Addicts, the AI Illiterate and the AI Amplified. Bring a short piece of each into this clip."
+                    rows={4}
+                    disabled={busyClip !== null}
+                    autoFocus
+                  />
+                  <div className={d.row}>
+                    <button
+                      type="button"
+                      className={d.primaryBtn}
+                      onClick={() => void revise(c)}
+                      disabled={busyClip !== null || !direction.trim()}
+                    >
+                      {busyClip === c.clip_id ? `Re-cutting… ${elapsed}s` : 'Re-cut it'}
+                    </button>
+                  </div>
+                  <p className={d.hint}>
+                    She only selects and orders real words from the transcript, so she cannot write a
+                    linking sentence. If what you are describing is not said anywhere in the episode she
+                    will tell you instead of approximating it.
+                  </p>
+                </div>
+              ) : null}
+
+              {busyClip === c.clip_id ? (
+                <div className={d.working}>
+                  <p className={d.workingHead}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      className={d.workingMark}
+                      src="/console-assets/mark-loop.png"
+                      alt=""
+                      width={18}
+                      height={18}
+                    />
+                    <b>{think?.phase === 'writing' ? 'writing the new cut' : 'searching the episode'}</b>
+                    {elapsed}s
+                  </p>
+                  <p className={d.stream}>
+                    {think?.text ? <span>{think.text}</span> : <em>reading the whole transcript</em>}
+                  </p>
+                </div>
+              ) : null}
 
               {/* The EDL is for the engine. It is here for debugging a bad cut, not for reviewing. */}
               {showEdl === c.clip_id ? (

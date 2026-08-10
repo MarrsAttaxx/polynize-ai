@@ -195,6 +195,139 @@ export async function proposeClips(
   return parsed;
 }
 
+const REVISE_SYSTEM = `You are the podcast-clip editor for Polynize, revising ONE clip that already exists, on the operator's instruction.
+
+You are given the FULL episode transcript, the clip's current cut, and what he wants changed. Return the clip's new cut.
+
+THE THING THAT MATTERS MOST HERE: YOU MAY REACH ANYWHERE IN THE EPISODE. The clip's current spans are not a boundary. If he asks for material that sits twenty minutes away from the rest of the clip, go and get it: a clip is a theme condensed, not a region of the timeline, so pulling a span from elsewhere is the normal way to build one and not a compromise. Search the whole transcript for what he is describing.
+
+HOW TO REVISE
+- Change what he asked for and leave the rest of the cut alone. He is building this up over several turns and expects what he already accepted to stay where it is.
+- Earlier instructions still apply. You are given all of them in order; a new one adds to them rather than replacing them, unless it plainly contradicts an earlier one, in which case the newest wins.
+- If he names things that should each appear (for example three named categories), find the span where each one is actually said and include a short piece of each, in the order that makes the clip play as one thought.
+- Keep the hook first. If his change gives the clip a stronger opening line, move that to the front and say so in your note.
+- Stay tight. Adding material is not a reason to stop cutting: drop whatever no longer serves the single idea, and keep the whole thing in the 30 to 90 second range unless he has asked for something longer.
+
+USE ONLY THE SPEAKER'S REAL WORDS. You SELECT and ORDER spans from the transcript. You never paraphrase, you never write a linking sentence, and you never invent a line. Every span you return must be text that is actually in the transcript, with the [HH:MM:SS] anchor it appears at, because the assembly engine finds it by that anchor. If you cannot find what he is describing anywhere in the transcript, say so in your note and leave the cut as it was rather than approximating it.
+
+Return ONLY a JSON object, no markdown and no code fence:
+
+{"clips":[{
+  "title": "the clip's title, updated only if his change makes the old one wrong",
+  "theme": "the one idea in a phrase",
+  "why_strong": "one line on why it will perform",
+  "hook": {"at": "HH:MM:SS", "text": "the verbatim first line"},
+  "edl": [{"at": "HH:MM:SS", "text": "verbatim words to keep", "cut_note": "what is cut around this and why"}],
+  "est_duration_seconds": 62,
+  "cuts_made": "what you removed, and what you brought in and from where",
+  "platforms": ["TikTok", "Reels", "Shorts"],
+  "note": "one or two sentences to the operator about what you changed, as a reply in a conversation"
+}]}
+
+Exactly one clip in the array. The first entry of "edl" MUST be the hook. Never use the em-dash character.`;
+
+/**
+ * Revise one clip on the operator's instruction.
+ *
+ * This is the loop Marrs asked for after using the screens: "I need something similar to what I have in
+ * the Prezie creator in here, which gives me the ability to read, alter, or give a bit more direction
+ * on the clip." His example is the shape of the problem exactly: he knows a later section of the episode
+ * names three classes and he wants a piece of each folded into a clip that currently does not touch
+ * them. So the whole transcript goes back in, not just the clip, and the prompt says outright that the
+ * clip's current spans are not a boundary.
+ *
+ * Returns the new cut plus her note. The clip keeps its id, so the revision replaces it in place and
+ * everything pointing at it survives.
+ */
+export async function reviseClip(
+  transcript: string,
+  clip: ClipProposal,
+  direction: string,
+  onProgress?: (d: StreamDelta) => void
+): Promise<{ clip: ClipProposal; note: string }> {
+  const want = direction.trim();
+  if (!want) throw new DraftError('empty');
+  const body = transcript.trim();
+  if (body.length < 400) throw new DraftError('no-concept');
+
+  const current = clip.edl
+    .map((s, i) => `${i + 1}. [${s.at}] "${s.text}"`)
+    .join('\n');
+
+  // EVERY EARLIER DIRECTION GOES BACK IN, oldest first, with the new one last and labelled as the
+  // change being asked for now. Without the history a revision silently reverts the previous one.
+  const history = (clip.directions ?? []).length
+    ? `WHAT HE HAS ALREADY ASKED FOR ON THIS CLIP, oldest first. These still apply:\n${(clip.directions ?? [])
+        .map((d, i) => `${i + 1}. ${d}`)
+        .join('\n')}`
+    : '';
+
+  const parts = [
+    `THE FULL EPISODE TRANSCRIPT. You may take spans from anywhere in it:\n"""\n${body}\n"""`,
+    `THE CLIP AS IT STANDS.\nTitle: ${clip.title}\nTheme: ${clip.theme}\n\nIts cut, in play order:\n${current}`,
+    history,
+    `THE CHANGE HE WANTS NOW:\n"""\n${want}\n"""`,
+  ].filter(Boolean);
+
+  const call = {
+    system: REVISE_SYSTEM,
+    messages: [{ role: 'user' as const, content: parts.join('\n\n') }],
+    maxTokens: 16000,
+    temperature: 0.6,
+    json: true,
+    model: clipModel(),
+    apiKey: process.env.APRIL_OPENROUTER_API_KEY,
+  };
+
+  let raw: string;
+  try {
+    raw = onProgress ? await completeStream(call, onProgress) : await complete(call);
+  } catch (e) {
+    console.error(`[podcast-clips] revise threw: ${e instanceof Error ? e.message : String(e)}`);
+    throw new DraftError('llm-unavailable');
+  }
+
+  const [revised] = parseClips(raw);
+  if (!revised) {
+    console.error(
+      `[podcast-clips] revision unusable. length=${raw.length} startsWith=${JSON.stringify(raw.slice(0, 160))}`
+    );
+    throw new DraftError('empty');
+  }
+
+  const note = readNote(raw);
+  return {
+    clip: {
+      ...revised,
+      // IDENTITY AND HISTORY SURVIVE THE REVISION. Keeping the id means the clip is replaced in place
+      // rather than appearing as a second one, and keeping his ruling means a revision does not quietly
+      // un-approve something he had already signed off.
+      clip_id: clip.clip_id,
+      rank: clip.rank,
+      created_at: clip.created_at,
+      status: clip.status === 'assembled' ? 'approved' : clip.status,
+      directions: [...(clip.directions ?? []), want],
+      // The composition in Descript is now older than the words on the card.
+      recut_needed: clip.status === 'assembled' || clip.recut_needed ? true : undefined,
+      descript_url: clip.descript_url,
+      source_aspect: clip.source_aspect,
+      updated_at: new Date().toISOString(),
+    },
+    note,
+  };
+}
+
+/** Her sentence to the operator, if she wrote one. Not worth failing a revision over. */
+function readNote(raw: string): string {
+  const m = String(raw ?? '').match(/"note"\s*:\s*"((?:[^"\\]|\\.)*)"/);
+  if (!m) return 'Updated it.';
+  try {
+    return stripEmDashes(JSON.parse(`"${m[1]}"`) as string) || 'Updated it.';
+  } catch {
+    return 'Updated it.';
+  }
+}
+
 /**
  * Read the reply.
  *

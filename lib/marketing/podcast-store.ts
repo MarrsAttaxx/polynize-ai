@@ -66,6 +66,23 @@ export type ClipProposal = {
   status: ClipStatus;
   /** Marrs's own words when he changed something, so a re-cut knows what he wanted. */
   operator_note?: string;
+  /**
+   * EVERY DIRECTION HE HAS GIVEN THIS CLIP, oldest first.
+   *
+   * An array rather than one field, and passed back in full on every revision, because the figure
+   * loop proved what happens otherwise: with only the latest instruction in hand, turn three quietly
+   * undoes turn one and the loop feels broken. Also shown on the card, so he can see what he has
+   * already asked for rather than having to remember it.
+   */
+  directions?: string[];
+  /**
+   * TRUE when the clip has been revised since it was cut, so the composition in Descript no longer
+   * matches the words on the card.
+   *
+   * Recorded rather than silently fixed: deleting the stale composition is not this system's call, and
+   * a card that shows a new cut list beside a link to an old video is the more dangerous state.
+   */
+  recut_needed?: boolean;
   /** The Descript agent job, while it runs and after it finishes. */
   job_id?: string;
   descript_composition_id?: string;
