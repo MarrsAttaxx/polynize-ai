@@ -36,13 +36,21 @@ import s from './matrix.module.css';
  * after you have already given up.
  */
 
-/** Colour says how far along. The arrow says which way, and survives colour blindness. */
-const TIER_ARROW: Record<Tier, string> = {
-  g: '↗',
-  t: '↗',
-  a: '→',
-  o: '↘',
-  r: '↘',
+/**
+ * Arrows on the extremes ONLY. A glyph in every cell put marks on all two hundred and
+ * the grid went straight back to being busy, which is the thing the arrows were meant
+ * to fix. Only the strongest and the weakest are marked, so the eye has somewhere to
+ * land; the middle is carried by colour alone, which is all it has to say.
+ *
+ * It keys off BOTH axes, because they are independent: `.score` cells are filled and
+ * `.uplift` cells are outlined, so "solid green" is shape AND tier, not tier alone.
+ * Note tier r is currently unreachable (cellFor's floor is above scTier's r threshold),
+ * so the red end of the scale in practice is o.
+ */
+const arrowFor = (shape: 'sc' | 'up', tier: Tier) => {
+  if (shape === 'sc' && (tier === 'g' || tier === 't')) return '↗';
+  if (tier === 'o' || tier === 'r') return '↘';
+  return '';
 };
 
 const TIER_WORD: Record<Tier, string> = {
@@ -133,7 +141,6 @@ export function CapabilityMatrix() {
         <span className={s.keyItem}>
           <i className={`${s.keyDot} ${s.keyCoral}`} />Gap
         </span>
-        <span className={s.keyHint}>Select any cell</span>
       </div>
       <div
         className={`${s.grid} ${armed ? s.armed : ''} ${on ? s.on : ''}`}
@@ -228,7 +235,7 @@ export function CapabilityMatrix() {
                     }
                     aria-label={`${u.h}, ${cap}, ${scn.name}: ${TIER_WORD[tier]}. Open detail.`}
                   >
-                    {TIER_ARROW[tier]}
+                    {arrowFor(cell.t, tier)}
                   </button>
                 );
               });

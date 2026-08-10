@@ -210,9 +210,9 @@ type FigurePlace = 'wide' | 'right' | 'centre';
 
 const VIEWBOX: Record<FigureKind, string> = {
   scatter: '0 0 620 580',
-  ambiguity: '0 0 1000 440',
+  ambiguity: '0 0 1000 470',
   coordinates: '0 0 1000 400',
-  guess: '0 0 1000 500',
+  guess: '0 0 1000 480',
 };
 
 const PLACE: Record<FigureKind, FigurePlace> = {
@@ -410,55 +410,35 @@ function LoneCompass() {
    badges could not carry that. They drift, they never line up, and question marks sit
    among them at the same weight. */
 
-type Floater = { name: VendorName | null; x: number; y: number; size: number; plane: 0 | 1 | 2; i: number };
+type Floater = { name: VendorName | 'q'; x: number; y: number; size: number; i: number };
 
-const FLOATERS: Floater[] = (() => {
-  const r = rand(880811);
-  const rows: { y: number; n: number; size: number; plane: 0 | 1 | 2 }[] = [
-    { y: 96, n: 6, size: 34, plane: 0 },
-    { y: 216, n: 5, size: 52, plane: 1 },
-    { y: 336, n: 5, size: 44, plane: 2 },
-  ];
-  const out: Floater[] = [];
-  let i = 0;
-  let v = 0;
-  for (const row of rows) {
-    for (let c = 0; c < row.n; c++) {
-      const span = 900 / row.n;
-      // Every third slot is the question rather than a logo, so the two read as the
-      // same kind of thing: another item in the pile you cannot account for.
-      const isQuery = (c + row.plane) % 3 === 2;
-      out.push({
-        name: isQuery ? null : VENDORS[v++ % VENDORS.length],
-        x: 56 + span * (c + 0.5) + (r() - 0.5) * span * 0.34,
-        y: row.y + (r() - 0.5) * 42,
-        size: row.size * (0.88 + r() * 0.24),
-        plane: row.plane,
-        i: i++,
-      });
-    }
-  }
-  return out;
-})();
+/**
+ * Hand placed, not generated, and that is the point: a loop produces rows, and rows
+ * read as an ordered set. This is a pile of things you have bought that do not line up
+ * with each other. One of each mark, never repeated, because a duplicate reads as a
+ * pattern; the question repeats instead, since that IS the recurring thing.
+ */
+const FLOATERS: Floater[] = [
+  { name: 'openai', x: 132, y: 118, size: 96, i: 0 },
+  { name: 'anthropic', x: 336, y: 74, size: 80, i: 1 },
+  { name: 'q', x: 476, y: 178, size: 76, i: 2 },
+  { name: 'gemini', x: 606, y: 88, size: 88, i: 3 },
+  { name: 'claude', x: 842, y: 132, size: 92, i: 4 },
+  { name: 'q', x: 246, y: 262, size: 64, i: 5 },
+  { name: 'copilot', x: 432, y: 322, size: 104, i: 6 },
+  { name: 'q', x: 694, y: 258, size: 82, i: 7 },
+  { name: 'grok', x: 148, y: 366, size: 84, i: 8 },
+  { name: 'q', x: 906, y: 306, size: 70, i: 9 },
+  { name: 'openclaw', x: 616, y: 392, size: 78, i: 10 },
+  { name: 'q', x: 800, y: 404, size: 58, i: 11 },
+];
 
 function VendorDrift() {
   return (
     <g className={s.hudScene}>
-      <path className={s.hudGrid} d={graticule(1000, 440, 44, 30)} />
-      <path className={s.hudFrame} d={brackets(26, 26, 948, 388, 28)} />
       {FLOATERS.map((fl) => (
-        <g
-          key={fl.i}
-          className={`${s.hudFloat} ${
-            fl.plane === 0 ? s.figDeep : fl.plane === 1 ? s.figNear : s.figMid
-          }`}
-          style={{ ['--i' as string]: fl.i }}
-        >
-          {fl.name ? (
-            <g className={s.hudVendor}>
-              <VendorLogo name={fl.name} x={fl.x} y={fl.y} size={fl.size} />
-            </g>
-          ) : (
+        <g key={fl.i} className={s.hudFloat} style={{ ['--i' as string]: fl.i }}>
+          {fl.name === 'q' ? (
             <text
               className={s.hudQuery}
               x={f(fl.x)}
@@ -467,6 +447,10 @@ function VendorDrift() {
             >
               ?
             </text>
+          ) : (
+            <g className={s.hudVendor}>
+              <VendorLogo name={fl.name} x={fl.x} y={fl.y} size={fl.size} />
+            </g>
           )}
         </g>
       ))}
@@ -487,7 +471,7 @@ function VendorDrift() {
    them; scaling a solid bar behind fixed rules does not. */
 
 const BAR_COUNT = 14;
-const BAR_BASE = 336;
+const BAR_BASE = 316;
 const BAR_TARGET = 76;
 const BARS = Array.from({ length: BAR_COUNT }, (_, i) => {
   const r = rand(4400 + i);
@@ -496,10 +480,11 @@ const BARS = Array.from({ length: BAR_COUNT }, (_, i) => {
     x: 62 + i * 64,
     // Capped so that h * the 1.14 breathe peak still clears the benchmark. A bar that
     // grows past the line while breathing argues the opposite of the copy.
-    h: 56 + r() * 136,
+    h: 50 + r() * 118,
     /** Every bar breathes on its own clock, so the field never pulses in unison. */
-    dur: 3.2 + r() * 2.6,
-    delay: r() * 2.4,
+    // Faster than the first pass, which read as idling rather than as live readings.
+    dur: 1.5 + r() * 1.1,
+    delay: r() * 1.6,
   };
 });
 
@@ -518,7 +503,6 @@ const CHART_GRID = (() => {
 function BenchmarkBars() {
   return (
     <g className={s.hudScene}>
-      <path className={s.hudFrame} d={brackets(24, 22, 952, 356, 28)} />
       <path className={s.hudGrid} d={CHART_GRID} />
 
       {/* The headroom each bar is not using. Static, and outside the breathing group, so
@@ -553,6 +537,13 @@ function BenchmarkBars() {
       <path className={s.hudBlockRule} d={BLOCK_RULES} />
       <path className={s.hudAxis} d={`M 40 ${BAR_BASE} H 962`} />
 
+      {/* One person per column, so a reader knows what a bar is a reading OF. */}
+      <g className={s.hudHuman}>
+        {BARS.map((b) => (
+          <Person key={`p${b.i}`} x={b.x} y={BAR_BASE + 46} sc={1.2} />
+        ))}
+      </g>
+
       {/* The benchmark. It drifts, because the standard moves too. */}
       <g className={s.hudTargetDrift}>
         <path className={s.hudBloom} d={`M 40 ${BAR_TARGET} H 962`} />
@@ -583,16 +574,16 @@ const REEL_SYMBOLS: Symb[][] = [
   ['query', 'grok', 'human', 'openai', 'bot', 'claude', 'copilot', 'query'],
 ];
 
-const CELL_H = 96;
-const WIN = { y: 96, h: 288, w: 204 };
-const REEL_X = [250, 500, 750];
+const CELL_H = 112;
+const WIN = { y: 70, h: 340, w: 236 };
+const REEL_X = [240, 500, 760];
 /** Each reel turns at its own speed. Three identical reels read as one moving object. */
 const REEL_DUR = ['5.4s', '3.9s', '6.7s'];
 
 function ReelSymbol({ kind, y }: { kind: Symb; y: number }) {
   if (kind === 'query') {
     return (
-      <text className={s.hudQuery} x="0" y={y + 18} style={{ fontSize: '52px' }}>
+      <text className={s.hudQuery} x="0" y={y + 22} style={{ fontSize: '64px' }}>
         ?
       </text>
     );
@@ -600,20 +591,20 @@ function ReelSymbol({ kind, y }: { kind: Symb; y: number }) {
   if (kind === 'bot') {
     return (
       <g className={s.hudBot}>
-        <BotBody x={0} y={y} sc={2} />
+        <BotBody x={0} y={y} sc={2.5} />
       </g>
     );
   }
   if (kind === 'human') {
     return (
       <g className={s.hudHuman}>
-        <Person x={0} y={y} sc={2} />
+        <Person x={0} y={y} sc={2.5} />
       </g>
     );
   }
   return (
     <g className={s.hudVendor}>
-      <VendorLogo name={kind} x={0} y={y} size={52} />
+      <VendorLogo name={kind} x={0} y={y} size={66} />
     </g>
   );
 }
@@ -622,15 +613,6 @@ function SlotMachine() {
   const travel = REEL_SYMBOLS[0].length * CELL_H;
   return (
     <g className={s.hudScene}>
-      <path className={s.hudFrame} d={brackets(72, 26, 856, 434, 30)} />
-
-      {/* Marquee: a row of lights across the top, chasing. */}
-      <g className={s.hudMarquee}>
-        {Array.from({ length: 16 }).map((_, i) => (
-          <circle key={i} cx={128 + i * 50} cy={64} r={6.5} style={{ ['--i' as string]: i }} />
-        ))}
-      </g>
-
       <defs>
         <clipPath id="pn-reel-clip">
           <rect x={0} y={WIN.y} width={WIN.w} height={WIN.h} />
@@ -639,74 +621,40 @@ function SlotMachine() {
 
       {REEL_X.map((rx, r) => (
         <g key={r} transform={`translate(${rx - WIN.w / 2} 0)`}>
-          <rect
-            className={s.hudDisc}
-            x={0}
-            y={WIN.y}
-            width={WIN.w}
-            height={WIN.h}
-            rx="8"
-          />
+          <rect className={s.hudDisc} x={0} y={WIN.y} width={WIN.w} height={WIN.h} rx="8" />
           <g clipPath="url(#pn-reel-clip)">
-            <g
-              className={s.hudReel}
-              style={{ ['--travel' as string]: `${-travel}px`, ['--dur' as string]: REEL_DUR[r] }}
-              transform={`translate(${WIN.w / 2} 0)`}
-            >
-              {[0, 1].map((pass) =>
-                REEL_SYMBOLS[r].map((sym, i) => (
-                  <ReelSymbol
-                    key={`${pass}-${i}`}
-                    kind={sym}
-                    y={WIN.y + 48 + (pass * REEL_SYMBOLS[r].length + i) * CELL_H}
-                  />
-                ))
-              )}
+            {/* The centring lives on THIS group, which never animates. Putting it on the
+                animated group loses it: a CSS transform from a keyframe replaces the SVG
+                transform attribute outright, so the symbols snapped to x = 0 the moment
+                the reel started turning. */}
+            <g transform={`translate(${WIN.w / 2} 0)`}>
+              <g
+                className={s.hudReel}
+                style={{ ['--travel' as string]: `${-travel}px`, ['--dur' as string]: REEL_DUR[r] }}
+              >
+                {[0, 1].map((pass) =>
+                  REEL_SYMBOLS[r].map((sym, i) => (
+                    <ReelSymbol
+                      key={`${pass}-${i}`}
+                      kind={sym}
+                      y={WIN.y + 48 + (pass * REEL_SYMBOLS[r].length + i) * CELL_H}
+                    />
+                  ))
+                )}
+              </g>
             </g>
           </g>
-          <rect
-            className={s.hudReelFrame}
-            x={0}
-            y={WIN.y}
-            width={WIN.w}
-            height={WIN.h}
-            rx="8"
-          />
+          <rect className={s.hudReelFrame} x={0} y={WIN.y} width={WIN.w} height={WIN.h} rx="8" />
         </g>
       ))}
 
       {/* The payline. Whatever is sitting on it when you stop is what you funded. */}
-      <path className={s.hudBloom} d={`M 110 ${WIN.y + WIN.h / 2} H 890`} />
-      <path className={s.hudPayline} d={`M 110 ${WIN.y + WIN.h / 2} H 890`} />
+      <path className={s.hudBloom} d={`M 96 ${WIN.y + WIN.h / 2} H 904`} />
+      <path className={s.hudPayline} d={`M 96 ${WIN.y + WIN.h / 2} H 904`} />
       <path
         className={s.hudTargetCap}
-        d={`M 110 ${WIN.y + WIN.h / 2 - 13} v 26 M 890 ${WIN.y + WIN.h / 2 - 13} v 26`}
+        d={`M 96 ${WIN.y + WIN.h / 2 - 14} v 28 M 904 ${WIN.y + WIN.h / 2 - 14} v 28`}
       />
-
-      {/* The lever, on the right, permanently mid pull. */}
-      <g className={s.hudLever}>
-        <path className={s.hudLineDim} d={`M 940 ${WIN.y + 44} V ${WIN.y + 156}`} />
-        <circle className={s.hudLeverKnob} cx={940} cy={WIN.y + 34} r={17} />
-      </g>
-
-      {/* A readout that never settles on a figure. */}
-      <g className={s.hudSide}>
-        <path className={s.hudSegDim} d={ladder(148, 412, 30, 8, 3)} />
-        <path className={s.hudSegDim} d={ladder(398, 412, 30, 8, 3)} />
-        <path className={s.hudSegDim} d={ladder(648, 412, 30, 8, 3)} />
-        <path className={s.hudSegDim} d={ladder(822, 412, 30, 8, 3)} />
-      </g>
     </g>
   );
-}
-
-/** A vertical stack of blocks, filled from the bottom. One path. */
-function ladder(x: number, y: number, w: number, h: number, n: number, filled = n) {
-  const d: string[] = [];
-  for (let i = 0; i < n; i++) {
-    if (i >= filled) continue;
-    const yy = y + (n - 1 - i) * (h + 5);
-    d.push(`M ${x} ${yy} h ${w} v ${h} h ${-w} Z`);
-  }
-  return d.join(' ');
 }

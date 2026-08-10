@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { DraftingGrid } from '../../_components/DraftingGrid';
 import { TrackedLink } from '../../_components/TrackedLink';
 import { SiteFooter } from '../../_components/SiteFooter';
-import { SiloGlyph, StageGlyph, MapGlyph } from '../_icons';
+import { SiloGlyph, StageGlyph, MapGlyph, GitHubMark } from '../_icons';
 import { CapabilityMatrix } from './CapabilityMatrix';
 import { StoryPath } from './StoryPath';
 import { StoryMotion } from './StoryMotion';
@@ -118,9 +118,10 @@ export function StoryLanding({
             ))}
           </div>
           <figure className={`${s.matrixFigure} ${s.riseScale}`}>
-            {/* The key lives inside CapabilityMatrix now, above the grid. */}
+            {/* The key lives inside CapabilityMatrix now, above the grid, and the
+                caption came off: the grid explains itself and the paragraph under it was
+                a second explanation nobody read. */}
             <CapabilityMatrix />
-            <figcaption className={s.matrixCaption}>{c.matrixImage.caption}</figcaption>
           </figure>
           <div className={s.cards3}>
             {c.whatItIs.cards.map((card) => (
@@ -193,6 +194,11 @@ export function StoryLanding({
         {/* 6. Proof */}
         <section className={s.section}>
           <div className={`${s.proof} ${s.rise}`}>
+            {/* The client is never named in the copy, per the standing rule. The mark
+                is the one thing that says who, and it says it quietly. */}
+            <span className={s.proofMark} aria-hidden="true">
+              <GitHubMark />
+            </span>
             <div className={s.eyebrow}>Proof</div>
             <h2 className={s.proofH2}>{c.proof.h2}</h2>
             <div className={s.prose}>
