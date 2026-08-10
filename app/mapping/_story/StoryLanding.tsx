@@ -210,19 +210,8 @@ export function StoryLanding({
           </div>
         </section>
 
-        {/* 7. Where it leads */}
-        <Section eyebrow="What comes next" h2={c.leads.h2}>
-          <div className={`${s.prose} ${s.rise}`}>
-            {c.leads.paras.map((p, i) => (
-              <p key={i}>{p}</p>
-            ))}
-          </div>
-          <Link className={s.textLink} href={c.leads.linkHref}>
-            {c.leads.linkLabel} <span aria-hidden>→</span>
-          </Link>
-        </Section>
-
-        {/* 8. Final CTA */}
+        {/* 7. Final CTA. "Where it leads" came off: the diagnosis is the point, and
+            a second forward-looking section before the CTA blunted it. */}
         <section className={s.section}>
           <div className={`${s.finalCard} ${s.rise}`}>
             <div className={s.eyebrow}>Ready when you are</div>
@@ -256,7 +245,7 @@ function StoryNav({ cta }: { cta: string }) {
           <img src="/assets/polynize-mark.png" alt="" width={26} height={26} />
         </span>
         <span>
-          polynize<span style={{ color: 'var(--text-3)' }}>.ai</span>
+          polynize
         </span>
       </Link>
       <TrackedLink

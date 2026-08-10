@@ -214,7 +214,7 @@ export default function LinksPage() {
 
       <div className={s.footer}>
         <div className={s.footerRow}>
-          <Link href="/">polynize.ai</Link>
+          <Link href="/">polynize</Link>
           <a href="https://polynize.io" target="_blank" rel="noopener noreferrer">
             polynize.io
           </a>

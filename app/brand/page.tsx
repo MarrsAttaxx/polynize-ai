@@ -46,7 +46,7 @@ export default function BrandPage() {
 
       <header className={s.top}>
         <div className={s.brand}>
-          <a href="/">polynize.ai</a>
+          <a href="/">polynize</a>
           <span className={s.brandSlash}>/</span>
           <span>brand</span>
         </div>

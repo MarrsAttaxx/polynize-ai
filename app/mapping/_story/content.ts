@@ -59,8 +59,11 @@ const INPUTS: Silo[] = [
  *   capability" (rejected 2026-08-06) and an unnamed-subject version before landing
  *   here. Do not reinstate either. The line "you would not measure a chef by the gas
  *   they burn" was lost along the way and is worth another home.
- * - Beat 4 says "guess", not "opinion". Marrs's correction, and he is right: an opinion
- *   is a position you can defend, a guess is what is left when you have no information.
+ * - Beat 4 says "gamble" (Marrs, 10 Aug 2026), which replaced "guess", which replaced
+ *   "opinion". The escalation is deliberate: an opinion is a position you can defend, a
+ *   guess is what is left when you have no information, and a gamble is money on it
+ *   anyway. It is also what the slot machine beside it is drawing, so the two have to
+ *   move together if either changes.
  * - Beat 5 gets no kicker and no sub. Kickers render in mint and the turn is the only
  *   mint line in the arc, so a marker above it would spend that moment twice.
  */
@@ -83,7 +86,7 @@ export const storyBeats: Beat[] = [
     figure: 'coordinates',
   },
   {
-    line: 'So every investment decision is a guess.',
+    line: 'So every investment decision is a gamble.',
     sub: 'Which licences to renew, which teams to back, where the next dollar goes. The call goes to whoever is most confident in the room.',
     figure: 'guess',
   },
@@ -139,7 +142,7 @@ export const storyContent: MappingContent = {
     h1: 'Map AI Capabilities Across Your Teams.',
     subhead:
       'Before you invest another dollar in AI, see what your people can actually do with it, benchmarked against industry standards.',
-    primaryCta: 'Book a demo',
+    primaryCta: 'Book a call',
     secondaryLabel: 'See how it works',
   },
 
@@ -151,7 +154,6 @@ export const storyContent: MappingContent = {
     h2: 'This is your map.',
     paras: [
       'We take your team through scenarios built from the work they actually do. They respond in their own words, in real situations, and the platform reads what capability they are genuinely demonstrating.',
-      'Documents and process maps are a snapshot. They are what people say about the work. This is what people do in the work, which is why the map is accurate.',
     ],
     cards: mappingContent.whatItIs.cards,
   },
@@ -200,7 +202,7 @@ export const storyContent: MappingContent = {
 
   finalCta: {
     ...mappingContent.finalCta,
-    button: 'Book a demo',
+    button: 'Book a call',
   },
 };
 

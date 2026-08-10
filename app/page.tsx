@@ -66,7 +66,7 @@ function DirCNav() {
           <img src="/assets/polynize-mark.png" alt="" />
         </span>
         <span>
-          polynize<span style={{ color: 'var(--text-3)' }}>.ai</span>
+          polynize
         </span>
       </Link>
       <TrackedLink
@@ -648,7 +648,7 @@ function DirCFooter() {
               <img src="/assets/polynize-mark.png" alt="" />
             </span>
             <span>
-              polynize<span style={{ color: 'var(--text-3)' }}>.ai</span>
+              polynize
             </span>
           </Link>
           <p className={s.dcFooterBlurb}>

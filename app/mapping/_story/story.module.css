@@ -101,36 +101,15 @@
 .ctaRow { display: flex; gap: 14px; flex-wrap: wrap; justify-content: center; margin-top: 30px; }
 
 /* ---------- Section scaffolding ---------- */
-/* Section boundaries are full-bleed scale rules rather than a hairline that stops at
-   the content box. Same fix as the nav, applied at every boundary: the page was
-   reproducing "boxed to the centre" seven more times below the header. */
 .section {
   padding: 68px 0;
   text-align: center;
   position: relative;
 }
-.section::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: calc(50% - 50vw);
-  width: 100vw;
-  height: 5px;
-  pointer-events: none;
-  background:
-    linear-gradient(var(--border-soft), var(--border-soft)) top left / 100% 1px no-repeat,
-    repeating-linear-gradient(
-        to right,
-        color-mix(in srgb, var(--mint) 16%, transparent) 0 1px,
-        transparent 1px 64px
-      )
-      top left / 100% 5px no-repeat;
-}
-/* The story section carries no horizontal rules, top or bottom. They read as leftover
-   map furniture rather than as boundaries, and the story is meant to be one unbroken
-   expanse with nothing in it but the route. The vertical scale rule with its markers
-   (.scaleRule, inside the rail SVG) is the only ruled edge that survives here. */
-.story + .section::before { display: none; }
+/* The full-bleed scale rules that used to sit at every section boundary are gone. They
+   were the last of the map furniture, and by this pass they were reading as a stray
+   dashed line between blocks of copy rather than as a boundary. Sections are separated
+   by their own padding now, which is enough. */
 
 .sectionHead { max-width: 780px; margin: 0 auto 34px; }
 .eyebrow {
@@ -969,12 +948,16 @@
 .stagesLine { margin-top: 24px; font-size: 14px; color: var(--text-3); }
 
 /* ---------- Proof ---------- */
-/* Muted rather than GitHub's own black, so the mark reads as an attribution and not as
-   a partner badge. The copy still never names them. */
+/* Centred ABOVE the eyebrow, not beside it. inline-flex put it on the same line as the
+   inline-block eyebrow, so the mark sat off to the left of the word PROOF. It takes the
+   eyebrow's own mint rather than GitHub's black, so the two read as one unit and the
+   mark reads as an attribution rather than a partner badge. The copy still never names
+   them. */
 .proofMark {
-  display: inline-flex;
-  color: var(--text-3);
-  margin-bottom: 14px;
+  display: block;
+  width: 26px;
+  margin: 0 auto 12px;
+  color: var(--mint);
 }
 .proof {
   border: 1px solid var(--border);

@@ -84,7 +84,7 @@ export const mappingContent: MappingContent = {
     cards: [
       {
         title: 'Built from real work',
-        body: 'Not a survey, not a self assessment. Scenarios drawn from the work your team does every week.',
+        body: 'Scenarios drawn from the work your team does every week.',
       },
       {
         title: 'People, work and technology together',

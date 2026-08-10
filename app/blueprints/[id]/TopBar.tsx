@@ -9,7 +9,7 @@ type Props = {
 export function TopBar({ docRef }: Props) {
   return (
     <header className={s.top}>
-      <a href="/">polynize.ai</a>
+      <a href="/">polynize</a>
       <span>BP-{docRef}</span>
       <div className={s.topRight}>
         <TrackedLink
