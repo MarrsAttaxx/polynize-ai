@@ -1,8 +1,6 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
-import gsap from 'gsap';
-import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import s from './story.module.css';
 
 /**
@@ -27,12 +25,21 @@ import s from './story.module.css';
  * the bottom, the last screenful IS the final CTA and the footer, and a veil that stays
  * on leaves them permanently out of focus with no scroll left to fix it.
  *
- * FAIL-SAFE: base opacity is 0 and only script raises it. No script, a thrown error or
- * a dead ticker all leave the page completely sharp, which is a perfectly good page.
- * That is the opposite posture from the old reveal system, which failed to blank.
+ * NEVER FADE THE WRAPPER. Per Filter Effects, an ancestor with opacity < 1 establishes
+ * a Backdrop Root, so a descendant's backdrop-filter can only see content INSIDE that
+ * root, which here is nothing. The first version ramped this element's opacity and the
+ * blur therefore did not exist for the entire ramp, appearing only if the value landed
+ * on exactly 1. Reported by Marrs ("scroll from the top and the blur never shows, but
+ * refresh halfway down and it works") and reproduced in the browser: wrapper at 1
+ * blurs, wrapper at 0.85 does not. Opacity on the SAME element as the backdrop-filter
+ * is fine, which is why the strength now rides a custom property that each layer
+ * applies to itself.
+ *
+ * FAIL-SAFE: --veil-k defaults to 0 in the stylesheet and only script raises it. No
+ * script, a thrown error or a dead ticker all leave the page completely sharp, which is
+ * a perfectly good page. That is the opposite posture from the old reveal system, which
+ * failed to blank.
  */
-
-gsap.registerPlugin(ScrollTrigger);
 
 export function FocusVeil() {
   const ref = useRef<HTMLDivElement | null>(null);
@@ -56,20 +63,37 @@ export function FocusVeil() {
     const apply = () => {
       const h = window.innerHeight;
       const y = window.scrollY;
-      const max = Math.max(0, ScrollTrigger.maxScroll(window));
+      const max = Math.max(0, document.documentElement.scrollHeight - h);
       const engage = (y - h * 0.16) / (h * 0.4);
       const release = (max - y) / (h * 0.75);
       const v = Math.max(0, Math.min(1, engage, release));
-      gsap.set(el, { opacity: v });
+      el.style.setProperty('--veil-k', v.toFixed(3));
     };
 
-    const ctx = gsap.context(() => {
-      ScrollTrigger.create({ start: 0, end: 'max', onUpdate: apply, onRefresh: apply });
-      // The page is normally at scroll 0 on load, where onUpdate has not fired yet.
-      apply();
-    });
+    /**
+     * A plain listener rather than a ScrollTrigger. This needs the raw scroll position
+     * on every frame and nothing else, so a trigger with a start, an end and a progress
+     * is machinery that can only go wrong: a degenerate range measured before layout
+     * settles would stop firing entirely.
+     */
+    let frame = 0;
+    const onScroll = () => {
+      if (frame) return;
+      frame = requestAnimationFrame(() => {
+        frame = 0;
+        apply();
+      });
+    };
 
-    return () => ctx.revert();
+    apply();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onScroll);
+
+    return () => {
+      if (frame) cancelAnimationFrame(frame);
+      window.removeEventListener('scroll', onScroll);
+      window.removeEventListener('resize', onScroll);
+    };
   }, []);
 
   return (

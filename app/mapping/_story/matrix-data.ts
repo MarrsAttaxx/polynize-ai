@@ -49,7 +49,7 @@ export type MatrixUser = {
 
 export const MATRIX_SCENARIOS: Scenario[] = [
   {
-    tag: 'Scenario 1',
+    tag: 'Work scenario 1',
     name: 'Researching a new account',
     cat: 'analytic',
     caps: [
@@ -58,7 +58,7 @@ export const MATRIX_SCENARIOS: Scenario[] = [
     ],
   },
   {
-    tag: 'Scenario 2',
+    tag: 'Work scenario 2',
     name: 'Drafting the proposal',
     cat: 'functional',
     caps: [
@@ -67,7 +67,7 @@ export const MATRIX_SCENARIOS: Scenario[] = [
     ],
   },
   {
-    tag: 'Scenario 3',
+    tag: 'Work scenario 3',
     name: 'Pricing and scoping the work',
     cat: 'analytic',
     caps: [
@@ -76,7 +76,7 @@ export const MATRIX_SCENARIOS: Scenario[] = [
     ],
   },
   {
-    tag: 'Scenario 4',
+    tag: 'Work scenario 4',
     name: 'Pitching it to the client',
     cat: 'collaboration',
     caps: [
@@ -85,7 +85,7 @@ export const MATRIX_SCENARIOS: Scenario[] = [
     ],
   },
   {
-    tag: 'Scenario 5',
+    tag: 'Work scenario 5',
     name: 'Turning the win into a campaign',
     cat: 'functional',
     caps: [

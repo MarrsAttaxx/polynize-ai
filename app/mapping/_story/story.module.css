@@ -122,9 +122,23 @@
   height: 52vh;
   z-index: 20;
   pointer-events: none;
-  /* Script raises this. Base 0 means no script, a thrown error or a dead ticker all
-     leave the page completely sharp, which is a perfectly good page. */
-  opacity: 0;
+  /* THE WRAPPER NEVER GETS AN OPACITY, and this is the whole reason the effect works.
+     Per Filter Effects, an ancestor with opacity < 1 establishes a Backdrop Root, which
+     means a descendant's backdrop-filter can only see content INSIDE that root, i.e.
+     nothing. Fading this element made the blur silently vanish for the entire ramp and
+     switch on only if the value happened to land on exactly 1. Verified in the browser
+     on 10 Aug 2026: wrapper at 1 blurs, wrapper at 0.85 does not, layers at 0.5 with
+     the wrapper at 1 blur at half strength. Opacity on the SAME element as the
+     backdrop-filter is fine; opacity on an ancestor is not.
+
+     So the strength ramp is a custom property that each layer applies to ITSELF. */
+  --veil-k: 0;
+}
+.veilLayer,
+.veilScrim {
+  /* Base 0 means no script, a thrown error or a dead ticker all leave the page
+     completely sharp, which is a perfectly good page. */
+  opacity: var(--veil-k, 0);
 }
 .veilLayer {
   position: absolute;
