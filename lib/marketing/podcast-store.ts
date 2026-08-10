@@ -71,6 +71,16 @@ export type ClipProposal = {
   descript_composition_id?: string;
   descript_url?: string;
   assembly_error?: string;
+  /**
+   * TRUE when the cut exists but is not publishable yet, because a landscape source needs Descript's
+   * speaker-tracking reframe and that is a manual toggle rather than something automation can apply.
+   *
+   * A flag rather than nothing, because the failure this guards against is not the manual step, it is
+   * a clip that looks finished, gets published, and has a speaker cropped out of frame.
+   */
+  needs_reframe?: boolean;
+  /** What the agent REPORTED the source to be. Never assumed: he once misremembered it himself. */
+  source_aspect?: '9:16' | '16:9' | 'unknown';
   /** The marketing piece this clip became, once it entered the publishing pipeline. */
   piece_id?: string;
   created_at: string;

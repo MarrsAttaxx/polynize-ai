@@ -1,0 +1,455 @@
+/**
+ * The podcast clip workbench.
+ *
+ * The type hierarchy exists to serve one act of judgment: does this clip play as one coherent
+ * thought? So the HOOK LINE and the BODY PROSE are the largest, most readable things on the page, and
+ * everything administrative (rank, status, duration, platforms) is deliberately small. Marrs asked for
+ * "a readable TEXT BLOCK, not an EDL", and that is a typography instruction as much as a data one.
+ */
+
+.head {
+  margin-bottom: 26px;
+}
+.back {
+  display: inline-block;
+  margin-bottom: 14px;
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: var(--text-3);
+  text-decoration: none;
+}
+.back:hover {
+  color: var(--mint);
+}
+.eyebrow {
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  margin-bottom: 6px;
+}
+.title {
+  margin: 0;
+  font-size: 30px;
+  line-height: 1.15;
+  color: var(--text);
+}
+.sub {
+  margin: 6px 0 0;
+  font-size: 14px;
+  color: var(--text-2);
+}
+
+.panel {
+  border: 1px solid var(--line, rgba(244, 236, 228, 0.12));
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 22px;
+  background: var(--surface, #13131a);
+}
+.panelHead {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.panelTitle {
+  margin: 0 0 12px;
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 12px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+.model {
+  margin-left: auto;
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--text-3);
+  opacity: 0.75;
+}
+
+.row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-top: 12px;
+}
+
+.btn,
+.primaryBtn,
+.ghostBtn {
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 12px;
+  border-radius: 10px;
+  padding: 10px 15px;
+  cursor: pointer;
+  white-space: nowrap;
+  text-decoration: none;
+  display: inline-block;
+}
+.primaryBtn {
+  color: var(--ink, #0a0a0f);
+  background: var(--mint);
+  border: 1px solid var(--mint);
+  font-weight: 600;
+}
+.btn {
+  color: var(--mint);
+  background: rgba(105, 252, 203, 0.08);
+  border: 1px solid rgba(105, 252, 203, 0.4);
+}
+.ghostBtn {
+  color: var(--text-3);
+  background: transparent;
+  border: 1px solid rgba(244, 236, 228, 0.16);
+}
+.btn:disabled,
+.primaryBtn:disabled,
+.ghostBtn:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.status {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--text-2);
+}
+.status b {
+  color: var(--mint);
+  font-weight: 600;
+}
+.hint {
+  margin: 12px 0 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-3);
+}
+.note {
+  margin: 0 0 16px;
+  font-size: 13px;
+  color: var(--mint);
+}
+.error {
+  margin: 0 0 16px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--coral);
+}
+.warn {
+  font-size: 12px;
+  color: var(--amber);
+}
+
+/* THE MANUAL STEP, in amber because it is neither an error nor a success: the cut worked and is
+   still not publishable. */
+.manual {
+  margin: 12px 0 0;
+  padding: 10px 12px;
+  border-left: 3px solid var(--amber);
+  background: rgba(240, 184, 107, 0.08);
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-2);
+}
+.manual b {
+  color: var(--amber);
+}
+
+/* Descript project picker */
+.projects {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 12px;
+}
+.project {
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--text-2);
+  background: transparent;
+  border: 1px solid rgba(244, 236, 228, 0.16);
+  border-radius: 8px;
+  padding: 7px 10px;
+  cursor: pointer;
+  text-align: left;
+}
+.project:hover {
+  border-color: rgba(105, 252, 203, 0.5);
+  color: var(--text);
+}
+.projectOn {
+  border-color: var(--mint);
+  color: var(--mint);
+}
+
+.pasteBox {
+  margin-top: 12px;
+}
+.paste {
+  width: 100%;
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text);
+  background: rgba(10, 10, 15, 0.5);
+  border: 1px solid rgba(244, 236, 228, 0.16);
+  border-radius: 10px;
+  padding: 12px;
+  resize: vertical;
+  margin-bottom: 10px;
+}
+
+/* Progress, same idiom as the prezie stage so there is one language for "she is working". */
+.working {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+  margin-top: 14px;
+}
+.workingHead {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  color: var(--text-3);
+}
+.workingHead b {
+  font-weight: 400;
+  color: var(--mint);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+.workingMark {
+  flex: none;
+  display: block;
+}
+.stream {
+  display: flex;
+  justify-content: flex-end;
+  overflow: hidden;
+  margin: 0;
+  height: 15px;
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 11px;
+  line-height: 15px;
+  color: var(--text-3);
+  opacity: 0.6;
+  mask-image: linear-gradient(to right, transparent, #000 22%);
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 22%);
+}
+.stream span {
+  flex: none;
+  white-space: pre;
+}
+.stream em {
+  flex: none;
+  margin-right: auto;
+  font-style: normal;
+  opacity: 0.8;
+}
+
+/* ---- one clip ---- */
+.clip {
+  border: 1px solid rgba(244, 236, 228, 0.12);
+  border-radius: 12px;
+  padding: 18px;
+  margin-top: 16px;
+  background: rgba(10, 10, 15, 0.35);
+}
+.clipHead {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.rank {
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: var(--text-3);
+  flex: none;
+}
+.clipTitle {
+  margin: 0;
+  font-size: 17px;
+  line-height: 1.25;
+  color: var(--text);
+}
+.badge {
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  border-radius: 999px;
+  padding: 3px 8px;
+  border: 1px solid rgba(244, 236, 228, 0.2);
+  color: var(--text-3);
+}
+.badge_approved {
+  border-color: rgba(240, 225, 182, 0.5);
+  color: var(--gold, #f0e1b6);
+}
+.badge_assembling {
+  border-color: rgba(240, 184, 107, 0.6);
+  color: var(--amber);
+}
+.badge_assembled {
+  border-color: var(--mint);
+  color: var(--mint);
+}
+.badge_rejected {
+  opacity: 0.5;
+}
+.dur {
+  margin-left: auto;
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: var(--text-3);
+}
+
+.theme {
+  margin: 10px 0 0;
+  font-size: 14px;
+  color: var(--text-2);
+}
+.why {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: var(--text-3);
+  font-style: italic;
+}
+
+/**
+ * THE READABLE BLOCK. This is the part he actually reads, so it gets the size and the line height,
+ * and the hook is visually separated because leading with the blunt line is the whole technique.
+ */
+.readable {
+  margin: 16px 0 0;
+  padding: 16px;
+  border-radius: 10px;
+  background: rgba(244, 236, 228, 0.04);
+}
+.hookLabel,
+.bodyLabel {
+  margin: 0 0 5px;
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+.bodyLabel {
+  margin-top: 16px;
+}
+.hookLine {
+  margin: 0;
+  font-size: 19px;
+  line-height: 1.35;
+  font-weight: 600;
+  color: var(--mint);
+}
+.bodyLine {
+  margin: 0;
+  font-size: 16px;
+  line-height: 1.62;
+  color: var(--text);
+}
+
+.platforms,
+.cuts {
+  margin: 10px 0 0;
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--text-3);
+}
+.cutting {
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: var(--amber);
+}
+
+/* The cut list is a debugging view, so it is styled as data rather than as reading. */
+.edl {
+  margin: 14px 0 0;
+  padding-left: 20px;
+  font-size: 12px;
+  line-height: 1.65;
+  color: var(--text-3);
+}
+.edl code {
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  color: var(--amber);
+  margin-right: 4px;
+}
+.edl em {
+  font-style: normal;
+  opacity: 0.7;
+}
+
+.dropped {
+  margin-top: 20px;
+  font-size: 13px;
+  color: var(--text-3);
+}
+.dropped summary {
+  cursor: pointer;
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.droppedRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+}
+.droppedRow span {
+  flex: 1;
+  min-width: 0;
+}
+
+/* ---- new episode form (on the list page) ---- */
+.newBox {
+  border: 1px solid rgba(105, 252, 203, 0.3);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 22px;
+  background: rgba(105, 252, 203, 0.04);
+}
+.newRow {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+.newNum,
+.newTitle,
+.newStream {
+  font-size: 14px;
+  color: var(--text);
+  background: rgba(10, 10, 15, 0.5);
+  border: 1px solid rgba(244, 236, 228, 0.16);
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+.newNum {
+  width: 70px;
+  flex: none;
+  text-align: center;
+}
+.newTitle {
+  flex: 1;
+  min-width: 180px;
+}
+.newStream {
+  flex: none;
+}

@@ -260,7 +260,7 @@ export function assemblyPrompt(clip: ClipProposal, episodeTitle: string): string
     .map((s, i) => `${i + 1}. [${s.at}] "${s.text}"`)
     .join('\n');
 
-  return `Build a short vertical clip as a NEW composition. Do NOT modify or trim the existing source composition: leave it exactly as it is.
+  return `Build a VERTICAL SHORT as a NEW composition. Do NOT modify or trim the existing source composition: leave it exactly as it is.
 
 Name the new composition: ${clip.title}
 
@@ -268,12 +268,66 @@ Assemble EXACTLY these spans from "${episodeTitle}", in this order. Span 1 is th
 
 ${spans}
 
-Rules:
+THE CUT
 - Keep only these spans. Everything between them is cut.
 - Remove silences, filler words and false starts inside the spans you keep.
 - Hard cuts only. No fades, no dissolves, no transitions.
 - End on the last span. Do not add an outro, and do not pad with silence to reach any length.
 - Do not add content the speaker did not say.
 
-Then report back: the new composition's id and name, its final duration, and the ASPECT RATIO of the source media. Do not assume the aspect ratio, check it and say what it actually is.`;
+THE FRAME. The finished clip is for TikTok, Reels and Shorts, so it must be 9:16 VERTICAL, 1080x1920.
+- First CHECK the source media's aspect ratio. Do not assume it, and do not take my word for it.
+- If the source is already 9:16, leave the framing alone. Do not crop or reframe it.
+- If the source is 16:9 or any landscape ratio, set the composition to a 9:16 canvas and reframe so
+  the SPEAKER stays in frame, following whoever is talking. In Descript this is the "Center active
+  speaker" behaviour under the Look Good AI tools. A fixed centre crop is NOT acceptable on a
+  two-person podcast, because it cuts whoever is not in the middle out of the shot.
+- If you cannot apply speaker tracking yourself, DO NOT silently fall back to a static centre crop.
+  Set the 9:16 canvas, leave the framing as it is, and say clearly that speaker tracking still needs
+  to be switched on by hand.
+
+THEN REPORT, as plain labelled lines:
+- COMPOSITION: the new composition's id and name
+- DURATION: its final duration in seconds
+- SOURCE ASPECT: the aspect ratio you actually found on the source media
+- CANVAS: the aspect ratio the new composition is set to
+- SPEAKER TRACKING: applied, not needed, or needs doing by hand`;
+}
+
+/**
+ * Read the agent's report to find out whether the clip is actually finished.
+ *
+ * This exists because of a specific, expensive gap. Descript's speaker-tracking reframe was found NOT
+ * to be exposed to automation, which means a 16:9 source can be cut, ordered and canvased
+ * automatically but still needs a roughly thirty second manual toggle before it is publishable. The
+ * dangerous outcome is not the manual step, it is a clip that LOOKS done, gets published, and has a
+ * speaker cropped out of frame. So the agent is asked to state what it managed, and this turns that
+ * statement into a flag the operator can see.
+ *
+ * Deliberately pessimistic: anything other than a clear "applied" or "not needed" is treated as
+ * still needing a human, because assuming it worked is the one reading with a bad failure mode.
+ */
+export function readAssemblyReport(text: string): {
+  source_aspect?: '9:16' | '16:9' | 'unknown';
+  needs_reframe: boolean;
+} {
+  const t = String(text ?? '');
+  const aspectLine = t.match(/SOURCE ASPECT\s*:?\s*([^\n]*)/i)?.[1] ?? '';
+  const vertical = /\b9\s*[:x]\s*16\b|vertical|portrait/i.test(aspectLine);
+  const landscape = /\b16\s*[:x]\s*9\b|landscape|1920\s*[x×]\s*1080/i.test(aspectLine);
+  const source_aspect: '9:16' | '16:9' | 'unknown' = vertical
+    ? '9:16'
+    : landscape
+      ? '16:9'
+      : 'unknown';
+
+  const trackingLine = t.match(/SPEAKER TRACKING\s*:?\s*([^\n]*)/i)?.[1] ?? '';
+  const settled = /\bapplied\b|\bnot needed\b|\balready\b/i.test(trackingLine);
+
+  return {
+    source_aspect,
+    // A vertical source needs nothing. Anything else needs a human unless the agent said outright
+    // that it handled it.
+    needs_reframe: source_aspect === '9:16' ? false : !settled,
+  };
 }
