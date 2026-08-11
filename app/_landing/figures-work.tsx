@@ -9,6 +9,9 @@
  *   beat 2  the vendor field. "Too many tools, too many options, too many opinions" is
  *           the sentence that figure was built for: every mark a different vendor,
  *           question marks at the same weight among them, nothing lining up.
+ *   beat 3  the torch on the systems diagram. Beat 3 is now word for word the same beat
+ *           as /mapping's, so it gets the same figure. Both pages arrive at the same
+ *           place here: there is no clarity on where AI actually works.
  *
  * The two here:
  *
@@ -27,7 +30,7 @@
  * still lands on a complete drawing, and no numerals anywhere.
  */
 
-import { LoneCompass, VendorDrift } from './figures-ai';
+import { LoneCompass, TorchDiagram, VendorDrift } from './figures-ai';
 import { Person, brackets, f, graticule, rand } from './hud';
 import type { FigureRegistry } from './BeatFigure';
 import s from './story.module.css';
@@ -176,10 +179,16 @@ export const WORK_FIGURES: FigureRegistry = {
   // Also reused: the vendor field IS "too many tools, too many options, too many
   // opinions", which is closer to what that figure argues than the beat it was built for.
   options: { viewBox: '0 0 1000 480', place: 'wide', render: () => <VendorDrift /> },
+  // Same key geometry as /mapping's, so the two pages are identical here.
+  torch: { viewBox: '0 0 1000 440', place: 'wide', render: () => <TorchDiagram /> },
+  /**
+   * The amplifier is no longer used by a beat. It is kept registered rather than deleted
+   * because it draws the strongest single argument in the thesis (a force multiplier
+   * multiplies what it is given), and that argument is likely to want a home again. A
+   * registry entry nothing references costs nothing.
+   */
   amplify: {
     viewBox: '0 0 1000 420',
-    // The route swings out to the left edge across this gap, so the figure sits right
-    // of centre rather than fighting it for the same space.
     place: 'right',
     render: () => <Amplifier />,
   },

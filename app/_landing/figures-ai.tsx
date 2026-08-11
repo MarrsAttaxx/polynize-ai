@@ -279,7 +279,8 @@ const TRAVELLERS = [
   { x0: 432, x1: 568, y: 320, i: 2 },
 ];
 
-function TorchDiagram() {
+/** Reused by /capability-mapping: the same beat, so the same figure. */
+export function TorchDiagram() {
   return (
     <g className={s.hudScene}>
       <defs>

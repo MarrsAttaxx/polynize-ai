@@ -36,7 +36,7 @@ import {
  */
 
 /** The figures this page declares. See figures-work.tsx for the registry. */
-export type WorkFigureKind = 'lost' | 'blackbox' | 'amplify' | 'gamble';
+export type WorkFigureKind = 'lost' | 'options' | 'torch' | 'misfit';
 
 /** The three inputs the engagement asks for. Same three, different emphasis. */
 const INPUTS: Silo[] = [
@@ -48,9 +48,9 @@ const INPUTS: Silo[] = [
 /**
  * The five beats.
  *
- * Jobs: 1 condition, 2 consequence, 3 the mechanism that makes it worse, 4 the cost,
- * 5 the turn. Same arc shape as /mapping, which is why they can share a layout, but
- * every line is about the work rather than about the tools.
+ * Jobs: 1 condition, 2 consequence, 3 the diagnosis, 4 the cause, 5 the turn. Same arc
+ * shape as /mapping, which is why they can share a layout, and beat 3 is now word for
+ * word the same beat on both pages.
  *
  * DECISIONS THAT SHOULD NOT BE QUIETLY UNDONE:
  * - Beats 1, 2, 4 and 5 are Marrs's own lines (10 Aug 2026). Beat 1 went through "Most
@@ -58,9 +58,11 @@ const INPUTS: Silo[] = [
  *   their work" before landing on "lost in their AI journey". Do not paraphrase any of
  *   them. The SUB-LINES under 1, 2 and 4 are mine, written to the brief he gave for
  *   each, and are the parts most likely to want his hand.
- * - Beat 3 is the load-bearing one. Amplification is the mechanism that turns an
- *   unmapped process from a slow problem into a fast one, and it is the reason the
- *   sequence has to be model, then train, then deploy rather than any other order.
+ * - Beat 3 is shared verbatim with /mapping, text and figure. It replaced "AI amplifies
+ *   whatever it is given", which was the load-bearing line from the thesis and is worth
+ *   finding another home for: it is the reason the sequence has to be model, then train,
+ *   then deploy rather than any other order. The Amplifier figure it used is still
+ *   registered in figures-work.tsx, unreferenced, for exactly that reason.
  * - Beat 4 is the pivot of the whole page: the reader arrived believing they have a
  *   technology problem, and this is the line that tells them they do not. Its sub-line
  *   has to say WHY, which is that AI cuts across the org structure rather than sitting
@@ -81,10 +83,13 @@ export const workBeats: Beat[] = [
     figure: 'options',
   },
   {
-    kicker: 'What it costs',
-    line: 'AI amplifies whatever it is given.',
-    sub: 'Point it at work nobody has mapped and it does not fix the process. It runs the same broken process faster.',
-    figure: 'amplify',
+    // Word for word /mapping's beat 3, kicker included, and the same figure. Marrs asked
+    // for them to be identical (11 Aug 2026), so a change to one has to be made to both
+    // or they silently drift apart.
+    kicker: 'No landmarks',
+    line: 'No clarity on where AI actually works.',
+    sub: 'Advice is generic and doesn’t relate to you, or to the flow of your team’s work.',
+    figure: 'torch',
   },
   {
     line: 'This is not a technology problem. It is an organisation design problem.',
