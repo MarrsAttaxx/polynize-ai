@@ -133,6 +133,12 @@ export const workArtefactsFootnote =
 export const workContent: MappingContent = {
   ...mappingContent,
 
+  /**
+   * A different frame of the same video: 59.2s. Overridden here rather than in
+   * content-base so /mapping keeps its own frame at 0:10.
+   */
+  video: { ...mappingContent.video, poster: '/mapping/poster-cm-59s.jpg' },
+
   hero: {
     h1: 'See How Your Teams Actually Work.',
     subhead:

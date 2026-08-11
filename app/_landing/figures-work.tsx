@@ -19,11 +19,11 @@
  *           individual, so pointing it at unmapped work does not straighten the process,
  *           it runs the same crooked process louder. The output waveform is the input
  *           waveform, bigger and with the same kink in it.
- *   beat 4  Misfit. A rigid org chart of identical boxes on identical reporting lines,
- *           with the work drawn as a shape that cuts straight across them and fits none
- *           of them. This is the pivot of the page: not a technology problem, an
- *           organisation design problem, and the figure has to make the reader SEE that
- *           AI does not sit inside the structure they already have.
+ *   beat 4  Redesign. An org chart whose blocks will not sit still: every box drifting,
+ *           the reporting lines faint behind them, the whole structure mid-rearrangement.
+ *           This is the pivot of the page (not a technology problem, an organisation
+ *           design problem) and it also sets up the org chart the reader is about to be
+ *           handed in the next section, so the two read as the same object.
  *
  * Everything the AI figures' header comment says applies here too: procedural and
  * deterministic, merged paths, bloom without filters, CSS keyframes so a stalled ticker
@@ -94,16 +94,21 @@ function Amplifier() {
 }
 
 /* ================================================================== beat 4
-   The misfit.
+   The organisation being redesigned.
 
-   A rigid hierarchy of identical boxes on identical lines, and one continuous shape that
-   runs straight through all of them. Every box is the same size on purpose: the point is
-   that the structure was designed for interchangeable units of work, and the thing being
-   introduced is not one.
+   An org chart of identical boxes on identical reporting lines, and none of the boxes will
+   hold still. They drift, ease back, and drift again on their own clocks, so the structure
+   reads as mid-rearrangement rather than as a diagram of something settled.
 
-   The crossing shape is drawn LAST and bright, over the top of the chart rather than
-   inside it, because "does not fit within" is the entire argument. If a future edit tucks
-   it neatly into a lane, the figure has started saying the opposite. */
+   IT REPLACED A CROSSING LINE, and the reason matters. The first version drew the work as
+   one bright curve cutting across the chart, which said "AI does not fit in here" but said
+   it ABOUT the chart rather than THROUGH it. Moving the boxes themselves says the same
+   thing from the inside: the answer is not routing something past the structure, it is
+   changing the structure. It also sets up the org chart in the next section, so the reader
+   meets the same object twice.
+
+   The lines stay put on purpose. They are the thing the boxes are straining against, and
+   a chart where the wiring moves too would read as noise rather than as redesign. */
 
 const BOX_W = 132;
 const BOX_H = 54;
@@ -136,22 +141,21 @@ const ORG = (() => {
   return { boxes, lines: lines.join(' ') };
 })();
 
-/** The work: one continuous run that ignores every boundary in the chart. */
-const CROSSING =
-  'M 40 300 C 190 300, 214 118, 356 118 C 498 118, 520 292, 664 292 ' +
-  'C 808 292, 826 180, 960 180';
+/** Four drift patterns, assigned by index, so no two neighbours move together. */
+const DRIFTS = [s.orgDriftA, s.orgDriftB, s.orgDriftC, s.orgDriftD];
 
-function Misfit() {
+function Redesign() {
   return (
     <g className={s.hudScene}>
       <path className={s.hudGrid} d={graticule(1000, 400, 44, 24)} />
 
-      {/* The structure. Identical boxes, identical lines, no exceptions. */}
-      <g className={s.hudOrg}>
-        <path className={s.hudOrgLine} d={ORG.lines} />
-        {ORG.boxes.map((b, i) => (
+      {/* The wiring stays put. It is what the boxes are straining against. */}
+      <path className={s.hudOrgLine} d={ORG.lines} />
+
+      {/* The boxes will not hold still. */}
+      {ORG.boxes.map((b, i) => (
+        <g key={i} className={DRIFTS[i % DRIFTS.length]} style={{ ['--i' as string]: i }}>
           <rect
-            key={i}
             className={s.hudOrgBox}
             x={f(b.x - BOX_W / 2)}
             y={f(b.y - BOX_H / 2)}
@@ -159,14 +163,12 @@ function Misfit() {
             height={BOX_H}
             rx="6"
           />
-        ))}
-      </g>
-
-      {/* The work, over the top. Bright, continuous, and fitting nothing. */}
-      <path className={s.hudBloom} d={CROSSING} />
-      <path className={s.hudCross} d={CROSSING} />
-      <circle className={s.hudDot} cx="40" cy="300" r="6" />
-      <circle className={s.hudDot} cx="960" cy="180" r="6" />
+          <path
+            className={s.hudOrgRule}
+            d={`M ${f(b.x - 38)} ${f(b.y - 8)} h 76 M ${f(b.x - 38)} ${f(b.y + 7)} h 48`}
+          />
+        </g>
+      ))}
     </g>
   );
 }
@@ -192,5 +194,5 @@ export const WORK_FIGURES: FigureRegistry = {
     place: 'right',
     render: () => <Amplifier />,
   },
-  misfit: { viewBox: '0 0 1000 400', place: 'wide', render: () => <Misfit /> },
+  misfit: { viewBox: '0 0 1000 400', place: 'wide', render: () => <Redesign /> },
 };

@@ -15,47 +15,124 @@
   text-align: left;
 }
 
-/* ---------- The empty state ----------
-   The section opens on one button, not on a finished map. A map sitting there fully drawn
-   reads as a product screenshot and gets scrolled past; a reader who picks their own team
-   out of an org chart is looking at THEIR map by the time it appears. */
-.empty {
-  display: grid;
-  justify-items: center;
-  gap: 18px;
-  padding: 40px 0 24px;
-  text-align: center;
-}
-.bigCta {
-  font-family: var(--font-space-grotesk), sans-serif;
-  font-size: clamp(17px, 2vw, 21px);
-  font-weight: 600;
-  color: #06231a;
-  background: var(--mint);
-  border: 0;
-  border-radius: 999px;
-  padding: 20px 44px;
-  cursor: pointer;
-  box-shadow: 0 0 0 1px color-mix(in srgb, var(--mint) 60%, transparent),
-    0 0 44px color-mix(in srgb, var(--mint) 34%, transparent);
-  transition: transform 0.18s cubic-bezier(0.2, 0.8, 0.3, 1), box-shadow 0.18s ease;
-}
-.bigCta:hover { transform: translateY(-2px); }
-.emptyNote { margin: 0; font-size: 14px; color: var(--text-3); max-width: 420px; }
+/* ---------- The reveal ----------
+   Was a mint "Map a team" pill, which sat inches from the page's real CTA and read as a
+   second attempt at the same ask. This shows the SHAPE of the map, withholds the detail,
+   and makes the click feel like uncovering rather than submitting.
 
-/* The glow breathes so the button reads as the one thing to do here. Held to a glow and
-   a hair of scale: a button that bounces reads as an advert. */
-@keyframes ctaPulse {
-  0%, 100% {
-    box-shadow: 0 0 0 1px color-mix(in srgb, var(--mint) 60%, transparent),
-      0 0 30px color-mix(in srgb, var(--mint) 24%, transparent);
-  }
-  50% {
-    box-shadow: 0 0 0 1px color-mix(in srgb, var(--mint) 80%, transparent),
-      0 0 60px color-mix(in srgb, var(--mint) 48%, transparent);
-  }
+   The rows are schematic: no names, no numbers, nothing readable at any blur radius. That
+   matters. A blurred grid that looked like real data would be claiming to hide something
+   from the reader, and there is nothing to hide. */
+.reveal {
+  position: relative;
+  display: block;
+  width: 100%;
+  border: 1px solid var(--border-soft);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--mint) 2%, var(--bg-deep, #0f0f17));
+  padding: 0;
+  cursor: pointer;
+  overflow: hidden;
+  transition: border-color 0.2s ease, transform 0.2s cubic-bezier(0.2, 0.8, 0.3, 1);
 }
-.pulse { animation: ctaPulse 2.6s ease-in-out infinite; }
+.reveal:hover,
+.reveal:focus-visible { border-color: color-mix(in srgb, var(--mint) 55%, transparent); }
+.reveal:hover { transform: translateY(-2px); }
+.reveal:focus-visible { outline: 2px solid var(--mint); outline-offset: 3px; }
+/* Sharpens slightly under the cursor, so the affordance is "there is something here". */
+.reveal:hover .revealGhost { filter: blur(5px); opacity: 0.72; }
+
+/* Every measurement here is the real map's: 92px lanes, 18px gutters, a header, cluster
+   bands between groups. Change one there and change it here, or the reveal stops reading
+   as the same object. */
+.revealGhost {
+  display: grid;
+  padding: 10px 0 20px;
+  filter: blur(7px);
+  opacity: 0.72;
+  transition: filter 0.25s ease, opacity 0.25s ease;
+  pointer-events: none;
+}
+.ghostHead,
+.ghostRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 92px 92px 92px;
+  align-items: center;
+  justify-items: center;
+  padding: 0 18px;
+}
+.ghostHead {
+  height: 26px;
+  margin-bottom: 4px;
+}
+.ghostHead i {
+  width: 54px;
+  height: 8px;
+  border-radius: 2px;
+}
+.ghostHead i:first-child { justify-self: start; width: 40px; background: color-mix(in srgb, var(--text-3) 40%, transparent); }
+.ghostHead .lHuman { background: var(--coral); }
+.ghostHead .lHybrid { background: var(--amber); }
+.ghostHead .lAgentic { background: var(--mint); }
+
+/* The band that carries a cluster name in the real map. */
+.ghostCluster {
+  padding: 15px 18px 7px;
+  border-top: 1px solid var(--border-soft);
+}
+.ghostCluster i {
+  display: block;
+  height: 12px;
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--text) 34%, transparent);
+}
+
+.ghostRow { height: 34px; }
+.ghostLabel {
+  justify-self: start;
+  height: 11px;
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--text-2) 40%, transparent);
+}
+/* Empty lanes stay visible. Three columns you can count is what makes it a map. */
+.ghostCell {
+  width: 62px;
+  height: 20px;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--text-3) 22%, transparent);
+}
+.ghostCell.lHuman { background: var(--coral); }
+.ghostCell.lHybrid { background: var(--amber); }
+.ghostCell.lAgentic { background: var(--mint); }
+
+.revealOverlay {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: 8px;
+  /* A scrim, so the label reads against whichever lane colour is behind it. */
+  background: radial-gradient(
+    ellipse at center,
+    color-mix(in srgb, var(--bg) 88%, transparent) 0%,
+    color-mix(in srgb, var(--bg) 62%, transparent) 70%,
+    color-mix(in srgb, var(--bg) 38%, transparent) 100%
+  );
+}
+.revealLabel {
+  font-family: var(--font-space-grotesk), sans-serif;
+  font-size: clamp(19px, 2.4vw, 26px);
+  font-weight: 600;
+  color: var(--text);
+  text-shadow: 0 2px 18px rgba(0, 0, 0, 0.7);
+}
+.revealNote { font-size: 13.5px; color: var(--text-2); }
+@keyframes revealBreathe {
+  0%, 100% { box-shadow: 0 0 0 1px color-mix(in srgb, var(--mint) 12%, transparent), 0 0 30px color-mix(in srgb, var(--mint) 10%, transparent); }
+  50% { box-shadow: 0 0 0 1px color-mix(in srgb, var(--mint) 34%, transparent), 0 0 54px color-mix(in srgb, var(--mint) 24%, transparent); }
+}
+.revealBreathe { animation: revealBreathe 3.2s ease-in-out infinite; }
 
 /* ---------- The control, where the legend used to be ---------- */
 .controls { display: flex; justify-content: center; margin: 0 0 20px; }
@@ -341,7 +418,7 @@
 }
 .close:hover { color: var(--text); border-color: var(--border); }
 
-.pickHead { max-width: 560px; margin: 0 auto 26px; }
+.pickHead { max-width: 560px; margin: 0 auto 30px; }
 .pickEyebrow {
   display: block;
   font-family: var(--font-inter), monospace;
@@ -359,24 +436,43 @@
   margin: 0 0 10px;
   color: var(--text);
 }
-.pickNote { margin: 0; font-size: 14px; line-height: 1.6; color: var(--text-2); }
-.pickFoot { margin: 22px 0 0; font-size: 12px; color: var(--text-3); }
+/* "Indicative only", and nothing else. The paragraph that used to sit here explained the
+   engagement to somebody who is mid-click, which is the wrong moment for it. */
+.pickFoot {
+  margin: 26px 0 0;
+  font-family: var(--font-inter), monospace;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
 
 /* ---------- The org chart ----------
    Real buttons with CSS connectors, not an SVG. Every box is keyboard reachable and
    announced, and a pseudo-element cannot trap focus the way an SVG hit area can. */
 .org { display: grid; justify-items: center; }
+/* Titles and icons only. The one-line notes came off: seven of them turned a picker into
+   a page of reading, and the reader is choosing a function they already know the name of. */
 .orgBox {
   display: grid;
-  gap: 4px;
-  text-align: left;
+  justify-items: center;
+  gap: 10px;
+  text-align: center;
   border: 1px solid var(--border-soft);
-  border-radius: 10px;
+  border-radius: 12px;
   background: color-mix(in srgb, var(--mint) 3%, transparent);
-  padding: 12px 14px;
+  padding: 22px 16px;
   cursor: pointer;
   transition: border-color 0.16s ease, background 0.16s ease, transform 0.16s ease;
 }
+.orgIcon {
+  display: inline-flex;
+  color: var(--mint);
+  opacity: 0.85;
+}
+.orgBox:hover .orgIcon,
+.orgBox:focus-visible .orgIcon { opacity: 1; }
 .orgBox:hover,
 .orgBox:focus-visible {
   border-color: var(--mint);
@@ -386,20 +482,20 @@
 .orgBox:focus-visible { outline: 2px solid var(--mint); outline-offset: 2px; }
 .orgName {
   font-family: var(--font-space-grotesk), sans-serif;
-  font-size: 14.5px;
+  font-size: 15.5px;
   font-weight: 600;
   color: var(--text);
+  line-height: 1.25;
 }
-.orgNote { font-size: 11.5px; line-height: 1.4; color: var(--text-3); }
 .orgLead {
-  min-width: 260px;
+  min-width: 300px;
   border-color: color-mix(in srgb, var(--mint) 40%, transparent);
   background: color-mix(in srgb, var(--mint) 8%, transparent);
 }
 /* The vertical drop, the horizontal bus, and a stub over each function. */
 .orgBus {
   width: 100%;
-  height: 26px;
+  height: 30px;
   position: relative;
 }
 .orgBus::before {
@@ -423,7 +519,7 @@
 .orgRow {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 14px;
+  gap: 16px;
   width: 100%;
 }
 .orgTeam { position: relative; }
@@ -465,7 +561,11 @@
 
 @media (max-width: 680px) {
   .orgRow { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .orgBox { padding: 16px 10px; }
+  .ghostHead,
+  .ghostRow { grid-template-columns: minmax(0, 1fr) 52px 52px 52px; }
+  .ghostCell { width: 40px; }
+  .ghostHead i { width: 34px; }
   .orgLead { min-width: 0; width: 100%; }
   .modal { padding: 24px 18px 20px; }
-  .bigCta { padding: 17px 30px; }
 }

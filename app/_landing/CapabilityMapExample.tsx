@@ -38,6 +38,34 @@ type Lane = (typeof LANES)[number];
 
 const LANE_CLASS: Record<Lane, string> = { human: s.lHuman, hybrid: s.lHybrid, agentic: s.lAgentic };
 
+/**
+ * The blurred placeholder behind "click to reveal".
+ *
+ * It mirrors the ANATOMY of the real map exactly (lane header, cluster bands, one lit lane
+ * per row, same 92px lane columns) and carries none of its content. That distinction is
+ * the whole point: a reader should recognise the object they are about to be handed, and
+ * should not be able to believe there is real data being withheld from them behind the
+ * blur, because there is not. `lit` is the lane index, fixed so nothing shimmers between
+ * renders.
+ */
+type GhostItem = { kind: 'cluster'; w: number } | { kind: 'row'; w: number; lit: 0 | 1 | 2 };
+
+const GHOST: GhostItem[] = [
+  { kind: 'cluster', w: 30 },
+  { kind: 'row', w: 62, lit: 2 },
+  { kind: 'row', w: 74, lit: 0 },
+  { kind: 'row', w: 55, lit: 1 },
+  { kind: 'cluster', w: 24 },
+  { kind: 'row', w: 68, lit: 2 },
+  { kind: 'row', w: 51, lit: 1 },
+  { kind: 'row', w: 79, lit: 0 },
+  { kind: 'cluster', w: 34 },
+  { kind: 'row', w: 58, lit: 2 },
+  { kind: 'row', w: 71, lit: 1 },
+  { kind: 'row', w: 64, lit: 2 },
+];
+const GHOST_LANE = [s.lHuman, s.lHybrid, s.lAgentic] as const;
+
 /** How long the modelling beat runs. Long enough to read, short enough not to annoy. */
 const THINK_MS = 1250;
 
@@ -94,18 +122,55 @@ export function CapabilityMapExample() {
   return (
     <div className={s.wrap}>
       {!team ? (
-        <div className={s.empty}>
-          <button
-            type="button"
-            className={`${s.bigCta} ${reduced ? '' : s.pulse}`}
-            onClick={openPicker}
-          >
-            Map a team
-          </button>
-          <p className={s.emptyNote}>
-            Pick any team in a business like yours and see the map it produces.
-          </p>
-        </div>
+        /**
+         * A blurred map you click through, not a button.
+         *
+         * It was a mint "Map a team" pill, which sat two inches from the page's real CTA
+         * and read as a second attempt at the same ask (Marrs, 11 Aug 2026). This is the
+         * opposite move: show the shape of the thing, withhold the detail, and make the
+         * click feel like uncovering rather than submitting.
+         *
+         * The blurred rows are deliberately SCHEMATIC. No names, no numbers, no readable
+         * text, so nothing here can be mistaken for real data being hidden from you.
+         */
+        <button
+          type="button"
+          className={`${s.reveal} ${reduced ? '' : s.revealBreathe}`}
+          onClick={openPicker}
+          aria-label="Reveal your capability map"
+        >
+          <span className={s.revealGhost} aria-hidden="true">
+            {/* The lane header, in the lane colours, so the object is recognisable
+                through the blur before a single word of it can be read. */}
+            <span className={s.ghostHead}>
+              <i />
+              <i className={s.lHuman} />
+              <i className={s.lHybrid} />
+              <i className={s.lAgentic} />
+            </span>
+            {GHOST.map((g, r) =>
+              g.kind === 'cluster' ? (
+                <span key={r} className={s.ghostCluster}>
+                  <i style={{ width: `${g.w}%` }} />
+                </span>
+              ) : (
+                <span key={r} className={s.ghostRow}>
+                  <i className={s.ghostLabel} style={{ width: `${g.w}%` }} />
+                  {[0, 1, 2].map((c) => (
+                    <i
+                      key={c}
+                      className={`${s.ghostCell} ${c === g.lit ? GHOST_LANE[c] : ''}`}
+                    />
+                  ))}
+                </span>
+              )
+            )}
+          </span>
+          <span className={s.revealOverlay}>
+            <span className={s.revealLabel}>Click to reveal your map</span>
+            <span className={s.revealNote}>Pick a team and watch it get mapped</span>
+          </span>
+        </button>
       ) : (
         <>
           {/* Where the legend used to be. The control earns the space; a key does not. */}
@@ -175,6 +240,36 @@ function countLine(caps: MapCap[]) {
   return `${n.human} human · ${n.hybrid} hybrid · ${n.agentic} agentic. An illustrative map, generalised for a business of this shape.`;
 }
 
+/**
+ * One glyph per function. Line art at a single weight, drawn from the same vocabulary as
+ * the beat figures, so the modal belongs to the page rather than importing an icon set.
+ */
+function TeamGlyph({ id }: { id: TeamId }) {
+  const c = 'currentColor';
+  const common = { fill: 'none', stroke: c, strokeWidth: 1.6, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const };
+  const paths: Record<TeamId, React.ReactNode> = {
+    // A crown of decisions: three peaks on a base.
+    leadership: <path {...common} d="M3 17h18M4 17l1.5-8 4 4L12 6l2.5 7 4-4L20 17" />,
+    // A rising line that lands on a target.
+    sales: <path {...common} d="M3 18l6-6 4 3 5-7M15 8h3v3" />,
+    // Broadcast: a horn and two waves.
+    marketing: <path {...common} d="M4 10v4l7 3V7l-7 3zM15 9a4 4 0 010 6M18 7a7 7 0 010 10" />,
+    // Ledger and coin.
+    finance: <path {...common} d="M5 4h9l5 5v11H5zM14 4v5h5M9 15h6M9 12h3" />,
+    // A cycle. A gear turns to mush at 22px; two arcs and two arrowheads do not.
+    operations: <path {...common} d="M3.5 12a8.5 8.5 0 0114.6-5.9M18.5 3v3.6H15M20.5 12a8.5 8.5 0 01-14.6 5.9M5.5 21v-3.6H9" />,
+    // Two figures.
+    people: <path {...common} d="M9 11a3 3 0 100-6 3 3 0 000 6M3 20a6 6 0 0112 0M16 5.5a3 3 0 010 5.5M17 20a6 6 0 00-2-4.3" />,
+    // A block being built out of blocks.
+    product: <path {...common} d="M4 8l8-4 8 4-8 4zM4 8v8l8 4 8-4V8M12 12v8" />,
+  };
+  return (
+    <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+      {paths[id]}
+    </svg>
+  );
+}
+
 /* ------------------------------------------------------------------ the picker */
 
 /**
@@ -235,9 +330,6 @@ function TeamPicker({
             <div className={s.pickHead}>
               <span className={s.pickEyebrow}>The organisation</span>
               <h3 className={s.pickTitle}>Which team should we map?</h3>
-              <p className={s.pickNote}>
-                A business of this shape has these functions. Pick one and we will map it.
-              </p>
             </div>
 
             <div className={s.org}>
@@ -248,8 +340,10 @@ function TeamPicker({
                   className={`${s.orgBox} ${s.orgLead}`}
                   onClick={() => onChoose(lead.id)}
                 >
+                  <span className={s.orgIcon} aria-hidden="true">
+                    <TeamGlyph id={lead.id} />
+                  </span>
                   <span className={s.orgName}>{lead.name}</span>
-                  <span className={s.orgNote}>{lead.note}</span>
                 </button>
               )}
               <div className={s.orgBus} aria-hidden="true" />
@@ -261,17 +355,16 @@ function TeamPicker({
                     className={`${s.orgBox} ${s.orgTeam}`}
                     onClick={() => onChoose(t.id)}
                   >
+                    <span className={s.orgIcon} aria-hidden="true">
+                      <TeamGlyph id={t.id} />
+                    </span>
                     <span className={s.orgName}>{t.name}</span>
-                    <span className={s.orgNote}>{t.note}</span>
                   </button>
                 ))}
               </div>
             </div>
 
-            <p className={s.pickFoot}>
-              A real engagement maps your own teams, from your own material. This is a
-              generalised example.
-            </p>
+            <p className={s.pickFoot}>Indicative only</p>
           </>
         )}
       </div>
