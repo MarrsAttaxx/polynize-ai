@@ -721,3 +721,22 @@
   font-style: normal;
   opacity: 0.8;
 }
+
+/* The one-shot is the recommended first move now, so it reads as the primary action. */
+.primaryBtn {
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink, #0a0a0f);
+  background: var(--mint);
+  border: 1px solid var(--mint);
+  border-radius: 10px;
+  padding: 10px 15px;
+  cursor: pointer;
+  white-space: nowrap;
+  margin-right: 8px;
+}
+.primaryBtn:disabled {
+  opacity: 0.45;
+  cursor: default;
+}

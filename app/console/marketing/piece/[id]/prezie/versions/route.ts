@@ -35,6 +35,8 @@ import {
   type Prezie,
 } from '@/lib/marketing/prezie-store';
 import { generateScene, MAX_FACTS, MAX_NODES } from '@/lib/marketing/scene-generate';
+import { generatePrezieFromScript } from '@/lib/marketing/prezie-oneshot';
+import { conceptBodyForPiece } from '@/lib/marketing/draft';
 import { DraftError } from '@/lib/marketing/draft';
 import { stripEmDashes } from '@/lib/em-dash';
 
@@ -74,6 +76,14 @@ const GenerateSchema = z.object({
    * begins with the operator describing the first picture, not with a guess at one.
    */
   figures: z.boolean().optional(),
+  /**
+   * ONE-SHOT the whole board from the script, instead of starting empty.
+   *
+   * Marrs got a complete five-figure prezie out of a single Claude pass after a week of failing to get
+   * one board out of the figure-by-figure loop. The loop was not the problem; starting from nothing was.
+   * This produces the spine and the existing per-figure loop fixes what missed.
+   */
+  oneshot: z.boolean().optional(),
   narrative: z.string().max(4000).optional(),
   direction: z.string().max(4000).optional(),
   /** The version to refine, when this is a follow-up rather than a fresh build. */
@@ -133,6 +143,61 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   if (!piece) return NextResponse.json({ error: 'piece not found' }, { status: 404 });
 
   const concept = conceptOf(piece);
+
+  // THE ONE-SHOT. A whole board from the script in one call, saved as a new version like any other, so
+  // a disappointing pass costs nothing and the one that worked is still there to click back to.
+  if (body.oneshot) {
+    const script = (piece.script ?? '').trim();
+    if (!script) {
+      return NextResponse.json(
+        { error: 'There is no script yet, and the one-shot builds from the script. Write it first.' },
+        { status: 400 }
+      );
+    }
+    try {
+      const conceptBody = await conceptBodyForPiece(user.email, piece).catch(() => '');
+      const { figures, model } = await generatePrezieFromScript(script, {
+        concept: conceptBody,
+        angle: piece.angle,
+        direction: body.direction,
+      });
+      const now = new Date().toISOString();
+      const prezie: Prezie = {
+        prezie_id: randomUUID(),
+        concept,
+        piece_id: piece.piece_id,
+        stream: piece.stream,
+        owner: user.email,
+        name: stripEmDashes(body.name?.trim() || `${piece.title} one-shot`),
+        figures,
+        created_at: now,
+      };
+      await savePrezie(prezie);
+      const list = await listPreziesForConcept(concept);
+      return NextResponse.json({
+        ok: true,
+        note: `${figures.length} figure${figures.length === 1 ? '' : 's'} built from the script. Open each one and change what missed.`,
+        model,
+        prezie: { ...prezie, url: `/console/prezie/${concept}/${prezie.prezie_id}` },
+        versions: summarise(list, piece.piece_id),
+      });
+    } catch (e) {
+      if (e instanceof DraftError && e.reason === 'empty') {
+        return NextResponse.json(
+          { error: 'That came back unusable. Try again, or give some direction first.' },
+          { status: 502 }
+        );
+      }
+      if (e instanceof DraftError && e.reason === 'no-concept') {
+        return NextResponse.json({ error: 'The script is too short to build a board from.' }, { status: 400 });
+      }
+      console.error('[prezie.versions] one-shot failed:', e);
+      return NextResponse.json(
+        { error: 'April is unavailable right now. Try again in a moment.' },
+        { status: 502 }
+      );
+    }
+  }
 
   // An empty figure prezie is created directly. There is nothing to generate yet, and asking
   // April for an opening guess is what produced boards that ignored what he wanted.

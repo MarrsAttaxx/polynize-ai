@@ -330,6 +330,61 @@ export function PrezieScreen({
     }
   };
 
+  /**
+   * THE ONE-SHOT: the whole board from the script, in one call.
+   *
+   * Marrs got a complete five-figure prezie out of a single Claude pass after a week of failing to get
+   * one board out of this loop, which said the loop was not the problem: starting from nothing was. This
+   * produces the spine and the per-figure loop below fixes whatever missed.
+   *
+   * It saves as a NEW VERSION like everything else, so a disappointing pass costs nothing and the
+   * version that worked is still one click away.
+   */
+  const oneShot = async () => {
+    if (drawing) return;
+    setDrawing(true);
+    setError(null);
+    setNote(null);
+    try {
+      const res = await fetch(baseUrlRef.current + '/prezie/versions', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ oneshot: true, direction: direction.trim() || undefined }),
+      });
+      const b = (await res.json().catch(() => null)) as
+        | {
+            prezie?: { prezie_id: string; name: string; figures?: FigureView[] };
+            versions?: Version[];
+            note?: string;
+            model?: string;
+            error?: string;
+          }
+        | null;
+      if (!res.ok || !b?.prezie) {
+        setError(b?.error ?? 'Could not build it.');
+        return;
+      }
+      setOpen({
+        prezie_id: b.prezie.prezie_id,
+        name: b.prezie.name,
+        scene: null,
+        figures: b.prezie.figures ?? [],
+      });
+      latest.current = null;
+      if (b.versions) setVersions(b.versions);
+      if (b.model) setModel(b.model);
+      setFigSel(0);
+      setThread([]);
+      setSaveState('saved');
+      setPreviewV((v) => v + 1);
+      setNote(b.note ?? 'Built it.');
+    } catch {
+      setError('Network error. Try again.');
+    } finally {
+      setDrawing(false);
+    }
+  };
+
   // ---- figures: draw, revise, remove ----
   const figures = open?.figures ?? [];
   const figEndpoint = () => baseUrlRef.current + '/prezie/figure';
@@ -1175,16 +1230,29 @@ export function PrezieScreen({
           ) : (
             <>
               <p className={d.empty}>
-                Nothing open. Start a prezie you build up a figure at a time, pick a version on
-                the left, or use the narrative box below for the older three-object board.
+                Nothing open. Build the whole board from the script in one pass and then fix what
+                missed, start empty and build it up a figure at a time, or pick a version on the left.
               </p>
+              <button
+                type="button"
+                className={d.primaryBtn}
+                onClick={() => void oneShot()}
+                disabled={drawing || !script}
+                title={
+                  script
+                    ? 'One figure per beat of the script, built in a single pass'
+                    : 'Write the script first: the one-shot builds from it'
+                }
+              >
+                {drawing ? `Building the board… ${elapsed}s` : 'Build the whole board from the script'}
+              </button>
               <button
                 type="button"
                 className={d.aprilBtn}
                 onClick={() => void startFigures()}
                 disabled={drawing}
               >
-                {drawing ? `Starting… ${elapsed}s` : 'Start a prezie, figure by figure'}
+                {drawing ? `Starting… ${elapsed}s` : 'Start empty, figure by figure'}
               </button>
             </>
           )}
