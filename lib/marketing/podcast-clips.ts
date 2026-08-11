@@ -18,6 +18,7 @@ import { randomUUID } from 'node:crypto';
 import { completeStream, complete, type StreamDelta } from '@/lib/llm';
 import { resolveModel } from '@/lib/llm/openrouter';
 import { repairJsonControlChars } from './figure-parse';
+import { resolveComposition } from '@/lib/descript';
 import { stripEmDashes } from '@/lib/em-dash';
 import { DraftError } from './draft';
 import type { ClipProposal, ClipSpan, ClipStyle, ClipExclusion } from './podcast-store';
@@ -682,6 +683,43 @@ export function readCompositionId(text: string): string | undefined {
   if (tagged) return tagged[1].toLowerCase();
 
   return undefined;
+}
+
+/**
+ * WHICH COMPOSITION A CLIP LIVES IN, resolving it if it was never recorded.
+ *
+ * SHARED because I already got this wrong by not sharing it. The finish pass resolved a missing
+ * composition id and the render pass did not, so Marrs's clip 2 ("AI is an Organizational Redesign
+ * Problem") could be finished but not rendered: it was cut before the id was being captured, and "Bring
+ * it in" refused with a message that said it had not been cut yet, which was plainly false to anyone
+ * looking at the card. Two routes needing the same fallback is a reason to write it once.
+ */
+export async function resolveClipComposition(
+  ep: { descript_project_id?: string; descript_composition_id?: string; clips: ClipProposal[] },
+  clip: ClipProposal,
+  /**
+   * The id an agent just claimed, when there is a fresh report to hand. It is only a HINT: the
+   * project's own composition list still decides, because the report's formatting has already proved
+   * unreliable and a wrong id sends the operator to the full episode.
+   */
+  reported?: string
+): Promise<{ id?: string; how: string }> {
+  // A stored id wins, unless a fresh report names a different one, which means a re-cut just happened.
+  if (clip.descript_composition_id && (!reported || reported === clip.descript_composition_id)) {
+    return { id: clip.descript_composition_id, how: 'stored' };
+  }
+  if (!ep.descript_project_id) return { how: 'no-project' };
+  const resolved = await resolveComposition({
+    projectId: ep.descript_project_id,
+    reported,
+    clipTitle: clip.title,
+    // The episode's own composition is the full recording and is never the answer.
+    sourceCompositionId: ep.descript_composition_id,
+    claimed: ep.clips
+      .filter((c) => c.clip_id !== clip.clip_id && c.descript_composition_id)
+      .map((c) => c.descript_composition_id!),
+  });
+  return { id: resolved.id ?? clip.descript_composition_id, how: resolved.how };
 }
 
 /** The url that opens one composition rather than the project's default (the full episode). */

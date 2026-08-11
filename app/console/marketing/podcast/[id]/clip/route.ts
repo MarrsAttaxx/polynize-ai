@@ -31,8 +31,9 @@ import {
   readFinishReport,
   readCompositionId,
   compositionUrl,
+  resolveClipComposition,
 } from '@/lib/marketing/podcast-clips';
-import { startAgentJob, getJob, jobOutcome, resolveComposition, DescriptError } from '@/lib/descript';
+import { startAgentJob, getJob, jobOutcome, DescriptError } from '@/lib/descript';
 import { stripEmDashes } from '@/lib/em-dash';
 
 export const dynamic = 'force-dynamic';
@@ -165,18 +166,12 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     // RESOLVED HERE TOO, not just required. Clips cut before the id was captured reliably have none
     // stored, and making him re-cut those (paying the credits twice) to fix a caption track would be
     // absurd when the composition is sitting in the project waiting to be found by name.
-    let compositionId = clip.descript_composition_id;
-    if (!compositionId) {
-      const resolved = await resolveComposition({
-        projectId: ep.descript_project_id,
-        clipTitle: clip.title,
-        sourceCompositionId: ep.descript_composition_id,
-        claimed: ep.clips
-          .filter((c) => c.clip_id !== clip.clip_id && c.descript_composition_id)
-          .map((c) => c.descript_composition_id!),
-      });
-      compositionId = resolved.id;
-      console.log(`[podcast.clip] finish resolved composition by ${resolved.how}: ${compositionId ?? 'none'}`);
+    const resolvedFinish = await resolveClipComposition(ep, clip);
+    const compositionId = resolvedFinish.id;
+    if (resolvedFinish.how !== 'stored') {
+      console.log(
+        `[podcast.clip] finish resolved composition by ${resolvedFinish.how}: ${compositionId ?? 'none'}`
+      );
     }
     if (!compositionId) {
       return NextResponse.json(
@@ -270,7 +265,26 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   if ('error' in found) return found.error;
   const { ep, clip } = found;
 
-  if (!clip.job_id) return NextResponse.json({ ok: true, state: clip.status, clips: ep.clips });
+  // A CLIP STUCK AT 'assembling' WITH NO JOB CANNOT RECOVER ON ITS OWN, and in that state no action
+  // button renders at all: it just says "Cutting…" forever. That happens to any clip whose job finished
+  // before the polling existed, or if a save was lost mid-flight. So the poll un-sticks it rather than
+  // reporting a state the operator can do nothing about.
+  if (!clip.job_id) {
+    if (clip.status === 'assembling') {
+      const freed: ClipProposal = {
+        ...clip,
+        // It has a composition, so the cut happened; otherwise it is back to approved and can be re-cut.
+        status: clip.descript_composition_id ? 'assembled' : 'approved',
+        stage: undefined,
+      };
+      const updated = withClip(ep, freed);
+      await saveEpisode(updated).catch((err) =>
+        console.error('[podcast.clip] unstick save failed:', err)
+      );
+      return NextResponse.json({ ok: true, state: freed.status, clips: updated.clips });
+    }
+    return NextResponse.json({ ok: true, state: clip.status, clips: ep.clips });
+  }
 
   let job;
   try {
@@ -329,15 +343,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     const framing = readAssemblyReport(report, { preFramed: ep.pre_framed });
     // The report is a HINT. The project's own composition list decides, because the report's
     // formatting has already proved unreliable and a wrong link sends him to the full episode.
-    const resolved = await resolveComposition({
-      projectId: ep.descript_project_id!,
-      reported: readCompositionId(report),
-      clipTitle: clip.title,
-      sourceCompositionId: ep.descript_composition_id,
-      claimed: ep.clips
-        .filter((c) => c.clip_id !== clip.clip_id && c.descript_composition_id)
-        .map((c) => c.descript_composition_id!),
-    });
+    const resolved = await resolveClipComposition(ep, clip, readCompositionId(report));
     if (resolved.how !== 'reported') {
       console.log(`[podcast.clip] composition resolved by ${resolved.how}: ${resolved.id ?? 'none'}`);
     }

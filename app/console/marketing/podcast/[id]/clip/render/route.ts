@@ -39,6 +39,7 @@ import {
   downloadRendered,
   DescriptError,
 } from '@/lib/descript';
+import { resolveClipComposition } from '@/lib/marketing/podcast-clips';
 import { putObject, isBucketConfigured } from '@/lib/agents/bucket';
 import { saveMediaAsset } from '@/lib/marketing/media-store';
 import { savePiece, type MarketingPiece } from '@/lib/marketing/piece-store';
@@ -84,9 +85,31 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       { status: 503 }
     );
   }
-  if (!ep.descript_project_id || !clip.descript_composition_id) {
+  if (!ep.descript_project_id) {
     return NextResponse.json(
-      { error: 'This clip has not been cut yet, so there is nothing to render.' },
+      { error: 'This episode is not pointed at a Descript project, so there is nothing to render.' },
+      { status: 400 }
+    );
+  }
+  if (clip.status !== 'assembled' && !clip.descript_composition_id) {
+    return NextResponse.json(
+      { error: 'Cut the clip in Descript first, then bring it in.' },
+      { status: 400 }
+    );
+  }
+  // RESOLVED, not required. Clips cut before the composition id was being captured have none stored,
+  // and refusing those told Marrs a clip "had not been cut yet" while he was looking at the cut.
+  const resolved = await resolveClipComposition(ep, clip);
+  const compositionId = resolved.id;
+  if (resolved.how !== 'stored') {
+    console.log(`[podcast.render] composition resolved by ${resolved.how}: ${compositionId ?? 'none'}`);
+  }
+  if (!compositionId) {
+    return NextResponse.json(
+      {
+        error:
+          'Could not find this clip\'s composition in Descript. Open the project to check it is there and named the same as the clip, or cut it again.',
+      },
       { status: 400 }
     );
   }
@@ -107,7 +130,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   try {
     const started = await startPublishJob({
       projectId: ep.descript_project_id,
-      compositionId: clip.descript_composition_id,
+      compositionId,
       resolution: '1080p',
     });
     const updated = withClip(ep, {
@@ -115,6 +138,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       status: 'assembling',
       stage: 'rendering',
       job_id: started.job_id,
+      // Recorded now, so a clip resolved by name keeps its id and the deep link is right from here on.
+      descript_composition_id: compositionId,
       render: { ...(clip.render ?? {}), job_id: started.job_id, error: undefined },
     });
     await saveEpisode(updated);
