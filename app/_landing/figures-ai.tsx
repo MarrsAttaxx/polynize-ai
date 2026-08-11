@@ -189,104 +189,175 @@ export function VendorDrift() {
 }
 
 /* ================================================================== beat 3
-   The dirty windscreen.
+   The torch on the systems diagram.
 
-   Looking out of a car through a screen smeared with dirt. The wipers sweep and sweep and
-   clear nothing, and out beyond the glass the vendor marks from beat 2 drift past, blurred
-   past recognition. The beat says there is no clarity on where AI actually works, and the
-   figure is that sentence: you are moving, something is being done about the view, and you
-   still cannot see.
+   Underneath is an ordinary systems diagram: process steps wired left to right, AI nodes
+   hanging off them on dotted lines, work travelling along the links, a couple of links
+   broken. Over the top, a moving circle of light. Only what the light is on is visible.
+   Everything else is dark, and the light never covers more than a fraction of it.
 
-   THE WIPERS MUST NOT CLEAR A PATH. The obvious implementation sweeps a clean arc through
-   the grime, and that inverts the whole thing: a cleared arc says the problem is being
-   solved. The smear is a static layer the wipers pass OVER, never through. */
+   That is the beat exactly. There is no clarity on where AI actually works: not because
+   nothing is there, but because you can only ever see the piece somebody is currently
+   pointing at, and the advice you get is about that piece rather than about the whole.
 
-const WS = { cx: 500, cy: 250 };
+   THE LIGHT MUST NEVER REVEAL THE WHOLE DIAGRAM. The obvious edit widens the circle until
+   the picture is legible, which is the opposite of the argument. It stays a fraction of
+   the frame, and its radius is fixed while only its position moves.
 
-/** The screen aperture: a windscreen is wider than it is tall and rounded at the top. */
-const GLASS = 'M 96 118 C 300 62, 700 62, 904 118 L 946 396 C 700 430, 300 430, 54 396 Z';
+   Fail-safe: with no animation the torch sits at its starting position and one section of
+   the diagram is lit. Something is always visible; nothing rests at nothing. */
 
-/** The grime. Blotches at three sizes so it reads as dirt rather than as texture. */
-const GRIME = (() => {
-  const r = rand(9182736);
-  const d: string[] = [];
-  for (let i = 0; i < 90; i++) {
-    const x = 60 + r() * 880;
-    const y = 80 + r() * 340;
-    const rx = 6 + r() * 30;
-    const ry = rx * (0.5 + r() * 0.7);
-    d.push(
-      `M ${f(x - rx)} ${f(y)} a ${f(rx)} ${f(ry)} 0 1 0 ${f(rx * 2)} 0 a ${f(rx)} ${f(ry)} 0 1 0 ${f(-rx * 2)} 0`
-    );
-  }
-  return d.join(' ');
-})();
+const DIAG = { w: 1000, h: 440 };
 
-/** Streaks left behind, following the wiper arc rather than the grime. */
-const STREAKS = (() => {
-  const d: string[] = [];
-  // Six, not fourteen: evenly spaced concentric arcs stop reading as a smear and start
-  // reading as radar rings. Broken into partial sweeps at uneven radii instead.
-  const spans = [
-    [168, -54, 18],
-    [206, -12, 58],
-    [242, -60, -6],
-    [281, 6, 54],
-    [318, -44, 26],
-    [352, -8, 48],
-  ] as const;
-  for (const [rr, a0, a1] of spans) d.push(arc(WS.cx, 470, rr, a0, a1));
-  return d.join(' ');
-})();
-
-/** What is out there, going past. Recognisable in silhouette only, which is the point. */
-const PASSING: { name: VendorName; x: number; y: number; size: number; i: number }[] = [
-  { name: 'openai', x: 210, y: 190, size: 84, i: 0 },
-  { name: 'gemini', x: 430, y: 150, size: 62, i: 1 },
-  { name: 'claude', x: 640, y: 210, size: 74, i: 2 },
-  { name: 'copilot', x: 830, y: 168, size: 90, i: 3 },
-  { name: 'grok', x: 330, y: 320, size: 66, i: 4 },
-  { name: 'anthropic', x: 720, y: 340, size: 58, i: 5 },
+/** Process steps: a workflow spine, two rows, left to right. */
+const STEPS = [
+  { x: 120, y: 150 },
+  { x: 320, y: 150 },
+  { x: 520, y: 150 },
+  { x: 720, y: 150 },
+  { x: 880, y: 262 },
+  { x: 620, y: 320 },
+  { x: 380, y: 320 },
+  { x: 168, y: 320 },
 ];
 
-function Windscreen() {
+/** AI nodes, hanging off the spine. Hexagons, so they read as a different kind of thing. */
+const AI_NODES = [
+  { x: 226, y: 58, to: 1 },
+  { x: 470, y: 52, to: 2 },
+  { x: 786, y: 62, to: 3 },
+  { x: 512, y: 414, to: 5 },
+  { x: 268, y: 412, to: 6 },
+];
+
+const STEP_W = 104;
+const STEP_H = 46;
+
+/** The spine. `broken` links are drawn with a visible gap and a coral break mark. */
+const LINKS: { a: number; b: number; broken?: boolean }[] = [
+  { a: 0, b: 1 },
+  { a: 1, b: 2, broken: true },
+  { a: 2, b: 3 },
+  { a: 3, b: 4 },
+  { a: 4, b: 5 },
+  { a: 5, b: 6, broken: true },
+  { a: 6, b: 7 },
+];
+
+const hex = (cx: number, cy: number, r: number) =>
+  Array.from({ length: 6 }, (_, i) => {
+    const a = (Math.PI / 3) * i - Math.PI / 6;
+    return `${i ? 'L' : 'M'} ${f(cx + Math.cos(a) * r)} ${f(cy + Math.sin(a) * r)}`;
+  }).join(' ') + ' Z';
+
+/** Straight-ish routing between two steps, with a dog-leg when they are on different rows. */
+function link(a: { x: number; y: number }, b: { x: number; y: number }) {
+  if (Math.abs(a.y - b.y) < 4) return `M ${a.x + STEP_W / 2} ${a.y} H ${b.x - STEP_W / 2}`;
+  const midY = (a.y + b.y) / 2;
+  return `M ${a.x} ${a.y + STEP_H / 2} V ${f(midY)} H ${b.x} V ${f(b.y - STEP_H / 2)}`;
+}
+
+const SPINE = LINKS.filter((l) => !l.broken)
+  .map((l) => link(STEPS[l.a], STEPS[l.b]))
+  .join(' ');
+
+const BROKEN = LINKS.filter((l) => l.broken).map((l) => ({
+  d: link(STEPS[l.a], STEPS[l.b]),
+  x: (STEPS[l.a].x + STEPS[l.b].x) / 2,
+  y: (STEPS[l.a].y + STEPS[l.b].y) / 2,
+}));
+
+const AI_LINKS = AI_NODES.map((n) => {
+  const t = STEPS[n.to];
+  return `M ${n.x} ${n.y + 20} V ${f((n.y + t.y) / 2)} H ${t.x} V ${f(t.y - STEP_H / 2)}`;
+}).join(' ');
+
+/** Work in flight. Three dots on the horizontal runs, so something is always moving. */
+const TRAVELLERS = [
+  { x0: 172, x1: 268, y: 150, i: 0 },
+  { x0: 572, x1: 668, y: 150, i: 1 },
+  { x0: 432, x1: 568, y: 320, i: 2 },
+];
+
+function TorchDiagram() {
   return (
     <g className={s.hudScene}>
-      <clipPath id="pn-glass">
-        <path d={GLASS} />
-      </clipPath>
+      <defs>
+        {/* White reveals, black hides. The gradient's soft outer stop is the blurred
+            edge of the beam: a hard-edged circle reads as a hole punched in a card. */}
+        <radialGradient id="pn-torch-grad">
+          <stop offset="0%" stopColor="#fff" />
+          <stop offset="62%" stopColor="#fff" />
+          <stop offset="100%" stopColor="#000" />
+        </radialGradient>
+        <mask id="pn-torch" maskUnits="userSpaceOnUse" x="0" y="0" width={DIAG.w} height={DIAG.h}>
+          <rect x="0" y="0" width={DIAG.w} height={DIAG.h} fill="#000" />
+          <g className={s.torchMove}>
+            <circle cx="180" cy="150" r="150" fill="url(#pn-torch-grad)" />
+          </g>
+        </mask>
+      </defs>
 
-      {/* Beyond the glass. Drawn first, so everything else is between it and the viewer. */}
-      <g clipPath="url(#pn-glass)">
-        <rect className={s.wsOutside} x="40" y="50" width="920" height="400" />
-        <path className={s.wsHorizon} d="M 40 300 H 960" />
-        <g className={s.wsPassing}>
-          {PASSING.map((v) => (
-            <g key={v.name} className={s.wsPass} style={{ ['--i' as string]: v.i }}>
-              <VendorLogo name={v.name} x={v.x} y={v.y} size={v.size} />
-            </g>
-          ))}
-        </g>
+      <g mask="url(#pn-torch)">
+        <path className={s.hudGrid} d={graticule(DIAG.w, DIAG.h, 44, 22)} />
 
-        {/* The grime, and the streaks the wipers leave. Neither is ever cleared: a wiped
-            arc would say the view is being fixed, which is the opposite of the copy. */}
-        <path className={s.wsStreak} d={STREAKS} />
-        <path className={s.wsGrime} d={GRIME} />
+        {/* The wiring. Dotted, because a systems diagram is dotted. */}
+        <path className={s.dgLink} d={SPINE} />
+        <path className={s.dgAiLink} d={AI_LINKS} />
 
-        {/* The wipers. They sweep over the grime, never through it. */}
-        <g className={s.wsWiperL}>
-          <path className={s.wsArm} d={`M 340 470 L 300 214`} />
-          <path className={s.wsBlade} d={`M 296 190 L 304 238`} />
-        </g>
-        <g className={s.wsWiperR}>
-          <path className={s.wsArm} d={`M 660 470 L 700 214`} />
-          <path className={s.wsBlade} d={`M 696 190 L 704 238`} />
-        </g>
+        {/* The links that are not working. */}
+        {BROKEN.map((b, i) => (
+          <g key={i}>
+            <path className={s.dgBroken} d={b.d} />
+            <path
+              className={s.dgBreak}
+              d={`M ${b.x - 9} ${b.y - 9} L ${b.x + 9} ${b.y + 9} M ${b.x + 9} ${b.y - 9} L ${b.x - 9} ${b.y + 9}`}
+            />
+          </g>
+        ))}
+
+        {/* Work in flight. */}
+        {TRAVELLERS.map((t) => (
+          <circle
+            key={t.i}
+            className={s.dgFlow}
+            cx={t.x0}
+            cy={t.y}
+            r="4.5"
+            style={{ ['--dx' as string]: `${t.x1 - t.x0}px`, ['--i' as string]: t.i }}
+          />
+        ))}
+
+        {/* The steps. */}
+        {STEPS.map((p, i) => (
+          <g key={i}>
+            <rect
+              className={s.dgStep}
+              x={p.x - STEP_W / 2}
+              y={p.y - STEP_H / 2}
+              width={STEP_W}
+              height={STEP_H}
+              rx="6"
+            />
+            {/* Two rules inside each box: enough to read as a labelled step, no words. */}
+            <path
+              className={s.dgStepRule}
+              d={`M ${p.x - 32} ${p.y - 8} h 64 M ${p.x - 32} ${p.y + 6} h 40`}
+            />
+          </g>
+        ))}
+
+        {/* The AI nodes. */}
+        {AI_NODES.map((n, i) => (
+          <g key={i} className={s.dgAi} style={{ ['--i' as string]: i }}>
+            <path className={s.dgAiHex} d={hex(n.x, n.y, 22)} />
+            <path
+              className={s.dgAiSpark}
+              d={`M ${n.x} ${n.y - 10} V ${n.y + 10} M ${n.x - 9} ${n.y - 5} L ${n.x + 9} ${n.y + 5} M ${n.x + 9} ${n.y - 5} L ${n.x - 9} ${n.y + 5}`}
+            />
+          </g>
+        ))}
       </g>
-
-      {/* The car. Pillars and dash, so the frame reads as being inside something. */}
-      <path className={s.wsGlassEdge} d={GLASS} />
-      <path className={s.wsDash} d="M 20 402 C 300 446, 700 446, 980 402 L 980 470 L 20 470 Z" />
     </g>
   );
 }
@@ -412,6 +483,6 @@ export const AI_FIGURES: FigureRegistry = {
     place: 'wide',
     render: () => <VendorDrift />,
   },
-  windscreen: { viewBox: '0 0 1000 470', place: 'wide', render: () => <Windscreen /> },
+  windscreen: { viewBox: '0 0 1000 440', place: 'wide', render: () => <TorchDiagram /> },
   guess: { viewBox: '0 0 1000 480', place: 'wide', render: () => <SlotMachine /> },
 };

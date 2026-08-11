@@ -217,6 +217,23 @@ export function StoryLanding({
           <p className={s.stagesLine}>{c.howItRuns.line}</p>
         </section>
 
+        {/* 4b. The mid-page CTA. A reader who is convinced by the map should not have to
+            scroll past three more sections to act on it, and this is the point in the page
+            where the argument has actually landed. */}
+        <section className={s.section}>
+          <div className={`${s.midCta} ${s.rise}`}>
+            <TrackedLink
+              className={`${s.btn} ${s.btnPrimary}`}
+              href={MAP_URL}
+              event="map_click"
+              eventProps={{ surface: `${surface}_mid_cta` }}
+            >
+              {c.hero.primaryCta}
+            </TrackedLink>
+            <p className={s.midCtaNote}>Five minutes. You will have a blueprint at the end of it.</p>
+          </div>
+        </section>
+
         {/* 5. What you keep */}
         <Section eyebrow="What you keep" h2={c.walkaway.h2}>
           <p className={s.leadLine}>{artefactsIntro}</p>
