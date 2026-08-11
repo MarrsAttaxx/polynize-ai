@@ -128,7 +128,7 @@ export const storyContent: MappingContent = {
     h1: 'Map AI Capabilities Across Your Teams.',
     subhead:
       'Before you invest another dollar in AI, see what your people can actually do with it, benchmarked against industry standards.',
-    primaryCta: 'Book a call',
+    primaryCta: 'Map your team',
     secondaryLabel: 'See how it works',
   },
 
@@ -201,7 +201,7 @@ export const storyContent: MappingContent = {
 
   finalCta: {
     ...mappingContent.finalCta,
-    button: 'Book a call',
+    button: 'Map your team',
   },
 };
 

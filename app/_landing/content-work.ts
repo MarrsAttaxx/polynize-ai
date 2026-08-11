@@ -138,7 +138,7 @@ export const workContent: MappingContent = {
     h1: 'See How Your Work Actually Works.',
     subhead:
       'Before you decide where AI belongs, map the work into its capabilities and see which are human, which are agentic, and which are both.',
-    primaryCta: 'Book a call',
+    primaryCta: 'Map your team',
     secondaryLabel: 'See how it works',
   },
 
@@ -224,7 +224,7 @@ export const workContent: MappingContent = {
 
   finalCta: {
     ...mappingContent.finalCta,
-    button: 'Book a call',
+    button: 'Map your team',
   },
 };
 

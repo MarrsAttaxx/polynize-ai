@@ -18,7 +18,7 @@ const BodySchema = z.object({
 /**
  * POST /api/blueprint-map/save
  *
- * Persists a sales blueprint so it can live at /blueprint/<id> and be shared.
+ * Persists a sales blueprint so it can live at /map-your-team/<id> and be shared.
  * Insert when no id is given, update in place when it is. Best-effort: if
  * Supabase or the sales_blueprints table is unavailable, returns 503 with
  * ok:false so the client can degrade gracefully (the map still works in the

@@ -27,7 +27,7 @@ export function FinalCTA({ payload }: { payload: BlueprintPayload }) {
         </TrackedLink>
         <TrackedLink
           className={`${s.cta} ${s.ctaSecondary}`}
-          href="/blueprint"
+          href="/map-your-team"
           event="cta_click"
           eventProps={{ surface: 'blueprint_final_cta', label: 'build_blueprint' }}
         >

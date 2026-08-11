@@ -100,7 +100,7 @@ function ShapeIcon({ id, active }: { id: number; active?: boolean }) {
 
 /**
  * Full blueprint renderer + chat editor + persistence. Used by the create flow
- * (/blueprint) with initialData from a fresh generation, and by /blueprint/[id]
+ * (/map-your-team) with initialData from a fresh generation, and by /map-your-team/[id]
  * with initialData + initialId loaded from storage. Owns its own `data` state so
  * chat edits and autosave stay self-contained.
  */
@@ -112,7 +112,7 @@ export function BlueprintDoc({
 }: {
   initialData: SalesBlueprint;
   initialId?: string;
-  /** Captured at intake on the public funnel. Absent on the shared /blueprint/[id] view. */
+  /** Captured at intake on the public funnel. Absent on the shared /map-your-team/[id] view. */
   lead?: { name: string; email: string; business: string };
   onRestart?: () => void;
 }) {
@@ -253,7 +253,7 @@ function ShareButton({
       </div>
     );
   }
-  const url = typeof window !== 'undefined' ? `${window.location.origin}/blueprint/${blueprintId}` : '';
+  const url = typeof window !== 'undefined' ? `${window.location.origin}/map-your-team/${blueprintId}` : '';
   async function copy() {
     try {
       await navigator.clipboard.writeText(url);

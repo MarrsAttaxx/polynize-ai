@@ -20,7 +20,7 @@ const INSTAGRAM_URL = 'https://www.instagram.com/polynize.ai';
  * the polynize.io positioning: "Humans, amplified", capability benchmarked
  * against what good looks like, powered by capability engineering.
  *
- * Every CTA drives /blueprint (the capability blueprint flow). The old /agents
+ * Every CTA drives /map-your-team (the capability blueprint flow). The old /agents
  * flow is retired behind a redirect in next.config.mjs. The four How steps map
  * one to one onto the blueprint's tabs so the promise matches the artifact.
  */
@@ -76,7 +76,7 @@ function DirCNav() {
         event="booking_click"
         eventProps={{ surface: 'home_nav' }}
       >
-        Talk to the Team <span className={s.dcArr}>→</span>
+        Talk to our team <span className={s.dcArr}>→</span>
       </TrackedLink>
     </nav>
   );
@@ -99,20 +99,11 @@ function DirCHero() {
       <div className={s.dcCtaRow}>
         <TrackedLink
           className={`${s.dcBtn} ${s.dcBtnPrimary}`}
-          href="/blueprint"
-          event="cta_click"
-          eventProps={{ surface: 'home_hero', label: 'map_bottleneck' }}
+          href="/map-your-team"
+          event="map_click"
+          eventProps={{ surface: 'home_hero', label: 'map_team' }}
         >
-          Map your bottleneck <span className={s.dcArr}>→</span>
-        </TrackedLink>
-        <TrackedLink
-          className={`${s.dcBtn} ${s.dcBtnSecondary}`}
-          href={BOOKING_URL}
-          external
-          event="booking_click"
-          eventProps={{ surface: 'home_hero' }}
-        >
-          Talk to the Team
+          Map your team <span className={s.dcArr}>→</span>
         </TrackedLink>
       </div>
     </section>
@@ -195,11 +186,11 @@ function DirCModelling() {
         </div>
         <TrackedLink
           className={`${s.dcBtn} ${s.dcBtnPrimary}`}
-          href="/blueprint"
+          href="/map-your-team"
           event="cta_click"
-          eventProps={{ surface: 'home_modelling', label: 'map_bottleneck' }}
+          eventProps={{ surface: 'home_modelling', label: 'map_team' }}
         >
-          Map your bottleneck <span className={s.dcArr}>→</span>
+          Map your team <span className={s.dcArr}>→</span>
         </TrackedLink>
       </div>
     </section>
@@ -235,11 +226,11 @@ function DirCMapHero() {
         </div>
         <TrackedLink
           className={`${s.dcBtn} ${s.dcBtnPrimary}`}
-          href="/blueprint"
-          event="cta_click"
-          eventProps={{ surface: 'home_mid_cta', label: 'map_bottleneck' }}
+          href="/map-your-team"
+          event="map_click"
+          eventProps={{ surface: 'home_mid_cta', label: 'map_team' }}
         >
-          Map your bottleneck <span className={s.dcArr}>→</span>
+          Map your team <span className={s.dcArr}>→</span>
         </TrackedLink>
       </div>
     </section>
@@ -615,20 +606,11 @@ function DirCFinal() {
         <div className={s.dcCtaRow} style={{ justifyContent: 'center' }}>
           <TrackedLink
             className={`${s.dcBtn} ${s.dcBtnPrimary}`}
-            href="/blueprint"
-            event="cta_click"
-            eventProps={{ surface: 'home_final_cta', label: 'map_bottleneck' }}
+            href="/map-your-team"
+            event="map_click"
+            eventProps={{ surface: 'home_final_cta', label: 'map_team' }}
           >
-            Map your bottleneck <span className={s.dcArr}>→</span>
-          </TrackedLink>
-          <TrackedLink
-            className={`${s.dcBtn} ${s.dcBtnSecondary}`}
-            href={BOOKING_URL}
-            external
-            event="booking_click"
-            eventProps={{ surface: 'home_final_cta' }}
-          >
-            Talk to the Team
+            Map your team <span className={s.dcArr}>→</span>
           </TrackedLink>
         </div>
       </div>

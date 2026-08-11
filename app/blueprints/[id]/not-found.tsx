@@ -13,7 +13,7 @@ export default function BlueprintNotFound() {
           see every capability scored against what good looks like.
         </p>
         <div className={s.ctas}>
-          <Link className={`${s.cta} ${s.ctaPrimary}`} href="/blueprint">
+          <Link className={`${s.cta} ${s.ctaPrimary}`} href="/map-your-team">
             build_my_blueprint →
           </Link>
           <Link className={`${s.cta} ${s.ctaSecondary}`} href="/">

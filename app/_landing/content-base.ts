@@ -103,12 +103,18 @@ export type MappingContent = {
 
 export const BOOKING_URL = 'https://calendar.app.google/rw8Vpd7BkJh5wwig9';
 
+/**
+ * The mapping flow. Every primary CTA on the site points here now: nobody books a call
+ * off a landing page, they want to see the thing work on their own business first.
+ */
+export const MAP_URL = '/map-your-team';
+
 export const mappingContent: MappingContent = {
   hero: {
     h1: 'Map what your team can actually do.',
     subhead:
       'A three hour session that shows you where your team’s capability sits against the work that matters, so you can see where to invest next. You leave with the map, the data, and a report.',
-    primaryCta: 'Book a discovery call',
+    primaryCta: 'Map your team',
     secondaryLabel: 'See how it works',
   },
 
@@ -286,6 +292,6 @@ export const mappingContent: MappingContent = {
   finalCta: {
     h2: 'Start with a conversation.',
     body: 'Tell us what you are trying to decide, and we will tell you whether mapping your team will help.',
-    button: 'Book a discovery call',
+    button: 'Map your team',
   },
 };

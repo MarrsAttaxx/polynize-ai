@@ -5,7 +5,7 @@ import type { SalesBlueprint } from '@/lib/agents/sales-blueprint-schema';
 import { BlueprintDoc } from './BlueprintDoc';
 import s from './blueprint.module.css';
 
-type Stage = 'input' | 'loading' | 'done' | 'error';
+type Stage = 'intro' | 'input' | 'loading' | 'done' | 'error';
 
 const LOADING_MESSAGES: { from: number; text: string }[] = [
   { from: 0, text: 'reading your answers' },
@@ -36,6 +36,19 @@ type Question = {
   required?: boolean;
 };
 
+/**
+ * The eight questions.
+ *
+ * REWRITTEN to team language (Marrs, 10 Aug 2026) as part of unifying the site on "Map
+ * your team". The old set was written for a standalone bottleneck tool and read like it:
+ * "Name the bottleneck" with no team in sight. Every question now names the TEAM as the
+ * subject and treats the bottleneck as one piece of that team's work, which is what the
+ * intro screen has just promised and what capability mapping actually claims.
+ *
+ * WHAT DID NOT CHANGE, and should not: the questions still ask for short honest answers
+ * rather than polished ones, they still ask where judgment lives, and they still ask what
+ * good would look like. Those three are what make the generated map worth anything.
+ */
 const QUESTIONS: Question[] = [
   {
     key: 'business',
@@ -47,44 +60,44 @@ const QUESTIONS: Question[] = [
   },
   {
     key: 'bottleneck',
-    label: 'Name the bottleneck',
-    sub: 'Where does work slow down, pile up, or depend on too few people? Short, honest answers beat polished ones.',
-    placeholder: 'e.g. Finding prior assessments and site data when senior staff have moved on',
+    label: 'Which team are we mapping, and where does its work get stuck?',
+    sub: 'Name the team, then the part of their work that slows down, piles up, or depends on too few people. Short, honest answers beat polished ones.',
+    placeholder: 'e.g. The bids team. Finding prior assessments when the people who wrote them have left',
     type: 'input',
     required: true,
   },
   {
     key: 'workflow',
-    label: 'Walk us through the workflow',
-    sub: 'What kicks it off, the main steps, who touches it, the finished output.',
+    label: 'Walk us through how that work actually runs',
+    sub: 'What kicks it off, the main steps, who on the team touches it, the finished output.',
     placeholder: 'What kicks it off, the main steps, who touches it, the finished output.',
     type: 'textarea',
   },
   {
     key: 'choke',
-    label: 'Where exactly does it choke, and what does that cost?',
-    sub: 'Time lost, rework, missed deadlines, reliance on one or two people.',
+    label: 'Where exactly does it choke, and what does that cost the team?',
+    sub: 'Time lost, rework, missed deadlines, one or two people everything depends on.',
     placeholder: 'Time lost, rework, missed deadlines, reliance on one or two people.',
     type: 'textarea',
   },
   {
     key: 'info',
-    label: 'What information does it depend on, and where does that live?',
+    label: 'What information does the team depend on, and where does it live?',
     sub: "Systems, drives, archives, people's heads. Flag anything culturally sensitive or confidential.",
     placeholder: "Systems, drives, archives, people's heads.",
     type: 'textarea',
   },
   {
     key: 'judgement',
-    label: 'What judgement calls happen inside it, and who makes them?',
-    sub: 'The decisions that must stay with your experts, whatever else changes.',
+    label: 'What judgement calls happen inside it, and who on the team makes them?',
+    sub: 'The decisions that must stay with your people, whatever else changes. This is the part the map protects.',
     placeholder: 'The decisions that must stay with your experts.',
     type: 'textarea',
   },
   {
     key: 'good',
-    label: 'What would good look like?',
-    sub: 'If this bottleneck disappeared, what would you actually see?',
+    label: 'What would good look like for this team?',
+    sub: 'If this stopped being the thing that holds them up, what would you actually see?',
     placeholder: 'If this bottleneck disappeared, what would you actually see?',
     type: 'textarea',
   },
@@ -151,7 +164,23 @@ function assemblePayload(a: Record<QKey, string>): string {
 }
 
 export default function BlueprintPage() {
-  const [stage, setStage] = useState<Stage>('input');
+  /**
+   * Opens on the intro, not on question one.
+   *
+   * The CTA everywhere on the site now says "Map your team", and the first thing the
+   * flow used to ask was "name the bottleneck". That is a promise the next screen
+   * breaks. The intro is what reconciles them: mapping a team starts by mapping one
+   * piece of its work, which is the capability-mapping argument anyway. Dropping this
+   * screen puts the mismatch straight back.
+   *
+   * ?start=1 skips it, for links that have already done the explaining (an email, an
+   * ad, a second visit).
+   */
+  const [stage, setStage] = useState<Stage>('intro');
+
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get('start') === '1') setStage('input');
+  }, []);
   const [mode, setMode] = useState<'form' | 'paste'>('form');
   const [step, setStep] = useState(0);
   const [answers, setAnswers] = useState<Record<QKey, string>>(EMPTY);
@@ -227,7 +256,7 @@ export default function BlueprintPage() {
     return (
       <div className={s.wrap}>
         <div className={s.loadStage}>
-          <div className={s.loadTag}>mapping the bottleneck</div>
+          <div className={s.loadTag}>mapping the team</div>
           <div className={s.scan}>
             <div className={s.scanLine} />
           </div>
@@ -257,6 +286,78 @@ export default function BlueprintPage() {
             </button>
           </div>
           {errorDetail && <div className={s.errDetail}>{errorDetail}</div>}
+        </div>
+      </div>
+    );
+  }
+
+  if (stage === 'intro') {
+    return (
+      <div className={s.wrap}>
+        <div className={s.inputStage}>
+          <div className={s.introCard}>
+            <div className={s.eyebrow}>Polynize · capability mapping</div>
+            <h1 className={s.introTitle}>Map your team.</h1>
+            <p className={s.introLead}>
+              Five minutes of questions, and you will have a capability blueprint: one
+              piece of your team’s work broken into what it is actually made of, with
+              every capability allocated human, hybrid or agentic.
+            </p>
+
+            <ol className={s.introSteps}>
+              <li>
+                <span className={s.introN}>01</span>
+                <div>
+                  <b>Pick one bottleneck</b>
+                  <span>
+                    Mapping a whole team starts with one piece of its work. Choose the
+                    part that is costing you.
+                  </span>
+                </div>
+              </li>
+              <li>
+                <span className={s.introN}>02</span>
+                <div>
+                  <b>Answer eight questions</b>
+                  <span>
+                    In your own words. Short and honest beats polished, and there is
+                    nothing to prepare.
+                  </span>
+                </div>
+              </li>
+              <li>
+                <span className={s.introN}>03</span>
+                <div>
+                  <b>Get the blueprint</b>
+                  <span>
+                    The capability map, the benchmark, and what we would do about it.
+                    Yours to keep and to share.
+                  </span>
+                </div>
+              </li>
+            </ol>
+
+            <div className={s.introActions}>
+              <button type="button" className={s.mapBtn} onClick={() => setStage('input')}>
+                Start mapping →
+              </button>
+              <button
+                type="button"
+                className={s.restartLink}
+                onClick={() => {
+                  setMode('paste');
+                  setStage('input');
+                }}
+              >
+                I already have notes
+              </button>
+            </div>
+
+            <p className={s.introFoot}>
+              This is the first step of the mapping journey, not the whole of it. A full
+              engagement maps every team, from your own material.
+            </p>
+          </div>
         </div>
       </div>
     );

@@ -11,6 +11,7 @@ import { ArtefactGlyph } from './ArtefactGlyph';
 import { BeatFigure, type FigureRegistry } from './BeatFigure';
 import {
   BOOKING_URL,
+  MAP_URL,
   type Artefact,
   type Beat,
   type MappingContent,
@@ -37,6 +38,12 @@ import s from './story.module.css';
  *
  * `surface` goes into the analytics event props so the three CTAs on each page stay
  * distinguishable from the same CTAs on a sibling page.
+ *
+ * WHERE THE CTAS GO, and it is a funnel decision rather than a styling one. Nobody reads
+ * a page like this and books a call off the back of it: they want to see the thing work
+ * on their own business first. So the hero and the final CTA drive the mapping flow,
+ * which takes five minutes and hands back a blueprint, and the nav keeps a quieter
+ * "talk to our team" for the minority who arrive ready. One loud path, one quiet one.
  */
 export function StoryLanding({
   content: c,
@@ -78,7 +85,7 @@ export function StoryLanding({
           block. A transform or filter on an ancestor breaks position: fixed. */}
       <FocusVeil />
       <div className={s.page}>
-        <StoryNav cta={c.finalCta.button} surface={surface} />
+        <StoryNav cta="Talk to our team" surface={surface} />
 
         {/* 1. Hero, video included */}
         <section className={s.hero}>
@@ -96,9 +103,8 @@ export function StoryLanding({
             <div className={s.ctaRow}>
               <TrackedLink
                 className={`${s.btn} ${s.btnPrimary}`}
-                href={BOOKING_URL}
-                external
-                event="booking_click"
+                href={MAP_URL}
+                event="map_click"
                 eventProps={{ surface: `${surface}_hero` }}
               >
                 {c.hero.primaryCta}
@@ -261,9 +267,8 @@ export function StoryLanding({
             <p className={s.finalBody}>{c.finalCta.body}</p>
             <TrackedLink
               className={`${s.btn} ${s.btnPrimary}`}
-              href={BOOKING_URL}
-              external
-              event="booking_click"
+              href={MAP_URL}
+              event="map_click"
               eventProps={{ surface: `${surface}_final_cta` }}
             >
               {c.finalCta.button}
@@ -428,8 +433,9 @@ function StoryNav({ cta, surface }: { cta: string; surface: string }) {
           polynize
         </span>
       </Link>
+      {/* The quiet path. The loud one is the hero and the final CTA, both into the flow. */}
       <TrackedLink
-        className={`${s.btn} ${s.btnPrimary} ${s.navBtn}`}
+        className={`${s.btnGhost} ${s.navBtn}`}
         href={BOOKING_URL}
         external
         event="booking_click"

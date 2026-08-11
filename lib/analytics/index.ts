@@ -11,6 +11,9 @@
 export type AnalyticsEvent =
   /** Generic CTA click. props: { surface, label, href? } */
   | 'cta_click'
+  /** Primary CTA into the mapping flow. Distinct from booking_click, which is the
+      quiet nav path to Calendly, so the two can be compared rather than merged. */
+  | 'map_click'
   /** Phase A advance/back. props: { from_step, to_step, question_id } */
   | 'phase_a_step'
   /** Phase A complete. props: { steps_completed, has_email } */
