@@ -103,7 +103,7 @@ export type ClipProposal = {
    * agent reported doing all of it. Splitting them makes the finish re-runnable on its own, which is
    * what a missed caption track actually needs, and it makes each pass small enough to verify.
    */
-  stage?: 'cutting' | 'finishing';
+  stage?: 'cutting' | 'finishing' | 'rendering';
   /**
    * What the finish pass reported, so a missing caption track is visible rather than assumed.
    *
@@ -130,6 +130,24 @@ export type ClipProposal = {
   needs_reframe?: boolean;
   /** What the agent REPORTED the source to be. Never assumed: he once misremembered it himself. */
   source_aspect?: '9:16' | '16:9' | 'unknown';
+  /**
+   * THE RENDER, once the finished clip has been brought back into the console.
+   *
+   * `share_url` is Descript's permanent watch page, kept as a human link. The FILE is copied into our
+   * own storage rather than referenced, because Descript's download url is a signed link that expires
+   * and `publish.ts` fetches media BY URL at publish time, which can be days after scheduling. A link
+   * that dies between scheduling and posting is the worst possible failure here.
+   */
+  render?: {
+    job_id?: string;
+    share_url?: string;
+    /** Our own permanent url, served from `/console/clip-media/...`. */
+    url?: string;
+    bytes?: number;
+    media_id?: string;
+    rendered_at?: string;
+    error?: string;
+  };
   /** The marketing piece this clip became, once it entered the publishing pipeline. */
   piece_id?: string;
   created_at: string;
@@ -239,6 +257,15 @@ export type PodcastEpisode = {
    * deliberately placed for a vertical crop.
    */
   pre_framed?: boolean;
+  /**
+   * DONE, so a processed episode leaves the list.
+   *
+   * Marrs asked for this once he had clips out of Ep06: the dashboard should show what still needs
+   * work. Archived rather than deleted, because the clips, their exclusions and their Descript links
+   * are the record of what was published and are worth keeping.
+   */
+  done?: boolean;
+  done_at?: string;
   /** The house standard for every clip cut from this episode. See `ClipStyle`. */
   style?: ClipStyle;
   /**
@@ -255,6 +282,20 @@ export type PodcastEpisode = {
 };
 
 const PREFIX = 'pam/podcast';
+
+/**
+ * Where a rendered clip's FILE lives, and the public url that serves it.
+ *
+ * Separate from the episode json because it is bytes rather than state, and keyed by stream so a clip
+ * sits with the stream whose media library will hold it.
+ */
+export function clipMediaKey(stream: string, mediaId: string): string {
+  return `pam/clip-media/${stream}/${mediaId}.mp4`;
+}
+
+export function clipMediaUrl(stream: string, mediaId: string): string {
+  return `/console/clip-media/${stream}/${mediaId}`;
+}
 
 export function episodeKey(owner: string, id: string): string {
   return `${PREFIX}/${owner}/${id}.json`;

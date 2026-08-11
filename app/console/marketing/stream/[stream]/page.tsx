@@ -109,7 +109,9 @@ export default async function StreamPage({
   // PODCAST EPISODES BELONG TO A STREAM, not to the marketing dashboard. Marrs: "it actually belongs
   // within the Polynize stream of content." An episode is that stream's source material, the same way
   // a concept is, and the clips it yields become that stream's pieces.
-  const episodes = episodesRes.filter((e) => (e.stream || DEFAULT_STREAM) === stream);
+  const episodes = episodesRes.filter(
+    (e) => (e.stream || DEFAULT_STREAM) === stream && !e.done
+  );
 
   return (
     <>

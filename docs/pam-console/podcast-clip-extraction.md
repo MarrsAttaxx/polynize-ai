@@ -27,9 +27,20 @@
 > cautious speaker-tracking instruction applies and any clip the agent could not finish is flagged
 > `needs_reframe` in the UI. **None of this is needed if the podcast is ever recorded 9:16 at source.**
 >
-> **Captions and title are part of the cut now**, per the house craft in `content-series-examples.md`:
-> continuous top to tail, added last so they match the locked cut, plain white, clear of the bottom
-> strip. The title is the clip's own title, top of frame, three seconds.
+> **Captions and title are a SEPARATE FINISH PASS**, re-runnable on its own. One combined prompt asking
+> for the cut, the canvas, the title and the captions reported doing all four when it had not, and a
+> missed caption track needs the finish run again rather than the whole clip re-cut. Per the house craft
+> in `content-series-examples.md`: captions continuous top to tail, added last so they match the locked
+> cut, plain white, clear of the bottom strip. The title is the clip's own title, **vertically centred,
+> five seconds** (Marrs, 2026-08-10). Filler-word and gap removal are asked for as DESCRIPT'S OWN TOOLS
+> by name, since describing the outcome was not landing.
+>
+> **Reading the agent's report is its own problem.** It is prose, and a keyword scan cannot work: the
+> agent lists what it deliberately did NOT do ("plain white, no karaoke") as evidence of success, and an
+> early version read that as failure and told Marrs a finished clip had no title and no captions. Only
+> the leading clause after each label decides, labels are anchored to line starts (unanchored, `TITLE`
+> matched "clear of the title area" in a different paragraph), and "not requested" is a third outcome
+> rather than a failure.
 
 **Status (2026-07-15):** the intelligence for the first video series, **Podcast Clips**. Loop chosen by Marrs: **agent proposes strong clips → human approves → Descript assembles → enrich (captions, thumbnail) → publish** (through the calendar + Metricool tail already proven). This doc is being developed **prompt-first**: get the editorial judgment right and validated on real episodes *before* wiring Descript to execute the cuts.
 
@@ -139,8 +150,21 @@ Still open, and genuinely worth deciding rather than defaulting:
   the same thing across the system. Currently the clip prompt carries its own definition (the blunt
   declarative line), which matches Marrs's pick on clip 1 but is a second source of truth.
 - **Multi-topic overlap** — when a strong line belongs to two themes, one clip or two.
-- **An approved clip becoming a piece**, so it flows into the calendar and Metricool tail rather than
-  ending at a Descript composition. The store already carries `piece_id` for this.
+- ~~An approved clip becoming a piece~~ **BUILT 2026-08-10.** "Bring it in" renders the composition
+  (`POST /jobs/publish`, 1080p, unlisted), copies the file into our own bucket, adds it to the stream's
+  media library, and creates an ordinary marketing piece with the video attached. From there the existing
+  calendar and Metricool tail applies with no knowledge of podcasts.
+
+  **Why the file is copied rather than linked.** Descript's `download_url` is a signed link that
+  EXPIRES, and `publish.ts` fetches media by url at PUBLISH time, which can be days after scheduling. A
+  Descript url would therefore produce posts that die silently between being scheduled and going out.
+  The copy is served from `/console/clip-media/{stream}/{id}`, which is unauthenticated by design
+  because the thing fetching it is Metricool's server, and unguessable because the id is a uuid. The
+  download is size-bounded so publishing the wrong composition (the 56-minute source) is refused rather
+  than loaded into a function's memory.
+
+  Also: episodes can be marked **DONE**, which archives them out of the list without deleting the
+  clips, exclusions or Descript links that record what was published.
 
 ## Guardrails the build added, and why
 

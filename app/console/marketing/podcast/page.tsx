@@ -6,6 +6,7 @@ import { isDescriptConfigured } from '@/lib/descript';
 import { isStreamId, streamLabel, DEFAULT_STREAM } from '@/lib/marketing/streams';
 import { NewEpisode } from './NewEpisode';
 import { DeleteEpisode } from './DeleteEpisode';
+import { DoneEpisode } from './DoneEpisode';
 import s from '../../_components/client-card.module.css';
 import l from '../../_components/launcher.module.css';
 import d from './podcast.module.css';
@@ -37,9 +38,11 @@ export default async function PodcastPage({
     console.error('[podcast] list failed:', err);
     return [];
   });
-  const episodes = stream
-    ? all.filter((e) => (e.stream || DEFAULT_STREAM) === stream)
-    : all;
+  const scoped = stream ? all.filter((e) => (e.stream || DEFAULT_STREAM) === stream) : all;
+  // DONE episodes leave the list. Marrs asked for this once Ep06 had clips out of it: the list should
+  // show what still needs work, and everything ever recorded would drown that.
+  const episodes = scoped.filter((e) => !e.done);
+  const finished = scoped.filter((e) => e.done);
 
   return (
     <>
@@ -107,12 +110,31 @@ export default async function PodcastPage({
                       →
                     </span>
                   </Link>
-                  <DeleteEpisode episodeId={ep.episode_id} title={ep.title} />
+                  <div className={d.cardActions}>
+                    <DoneEpisode episodeId={ep.episode_id} done={false} />
+                    <DeleteEpisode episodeId={ep.episode_id} title={ep.title} />
+                  </div>
                 </div>
               );
             })}
           </div>
         )}
+
+        {finished.length ? (
+          <details className={d.dropped} style={{ marginTop: 26 }}>
+            <summary>{finished.length} done</summary>
+            {finished.map((ep) => (
+              <div key={ep.episode_id} className={d.droppedRow}>
+                <span>
+                  {ep.number ? `Episode ${ep.number}: ` : ''}
+                  {ep.title}
+                </span>
+                <DoneEpisode episodeId={ep.episode_id} done />
+                <DeleteEpisode episodeId={ep.episode_id} title={ep.title} />
+              </div>
+            ))}
+          </details>
+        ) : null}
       </div>
     </>
   );

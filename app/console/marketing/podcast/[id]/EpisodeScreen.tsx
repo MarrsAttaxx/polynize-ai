@@ -298,6 +298,57 @@ export function EpisodeScreen({ episode, descriptConnected }: Props) {
     }
   };
 
+  /**
+   * Bring the finished clip back in: render it in Descript, store the file, make it a piece.
+   *
+   * The POST only STARTS the render. The work of downloading and creating the piece happens in the
+   * poll, because a 1080p render takes minutes and the request that asked for it is long gone.
+   */
+  const render = async (clip: ClipProposal) => {
+    setError(null);
+    setNote(null);
+    try {
+      const res = await fetch(`${base}/clip/render`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ clip_id: clip.clip_id }),
+      });
+      const b = (await res.json().catch(() => null)) as
+        | { clips?: ClipProposal[]; error?: string }
+        | null;
+      if (b?.clips) setClips(b.clips);
+      if (!res.ok) {
+        setError(b?.error ?? 'Could not start the render.');
+        return;
+      }
+      setNote('Rendering in Descript. It comes back as a piece with the video attached.');
+    } catch {
+      setError('Network error. Try again.');
+    }
+  };
+
+  /** Turn the piece into per-channel calendar drafts, which is the existing publishing step. */
+  const toCalendar = async (clip: ClipProposal) => {
+    if (!clip.piece_id) return;
+    setError(null);
+    setNote(null);
+    try {
+      const res = await fetch(`/console/marketing/piece/${clip.piece_id}/prepare`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({}),
+      });
+      const b = (await res.json().catch(() => null)) as { error?: string } | null;
+      if (!res.ok) {
+        setError(b?.error ?? 'Could not prepare it for the calendar.');
+        return;
+      }
+      setNote('On the calendar as per-channel drafts. Set the dates there and schedule.');
+    } catch {
+      setError('Network error. Try again.');
+    }
+  };
+
   /** Ask April for proposals, reading her progress as it arrives. */
   const propose = async () => {
     if (working) return;
@@ -388,12 +439,17 @@ export function EpisodeScreen({ episode, descriptConnected }: Props) {
     if (running.length === 0) return;
     for (const c of running) {
       try {
-        const res = await fetch(`${base}/clip?clip_id=${encodeURIComponent(c.clip_id)}`);
+        // A render is polled on its own endpoint, because finishing it does far more than read a
+        // status: it downloads the file, stores it and creates the piece.
+        const path = c.stage === 'rendering' ? 'clip/render' : 'clip';
+        const res = await fetch(`${base}/${path}?clip_id=${encodeURIComponent(c.clip_id)}`);
         const b = (await res.json().catch(() => null)) as
           | { clips?: ClipProposal[]; state?: string; error?: string }
           | null;
         if (b?.clips) setClips(b.clips);
         if (b?.state === 'approved' && b.error) setError(b.error);
+        if (b?.state === 'failed' && b.error) setError(b.error);
+        if (b?.state === 'ready') setNote('Video is in. It is a piece now, ready for the calendar.');
       } catch {
         // A failed poll is not a failed cut; the next tick tries again.
       }
@@ -738,6 +794,18 @@ export function EpisodeScreen({ episode, descriptConnected }: Props) {
                   negative words and told him "NO title, NO captions" on a clip that had both, because
                   "plain white, no karaoke" contains the word "no". And a music bed he never asked for was
                   reported as "music file not found", which invented a problem. */}
+              {c.render?.url ? (
+                <p className={d.finishLine}>
+                  video in · {c.render.bytes ? `${Math.round((c.render.bytes / 1024 / 1024) * 10) / 10}MB` : 'stored'}
+                  {c.render.share_url ? ' · ' : ''}
+                  {c.render.share_url ? (
+                    <a href={c.render.share_url} target="_blank" rel="noreferrer noopener">
+                      Descript share page
+                    </a>
+                  ) : null}
+                </p>
+              ) : null}
+              {c.render?.error ? <p className={d.error}>{c.render.error}</p> : null}
               {c.finish ? (
                 <>
                   <p
@@ -830,8 +898,39 @@ export function EpisodeScreen({ episode, descriptConnected }: Props) {
                 ) : null}
                 {c.status === 'assembling' ? (
                   <span className={d.cutting}>
-                    {c.stage === 'finishing' ? 'Adding title and captions…' : 'Cutting…'}
+                    {c.stage === 'finishing'
+                      ? 'Adding title and captions…'
+                      : c.stage === 'rendering'
+                        ? 'Rendering and bringing it in…'
+                        : 'Cutting…'}
                   </span>
+                ) : null}
+                {/* THE HANDOVER. A rendered clip becomes an ordinary piece with the video attached, so
+                    the calendar and Metricool need to know nothing about podcasts. */}
+                {c.status === 'assembled' && !c.render?.url ? (
+                  <button
+                    type="button"
+                    className={d.primaryBtn}
+                    onClick={() => void render(c)}
+                    disabled={Boolean(c.recut_needed)}
+                    title={
+                      c.recut_needed
+                        ? 'This changed since it was cut. Cut it again first.'
+                        : 'Render it, store the video, and make it a piece'
+                    }
+                  >
+                    Bring it in
+                  </button>
+                ) : null}
+                {c.render?.url && c.piece_id ? (
+                  <>
+                    <Link className={d.btn} href={`/console/marketing/piece/${c.piece_id}`}>
+                      Open the piece
+                    </Link>
+                    <button type="button" className={d.primaryBtn} onClick={() => void toCalendar(c)}>
+                      Add to calendar
+                    </button>
+                  </>
                 ) : null}
                 {/* THE FINISH PASS, on its own button. A missed caption track needs the finish run
                     again, not the whole clip re-cut, which would cost the credits twice. */}

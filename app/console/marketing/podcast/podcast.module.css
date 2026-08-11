@@ -494,9 +494,6 @@
   min-width: 0;
 }
 .delBtn {
-  position: absolute;
-  top: 10px;
-  right: 10px;
   font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
   font-size: 10px;
   letter-spacing: 0.1em;
@@ -623,4 +620,38 @@
 .delInline:disabled {
   opacity: 0.45;
   cursor: default;
+}
+
+/* Card controls, stacked top-right so Done and Delete do not fight the card's own click target. */
+.cardActions {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  display: flex;
+  gap: 6px;
+}
+.doneBtn,
+.doneBtnOn {
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  border-radius: 8px;
+  padding: 5px 9px;
+  cursor: pointer;
+  background: rgba(10, 10, 15, 0.7);
+  transition: opacity 0.12s;
+}
+.doneBtn {
+  color: var(--mint);
+  border: 1px solid rgba(105, 252, 203, 0.45);
+  opacity: 0;
+}
+.doneBtnOn {
+  color: var(--text-3);
+  border: 1px solid rgba(244, 236, 228, 0.16);
+}
+.cardWrap:hover .doneBtn,
+.doneBtn:focus-visible {
+  opacity: 1;
 }

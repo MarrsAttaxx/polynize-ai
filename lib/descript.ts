@@ -164,12 +164,64 @@ export async function startAgentJob(args: {
 }
 
 /**
- * Job states are `queued`, `running`, `stopped` and `cancelled`.
+ * RENDER a composition to an actual video file.
  *
- * NOTE THE TRAP, which is why this is normalised here once: `stopped` is not success. It means the
- * job is no longer running, and whether it worked is in `result.status`. Treating `stopped` as done
- * would report every failed assembly as a finished clip.
+ * `publish` and not `export/timeline`: the timeline export produces an EDL or XML with no media in it
+ * at all, which is useful for handing a cut to Premiere and useless for posting. Publish renders the
+ * video and returns both a permanent `share_url` (a watch page) and a `download_url` (the file).
+ *
+ * `unlisted` rather than `public`, because the clip is going out on a schedule and a share page that
+ * ranks or gets found before the post lands is not wanted.
  */
+export async function startPublishJob(args: {
+  projectId: string;
+  compositionId?: string;
+  resolution?: '480p' | '720p' | '1080p' | '1440p' | '4K';
+}) {
+  return call<AgentJobStarted>('/jobs/publish', {
+    method: 'POST',
+    body: {
+      project_id: args.projectId,
+      ...(args.compositionId ? { composition_id: args.compositionId } : {}),
+      media_type: 'Video',
+      resolution: args.resolution ?? '1080p',
+      access_level: 'unlisted',
+    },
+  });
+}
+
+/**
+ * Fetch the rendered file from Descript's signed url.
+ *
+ * Bounded deliberately: a podcast clip is tens of megabytes, and anything an order of magnitude larger
+ * means the wrong composition was published (the 56-minute source, say). Better to refuse than to spend
+ * a function's whole memory budget discovering it.
+ */
+export async function downloadRendered(
+  url: string,
+  maxBytes = 400 * 1024 * 1024
+): Promise<{ bytes: Uint8Array; contentType: string }> {
+  const res = await fetch(url, { cache: 'no-store' });
+  if (!res.ok) {
+    throw new DescriptError(`Could not download the render (${res.status})`, 'http');
+  }
+  const declared = Number(res.headers.get('content-length') ?? 0);
+  if (declared && declared > maxBytes) {
+    throw new DescriptError(
+      `That render is ${Math.round(declared / 1024 / 1024)}MB, which is far larger than a clip should be. Check the right composition was published.`,
+      'http'
+    );
+  }
+  const buf = new Uint8Array(await res.arrayBuffer());
+  if (buf.byteLength > maxBytes) {
+    throw new DescriptError('That render is too large to bring in.', 'http');
+  }
+  return {
+    bytes: buf,
+    contentType: res.headers.get('content-type') || 'video/mp4',
+  };
+}
+
 export type DescriptJob = {
   job_id: string;
   job_type?: string;
@@ -186,10 +238,25 @@ export type DescriptJob = {
     message?: string;
     agent_response?: string;
     ai_credits_used?: number;
+    /**
+     * PUBLISH results. `share_url` is permanent and reused if the same composition is published
+     * again; `download_url` is a SIGNED, EXPIRING link to the file, which is why the console copies
+     * the bytes out rather than storing the url.
+     */
+    share_url?: string;
+    download_url?: string;
+    download_url_expires_at?: string;
     [k: string]: unknown;
   };
 };
 
+/**
+ * Job states are `queued`, `running`, `stopped` and `cancelled`.
+ *
+ * NOTE THE TRAP, which is why this is normalised here once: `stopped` is not success. It means the
+ * job is no longer running, and whether it worked is in `result.status`. Treating `stopped` as done
+ * would report every failed assembly as a finished clip.
+ */
 export type JobOutcome = 'running' | 'done' | 'failed' | 'cancelled';
 
 export function jobOutcome(job: DescriptJob): JobOutcome {

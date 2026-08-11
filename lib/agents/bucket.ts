@@ -76,6 +76,53 @@ export async function putObjectText(
   );
 }
 
+/**
+ * Write BYTES, for the rendered video of a podcast clip.
+ *
+ * The bucket is private and Descript's own download url is a signed link that expires, but
+ * `lib/marketing/publish.ts` notes that "Metricool fetches by URL" and a post can be scheduled days
+ * ahead. An expiring url is therefore a dead link at the moment it matters most, so the file has to
+ * land somewhere permanent and be served from a route we own.
+ */
+export async function putObject(
+  key: string,
+  body: Uint8Array,
+  contentType: string
+): Promise<void> {
+  await client().send(
+    new PutObjectCommand({
+      Bucket: bucketName(),
+      Key: key,
+      Body: body,
+      ContentType: contentType,
+      // A clip is immutable once rendered, so it can be cached hard by anything in front of it.
+      CacheControl: 'public, max-age=31536000, immutable',
+    })
+  );
+}
+
+/** Read an object as BYTES plus its content type, or null if it is not there. */
+export async function getObjectBytes(
+  key: string
+): Promise<{ bytes: Uint8Array; contentType: string; length: number } | null> {
+  try {
+    const res = await client().send(
+      new GetObjectCommand({ Bucket: bucketName(), Key: key })
+    );
+    const bytes = await res.Body?.transformToByteArray();
+    if (!bytes) return null;
+    return {
+      bytes,
+      contentType: res.ContentType ?? 'application/octet-stream',
+      length: bytes.byteLength,
+    };
+  } catch (e) {
+    const name = (e as { name?: string })?.name;
+    if (name === 'NoSuchKey' || name === 'NotFound') return null;
+    throw e;
+  }
+}
+
 /** Delete an object (idempotent — S3 returns success even if it was absent). */
 export async function deleteObject(key: string): Promise<void> {
   await client().send(new DeleteObjectCommand({ Bucket: bucketName(), Key: key }));

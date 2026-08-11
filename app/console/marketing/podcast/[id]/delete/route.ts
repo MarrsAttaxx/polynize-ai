@@ -13,7 +13,7 @@ import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getCurrentUser } from '@/lib/console-auth';
-import { getEpisode, deleteEpisode } from '@/lib/marketing/podcast-store';
+import { getEpisode, deleteEpisode, saveEpisode } from '@/lib/marketing/podcast-store';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -64,4 +64,43 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     return NextResponse.json({ error: 'could not delete it' }, { status: 502 });
   }
   return NextResponse.json({ ok: true });
+}
+
+/**
+ * Mark an episode DONE, or put it back.
+ *
+ * Marrs asked for this once Ep06 had clips out of it: the list should show what still needs work.
+ * ARCHIVED rather than deleted, because the clips, their exclusions and their Descript links are the
+ * record of what was published, and the episode is also the thing a future clip gets cut from.
+ */
+export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const user = await getCurrentUser();
+  if (!user || user.scope.type !== 'team') {
+    return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
+  }
+
+  let body: { done?: boolean };
+  try {
+    body = z.object({ done: z.boolean() }).parse(await req.json());
+  } catch {
+    return NextResponse.json({ error: 'invalid request' }, { status: 400 });
+  }
+
+  const ep = await getEpisode(user.email, id);
+  if (!ep) return NextResponse.json({ error: 'episode not found' }, { status: 404 });
+
+  const now = new Date().toISOString();
+  try {
+    await saveEpisode({
+      ...ep,
+      done: body.done || undefined,
+      done_at: body.done ? now : undefined,
+      updated_at: now,
+    });
+  } catch (err) {
+    console.error('[podcast.done] save failed:', err);
+    return NextResponse.json({ error: 'could not save' }, { status: 502 });
+  }
+  return NextResponse.json({ ok: true, done: body.done });
 }
