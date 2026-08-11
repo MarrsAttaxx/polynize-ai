@@ -228,12 +228,23 @@ export const mappingContent: MappingContent = {
     height: 908,
   },
 
+  /**
+   * The 8:40 cut, Aug 2026. Re-encoded for web: the master was 960x540 at 6.9 Mbps
+   * (453 MB), which is roughly eight times what this resolution needs and far too big to
+   * put in front of anyone. CRF 27 with faststart brings it to 24 MB with no visible
+   * loss on the screen-share, and the moov atom at the front means it starts playing
+   * before it has finished downloading.
+   *
+   * The previous cut stays at /mapping/capability-mapping.mp4 because the standalone
+   * HTML exports already sent out reference it by absolute URL.
+   */
   video: {
     eyebrow: 'Capability Mapping',
     h2: 'What the map actually shows.',
-    src: '/mapping/capability-mapping.mp4',
-    poster: '/mapping/poster.jpg',
-    caption: 'Shourov Bhattacharya and Marrs Coiro, co founders, on reading a capability map.',
+    src: '/mapping/capability-mapping-2026.mp4',
+    poster: '/mapping/poster-2026.jpg',
+    caption:
+      'Shourov Bhattacharya and Marrs Coiro, co founders, on reading a capability map. About nine minutes.',
     people: [
       { name: 'Shourov Bhattacharya', src: '/mapping/avatar-shourov.jpg' },
       { name: 'Marrs Coiro', src: '/mapping/avatar-marrs.jpg' },

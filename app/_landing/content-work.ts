@@ -128,12 +128,6 @@ export const workArtefactsFootnote =
 export const workContent: MappingContent = {
   ...mappingContent,
 
-  /**
-   * A different frame of the same video: 1:02, where the matrix is up on the screen
-   * behind him. Overridden here rather than in content-base so /mapping keeps its own.
-   */
-  video: { ...mappingContent.video, poster: '/mapping/poster-1m02.jpg' },
-
   hero: {
     h1: 'See How Your Work Actually Works.',
     subhead:
