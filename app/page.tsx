@@ -659,7 +659,7 @@ function DirCFooter() {
             title="Contact"
             links={[
               ['hello@polynize.ai', 'mailto:hello@polynize.ai', true],
-              ['Book a call ↗', BOOKING_URL, true],
+              ['Talk to our team ↗', BOOKING_URL, true],
             ]}
           />
         </div>
