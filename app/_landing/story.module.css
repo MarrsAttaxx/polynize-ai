@@ -758,16 +758,35 @@
   transform-box: view-box;
   transform-origin: 0 0;
 }
+/**
+ * The sweep. Twelve stops rather than six, spaced UNEVENLY in both time and distance:
+ * long glides between short darts, so it reads as someone searching rather than as a
+ * pendulum. The even six-stop version was legible but mechanical (Marrs, 11 Aug 2026).
+ *
+ * The ease-in-out is what makes it work. It decelerates into every stop, so the short
+ * hops become quick darts with a beat of hesitation at the end of each one, which is the
+ * erratic part. A linear timing function here would flatten it back into a patrol.
+ *
+ * Translations are bounded so the beam centre stays roughly inside the frame: the circle
+ * starts at 180,150 and tx must stay within about -60 to 700, ty within -70 to 210.
+ * Grazing an edge is fine and adds to it; leaving the frame entirely reads as a bug.
+ */
 @keyframes torchSweep {
   0% { transform: translate(0px, 0px); }
-  18% { transform: translate(300px, 120px); }
-  36% { transform: translate(660px, 30px); }
-  54% { transform: translate(560px, 190px); }
-  72% { transform: translate(180px, 200px); }
-  88% { transform: translate(420px, 70px); }
+  9% { transform: translate(250px, 40px); }
+  15% { transform: translate(180px, -30px); }
+  27% { transform: translate(600px, 60px); }
+  33% { transform: translate(520px, 170px); }
+  41% { transform: translate(660px, 20px); }
+  52% { transform: translate(300px, 190px); }
+  58% { transform: translate(380px, 60px); }
+  67% { transform: translate(60px, 150px); }
+  74% { transform: translate(120px, 30px); }
+  85% { transform: translate(450px, 120px); }
+  93% { transform: translate(200px, 190px); }
   100% { transform: translate(0px, 0px); }
 }
-.play .torchMove { animation: torchSweep 17s cubic-bezier(0.45, 0, 0.55, 1) infinite; }
+.play .torchMove { animation: torchSweep 12s cubic-bezier(0.45, 0, 0.55, 1) infinite; }
 
 .dgStep {
   fill: color-mix(in srgb, var(--mint) 5%, transparent);
