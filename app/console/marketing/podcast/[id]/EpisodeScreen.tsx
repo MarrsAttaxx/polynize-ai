@@ -733,26 +733,56 @@ export function EpisodeScreen({ episode, descriptConnected }: Props) {
               {/* The words on this card have changed since the video was cut. Said rather than fixed:
                   deleting a composition in Descript is not this system's call, and a new cut list
                   sitting beside a link to the old video is the more dangerous state. */}
-              {/* WHAT THE FINISH ACTUALLY DID. Reported rather than assumed, because the combined pass
-                  claimed a title and captions that were not on the timeline. */}
+              {/* WHAT THE FINISH ACTUALLY DID.
+                  Phrased from VERDICTS, not booleans. The first version read the whole report line for
+                  negative words and told him "NO title, NO captions" on a clip that had both, because
+                  "plain white, no karaoke" contains the word "no". And a music bed he never asked for was
+                  reported as "music file not found", which invented a problem. */}
               {c.finish ? (
-                <p className={c.finish.captions === false || c.finish.title === false ? d.manual : d.finishLine}>
-                  {[
-                    c.finish.title === true ? 'title on' : c.finish.title === false ? 'NO title' : null,
-                    c.finish.captions === true
-                      ? 'captions on'
-                      : c.finish.captions === false
-                        ? 'NO captions'
-                        : null,
-                    c.finish.music === true
-                      ? 'music bed on'
-                      : c.finish.music === false
-                        ? 'music file not found'
-                        : null,
-                  ]
-                    .filter(Boolean)
-                    .join(' · ') || 'Finished, but it did not say what it did.'}
-                </p>
+                <>
+                  <p
+                    className={
+                      c.finish.captions === 'failed' || c.finish.title === 'failed' || c.finish.music === 'failed'
+                        ? d.manual
+                        : d.finishLine
+                    }
+                  >
+                    {[
+                      c.finish.title === 'done'
+                        ? 'title on'
+                        : c.finish.title === 'failed'
+                          ? 'NO title'
+                          : c.finish.title === 'not-requested'
+                            ? 'no title wanted'
+                            : null,
+                      c.finish.captions === 'done'
+                        ? 'captions on'
+                        : c.finish.captions === 'failed'
+                          ? 'NO captions'
+                          : c.finish.captions === 'not-requested'
+                            ? 'no captions wanted'
+                            : null,
+                      c.finish.music === 'done'
+                        ? 'music bed on'
+                        : c.finish.music === 'failed'
+                          ? 'MUSIC FILE NOT FOUND'
+                          : null,
+                      c.finish.font ? `set in ${c.finish.font}` : null,
+                    ]
+                      .filter(Boolean)
+                      .join(' · ') || 'Finished, but it did not say what it did.'}
+                  </p>
+                  {/* A font substitute is worth surfacing on its own: the fix is adding the font to the
+                      Descript project once, not re-running anything. */}
+                  {c.finish.font && !/space grotesk/i.test(c.finish.font) ? (
+                    <p className={d.hint}>
+                      Space Grotesk was not available in the Descript project, so it used{' '}
+                      {c.finish.font}. Add Space Grotesk to the project once and every clip after that
+                      picks it up.
+                    </p>
+                  ) : null}
+                  {c.finish.caveat ? <p className={d.hint}>It flagged: {c.finish.caveat}</p> : null}
+                </>
               ) : null}
               {c.recut_needed ? (
                 <p className={d.manual}>

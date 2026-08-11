@@ -579,25 +579,80 @@ export function finishPrompt(args: {
  * Read rather than trusted, because the first version of this system asserted that it had added
  * captions and a title, and it had not been possible to tell the difference from the console.
  */
+export type FinishVerdict = 'done' | 'failed' | 'not-requested' | 'unknown';
+
+/**
+ * WHY THIS IS NOT A KEYWORD SCAN, having been one and been wrong.
+ *
+ * The first version read the whole line after each label and called it a failure if any negative word
+ * appeared anywhere in it. Marrs's clip came back with a title and captions on it, and the card said
+ * "NO title, NO captions". The report actually read:
+ *
+ *   **CAPTIONS:** Added — one burned-in caption track ... plain white, no karaoke/highlight/emoji
+ *
+ * The word "no" in "no karaoke" is part of a SUCCESS description, and it flipped the verdict. Scanning a
+ * whole sentence for negative words cannot work, because the agent describes what it deliberately did
+ * NOT do as evidence of doing the job properly.
+ *
+ * So only the LEADING CLAUSE decides, which is where the verdict actually lives, and markdown is
+ * stripped first because `**CAPTIONS:**` left the capture starting at `**`.
+ *
+ * And "not requested" is its own outcome, not a failure. Reporting a music bed that was never asked for
+ * as "music file not found" invents a problem, which is exactly what the card did.
+ */
 export function readFinishReport(text: string): {
-  captions?: boolean;
-  title?: boolean;
-  music?: boolean;
+  captions: FinishVerdict;
+  title: FinishVerdict;
+  music: FinishVerdict;
+  /** The font it actually used, since a substitute is a real quality signal rather than a failure. */
+  font?: string;
+  /** Anything it flagged as unverified, which is worth showing without calling it a failure. */
+  caveat?: string;
   report: string;
 } {
-  const t = String(text ?? '');
-  const said = (label: string) => {
-    const line = t.match(new RegExp(label + '\\s*:?\\s*([^\\n]*)', 'i'))?.[1] ?? '';
-    if (!line.trim()) return undefined;
-    if (/\bnot found\b|\bnot requested\b/i.test(line)) return false;
-    return !/\bnot\b|\bno\b|\bcould not\b|\bunable\b|\bfailed\b|\bskipped\b/i.test(line);
+  const t = String(text ?? '').replace(/[*_`]/g, '');
+
+  /**
+   * THE LABEL MUST BE ANCHORED TO A LINE, and must carry its colon.
+   *
+   * Unanchored and case-insensitive, `TITLE` matched the words "clear of the title area" inside the
+   * CAPTIONS paragraph, so the title verdict was read out of a sentence about captions. `FONT` matched
+   * "font/color applied to all 4 scene layers" the same way. Both came back as unknown on a report that
+   * stated both plainly, two lines further down.
+   */
+  const labelled = (label: string): string =>
+    t.match(new RegExp('^[ \\t>-]*' + label + '[ \\t]*:[ \\t]*([^\\n]*)', 'im'))?.[1] ?? '';
+
+  const verdict = (label: string): FinishVerdict => {
+    const line = labelled(label);
+    // The verdict is the first clause. Everything after the first dash, full stop or comma is
+    // description, and description is where the misleading words live.
+    const head = line.split(/[—–-]|\.\s|\.$|,|\(/)[0].trim().toLowerCase();
+    if (!head) return 'unknown';
+    if (/^(not requested|none requested|not applicable|n\/a|not needed)/.test(head)) {
+      return 'not-requested';
+    }
+    // "not found" and "missing" are checked ANYWHERE in the clause, because the agent writes them as
+    // "file not found" and "Clip Bed.wav is missing", where the leading word is innocent.
+    if (/\bnot found\b|\bmissing\b/.test(head)) return 'failed';
+    if (/^(not |no\b|none\b|could not|couldn't|unable|failed|skipped|omitted)/.test(head)) {
+      return 'failed';
+    }
+    if (/^(added|yes|done|applied|present|complete|in place|verified)/.test(head)) return 'done';
+    return 'unknown';
   };
+
+  const font = labelled('FONT').split(/[.,—–(]/)[0].trim().slice(0, 40);
+  const caveat = t.match(/\b(?:caveat|note|however)\b\s*:?\s*([^\n]{10,300})/i)?.[1]?.trim();
+
   return {
-    captions: said('CAPTIONS'),
-    title: said('TITLE'),
-    music: said('MUSIC'),
+    captions: verdict('CAPTIONS'),
+    title: verdict('TITLE'),
+    music: verdict('MUSIC'),
+    font: font || undefined,
+    caveat: caveat || undefined,
     // The whole report is kept so a surprising outcome can be read rather than guessed at later.
-    report: t.slice(0, 4000),
+    report: String(text ?? '').slice(0, 4000),
   };
 }
 

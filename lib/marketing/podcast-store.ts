@@ -104,8 +104,22 @@ export type ClipProposal = {
    * what a missed caption track actually needs, and it makes each pass small enough to verify.
    */
   stage?: 'cutting' | 'finishing';
-  /** What the finish pass reported, so a missing caption track is visible rather than assumed. */
-  finish?: { captions?: boolean; title?: boolean; music?: boolean; report?: string };
+  /**
+   * What the finish pass reported, so a missing caption track is visible rather than assumed.
+   *
+   * Verdicts rather than booleans, because "not requested" is a real third outcome and reporting it as
+   * a failure invents a problem: the card told Marrs "music file not found" for a bed he had never
+   * asked for, on a clip that had a title and captions on it.
+   */
+  finish?: {
+    captions?: 'done' | 'failed' | 'not-requested' | 'unknown';
+    title?: 'done' | 'failed' | 'not-requested' | 'unknown';
+    music?: 'done' | 'failed' | 'not-requested' | 'unknown';
+    /** The font it actually used. A substitute is a quality signal, not a failure. */
+    font?: string;
+    caveat?: string;
+    report?: string;
+  };
   /**
    * TRUE when the cut exists but is not publishable yet, because a landscape source needs Descript's
    * speaker-tracking reframe and that is a manual toggle rather than something automation can apply.
