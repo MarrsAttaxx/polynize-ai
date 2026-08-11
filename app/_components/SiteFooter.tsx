@@ -38,7 +38,6 @@ export function SiteFooter() {
             links={[
               ['polynize.io', POLYNIZE_IO, true],
               ['Map your team', '/mapping', false],
-              ['Brand', '/brand', false],
             ]}
           />
           <FootCol
@@ -60,7 +59,7 @@ export function SiteFooter() {
       </div>
       <div className={s.dcFooterBase}>
         <span>© 2026 Polynize Pty Ltd</span>
-        <span className={s.dcText3}>Built in Sydney</span>
+        <span className={s.dcText3}>Built in Melbourne</span>
       </div>
     </footer>
   );

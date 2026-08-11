@@ -1,12 +1,25 @@
 /**
- * Provider-agnostic analytics. Designed so we can swap in PostHog,
- * Segment, GA4, or anything else as a single edit later. No tracker
- * is wired in v1, so calls are no-ops + a debug log.
+ * Provider-agnostic analytics. The shape of `track(event, props)` is locked so callers
+ * never change when the provider does.
  *
- * To add a real provider, implement an `AnalyticsProvider` and assign
- * `currentProvider`. The shape of `track(event, props)` is locked so
- * callers don't change.
+ * WIRED TO VERCEL WEB ANALYTICS, 11 Aug 2026. Until now this was a no-op that logged to
+ * the console in dev, which meant every CTA on the site was unmeasurable: the funnel
+ * rework could not be evaluated at all. Vercel was the right choice by elimination
+ * rather than enthusiasm. The site is already on Vercel, so there is no new vendor, no
+ * cookie banner (it is cookieless and does not fingerprint), no extra script domain to
+ * get blocked, and pageviews need no configuration.
+ *
+ * ONE THING TO KNOW: custom events are a PRO feature. Pageviews record on any plan, but
+ * `track()` calls are silently dropped on Hobby. If map_click and booking_click show zero
+ * while pageviews climb, that is the plan and not the code.
+ *
+ * The provider is forwarded to directly rather than installed via setProvider, on
+ * purpose. setProvider needs a client component to run before the first event fires, and
+ * a race there loses events silently. Vercel's own track() is already a safe no-op on the
+ * server and before <Analytics /> mounts, so there is nothing to sequence.
  */
+
+import { track as vercelTrack } from '@vercel/analytics';
 
 export type AnalyticsEvent =
   /** Generic CTA click. props: { surface, label, href? } */
@@ -46,21 +59,21 @@ export interface AnalyticsProvider {
 }
 
 /**
- * No-op provider used in v1. When a real tracker is wired, replace
- * `currentProvider` with the implementation. All events queue silently
- * via console.debug so we can spot-check what would fire.
+ * Vercel Web Analytics. Still logs to the console in development, because a silent
+ * analytics layer is one you cannot tell apart from a broken one.
  */
-const noopProvider: AnalyticsProvider = {
+const vercelProvider: AnalyticsProvider = {
   track(event, props) {
     if (typeof window === 'undefined') return;
     if (process.env.NODE_ENV !== 'production') {
       // eslint-disable-next-line no-console
       console.debug('[analytics] %s', event, props ?? {});
     }
+    vercelTrack(event, props);
   },
 };
 
-let currentProvider: AnalyticsProvider = noopProvider;
+let currentProvider: AnalyticsProvider = vercelProvider;
 
 export function setProvider(provider: AnalyticsProvider): void {
   currentProvider = provider;

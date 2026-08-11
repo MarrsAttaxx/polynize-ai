@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { DraftingGrid } from '../_components/DraftingGrid';
 import { TrackedLink } from '../_components/TrackedLink';
 import { SiteFooter } from '../_components/SiteFooter';
-import { SiloGlyph, StageGlyph, MapGlyph, GitHubMark } from './icons';
+import { SiloGlyph, StageGlyph, MapGlyph } from './icons';
 import { StoryPath } from './StoryPath';
 import { StoryMotion } from './StoryMotion';
 import { FocusVeil } from './FocusVeil';
@@ -242,11 +242,8 @@ export function StoryLanding({
         {/* 7. Proof */}
         <section className={s.section}>
           <div className={`${s.proof} ${s.rise}`}>
-            {/* The client is never named in the copy, per the standing rule. The mark
-                is the one thing that says who, and it says it quietly. */}
-            <span className={s.proofMark} aria-hidden="true">
-              <GitHubMark />
-            </span>
+            {/* No client mark here any more. The copy now says "we can't tell you who
+                yet", and a recognisable logo on the same screen contradicts it. */}
             <div className={s.eyebrow}>Proof</div>
             <h2 className={s.proofH2}>{c.proof.h2}</h2>
             <div className={s.prose}>
@@ -254,7 +251,7 @@ export function StoryLanding({
                 <p key={i}>{p}</p>
               ))}
             </div>
-            <div className={s.proofStat}>{c.proof.stat}</div>
+            {c.proof.stat && <div className={s.proofStat}>{c.proof.stat}</div>}
           </div>
         </section>
 

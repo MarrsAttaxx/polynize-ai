@@ -19,15 +19,15 @@ import {
  * work at all and answers with the capability map: one bottleneck, every capability in
  * it, split human, hybrid, agentic. An enterprise version is coming from Shourov.
  *
- * NOINDEX while the three are being judged. Near-identical pages competing for the same
- * terms split the ranking signal and read as doorway pages to a crawler. Remove `robots`
- * on whichever one is promoted, and canonical the others to it.
+ * THIS IS THE ONE THAT RANKS (Marrs, 11 Aug 2026). It was noindex while the three were
+ * being judged; it won, so the block is gone. /mapping now carries the noindex and a
+ * canonical pointing here, because two near-identical pages competing for the same terms
+ * split the signal and read as doorway pages to a crawler.
  */
 export const metadata: Metadata = {
   title: 'Capability Mapping',
   description:
     'Before you decide where AI belongs, map the work into its capabilities and see which are human, which are agentic, and which are both.',
-  robots: { index: false, follow: false },
   openGraph: {
     title: 'Capability Mapping · Polynize',
     description:

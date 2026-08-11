@@ -743,6 +743,62 @@
 }
 .play .hudCross { animation: hudCrossDraw 2.2s cubic-bezier(0.4, 0, 0.2, 1) both; }
 
+/* ---- /mapping beat 3: the dirty windscreen ----
+   THE WIPERS MUST NEVER CLEAR A PATH. The obvious build sweeps a clean arc through the
+   grime, and that inverts the beat: a cleared arc says the view is being fixed, and the
+   copy says there is no clarity. The grime and the streaks are static layers that the
+   wipers pass OVER. Do not add a mask. */
+.wsOutside { fill: color-mix(in srgb, var(--mint) 5%, #06060c); }
+.wsHorizon { fill: none; stroke: var(--hud-4); stroke-width: 1.4; }
+/* Out there, and unreadable. The blur is the whole point: recognisable as logos, not as
+   any particular one. */
+.wsPassing { filter: blur(5px); opacity: 0.5; }
+.wsPass { color: var(--hud-1); transform-box: fill-box; transform-origin: 50% 50%; }
+@keyframes wsDrift {
+  from { transform: translateX(90px); opacity: 0; }
+  12% { opacity: 0.9; }
+  80% { opacity: 0.9; }
+  to { transform: translateX(-120px); opacity: 0; }
+}
+.play .wsPass {
+  animation: wsDrift 7s linear infinite;
+  animation-delay: calc(var(--i, 0) * -1.16s);
+}
+.wsGrime { fill: color-mix(in srgb, #6b5a3c 34%, transparent); }
+.wsStreak {
+  fill: none;
+  stroke: color-mix(in srgb, #6b5a3c 14%, transparent);
+  stroke-width: 7;
+  stroke-linecap: round;
+}
+.wsArm { fill: none; stroke: var(--hud-2); stroke-width: 3; stroke-linecap: round; }
+.wsBlade {
+  fill: none;
+  stroke: var(--hud-0);
+  stroke-width: 9;
+  stroke-linecap: round;
+  filter: drop-shadow(0 0 6px color-mix(in srgb, var(--mint) 40%, transparent));
+}
+/* Pivoted at the base of the screen, so they swing like wipers rather than rotating in
+   place. transform-box: view-box because the origin is a point on the scene, not on the
+   element's own box. */
+.wsWiperL,
+.wsWiperR { transform-box: view-box; }
+.wsWiperL { transform-origin: 340px 470px; }
+.wsWiperR { transform-origin: 660px 470px; }
+@keyframes wsWipeL {
+  0%, 100% { transform: rotate(-30deg); }
+  50% { transform: rotate(22deg); }
+}
+@keyframes wsWipeR {
+  0%, 100% { transform: rotate(30deg); }
+  50% { transform: rotate(-22deg); }
+}
+.play .wsWiperL { animation: wsWipeL 2.1s ease-in-out infinite; }
+.play .wsWiperR { animation: wsWipeR 2.1s ease-in-out infinite; }
+.wsGlassEdge { fill: none; stroke: var(--hud-2); stroke-width: 2.4; }
+.wsDash { fill: #06060c; stroke: var(--hud-3); stroke-width: 1.6; }
+
 /* ---------- The route ----------
    A dashed path down the left margin with a waypoint per beat and a mint trail that
    fills in behind the reader. Sits in the slack beside the 860px text column, so the

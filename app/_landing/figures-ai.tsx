@@ -136,26 +136,30 @@ type Floater = { name: VendorName | 'q'; x: number; y: number; size: number; i: 
  * each other. One of each mark, never repeated, because a duplicate reads as a pattern;
  * the question repeats instead, since that IS the recurring thing.
  *
- * PLACED ON A JITTERED 4 x 3 LATTICE covering the whole frame, not scattered freehand.
- * The first version clumped toward the middle and left the corners empty, which read as
- * a cluster rather than as a field (Marrs, 10 Aug 2026). A lattice guarantees even
- * coverage; the per-item offsets and the size spread from 58 to 110 stop it looking like
- * a grid. Anything moved here should keep both properties: reach the edges, and never
- * line up with its neighbours on either axis.
+ * PLACED ON A JITTERED LATTICE covering the whole frame, not scattered freehand. The
+ * first version clumped toward the middle and left the corners empty, which read as a
+ * cluster rather than as a field (Marrs, 10 Aug 2026). Spread wider again on 11 Aug, with
+ * the size range opened up from 58-110 to 48-132: a field where everything is roughly the
+ * same size reads as a set, and this is meant to read as a pile.
+ *
+ * Anything moved here has to keep three properties: reach the edges, never line up with a
+ * neighbour on either axis, and keep the size range wide. This figure is shared with
+ * /capability-mapping, so a change lands on both pages.
  */
 const FLOATERS: Floater[] = [
-  { name: 'openai', x: 108, y: 96, size: 104, i: 0 },
-  { name: 'anthropic', x: 352, y: 66, size: 74, i: 1 },
-  { name: 'q', x: 598, y: 104, size: 92, i: 2 },
-  { name: 'gemini', x: 886, y: 74, size: 82, i: 3 },
-  { name: 'q', x: 196, y: 252, size: 62, i: 4 },
-  { name: 'claude', x: 438, y: 218, size: 110, i: 5 },
-  { name: 'copilot', x: 682, y: 262, size: 96, i: 6 },
-  { name: 'q', x: 912, y: 226, size: 70, i: 7 },
-  { name: 'grok', x: 96, y: 386, size: 88, i: 8 },
-  { name: 'q', x: 330, y: 418, size: 58, i: 9 },
-  { name: 'openclaw', x: 566, y: 388, size: 78, i: 10 },
-  { name: 'q', x: 824, y: 412, size: 100, i: 11 },
+  { name: 'openai', x: 74, y: 82, size: 124, i: 0 },
+  { name: 'anthropic', x: 318, y: 58, size: 66, i: 1 },
+  { name: 'q', x: 560, y: 110, size: 104, i: 2 },
+  { name: 'gemini', x: 806, y: 52, size: 92, i: 3 },
+  { name: 'q', x: 946, y: 148, size: 54, i: 4 },
+  { name: 'claude', x: 168, y: 246, size: 78, i: 5 },
+  { name: 'copilot', x: 424, y: 232, size: 132, i: 6 },
+  { name: 'q', x: 690, y: 268, size: 70, i: 7 },
+  { name: 'grok', x: 902, y: 300, size: 108, i: 8 },
+  { name: 'q', x: 62, y: 392, size: 88, i: 9 },
+  { name: 'openclaw', x: 296, y: 424, size: 60, i: 10 },
+  { name: 'q', x: 556, y: 418, size: 118, i: 11 },
+  { name: 'q', x: 782, y: 436, size: 48, i: 12 },
 ];
 
 /** Reused by /capability-mapping: too many tools, too many options, too many opinions. */
@@ -185,97 +189,104 @@ export function VendorDrift() {
 }
 
 /* ================================================================== beat 3
-   Readouts climbing towards a benchmark, and never getting there.
+   The dirty windscreen.
 
-   The bars breathe and the benchmark drifts, which is the honest picture: neither your
-   capability nor the standard it is measured against holds still. The compass that used
-   to sit beside this moved to beat 1, where being lost is the actual subject.
+   Looking out of a car through a screen smeared with dirt. The wipers sweep and sweep and
+   clear nothing, and out beyond the glass the vendor marks from beat 2 drift past, blurred
+   past recognition. The beat says there is no clarity on where AI actually works, and the
+   figure is that sentence: you are moving, something is being done about the view, and you
+   still cannot see.
 
-   HOW THE BLOCKS WORK, because it is not obvious and it is easy to break: each bar is a
-   SOLID rect that scales on Y, and the block separations are static background-coloured
-   rules drawn across the whole chart on top. Scaling a stack of drawn blocks stretches
-   them; scaling a solid bar behind fixed rules does not. */
+   THE WIPERS MUST NOT CLEAR A PATH. The obvious implementation sweeps a clean arc through
+   the grime, and that inverts the whole thing: a cleared arc says the problem is being
+   solved. The smear is a static layer the wipers pass OVER, never through. */
 
-const BAR_COUNT = 14;
-const BAR_BASE = 316;
-const BAR_TARGET = 76;
-const BARS = Array.from({ length: BAR_COUNT }, (_, i) => {
-  const r = rand(4400 + i);
-  return {
-    i,
-    x: 62 + i * 64,
-    // Capped so that h * the 1.14 breathe peak still clears the benchmark. A bar that
-    // grows past the line while breathing argues the opposite of the copy.
-    h: 50 + r() * 118,
-    /** Every bar breathes on its own clock, so the field never pulses in unison. */
-    // Faster than the first pass, which read as idling rather than as live readings.
-    dur: 1.5 + r() * 1.1,
-    delay: r() * 1.6,
-  };
-});
+const WS = { cx: 500, cy: 250 };
 
-const BLOCK_RULES = (() => {
+/** The screen aperture: a windscreen is wider than it is tall and rounded at the top. */
+const GLASS = 'M 96 118 C 300 62, 700 62, 904 118 L 946 396 C 700 430, 300 430, 54 396 Z';
+
+/** The grime. Blotches at three sizes so it reads as dirt rather than as texture. */
+const GRIME = (() => {
+  const r = rand(9182736);
   const d: string[] = [];
-  for (let y = BAR_BASE - 14; y > BAR_TARGET - 40; y -= 15) d.push(`M 30 ${y} H 970`);
+  for (let i = 0; i < 90; i++) {
+    const x = 60 + r() * 880;
+    const y = 80 + r() * 340;
+    const rx = 6 + r() * 30;
+    const ry = rx * (0.5 + r() * 0.7);
+    d.push(
+      `M ${f(x - rx)} ${f(y)} a ${f(rx)} ${f(ry)} 0 1 0 ${f(rx * 2)} 0 a ${f(rx)} ${f(ry)} 0 1 0 ${f(-rx * 2)} 0`
+    );
+  }
   return d.join(' ');
 })();
 
-const CHART_GRID = (() => {
+/** Streaks left behind, following the wiper arc rather than the grime. */
+const STREAKS = (() => {
   const d: string[] = [];
-  for (let y = BAR_BASE - 52; y > BAR_TARGET; y -= 52) d.push(`M 40 ${y} H 962`);
+  // Six, not fourteen: evenly spaced concentric arcs stop reading as a smear and start
+  // reading as radar rings. Broken into partial sweeps at uneven radii instead.
+  const spans = [
+    [168, -54, 18],
+    [206, -12, 58],
+    [242, -60, -6],
+    [281, 6, 54],
+    [318, -44, 26],
+    [352, -8, 48],
+  ] as const;
+  for (const [rr, a0, a1] of spans) d.push(arc(WS.cx, 470, rr, a0, a1));
   return d.join(' ');
 })();
 
-function BenchmarkBars() {
+/** What is out there, going past. Recognisable in silhouette only, which is the point. */
+const PASSING: { name: VendorName; x: number; y: number; size: number; i: number }[] = [
+  { name: 'openai', x: 210, y: 190, size: 84, i: 0 },
+  { name: 'gemini', x: 430, y: 150, size: 62, i: 1 },
+  { name: 'claude', x: 640, y: 210, size: 74, i: 2 },
+  { name: 'copilot', x: 830, y: 168, size: 90, i: 3 },
+  { name: 'grok', x: 330, y: 320, size: 66, i: 4 },
+  { name: 'anthropic', x: 720, y: 340, size: 58, i: 5 },
+];
+
+function Windscreen() {
   return (
     <g className={s.hudScene}>
-      <path className={s.hudGrid} d={CHART_GRID} />
+      <clipPath id="pn-glass">
+        <path d={GLASS} />
+      </clipPath>
 
-      {/* The headroom each bar is not using. Static, and outside the breathing group, so
-          it can never scale up past the benchmark. */}
-      {BARS.map((b) => (
-        <rect
-          key={`g${b.i}`}
-          className={s.hudBarDim}
-          x={b.x - 20}
-          y={BAR_TARGET + 14}
-          width="40"
-          height={BAR_BASE - BAR_TARGET - 14}
-          rx="2"
-        />
-      ))}
-
-      {BARS.map((b) => (
-        <g
-          key={b.i}
-          className={s.hudBreathe}
-          style={{
-            ['--i' as string]: b.i,
-            ['--dur' as string]: `${b.dur.toFixed(2)}s`,
-            ['--delay' as string]: `${b.delay.toFixed(2)}s`,
-          }}
-        >
-          <rect className={s.hudBarLit} x={b.x - 20} y={BAR_BASE - b.h} width="40" height={b.h} rx="2" />
+      {/* Beyond the glass. Drawn first, so everything else is between it and the viewer. */}
+      <g clipPath="url(#pn-glass)">
+        <rect className={s.wsOutside} x="40" y="50" width="920" height="400" />
+        <path className={s.wsHorizon} d="M 40 300 H 960" />
+        <g className={s.wsPassing}>
+          {PASSING.map((v) => (
+            <g key={v.name} className={s.wsPass} style={{ ['--i' as string]: v.i }}>
+              <VendorLogo name={v.name} x={v.x} y={v.y} size={v.size} />
+            </g>
+          ))}
         </g>
-      ))}
 
-      {/* The separations, painted in the page colour over the top of the bars. */}
-      <path className={s.hudBlockRule} d={BLOCK_RULES} />
-      <path className={s.hudAxis} d={`M 40 ${BAR_BASE} H 962`} />
+        {/* The grime, and the streaks the wipers leave. Neither is ever cleared: a wiped
+            arc would say the view is being fixed, which is the opposite of the copy. */}
+        <path className={s.wsStreak} d={STREAKS} />
+        <path className={s.wsGrime} d={GRIME} />
 
-      {/* One person per column, so a reader knows what a bar is a reading OF. */}
-      <g className={s.hudHuman}>
-        {BARS.map((b) => (
-          <Person key={`p${b.i}`} x={b.x} y={BAR_BASE + 46} sc={1.2} />
-        ))}
+        {/* The wipers. They sweep over the grime, never through it. */}
+        <g className={s.wsWiperL}>
+          <path className={s.wsArm} d={`M 340 470 L 300 214`} />
+          <path className={s.wsBlade} d={`M 296 190 L 304 238`} />
+        </g>
+        <g className={s.wsWiperR}>
+          <path className={s.wsArm} d={`M 660 470 L 700 214`} />
+          <path className={s.wsBlade} d={`M 696 190 L 704 238`} />
+        </g>
       </g>
 
-      {/* The benchmark. It drifts, because the standard moves too. */}
-      <g className={s.hudTargetDrift}>
-        <path className={s.hudBloom} d={`M 40 ${BAR_TARGET} H 962`} />
-        <path className={s.hudTargetLine} d={`M 40 ${BAR_TARGET} H 962`} />
-        <path className={s.hudTargetCap} d={`M 40 ${BAR_TARGET - 11} v 22 M 962 ${BAR_TARGET - 11} v 22`} />
-      </g>
+      {/* The car. Pillars and dash, so the frame reads as being inside something. */}
+      <path className={s.wsGlassEdge} d={GLASS} />
+      <path className={s.wsDash} d="M 20 402 C 300 446, 700 446, 980 402 L 980 470 L 20 470 Z" />
     </g>
   );
 }
@@ -401,6 +412,6 @@ export const AI_FIGURES: FigureRegistry = {
     place: 'wide',
     render: () => <VendorDrift />,
   },
-  coordinates: { viewBox: '0 0 1000 400', place: 'wide', render: () => <BenchmarkBars /> },
+  windscreen: { viewBox: '0 0 1000 470', place: 'wide', render: () => <Windscreen /> },
   guess: { viewBox: '0 0 1000 480', place: 'wide', render: () => <SlotMachine /> },
 };

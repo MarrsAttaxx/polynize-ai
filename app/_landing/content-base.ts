@@ -251,13 +251,22 @@ export const mappingContent: MappingContent = {
     ],
   },
 
+  /**
+   * Marrs's copy, verbatim (11 Aug 2026), numbers included and cleared by him.
+   *
+   * Two house rules bend here and he made both calls: it uses "train" as a verb, and it
+   * ends on an emoji. Neither is decoration. The tone is the point of the last line, and
+   * the whole section works because it withholds the names rather than despite it.
+   *
+   * The GitHub mark came off with this rewrite. A logo and "we can't tell you who yet"
+   * on the same screen contradict each other, and the mark was the louder of the two.
+   */
   proof: {
-    h2: 'One of the world’s biggest technology companies used this to find out where to invest in its people.',
-    paras: [
-      'Before taking a new product to global market, they mapped the real capability of their go to market leadership. They benchmarked it, found where the gaps actually were, and used that to decide where investment would move the numbers.',
-    ],
-    stat: 'Ninety minutes. One team. A decision they could act on.',
+    h2: 'Used by one of the big four consultancies to train 38,000 practitioners, and a world leading tech brand to train a $200M ARR sales team.',
+    paras: ['We can’t tell you who yet, but soon. 🤫'],
+    stat: '',
   },
+
 
   examples: {
     h2: 'What teams map.',

@@ -643,7 +643,6 @@ function DirCFooter() {
             title="Polynize"
             links={[
               ['polynize.io', POLYNIZE_IO, true],
-              ['Brand', '/brand', false],
               ['Console', '/console-demo', false],
             ]}
           />
@@ -666,7 +665,7 @@ function DirCFooter() {
       </div>
       <div className={s.dcFooterBase}>
         <span>© 2026 Polynize Pty Ltd</span>
-        <span className={s.dcText3}>Built in Sydney</span>
+        <span className={s.dcText3}>Built in Melbourne</span>
       </div>
     </footer>
   );

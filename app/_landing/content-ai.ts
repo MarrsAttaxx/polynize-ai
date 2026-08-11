@@ -28,7 +28,7 @@ import {
 } from './content-base';
 
 /** The figures this page declares. See figures-ai.tsx for the registry. */
-export type FigureKind = 'scatter' | 'ambiguity' | 'coordinates' | 'guess';
+export type FigureKind = 'scatter' | 'ambiguity' | 'windscreen' | 'guess';
 
 /** The three inputs the engagement asks for, per the call. */
 const INPUTS: Silo[] = [
@@ -77,13 +77,13 @@ export const storyBeats: Beat[] = [
   },
   {
     kicker: 'No landmarks',
-    line: 'You do not know where you are, or what good looks like.',
-    sub: 'No real data on what your people can do with these tools. Nothing to measure it against.',
-    figure: 'coordinates',
+    line: 'No clarity on where AI actually works.',
+    sub: 'Advice is generic and doesn’t relate to you, or to the flow of your team’s work.',
+    figure: 'windscreen',
   },
   {
     line: 'So every investment decision is a gamble.',
-    sub: 'Which licences to renew, which teams to back, where the next dollar goes. The call goes to whoever is most confident in the room.',
+    sub: 'Which licences to renew, which teams to back, where the next dollar goes.',
     figure: 'guess',
   },
   {
@@ -223,7 +223,6 @@ export const storyScale = {
   h2: 'This scales to the whole organisation.',
   steps: ['One process', 'One team', 'Every team'],
   paras: [
-    'What you have just read is one team against one process. The same method runs wider: more roles, more of the work, the same benchmark underneath all of it. Nothing about the process changes, only how much of the organisation is inside it.',
-    'That wider version is capability modelling. Mapping is the diagnostic step inside it, and it comes first on purpose, because a model of an entire organisation built before the method has been proven on a single piece of real work is a very expensive guess.',
+    'The deeper version of mapping is capability modelling, which models people, workflows and tech across your entire organisation.',
   ],
 };

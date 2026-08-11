@@ -71,8 +71,8 @@ const INPUTS: Silo[] = [
 export const workBeats: Beat[] = [
   {
     kicker: 'The problem',
-    line: 'Most organisations are lost in their AI journey.',
-    sub: 'Tools bought, pilots run, budgets committed. No agreed picture of where any of it belongs in the work.',
+    line: 'Most organisations are lost on their AI journey.',
+    sub: 'Tools bought, pilots run, budgets committed. No understanding of where any of it belongs in the work.',
     figure: 'lost',
   },
   {
@@ -129,7 +129,7 @@ export const workContent: MappingContent = {
   ...mappingContent,
 
   hero: {
-    h1: 'See How Your Work Actually Works.',
+    h1: 'See How Your Teams Actually Work.',
     subhead:
       'Before you decide where AI belongs, map the work into its capabilities and see which are human, which are agentic, and which are both.',
     primaryCta: 'Map your team',

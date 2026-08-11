@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { Space_Grotesk, Inter, JetBrains_Mono } from 'next/font/google';
 import './globals.css';
 import './tactile.css';
+import { Analytics } from '@vercel/analytics/next';
 
 const spaceGrotesk = Space_Grotesk({
   subsets: ['latin'],
@@ -82,6 +83,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           }}
         />
         {children}
+        {/* Pageviews. Custom events go through lib/analytics, which forwards to the same
+            SDK; without this component mounted those calls are no-ops. */}
+        <Analytics />
       </body>
     </html>
   );
