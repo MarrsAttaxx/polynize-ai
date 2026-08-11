@@ -15,7 +15,7 @@
  */
 
 import { SCENE_ENGINE_CSS } from './scene';
-import { renderFigureFrame, type PrezieFigure } from './figure';
+import { renderFigureIframe, type PrezieFigure } from './figure';
 
 export type FigureScene = {
   title: string;
@@ -28,10 +28,9 @@ const esc = (s: string) =>
 const FRAME_CSS = `
 /* Each figure fills the screen; one is live at a time. The containment and the clip are
    the wall a generated figure cannot get over. */
-.figure{position:fixed;inset:0;z-index:3;display:none;overflow:hidden;isolation:isolate;
-  contain:layout paint}
+.figure{position:fixed;inset:0;z-index:3;display:none;width:100%;height:100%;border:0;
+  background:transparent}
 .figure.on{display:block}
-.figure > *{position:absolute;inset:0}
 /* THE NEXT CONTROL. Bottom right, and DELIBERATELY ALMOST INVISIBLE.
    It began mint and pulsing, which defeated its own purpose: the audience could see it and it
    read as a next button on a presentation (Marrs). It belongs to the same family as the
@@ -95,13 +94,27 @@ const ENGINE_JS = `
      those the board never advances on a bare tap, only on the NEXT control. */
   function owns(i){ return figs[i].getAttribute('data-interactive')==='1'; }
 
+  /* Figures are SANDBOXED IFRAMES, so the engine cannot reach into one to set a class: that is the
+     isolation working, not a limitation to route around. The step goes across as a message and the
+     shim inside applies it. A figure that has not finished loading is remembered and told as soon as
+     it says it is ready, so opening straight onto figure three cannot leave it blank. */
+  var ready={};
+  function tell(i){
+    if(!ready[i]) return;
+    try{ figs[i].contentWindow.postMessage({t:'step',step:(i===at?step:0)},'*'); }catch(e){}
+  }
+  addEventListener('message',function(e){
+    var d=e.data; if(!d) return;
+    if(d.t==='ready'){ ready[d.i]=1; tell(d.i); return; }
+    /* Pointer events do not cross an iframe boundary either, so the shim forwards the raw
+       coordinates and ALL the gesture logic stays here, in one place, unchanged. */
+    if(d.t==='down'){ down(d.x,d.y); return; }
+    if(d.t==='up'){ up(d.x,d.y,null); return; }
+  });
+
   function paint(){
     figs.forEach(function(f,i){ f.classList.toggle('on', i===at); });
-    var f=figs[at];
-    /* The step classes are CUMULATIVE: after two taps the figure carries s1 AND s2, so a rule
-       written for the first tap stays true for the rest of the figure. That is what lets
-       things stay where the presenter put them. */
-    for(var k=1;k<=8;k++) f.classList.toggle('s'+k, k<=step);
+    tell(at);
     sweep.classList.remove('run'); void sweep.offsetWidth; sweep.classList.add('run');
     nextBtn.classList.toggle('done', at>=figs.length-1);
     var left=taps(at)-step;
@@ -184,7 +197,7 @@ const ENGINE_JS = `
 
 /** Render a figure prezie to one self-contained interactive page. */
 export function renderFigureScene(scene: FigureScene): string {
-  const figures = scene.figures.map((f, i) => renderFigureFrame(f, i)).join('\n');
+  const figures = scene.figures.map((f, i) => renderFigureIframe(f, i)).join('\n');
   return `<!doctype html>
 <html lang="en"><head>
 <meta charset="utf-8">

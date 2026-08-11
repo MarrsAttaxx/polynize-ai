@@ -24,7 +24,7 @@
  */
 
 /** A figure's step contract: the engine adds s1..sN cumulatively as taps accumulate. */
-export const FIGURE_STEP_CONTRACT = `TAPS. The figure's root element gets classes added CUMULATIVELY as the presenter taps: after one tap it has "s1", after two it has "s1 s2", and so on. So write the resting state as your normal CSS, and write each tap as a rule that starts from the class for that tap:
+export const FIGURE_STEP_CONTRACT = `TAPS. The document's root element (<html>) gets classes added CUMULATIVELY as the presenter taps: after one tap it has "s1", after two it has "s1 s2", and so on. So write the resting state as your normal CSS, and write each tap as a rule that starts from the class for that tap:
 
   .mything{opacity:0}            /* not there yet */
   .s1 .mything{opacity:1}        /* arrives on the first tap */
@@ -58,66 +58,28 @@ export type PrezieFigure = {
 };
 
 /**
- * Strip anything that could execute or escape.
+ * WHAT USED TO BE HERE, and why it is gone.
  *
- * These figures are served from the UNLISTED PREZIE URL, which is unauthenticated by design,
- * so injected script would run for anyone holding the link. The realistic risk here is a
- * model mistake rather than an attacker, but the blast radius is the same either way, and the
- * cost of refusing script is zero: a figure has no legitimate need for any.
+ * `sanitiseFigureHtml` and `sanitiseFigureCss` stripped script, event handlers, `position: fixed`,
+ * remote urls and any rule touching `html`, `body` or `:root`. They existed because figures served from
+ * the console's own origin, where injected script could `fetch('/console/...')` and have the browser
+ * attach Marrs's session for it. That threat was real. The mitigation was not the right one.
  *
- * SVG WIDENS THIS, which is why it is hardened here in the same commit that opens it up. `<svg>`
- * was always permitted and merely never offered, so telling April to draw with it changes what
- * actually arrives. Two elements matter: `<foreignObject>`, which hosts arbitrary HTML inside the
- * SVG namespace and is a standard way to smuggle markup past a filter that only knows about SVG
- * shapes; and remote `href`/`xlink:href` on `<image>`, `<use>` and `<a>`, which would make a figure
- * fetch from the network in the middle of a take. Neither has any legitimate use in a figure.
+ * Figures now render inside `sandbox="allow-scripts"` WITHOUT `allow-same-origin`, which gives each one
+ * an opaque origin: no cookies, no storage, no parent DOM, no same-origin request. The security is
+ * structural, so the stripping is redundant, and every one of those rules was also costing capability:
+ *
+ *   - no script meant no dragging, no real slider, no physics, no canvas. Marrs spent a week working
+ *     around that ceiling. It was the single biggest limit on the whole stage and it was self-inflicted.
+ *   - `position: fixed` is now bounded by the iframe, so it cannot reach the operator's cue strip.
+ *   - `html`, `body` and `:root` are her own document's now, so styling them is legitimate.
+ *   - "loads nothing from the network" is no longer enforceable by a regex once script is allowed, so it
+ *     has moved into the prompt as a rule rather than pretending to be a guarantee.
+ *
+ * `sanitiseFigureForSandbox` below is what remains, and it is three lines.
  */
-export function sanitiseFigureHtml(raw: string): string {
-  let s = String(raw ?? '');
-  // Whole elements that can execute, navigate or load remote content.
-  s = s.replace(/<\s*(script|iframe|object|embed|link|meta|base|form|svg:script|foreignObject)\b[\s\S]*?<\s*\/\s*\1\s*>/gi, '');
-  s = s.replace(/<\s*(script|iframe|object|embed|link|meta|base|foreignObject)\b[^>]*\/?\s*>/gi, '');
-  // Inline handlers and javascript: targets.
-  s = s.replace(/\son[a-z]+\s*=\s*"[^"]*"/gi, '');
-  s = s.replace(/\son[a-z]+\s*=\s*'[^']*'/gi, '');
-  s = s.replace(/\son[a-z]+\s*=\s*[^\s>]+/gi, '');
-  s = s.replace(/javascript\s*:/gi, '');
-  // Remote references. A same-figure reference (href="#xg-grad") is how gradients, clip paths and
-  // motion paths work, so only off-machine targets are neutralised, and by breaking the attribute
-  // name rather than deleting it, so a malformed tag cannot be stitched back together.
-  s = s.replace(
-    /\s(?:xlink:)?href\s*=\s*("|')\s*(?:https?:)?\/\/[^"']*\1/gi,
-    ' data-blocked-href=$1$1'
-  );
-  s = s.replace(/\s(?:xlink:)?href\s*=\s*(?:https?:)?\/\/[^\s>]+/gi, ' data-blocked-href=""');
-  return s.trim();
-}
 
-/**
- * Strip CSS that would break out of the figure's box or reach off the machine.
- *
- * `position: fixed` is the one that matters: it escapes the frame entirely and would let a
- * figure cover the operator's cue strip or the whole screen. Remote urls are refused because
- * a prezie is performed in a studio and must not depend on the network mid-take.
- */
-export function sanitiseFigureCss(raw: string): string {
-  let s = String(raw ?? '');
-  s = s.replace(/@import[^;]*;?/gi, '');
-  s = s.replace(/position\s*:\s*fixed/gi, 'position:absolute');
-  s = s.replace(/expression\s*\(/gi, '(');
-  s = s.replace(/url\(\s*['"]?\s*(https?:)?\/\//gi, 'url(#blocked-');
-  // A figure cannot address anything outside itself: no html/body/:root rules. Looped,
-  // because removing one rule deletes the closing brace the next match anchors on, so a
-  // single pass leaves every second one behind.
-  for (let n = 0; n < 8; n++) {
-    const before = s;
-    s = s.replace(/(^|\})\s*(html|body|:root)\b[^{]*\{[^}]*\}/gi, '$1');
-    if (s === before) break;
-  }
-  return s.trim();
-}
-
-/** Round-trip a figure through both sanitisers, clamping taps to something performable. */
+/** Round-trip a figure, clamping taps to something performable. */
 export function sanitiseFigure(f: {
   figure_id: string;
   name: string;
@@ -132,8 +94,9 @@ export function sanitiseFigure(f: {
     figure_id: f.figure_id,
     name: f.name.trim().slice(0, 80),
     brief: f.brief.trim().slice(0, 4000),
-    css: sanitiseFigureCss(f.css),
-    html: sanitiseFigureHtml(f.html),
+    // CSS passes through untouched. It styles a document of its own now.
+    css: String(f.css ?? '').trim(),
+    html: sanitiseFigureForSandbox(f.html),
     // Nobody performs a figure with twelve taps in it, and a negative one breaks the engine.
     taps: Number.isFinite(taps) ? Math.max(0, Math.min(Math.floor(taps), 8)) : 0,
     interactive: f.interactive === true ? true : undefined,
@@ -141,76 +104,100 @@ export function sanitiseFigure(f: {
 }
 
 /**
- * Render one figure inside the frame the engine owns.
+ * SANITISING FOR THE SANDBOX, which is a much shorter list.
  *
- * The wrapper is the boundary: it clips, it isolates stacking so a figure cannot layer over
- * the operator's cue strip, and it carries the s1..sN classes the tap contract is written
- * against. April's CSS is scoped under the wrapper's id so two figures on one page cannot
- * collide even if they both use `.box`.
+ * A figure now runs inside an iframe with `sandbox="allow-scripts"` and NOT `allow-same-origin`, so it
+ * has an opaque origin: it cannot read `document.cookie`, cannot reach `localStorage`, cannot touch the
+ * parent DOM, and cannot make a same-origin request. That last one is the whole point. The real risk was
+ * never cookie theft (the session cookie is httpOnly); it was that script on the console's own origin
+ * can `fetch('/console/...')` and the browser attaches the session for it. An opaque origin removes
+ * that, so the reason for banning script is gone.
+ *
+ * WHY THAT MATTERS MORE THAN THE SECURITY. Stripping script bought safety by taking capability off the
+ * operator: no dragging, no real slider, no physics, no canvas. Marrs spent a week working around a
+ * ceiling that isolation removes at no cost. The ban was the cheap mitigation, not the right one.
+ *
+ * What is still stripped, and why each one is here rather than being tidiness:
+ *   - `<base>`, which would silently repoint every relative url in the document.
+ *   - `<meta http-equiv>`, which can set a refresh or a CSP the engine did not choose.
+ *   - top-level navigation attempts, since `allow-top-navigation` is deliberately not granted and a
+ *     `target="_top"` link would just fail confusingly.
+ *
+ * What is NO LONGER enforceable here and has moved into the prompt: "a figure loads nothing from the
+ * network". Once script is allowed it can `fetch` regardless, so pretending a regex still guarantees it
+ * would be worse than saying plainly that it is now a rule April is asked to follow.
  */
-export function renderFigureFrame(f: PrezieFigure, index: number): string {
-  const id = `fig${index}`;
-  // Every selector she wrote is prefixed with this figure's own id. Two figures may both use
-  // `.box` and neither will reach the other, and nothing she writes can reach the engine.
-  const scoped = scopeCss(f.css, `#${id}`);
-  return `<section class="figure" id="${id}" data-taps="${f.taps}"${
-    f.interactive ? ' data-interactive="1"' : ''
-  }>
-<style>${scoped}</style>
-${f.html}
-</section>`;
+export function sanitiseFigureForSandbox(raw: string): string {
+  let s = String(raw ?? '');
+  s = s.replace(/<\s*base\b[^>]*>/gi, '');
+  s = s.replace(/<\s*meta\b[^>]*http-equiv[^>]*>/gi, '');
+  s = s.replace(/\starget\s*=\s*("|')?_(top|parent)\1?/gi, ' ');
+  return s.trim();
 }
 
 /**
- * Prefix every selector in a CSS block with `scope`.
+ * Render one figure as an ISOLATED DOCUMENT inside a sandboxed iframe.
  *
- * Deliberately simple and text-based: it walks top level rules, leaves at-rules' preludes
- * alone while scoping their bodies (so @keyframes and @media keep working), and prefixes each
- * comma-separated selector. It is not a CSS parser and does not need to be; the input is one
- * small generated block, and anything it fails to scope is still trapped by the wrapper's
- * clipping. `:root` and friends are already gone by the time this runs.
+ * Three things get simpler by being separate documents rather than sections of one:
+ *
+ * 1. CSS IS NOT SCOPED, and must not be. `scopeCss` prefixed every selector with the wrapper's id,
+ *    which does not exist inside the iframe, so scoping here would break every rule. Two figures cannot
+ *    collide when they are two documents, so the whole mechanism becomes unnecessary rather than
+ *    merely unused.
+ * 2. `position: fixed` cannot escape. It is bounded by the iframe, so the wall is structural instead of
+ *    a regex the engine hopes it got right.
+ * 3. Ids cannot collide, so a gradient called `grad` in two figures is finally fine.
+ *
+ * The step state crosses the boundary by `postMessage`, because the parent cannot touch this document's
+ * DOM (that is the point) and pointer events do not cross an iframe either. So the shim below applies
+ * the `s1..sN` classes it is told about, and forwards taps up so a tap-anywhere figure still advances
+ * the board.
  */
-export function scopeCss(css: string, scope: string): string {
-  const out: string[] = [];
-  let i = 0;
-  const s = css;
-  while (i < s.length) {
-    const brace = s.indexOf('{', i);
-    if (brace === -1) break;
-    const prelude = s.slice(i, brace).trim();
-    // Find the matching close brace, allowing one level of nesting for at-rules.
-    let depth = 1;
-    let j = brace + 1;
-    while (j < s.length && depth > 0) {
-      if (s[j] === '{') depth++;
-      else if (s[j] === '}') depth--;
-      j++;
-    }
-    const body = s.slice(brace + 1, j - 1);
+export function renderFigureIframe(f: PrezieFigure, index: number): string {
+  const html = sanitiseFigureForSandbox(f.html);
+  const doc = `<!doctype html><html><head><meta charset="utf-8">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
+<style>
+/* Transparent, so the engine's substrate shows through from the parent page. */
+html,body{margin:0;height:100%;background:transparent;overflow:hidden;
+  font-family:'Space Grotesk',system-ui,sans-serif;font-weight:700;color:#f4ece4;
+  -webkit-font-smoothing:antialiased}
+body>*{position:absolute;inset:0}
+:root{--ink:#0a0a0f;--cream:#f4ece4;--coral:#ff7a6b;--amber:#f0b86b;--gold:#f0e1b6;--mint:#69fccb;
+  --mono:'JetBrains Mono',ui-monospace,monospace}
+${f.css}
+</style></head><body>
+${html}
+<script>
+(function(){
+  /* THE SHIM. The only thing the engine needs from inside here. */
+  var root=document.documentElement;
+  addEventListener('message',function(e){
+    var d=e.data; if(!d||d.t!=='step') return;
+    /* Cumulative, exactly as before: after two taps the root carries s1 AND s2, so a rule written
+       for the first tap stays true for the rest of the figure. */
+    for(var k=1;k<=8;k++) root.classList.toggle('s'+k, k<=d.step);
+  });
+  /* Pointer coordinates are forwarded RAW, and the engine does all the gesture work. The board's
+     tap counting, its swipe-back and its rule about interactive figures already live there, and
+     duplicating any of that inside every figure would be two places to get it wrong. */
+  function send(t,x,y){ try{ parent.postMessage({t:t,i:${index},x:x,y:y},'*'); }catch(err){} }
+  addEventListener('touchstart',function(e){var t=e.touches[0];send('down',t.clientX,t.clientY);},{passive:true});
+  addEventListener('touchend',function(e){var t=e.changedTouches[0];send('up',t.clientX,t.clientY);},{passive:true});
+  addEventListener('mousedown',function(e){send('down',e.clientX,e.clientY);});
+  addEventListener('mouseup',function(e){send('up',e.clientX,e.clientY);});
+  parent.postMessage({t:'ready',i:${index}},'*');
+})();
+<\/script>
+</body></html>`;
 
-    if (prelude.startsWith('@')) {
-      // Keyframes are named, not selected: their steps must NOT be scoped.
-      if (/^@(keyframes|font-face|property)/i.test(prelude)) {
-        out.push(`${prelude}{${body}}`);
-      } else {
-        // @media and friends: scope what is inside them.
-        out.push(`${prelude}{${scopeCss(body, scope)}}`);
-      }
-    } else {
-      const sel = prelude
-        .split(',')
-        .map((p) => {
-          const t = p.trim();
-          if (!t) return '';
-          // A rule targeting the root itself (the step classes) attaches to the wrapper.
-          if (/^\.s\d/.test(t)) return `${scope}${t}`;
-          return `${scope} ${t}`;
-        })
-        .filter(Boolean)
-        .join(',');
-      if (sel) out.push(`${sel}{${body}}`);
-    }
-    i = j;
-  }
-  return out.join('\n');
+  // srcdoc is an ATTRIBUTE, so ampersands and quotes in the whole document have to be escaped or the
+  // markup terminates early. This is the one place where getting escaping wrong breaks every figure.
+  const srcdoc = doc.replace(/&/g, '&amp;').replace(/"/g, '&quot;');
+
+  return `<iframe class="figure" id="fig${index}" data-taps="${f.taps}"${
+    f.interactive ? ' data-interactive="1"' : ''
+  } sandbox="allow-scripts" referrerpolicy="no-referrer" title="Figure ${index + 1}" srcdoc="${srcdoc}"></iframe>`;
 }
