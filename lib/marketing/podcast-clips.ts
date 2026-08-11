@@ -530,24 +530,37 @@ export function finishPrompt(args: {
 - Held from 0 to ${style.title_seconds} seconds, then gone.
 - Positioned in the VERTICAL CENTRE of the frame, horizontally centred. Not at the top, not a lower
   third: the middle of the 1080x1920 canvas.
-- Font: Space Grotesk, Bold, white. If Space Grotesk is not available in this project, use the closest
-  clean geometric sans and SAY WHICH ONE YOU USED. Do not silently pick a default.
-- Big and readable at a glance on a phone. It may sit over the video: that is intended.
+- Font: SPACE GROTESK, Bold, at ${style.title_pt ?? 100}pt.
+- Colour: MINT GREEN, hex #69fccb exactly. Not white. This is the brand colour and it is what makes the
+  clip recognisable as ours.
+- If Space Grotesk is not available in this project, use the closest clean geometric sans and SAY WHICH
+  ONE YOU USED. Do not silently pick a default, and do not change the colour if you have to change the
+  font.
+- It may sit over the video: that is intended.
 - Exactly the words above. Do not rewrite it and do not add a subtitle.`);
   } else {
     lines.push('THE TITLE. No title on this clip. Do not add one.');
   }
 
   if (style.captions) {
+    const template = style.caption_template?.trim();
     lines.push(`THE CAPTIONS. Add burned-in captions to the video for the whole clip.
+${
+      template
+        ? `- FIRST, look for a caption template or style already saved in this Descript workspace called "${template}" and APPLY IT. It was built by hand and is the intended look, so it beats anything described here. If you cannot find it, say so plainly and then follow the spec below instead.`
+        : '- There is no saved caption template to apply, so follow this spec exactly.'
+}
 - BURNED IN, meaning visible in the rendered video, not a caption track that has to be switched on.
   If Descript distinguishes between the two, choose the one that appears in the exported file.
 - CONTINUOUS, top to tail. Every spoken word is captioned and they never stop and start between spans.
-- Lower third, centred, comfortably clear of the bottom edge where platform UI sits, and clear of the
-  title while the title is up.
+- Font: SPACE GROTESK at ${style.caption_pt ?? 50}pt, WHITE. Same rule as the title if the font is
+  unavailable: use the closest clean geometric sans and say which one you used.
+- CENTRED horizontally, and sitting LOW in the frame: a lower third, comfortably clear of the bottom
+  edge where platform UI covers things, and well below the title while the title is up. The captions
+  must be clearly SMALLER and LOWER than the title, never competing with it.
 - A word or short phrase at a time, big enough to read on a phone at arm's length.
-- Plain white. No word-by-word colour highlighting, no karaoke effect, no emoji, no bouncing.
-- Font: Space Grotesk, Medium, white. Same rule as above if it is unavailable: say what you used.`);
+- No word-by-word colour highlighting, no karaoke effect, no emoji, no bouncing, no background box
+  unless the saved template has one.`);
   } else {
     lines.push('THE CAPTIONS. No captions on this clip. Do not add any.');
   }
@@ -568,7 +581,9 @@ export function finishPrompt(args: {
 - CAPTIONS: added, or not added and why
 - TITLE: added, or not added and why
 - MUSIC: added, not requested, or file not found
-- FONT: the font you actually used
+- FONT: the font you actually used, and the point sizes you set for the title and the captions
+- COLOUR: the title colour you actually set
+- TEMPLATE: the caption template you applied, or that you could not find it
 - DURATION: the composition's duration in seconds, which must be unchanged by this pass`);
 
   return lines.join('\n\n');

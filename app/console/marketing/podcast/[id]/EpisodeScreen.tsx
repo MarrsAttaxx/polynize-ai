@@ -633,8 +633,46 @@ export function EpisodeScreen({ episode, descriptConnected }: Props) {
                 onBlur={() => void saveStyle(style)}
                 aria-label="Title seconds"
               />
-              <span className={d.styleLabel}>seconds, centred. 0 for no title.</span>
+              <span className={d.styleLabel}>seconds, at</span>
+              <input
+                className={d.styleNum}
+                type="number"
+                min={24}
+                max={300}
+                value={style.title_pt ?? 100}
+                onChange={(e) => setStyle({ ...style, title_pt: Number(e.target.value) || 100 })}
+                onBlur={() => void saveStyle(style)}
+                aria-label="Title point size"
+              />
+              <span className={d.styleLabel}>pt, mint, centred. 0 seconds for no title.</span>
             </div>
+            <div className={d.styleRow}>
+              <span className={d.styleLabel}>Captions at</span>
+              <input
+                className={d.styleNum}
+                type="number"
+                min={16}
+                max={200}
+                value={style.caption_pt ?? 50}
+                onChange={(e) => setStyle({ ...style, caption_pt: Number(e.target.value) || 50 })}
+                onBlur={() => void saveStyle(style)}
+                aria-label="Caption point size"
+              />
+              <span className={d.styleLabel}>pt, white, centred and low. Template</span>
+              <input
+                className={d.styleText}
+                value={style.caption_template ?? ''}
+                onChange={(e) => setStyle({ ...style, caption_template: e.target.value })}
+                onBlur={() => void saveStyle(style)}
+                placeholder="name of your Descript caption template"
+                aria-label="Caption template name"
+              />
+            </div>
+            <p className={d.hint}>
+              If you name a caption template you built in Descript, she applies that instead and the
+              sizes above are only the fallback. Both the title and the captions are set in Space
+              Grotesk, so add that font to the Descript project once and it stops substituting.
+            </p>
             <div className={d.styleRow}>
               <span className={d.styleLabel}>Music bed</span>
               <input

@@ -166,8 +166,21 @@ export type ClipProposal = {
 export type ClipStyle = {
   /** Seconds the title card holds before it goes. 0 turns the title off. */
   title_seconds: number;
+  /** Title size in points. Marrs settled on 100 after seeing 120 on a real clip. */
+  title_pt?: number;
   /** Burned-in captions for the whole clip. */
   captions: boolean;
+  /** Caption size in points. 50 reads on a phone without competing with the title. */
+  caption_pt?: number;
+  /**
+   * The name of a CAPTION TEMPLATE already saved in Descript, if there is one.
+   *
+   * Marrs made one by hand: "I have created a caption template, but I don't know if we can load that."
+   * Named rather than described, because a template he built and can see is more trustworthy than any
+   * spec written from here, and it keeps the styling under his control. When it is set the agent is told
+   * to apply it and to fall back to the explicit spec only if it cannot find it, saying which it used.
+   */
+  caption_template?: string;
   /**
    * The music bed's FILENAME as it appears in the Descript project's media, e.g. "Clip Bed.wav".
    *
@@ -190,7 +203,9 @@ export type ClipStyle = {
 
 export const DEFAULT_CLIP_STYLE: ClipStyle = {
   title_seconds: 5,
+  title_pt: 100,
   captions: true,
+  caption_pt: 50,
   music_gain_db: -20,
   remove_filler: true,
   remove_silences: true,

@@ -42,7 +42,10 @@ const Schema = z.object({
   style: z
     .object({
       title_seconds: z.number().int().min(0).max(15),
+      title_pt: z.number().int().min(24).max(300).optional(),
       captions: z.boolean(),
+      caption_pt: z.number().int().min(16).max(200).optional(),
+      caption_template: z.string().trim().max(120).optional(),
       music_file: z.string().trim().max(200).optional(),
       music_gain_db: z.number().min(-60).max(0).optional(),
       remove_filler: z.boolean(),
