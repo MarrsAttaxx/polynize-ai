@@ -25,6 +25,20 @@ const nextConfig = {
   async headers() {
     return [
       {
+        /**
+         * The touch samples, readable cross-origin.
+         *
+         * An IMPORTED prezie is served under `Content-Security-Policy: sandbox`, which gives it an opaque
+         * origin, so fetching its own server's files is a cross-origin request. Without this the clip
+         * plays silently, which is the one thing the import exists to fix.
+         */
+        source: '/pam/sfx/:path*',
+        headers: [
+          { key: 'Access-Control-Allow-Origin', value: '*' },
+          { key: 'Cache-Control', value: 'public, max-age=31536000, immutable' },
+        ],
+      },
+      {
         source: '/proposals/:path*',
         headers: [{ key: 'X-Robots-Tag', value: 'noindex, nofollow' }],
       },

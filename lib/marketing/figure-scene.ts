@@ -164,9 +164,14 @@ const ENGINE_JS = `
       else if(dy>0) back(); else advance();
       return;
     }
-    /* A bare tap advances ONLY when the figure is not claiming the screen. */
+    /* A bare tap advances ONLY when the figure is not claiming the screen.
+       THE SOUND STILL PLAYS EITHER WAY. This used to return before blip() once the figure had no
+       steps left, which made an interactive figure go silent, and an IMPORTED prezie (which owns
+       its screen and has no engine steps at all) silent for its entire performance. The touch
+       sound belongs to the touch, not to whether the engine did something with it. */
     if(owns(at)){
-      if(step<taps(at)){ blip(); hit(x,y); step++; paint(); }
+      blip(); hit(x,y);
+      if(step<taps(at)){ step++; paint(); }
       return;
     }
     blip(); hit(x,y); advance();

@@ -73,6 +73,18 @@ export type Prezie = {
    * there.
    */
   figures?: PrezieFigure[];
+  /**
+   * AN IMPORTED PREZIE: a whole document somebody else drew, hosted by the engine.
+   *
+   * Marrs spent a week failing to get April to draw one figure, then one-shot a whole prezie in a chat in
+   * an afternoon. So the console stops trying to be the author. What it still supplies is the part he was
+   * missing: his touch sounds, the operator cue strip, the corner mark, versioning on the concept, and the
+   * unlisted studio URL.
+   *
+   * A third shape beside the board and the figures, rather than a figure with a document stuffed in it,
+   * because an imported file owns its own sequencing and the engine must not also advance on a touch.
+   */
+  imported?: { html: string };
   created_at: string;
   updated_at?: string;
 };
@@ -99,7 +111,10 @@ export function isPrezie(x: unknown): x is Prezie {
   // first draw could never find it ("That prezie is gone. Reload."). The presence of the
   // array is the signal that this is a figure prezie; its length says nothing about validity.
   const hasFigures = Array.isArray(p.figures);
-  return hasBoard || hasFigures;
+  const hasImport =
+    Boolean(p.imported) &&
+    typeof (p.imported as { html?: unknown } | undefined)?.html === 'string';
+  return hasBoard || hasFigures || hasImport;
 }
 
 async function readAt(key: string): Promise<Prezie | null> {

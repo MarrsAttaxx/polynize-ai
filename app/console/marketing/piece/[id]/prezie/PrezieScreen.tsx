@@ -45,6 +45,8 @@ type Version = {
   updated_at?: string;
   url: string;
   node_count: number;
+  /** True when this version is a whole document drawn elsewhere and hosted here. */
+  imported?: boolean;
 };
 type FigureView = {
   figure_id: string;
@@ -57,6 +59,8 @@ type FigureView = {
 type Open = {
   prezie_id: string;
   name: string;
+  /** True when the open version is an imported document, which the console hosts but does not edit. */
+  imported?: boolean;
   /** The legacy node board. Null on a figure prezie (D33). */
   scene: Scene | null;
   /** Authored figures, in performance order. Null on a board prezie. */
@@ -153,6 +157,15 @@ export function PrezieScreen({
    * conversation about one picture, not a record worth keeping once the picture exists.
    */
   const [thread, setThread] = useState<{ role: 'operator' | 'april'; text: string }[]>([]);
+  /**
+   * IMPORTING A PREZIE HE DREW ELSEWHERE.
+   *
+   * A week of trying to get April to draw one figure, against an afternoon to one-shot a whole prezie in
+   * a chat. So the console stops competing on the drawing and supplies what the file cannot have on its
+   * own: his touch sounds, the operator strip, versioning on the concept, and the studio URL.
+   */
+  const [importHtml, setImportHtml] = useState('');
+  const [showImport, setShowImport] = useState(false);
 
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const latest = useRef<Open | null>(opening);
@@ -300,6 +313,48 @@ export function PrezieScreen({
    * any other and appears in the list on the left; it simply starts with no figures instead of
    * a generated board.
    */
+  /** Paste a whole prezie in. No LLM call: the file IS the prezie. */
+  const importPrezie = async () => {
+    const html = importHtml.trim();
+    if (busy || html.length < 200) return;
+    setBusy(true);
+    setError(null);
+    setNote(null);
+    try {
+      const res = await fetch(endpoint(), {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ imported_html: html }),
+      });
+      const b = (await res.json().catch(() => null)) as {
+        note?: string;
+        prezie?: { prezie_id: string; name: string };
+        versions?: Version[];
+        error?: string;
+      } | null;
+      if (!res.ok || !b?.prezie) {
+        setError(b?.error ?? 'Could not import that.');
+        return;
+      }
+      if (b.versions) setVersions(b.versions);
+      setOpen({
+        prezie_id: b.prezie.prezie_id,
+        name: b.prezie.name,
+        imported: true,
+        scene: null,
+        figures: null,
+      });
+      setImportHtml('');
+      setShowImport(false);
+      setNote(b.note ?? 'Imported.');
+      setPreviewV((v) => v + 1);
+    } catch {
+      setError('Network error. Try again.');
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const startFigures = async () => {
     if (drawing) return;
     setDrawing(true);
@@ -1254,8 +1309,50 @@ export function PrezieScreen({
               >
                 {drawing ? `Starting… ${elapsed}s` : 'Start empty, figure by figure'}
               </button>
+              <button
+                type="button"
+                className={d.aprilBtn}
+                onClick={() => setShowImport((v) => !v)}
+                disabled={drawing || busy}
+                title="Paste a prezie you built elsewhere. It gets your touch sounds and the operator strip."
+              >
+                {showImport ? 'Cancel import' : 'Import one you built'}
+              </button>
             </>
           )}
+
+          {showImport ? (
+            <div className={d.buildBox}>
+              <textarea
+                className={d.importPaste}
+                value={importHtml}
+                onChange={(e) => setImportHtml(e.target.value)}
+                placeholder="Paste the whole HTML file here. It keeps every one of its own behaviours; the console adds your touch sounds, the operator cue strip, the corner mark, versioning and the studio URL."
+                rows={8}
+                disabled={busy}
+              />
+              <div className={d.buildRow}>
+                <button
+                  type="button"
+                  className={d.aprilBtn}
+                  onClick={() => void importPrezie()}
+                  disabled={busy || importHtml.trim().length < 200}
+                >
+                  {busy ? `Importing… ${elapsed}s` : 'Import it'}
+                </button>
+                <span className={d.hint}>
+                  {importHtml.trim().length
+                    ? `${importHtml.trim().length.toLocaleString()} characters`
+                    : 'Nothing pasted yet'}
+                </span>
+              </div>
+              <p className={d.hint}>
+                An imported prezie runs its own sequencing, so the engine never advances on a touch: your
+                taps go to the file and the corner mark is the only thing the engine owns. It is hosted,
+                not edited, so keep iterating the drawing wherever you made it and import again.
+              </p>
+            </div>
+          ) : null}
 
           <div className={d.buildBox}>
             {initial.angle?.trim() ? (

@@ -35,6 +35,7 @@ import {
   type Prezie,
 } from '@/lib/marketing/prezie-store';
 import { generateScene, MAX_FACTS, MAX_NODES } from '@/lib/marketing/scene-generate';
+import { sanitiseImportedPrezie, describeImported } from '@/lib/marketing/prezie-import';
 import { generatePrezieFromScript } from '@/lib/marketing/prezie-oneshot';
 import { conceptBodyForPiece } from '@/lib/marketing/draft';
 import { DraftError } from '@/lib/marketing/draft';
@@ -71,6 +72,13 @@ const SceneSchema = z.object({
 });
 
 const GenerateSchema = z.object({
+  /**
+   * A WHOLE PREZIE, drawn elsewhere and pasted in.
+   *
+   * No LLM call and no generation: the file IS the prezie. The console's job here is to host it, give it
+   * his touch sounds and the operator chrome, version it on the concept and hand back the studio URL.
+   */
+  imported_html: z.string().max(2_000_000).optional(),
   /**
    * Start an EMPTY FIGURE prezie (D33) instead of generating a board. No LLM call: the loop
    * begins with the operator describing the first picture, not with a guess at one.
@@ -109,7 +117,8 @@ const summarise = (list: Prezie[], pieceId: string) =>
     created_at: p.created_at,
     updated_at: p.updated_at,
     url: `/console/prezie/${p.concept}/${p.prezie_id}`,
-    node_count: p.figures?.length ?? p.scene?.nodes.length ?? 0,
+    node_count: p.imported ? 1 : (p.figures?.length ?? p.scene?.nodes.length ?? 0),
+    imported: Boolean(p.imported),
   }));
 
 /** undefined = the read failed; null = there is genuinely no such piece. */
@@ -197,6 +206,40 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         { status: 502 }
       );
     }
+  }
+
+  // AN IMPORT. Stored as-is, because the whole point is that the drawing is already right.
+  if (body.imported_html?.trim()) {
+    const html = sanitiseImportedPrezie(body.imported_html);
+    const seen = describeImported(html);
+    if (html.length < 200) {
+      return NextResponse.json(
+        { error: 'That looks too short to be a prezie. Paste the whole HTML file.' },
+        { status: 400 }
+      );
+    }
+    const now = new Date().toISOString();
+    const prezie: Prezie = {
+      prezie_id: randomUUID(),
+      concept,
+      piece_id: piece.piece_id,
+      stream: piece.stream,
+      owner: user.email,
+      // His own <title> is the best name available, since he chose it when he made the thing.
+      name: stripEmDashes(body.name?.trim() || seen.title || piece.title),
+      imported: { html },
+      created_at: now,
+    };
+    await savePrezie(prezie);
+    const list = await listPreziesForConcept(concept);
+    return NextResponse.json({
+      ok: true,
+      note: seen.looks_like_document
+        ? 'Imported. It has your touch sounds and the operator strip on it now.'
+        : 'Imported, though that did not look like a whole HTML document. Open it and check.',
+      prezie: { ...prezie, url: `/console/prezie/${concept}/${prezie.prezie_id}` },
+      versions: summarise(list, piece.piece_id),
+    });
   }
 
   // An empty figure prezie is created directly. There is nothing to generate yet, and asking

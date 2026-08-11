@@ -17,6 +17,7 @@
 import { getPrezie } from '@/lib/marketing/prezie-store';
 import { renderScene } from '@/lib/marketing/scene';
 import { renderFigureScene } from '@/lib/marketing/figure-scene';
+import { withTouchSounds } from '@/lib/marketing/prezie-import';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -38,11 +39,34 @@ export async function GET(
   // Two models coexist (D33): authored FIGURES render as a tapped walkthrough, and the older
   // node board renders as the open/close board. Whichever the prezie has is what it gets, so
   // nothing already built changes behaviour.
+  /**
+   * AN IMPORTED PREZIE IS SERVED AS ITSELF, not wrapped.
+   *
+   * Wrapping it in the engine was built and tested and was wrong twice over: it broke his taps (the same
+   * click that advances the file served directly did nothing inside the wrapper) and it stacked a second
+   * operator cue strip over the better one his file already draws. So the only thing added is the touch
+   * sounds, and the CSP sandbox header below is what makes serving somebody else's script safe here.
+   */
+  if (prezie.imported?.html) {
+    const url = new URL(_req.url);
+    return new Response(withTouchSounds(prezie.imported.html, url.origin), {
+      headers: {
+        'content-type': 'text/html; charset=utf-8',
+        'cache-control': 'no-store',
+        // An OPAQUE TOP-LEVEL ORIGIN. No cookies, no storage, no same-origin requests, so a document
+        // written by a model cannot call /console/... with Marrs's session attached. Forms, popups and
+        // top-level navigation are withheld by not granting their tokens.
+        'content-security-policy': 'sandbox allow-scripts',
+      },
+    });
+  }
+
+  // Otherwise the two authored models, as before.
   const body = prezie.figures?.length
-    ? renderFigureScene({ title: prezie.name || 'Prezie', figures: prezie.figures })
-    : prezie.scene
-      ? renderScene(prezie.scene)
-      : null;
+      ? renderFigureScene({ title: prezie.name || 'Prezie', figures: prezie.figures })
+      : prezie.scene
+        ? renderScene(prezie.scene)
+        : null;
   if (!body) {
     return new Response(
       `<!doctype html><meta charset="utf-8"><title>Empty prezie</title>
