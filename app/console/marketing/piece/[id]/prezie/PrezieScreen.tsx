@@ -783,7 +783,8 @@ export function PrezieScreen({
       <button type="button" className={d.versionPick} onClick={() => load(v)}>
         <span className={d.versionName}>{v.name}</span>
         <span className={d.versionMeta}>
-          {v.node_count} objects · {(v.updated_at ?? v.created_at).slice(0, 10)}
+          {v.imported ? 'imported' : `${v.node_count} objects`} ·{' '}
+          {(v.updated_at ?? v.created_at).slice(0, 10)}
         </span>
       </button>
       <a href={v.url} target="_blank" rel="noopener noreferrer" className={d.versionOpen}>
@@ -882,7 +883,9 @@ export function PrezieScreen({
         <section className={d.slideCol}>
           <div className={d.colHead}>
             <h2 className={d.colTitle}>{open ? open.name : 'Build a prezie'}</h2>
-            {open?.figures ? (
+            {open?.imported ? (
+              <span className={d.count}>imported</span>
+            ) : open?.figures ? (
               <span className={d.count}>
                 {figures.length} figure{figures.length === 1 ? '' : 's'}
               </span>
@@ -893,7 +896,19 @@ export function PrezieScreen({
             ) : null}
           </div>
 
-          {open && open.figures ? (
+          {open?.imported ? (
+            <>
+              <p className={d.editHint}>
+                This one was drawn outside the console, so it is HOSTED here rather than edited. It keeps
+                every one of its own behaviours and its own cue strip; the console adds your touch sounds,
+                versions it on the concept, and gives it the studio URL below.
+              </p>
+              <p className={d.hint}>
+                To change it, iterate the drawing where you made it and import again. Each import is a new
+                version, so nothing you liked gets overwritten.
+              </p>
+            </>
+          ) : open && open.figures ? (
             <>
               <p className={d.editHint}>
                 Say what you want and April draws it. Say what to change and she changes that
@@ -1407,7 +1422,7 @@ export function PrezieScreen({
         </section>
       </div>
 
-      {open && (nodes.length || figures.length) ? (
+      {open && (nodes.length || figures.length || open.imported) ? (
         <section className={d.deckPanel}>
           <div className={d.colHead}>
             <h2 className={d.colTitle}>On the touchscreen</h2>
