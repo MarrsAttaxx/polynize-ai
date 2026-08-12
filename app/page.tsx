@@ -93,49 +93,15 @@ function DirCHero() {
         <span className={s.dcMintEmph}>amplified.</span>
       </h1>
       <p className={s.dcLede}>We build human capability that drives the AI economy.</p>
-
-      <div className={s.dcCtaRow}>
-        <TrackedLink
-          className={`${s.dcBtn} ${s.dcBtnPrimary}`}
-          href="/map-your-team"
-          event="map_click"
-          eventProps={{ surface: 'home_hero', label: 'map_team' }}
-        >
-          Map your team <span className={s.dcArr}>→</span>
-        </TrackedLink>
-      </div>
+      {/* No CTA here (Marrs, 12 Aug 2026). The first ask is now the "Experience it for
+          yourself" bar further down, after the methodology claim and the founders have
+          earned it. The analytics surface `home_hero` retires with it; `home_modelling`
+          is the first-touch surface from now on, which matters when reading the funnel. */}
     </section>
   );
 }
 
 /* ---------- Capability modelling (the education beat) ---------- */
-
-/**
- * The first phase of the Polynize Capability Methodology. Modelling comes before
- * enablement and deployment, and step 01 is exactly what the CTA below performs,
- * which is why the first card is marked as the visitor's starting point.
- */
-const MODEL_STEPS = [
-  {
-    n: '01',
-    state: 'Current state',
-    t: 'Map capabilities',
-    d: 'We break the work into the capabilities inside it, and allocate every one of them: human, hybrid, or agent.',
-    here: true,
-  },
-  {
-    n: '02',
-    state: 'Future state',
-    t: 'Set the benchmark',
-    d: 'We define what good looks like for each capability, measured in the flow of work rather than in a workshop.',
-  },
-  {
-    n: '03',
-    state: 'The distance',
-    t: 'Find the gap',
-    d: 'The measured distance between the two. That gap is the thing everything afterwards is built to close.',
-  },
-];
 
 /**
  * A folded map, line art at a single weight. Drawn rather than imported so it sits in the
@@ -163,7 +129,9 @@ function DirCModelling() {
        three are one argument. */
     <section className={`${s.dcSection} ${s.dcSectionTightTop} ${s.dcSectionTightBottom}`}>
       <div className={s.dcSectionHead}>
-        <div className={s.dcSectionEyebrow}>Our methodology</div>
+        {/* No eyebrow. The map glyph does that job here, and a label reading "our
+            methodology" above a heading that already says what the methodology is was
+            saying it twice. */}
         <MapGlyph />
         <h2 className={s.dcH2}>
           It starts with
@@ -179,27 +147,6 @@ function DirCModelling() {
       {/* The founders, immediately after the claim. See DirCPodcast for why it lives here
           rather than at the foot of the page. */}
       <DirCPodcast />
-
-      <div className={`${s.dcHowGrid} ${s.dcHowGrid3}`}>
-        {MODEL_STEPS.map((step) => (
-          <div
-            key={step.n}
-            className={`${s.dcHowCard} ${step.here ? s.dcHowCardHere : ''}`}
-          >
-            <div className={s.dcHowNum}>
-              {step.n} · {step.state}
-            </div>
-            <div className={s.dcHowTitle}>{step.t}</div>
-            <div className={s.dcHowDesc}>{step.d}</div>
-            {step.here && (
-              <div className={s.dcHereTag}>
-                <span className={s.dcHereDot} aria-hidden />
-                You are here
-              </div>
-            )}
-          </div>
-        ))}
-      </div>
 
       <div className={s.dcMidCta}>
         <div className={s.dcMidCtaText}>
@@ -646,7 +593,6 @@ function DirCValues() {
 function DirCPodcast() {
   return (
     <div className={s.dcVideoBlock}>
-      <div className={s.dcSectionEyebrow}>From the founders</div>
 
       <TrackedLink
         className={s.dcVideoSolo}
@@ -663,8 +609,16 @@ function DirCPodcast() {
             className={s.dcPodThumbImg}
           />
           <div className={s.dcPodPlay} aria-hidden>
-            <svg viewBox="0 0 24 24" width="22" height="22">
-              <path d="M8 5v14l11-7z" fill="currentColor" />
+            {/* Rounded by stroking the path in its own fill colour with a round join, the
+                same trick as the play mark on /capability-mapping, so the two match. */}
+            <svg viewBox="0 0 96 96" width="96" height="96">
+              <path
+                d="M27 20 L73 48 L27 76 Z"
+                fill="currentColor"
+                stroke="currentColor"
+                strokeWidth="10"
+                strokeLinejoin="round"
+              />
             </svg>
           </div>
           <div className={s.dcPodRuntime}>9:21</div>

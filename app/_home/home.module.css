@@ -253,7 +253,7 @@
 /* Hero is sized to fit in a 1080p viewport with the sticky nav above it. The bottom is
    deliberately tight: the methodology claim is the next thing that has to be read, and a
    96px trench between the CTA and it made the page feel like it had stopped. */
-.dcHero { padding: 56px 48px 20px; }
+.dcHero { padding: 56px 48px 40px; }
 .dcMapHero { padding-top: 64px; }
 /* Two spacing modifiers, applied per section rather than globally, because the sections
    that are NOT part of a continuous argument still want the full 96px trench.
@@ -848,29 +848,38 @@
   object-fit: cover;
   display: block;
 }
+/* Just the play sign, in mint. It was a red YouTube-style disc, which put another brand's
+   colour at the visual centre of our homepage. No badge, no ring, no circle: the mark on
+   its own, sized so it can carry the frame without one.
+
+   The drop-shadow is doing real work rather than decorating. A mint glyph on an unknown
+   video frame has no guaranteed contrast, so the dark shadow separates it from whatever is
+   behind it and the mint glow keeps it reading as ours. */
 .dcPodPlay {
   position: absolute;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  width: 64px;
-  height: 64px;
-  border-radius: 50%;
-  background: #ff0000;
-  color: #ffffff;
+  color: var(--mint);
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.35),
-    0 4px 10px rgba(0, 0, 0, 0.5),
-    0 0 24px rgba(255, 0, 0, 0.35);
+  line-height: 0;
+  filter: drop-shadow(0 3px 14px rgba(0, 0, 0, 0.65))
+    drop-shadow(0 0 20px color-mix(in srgb, var(--mint) 40%, transparent));
   transition: transform 0.2s;
   z-index: 2;
 }
-.dcPodPlay svg { margin-left: 3px; }
-.dcPodFeat:hover .dcPodPlay {
-  transform: translate(-50%, -50%) scale(1.05);
+/* Nudged right of true centre: a triangle centred on its bounding box reads as sitting
+   left of where it should. */
+.dcPodPlay svg { display: block; margin-left: 4px; }
+.dcPodFeat:hover .dcPodPlay,
+.dcVideoSolo:hover .dcPodPlay {
+  transform: translate(-50%, -50%) scale(1.06);
+}
+@media (prefers-reduced-motion: reduce) {
+  .dcPodFeat:hover .dcPodPlay,
+  .dcVideoSolo:hover .dcPodPlay { transform: translate(-50%, -50%); }
 }
 .dcPodRuntime {
   position: absolute;
