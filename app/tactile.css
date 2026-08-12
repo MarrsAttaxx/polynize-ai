@@ -105,10 +105,14 @@ body.theme-light[data-depth="tactile"] {
   --border: rgba(63, 201, 154, 0.32);
   --border-soft: rgba(15, 40, 35, 0.08);
 
-  /* Bright mint reads washed-out and low-contrast on cream, both as text and as
-     a fill. In light mode use a darker green, and flip the on-accent ink (--bg,
-     which is only ever used as text ON a mint fill in the console) to white so
-     dark-green buttons show white text. Dark mode keeps bright mint + dark ink. */
+  /* THE ONE PLACE MINT IS NOT #69fccb, and it is a derivation rather than a second
+     brand green. Canonical mint on this cream substrate lands around 1.3:1 contrast:
+     unreadable as text and invisible as a fill. So light mode uses a darker green of
+     the same hue, and the on-accent ink (--bg, only ever used as text ON a mint fill
+     in the console) flips to white so dark-green buttons show white text. Dark mode
+     keeps bright mint + dark ink.
+
+     If this ever needs to become #69fccb, the substrate has to change with it. */
   --mint: #0f7d61;
   --bg: #ffffff;
 

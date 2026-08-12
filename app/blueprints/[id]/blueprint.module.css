@@ -372,11 +372,11 @@
     inset 0 0 12px rgba(232, 196, 77, 0.08);
 }
 .gridCellAgent {
-  background: rgba(77, 232, 160, 0.6);
-  border-color: #4de8a0;
+  background: rgba(105, 252, 203, 0.6);
+  border-color: #69fccb;
   box-shadow:
-    0 0 20px rgba(77, 232, 160, 0.15),
-    inset 0 0 12px rgba(77, 232, 160, 0.08);
+    0 0 20px rgba(105, 252, 203, 0.15),
+    inset 0 0 12px rgba(105, 252, 203, 0.08);
 }
 
 .side {

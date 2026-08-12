@@ -20,7 +20,7 @@ export const biz00Html = `<!DOCTYPE html>
   @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
   :root{
     --bg:#161620; --bg-deep:#0f0f17; --surface:#1d1d29; --surface-2:#232331;
-    --mint:#4de8a0; --coral:#e87a4d; --blue:#a5c1ec; --amber:#e8c44d;
+    --mint:#69fccb; --coral:#e87a4d; --blue:#a5c1ec; --amber:#e8c44d;
     --text:#f4ece4; --text-2:#c7b9ac; --text-3:#8a7d72;
     --hair:rgba(244,236,228,.10);
   }
@@ -56,7 +56,7 @@ export const biz00Html = `<!DOCTYPE html>
   /* the script slab */
   .script{padding:40px 48px;background:var(--surface);border:1px solid var(--hair);border-radius:18px;outline:none;
     font-family:'Space Grotesk';font-weight:400;font-size:25px;line-height:1.85;text-align:center;color:var(--text);}
-  .script:focus{border-color:rgba(77,232,160,.4);}
+  .script:focus{border-color:rgba(105, 252, 203,.4);}
   .script p{margin:0 0 1.1em;}
   .slate{font-family:'JetBrains Mono';font-size:14px;color:var(--mint);letter-spacing:.05em;font-weight:500;}
   .cue{font-family:'JetBrains Mono';font-size:13px;letter-spacing:.04em;color:var(--text-3);text-transform:uppercase;

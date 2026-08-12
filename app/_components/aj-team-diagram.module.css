@@ -92,7 +92,7 @@
   left: 24px;
   right: 24px;
   height: 2px;
-  background: linear-gradient(90deg, transparent, var(--mint, #4de8a0), transparent);
+  background: linear-gradient(90deg, transparent, var(--mint, #69fccb), transparent);
   border-radius: 0 0 2px 2px;
   opacity: 0.65;
 }
@@ -122,7 +122,7 @@
   overflow: hidden;
   box-shadow:
     inset 0 0 0 1px rgba(255, 255, 255, 0.08),
-    0 0 0 2px var(--mint, #4de8a0),
+    0 0 0 2px var(--mint, #69fccb),
     0 0 18px rgba(105, 252, 203, 0.18),
     0 4px 12px rgba(0, 0, 0, 0.45);
   flex-shrink: 0;
@@ -160,7 +160,7 @@
   font-size: 10px;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--mint, #4de8a0);
+  color: var(--mint, #69fccb);
   margin-top: 6px;
   line-height: 1.3;
 }

@@ -2,10 +2,13 @@
    Stage 2 Blueprint sections — shared styles.
    Rendered inside .container (blueprint.module.css), so the
    --bp-* palette tokens are in scope. The heat-map cell-fill
-   hexes (#e87a4d / #e8c44d / #4de8a0) are SEMANTIC and distinct
-   from the brand tokens (--bp-coral / --bp-amber / --bp-mint),
-   which are used for labels, %, and headers. Per spec §9.1 —
-   never remap.
+   hexes are SEMANTIC (coral = human, amber = hybrid, mint = agent)
+   and that mapping must never be remapped.
+
+   The mint cell fill WAS a separate #4de8a0, distinct from the
+   brand token, per an earlier spec note. Marrs collapsed that on
+   12 Aug 2026: there is one mint on this site and it is #69fccb.
+   Coral and amber cell fills are still their own hexes.
    ============================================================ */
 
 /* ---------- Percentage summary bar (§9.5) ---------- */
@@ -217,11 +220,11 @@
 }
 
 .cellAgent {
-  background: rgba(77, 232, 160, 0.6);
-  border-color: #4de8a0;
+  background: rgba(105, 252, 203, 0.6);
+  border-color: #69fccb;
   box-shadow:
-    0 0 20px rgba(77, 232, 160, 0.15),
-    inset 0 0 12px rgba(77, 232, 160, 0.08);
+    0 0 20px rgba(105, 252, 203, 0.15),
+    inset 0 0 12px rgba(105, 252, 203, 0.08);
 }
 
 /* Completeness treatments (§9.4) — modify the lit cell */
@@ -454,9 +457,9 @@
 }
 
 .allocChipAgent {
-  color: #4de8a0;
-  background: rgba(77, 232, 160, 0.12);
-  box-shadow: inset 0 0 0 1px rgba(77, 232, 160, 0.3);
+  color: #69fccb;
+  background: rgba(105, 252, 203, 0.12);
+  box-shadow: inset 0 0 0 1px rgba(105, 252, 203, 0.3);
 }
 
 .contractual {

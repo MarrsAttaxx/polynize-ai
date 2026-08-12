@@ -25,10 +25,17 @@ export function HeroVideo({
   src,
   poster,
   label,
+  tone = 'white',
 }: {
   src: string;
   poster: string;
   label: string;
+  /**
+   * White on the landing pages, mint on the homepage. Marrs asked for a mint mark on the
+   * homepage specifically (12 Aug 2026); the landing pages keep white, where the mark sits
+   * over a frame that already has mint in it.
+   */
+  tone?: 'white' | 'mint';
 }) {
   const ref = useRef<HTMLVideoElement | null>(null);
   const [started, setStarted] = useState(false);
@@ -57,7 +64,10 @@ export function HeroVideo({
 
       {!started && (
         <button type="button" className={s.playBtn} onClick={play} aria-label={label}>
-          <span className={s.playMark} aria-hidden="true">
+          <span
+            className={`${s.playMark} ${tone === 'mint' ? s.playMarkMint : ''}`}
+            aria-hidden="true"
+          >
             {/* Triangle only. The ring came off (Marrs, 12 Aug 2026) and the triangle
                 doubled to carry the frame on its own.
 
@@ -68,8 +78,8 @@ export function HeroVideo({
             <svg viewBox="0 0 96 96" width="96" height="96">
               <path
                 d="M27 20 L73 48 L27 76 Z"
-                fill="#fff"
-                stroke="#fff"
+                fill="currentColor"
+                stroke="currentColor"
                 strokeWidth="10"
                 strokeLinejoin="round"
               />

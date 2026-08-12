@@ -3,12 +3,16 @@ import s from './_home/home.module.css';
 import { CapabilityMapPreview } from './_home/CapabilityMapPreview';
 import { DraftingGrid } from './_components/DraftingGrid';
 import { TrackedLink } from './_components/TrackedLink';
+import { HeroVideo } from './_landing/HeroVideo';
+/* The video is shared with /mapping and /capability-mapping rather than duplicated, so
+   swapping the file swaps it in all three places. The poster is the work page's 59.2s
+   frame, which has the capability map on screen behind him. */
+import { mappingContent } from './_landing/content-base';
+import { workContent } from './_landing/content-work';
 
 const BOOKING_URL = 'https://calendar.app.google/rw8Vpd7BkJh5wwig9';
 const POLYNIZE_IO = 'https://polynize.io';
 const YOUTUBE_CHANNEL = 'https://www.youtube.com/@polynize.agentic';
-/** Episode 6. Featured because it is the one that explains capability mapping. */
-const EP06_URL = 'https://youtu.be/Xq_Hoyx_ccg';
 const LINKEDIN_URL = 'https://www.linkedin.com/company/polynize';
 const INSTAGRAM_URL = 'https://www.instagram.com/polynize.ai';
 
@@ -144,9 +148,9 @@ function DirCModelling() {
         </p>
       </div>
 
-      {/* The founders, immediately after the claim. See DirCPodcast for why it lives here
-          rather than at the foot of the page. */}
-      <DirCPodcast />
+      {/* The founders, immediately after the claim. See DirCFoundersVideo for why it lives
+          here rather than at the foot of the page. */}
+      <DirCFoundersVideo />
 
       <div className={s.dcMidCta}>
         <div className={s.dcMidCtaText}>
@@ -580,50 +584,24 @@ function DirCValues() {
 /**
  * The founders on camera, and nothing else.
  *
- * MOVED UP AND STRIPPED (Marrs, 12 Aug 2026). It used to sit near the bottom as a
- * three-episode podcast module with a featured card, titles, runtimes and a side list.
- * Its job now is different and it is placed to do it: faces and authority immediately
- * after the methodology claim, before a visitor has to decide whether to believe us. A
- * side list of other episodes would pull them sideways at exactly the wrong moment, and
- * the thumbnail already carries the title, so the caption underneath was doing nothing.
+ * SAME VIDEO AS THE LANDING PAGES, PLAYED IN PLACE (Marrs, 12 Aug 2026). This started as
+ * the YouTube episode card at the foot of the page, then moved up here, and the remaining
+ * problem was that clicking it left the site. It is now the identical component and file
+ * that /mapping and /capability-mapping use, so a visitor gets the founders without a trip
+ * to YouTube and there is one video to keep current rather than two.
  *
- * Still a link out to YouTube rather than an embedded player: an iframe would drop
- * third-party cookies on the homepage to save one click.
+ * No title, caption or avatars under it: the frame and the play mark are the whole thing.
+ * The mark is mint here and white on the landing pages, which is the one difference.
  */
-function DirCPodcast() {
+function DirCFoundersVideo() {
   return (
     <div className={s.dcVideoBlock}>
-
-      <TrackedLink
-        className={s.dcVideoSolo}
-        href={EP06_URL}
-        external
-        event="cta_click"
-        eventProps={{ surface: 'home_video', label: 'episode_06' }}
-        aria-label="Watch How to Map Your Organisation's Capabilities with Polynize on YouTube"
-      >
-        <div className={s.dcPodThumb}>
-          <img
-            src="/assets/podcast-ep06.jpg"
-            alt="How to Map Your Organisation's Capabilities with Polynize"
-            className={s.dcPodThumbImg}
-          />
-          <div className={s.dcPodPlay} aria-hidden>
-            {/* Rounded by stroking the path in its own fill colour with a round join, the
-                same trick as the play mark on /capability-mapping, so the two match. */}
-            <svg viewBox="0 0 96 96" width="96" height="96">
-              <path
-                d="M27 20 L73 48 L27 76 Z"
-                fill="currentColor"
-                stroke="currentColor"
-                strokeWidth="10"
-                strokeLinejoin="round"
-              />
-            </svg>
-          </div>
-          <div className={s.dcPodRuntime}>9:21</div>
-        </div>
-      </TrackedLink>
+      <HeroVideo
+        src={mappingContent.video.src}
+        poster={workContent.video.poster}
+        label={`Play: ${mappingContent.video.h2}`}
+        tone="mint"
+      />
     </div>
   );
 }

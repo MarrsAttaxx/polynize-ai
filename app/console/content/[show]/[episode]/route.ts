@@ -16,7 +16,7 @@ export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
 function unauthorizedHtml(): string {
-  return `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Shoot sheet</title><style>body{background:#0f0f17;color:#c7b9ac;font-family:ui-monospace,Menlo,monospace;display:flex;min-height:100vh;align-items:center;justify-content:center;margin:0;padding:24px;text-align:center;line-height:1.6}b{color:#4de8a0}</style></head><body><div>This shoot sheet needs a key.<br>Open it as <b>/content/&lt;show&gt;/&lt;episode&gt;?k=YOUR_TOKEN</b></div></body></html>`;
+  return `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Shoot sheet</title><style>body{background:#0f0f17;color:#c7b9ac;font-family:ui-monospace,Menlo,monospace;display:flex;min-height:100vh;align-items:center;justify-content:center;margin:0;padding:24px;text-align:center;line-height:1.6}b{color:#69fccb}</style></head><body><div>This shoot sheet needs a key.<br>Open it as <b>/content/&lt;show&gt;/&lt;episode&gt;?k=YOUR_TOKEN</b></div></body></html>`;
 }
 
 export async function GET(

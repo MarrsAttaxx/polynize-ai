@@ -22,10 +22,26 @@ the `/brand` page) and the **homepage's active palette** ("Direction C", a
 warm-shifted override applied by the `.dirC` wrapper in `home.module.css`). The
 homepage is what a visitor actually sees, so **to reproduce the website's look,
 use the Direction C values** — but both are documented so the relationship is
-explicit. A subtlety worth keeping: the *structural* glow/grid mint is the
-canonical `#69fccb` (`rgba(105,252,203,…)`), while the *accent* mint used for
-text, cells and buttons on the homepage is Direction C's `#4de8a0`. Both appear
-on screen deliberately.
+explicit.
+
+**Mint is now one value everywhere: `#69fccb`.** This reverses a previous entry
+in this document, which recorded two mints on screen deliberately: the canonical
+`#69fccb` for structural glow and grid, and Direction C's `#4de8a0` for accent
+text, heat-map cells and buttons. Marrs ended that split on 12 Aug 2026 — there
+is a single mint and it is the canonical one. The change covered the `.dirC`
+token, every hardcoded `#4de8a0`, and every `rgba(77,232,160,…)` across the
+public site and the Console, including the heat-map mint cell fill (coral and
+amber cell fills keep their own hexes and are unaffected).
+
+The **one** remaining exception is deliberate and is not a second brand green:
+`tactile.css` uses `--mint: #0f7d61` in light mode, because canonical mint on the
+cream substrate lands around 1.3:1 contrast — unreadable as text, invisible as a
+fill. It is a contrast derivation of the same hue. Changing it means changing the
+substrate with it.
+
+Direction C still warm-shifts **coral** (`#e87a4d`) and **amber** (`#e8c44d`)
+away from the canonical `#ff7a6b` / `#f0b86b`. Those were not part of the mint
+decision and remain as they were.
 
 Stacking order on the homepage (bottom → top), from `page.tsx` + the CSS:
 
@@ -68,10 +84,11 @@ These override the canonical tokens for everything inside the homepage wrapper.
 
 ```css
 .dirC {
-  /* Accent palette (warm-shifted vs the canonical tokens) */
+  /* Accent palette (warm-shifted vs the canonical tokens).
+     Mint is NO LONGER warm-shifted: it is the canonical value. */
   --coral: #e87a4d;
   --amber: #e8c44d;
-  --mint:  #4de8a0;
+  --mint:  #69fccb;
 
   /* Warm-shifted substrate + surfaces */
   --bg:        #161620;   /* warm navy (replaces #0a0a0f on the homepage) */
@@ -83,7 +100,7 @@ These override the canonical tokens for everything inside the homepage wrapper.
 
   --hairline:        rgba(244, 236, 228, 0.05);  /* divider lines */
   --hairline-strong: rgba(244, 236, 228, 0.10);
-  --mint-glow:       rgba(105, 252, 203, 0.18);  /* note: canonical mint */
+  --mint-glow:       rgba(105, 252, 203, 0.18);
 }
 ```
 
@@ -484,18 +501,18 @@ box-shadow:
   ```css
   .dcMapCell { height: 28px; border: 1px solid rgba(228, 228, 239, 0.06); border-radius: 3px; transition: all 0.3s; }
   .dcMapCellOn.dcMint {
-    background: rgba(77, 232, 160, 0.6);     /* fill */
-    border-color: #4de8a0;                   /* full-hex border */
+    background: rgba(105, 252, 203, 0.6);    /* fill */
+    border-color: #69fccb;                   /* full-hex border */
     box-shadow:
-      0 0 20px rgba(77, 232, 160, 0.15),     /* outer glow */
-      inset 0 0 12px rgba(77, 232, 160, 0.08); /* inner glow */
+      0 0 20px rgba(105, 252, 203, 0.15),    /* outer glow */
+      inset 0 0 12px rgba(105, 252, 203, 0.08); /* inner glow */
   }
   /* coral variant: rgba(232,122,77,…) + #e87a4d ; amber variant: rgba(232,196,77,…) + #e8c44d */
   ```
 
 - **Status / legend dots** carry a coloured glow:
   ```css
-  .dotMint  { background: var(--mint);  box-shadow: 0 0 8px rgba(77, 232, 160, 0.55); }
+  .dotMint  { background: var(--mint);  box-shadow: 0 0 8px rgba(105, 252, 203, 0.55); }
   .dotCoral { background: var(--coral); box-shadow: 0 0 8px rgba(232, 122, 77, 0.55); }
   .dotAmber { background: var(--amber); box-shadow: 0 0 8px rgba(232, 196, 77, 0.55); }
   ```
@@ -525,8 +542,8 @@ box-shadow:
    corner glows.
 4. Load Space Grotesk (display) + Inter (body) + JetBrains Mono (mono) per §4.
 5. Use the Direction C palette (§1b): bg `#161620`, surface `#1d1d29`, mint
-   `#4de8a0`, coral `#e87a4d`, amber `#e8c44d`, gold `#f0e1b6`, text `#f4ece4` /
-   `#c7b9ac` / `#8a7d72`.
+   `#69fccb` (canonical — not warm-shifted), coral `#e87a4d`, amber `#e8c44d`,
+   gold `#f0e1b6`, text `#f4ece4` / `#c7b9ac` / `#8a7d72`.
 6. Cards: `background: var(--surface); border-radius: 16–22px; box-shadow: var(--raise)` (§5a),
    `var(--emph)` for hero/feature cards, `var(--inset)` for recessed wells.
 7. Primary buttons: §3a gradient + §5c shadow; everything depth-wise is shadows,

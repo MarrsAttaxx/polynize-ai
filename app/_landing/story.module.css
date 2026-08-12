@@ -306,14 +306,28 @@
 .playBtn:hover { background: rgba(0, 0, 0, 0.3); }
 .playBtn:focus-visible { outline: 2px solid var(--mint); outline-offset: -4px; }
 
-/* Doubled from the ringed version, because the triangle is now carrying the frame alone. */
+/* Doubled from the ringed version, because the triangle is now carrying the frame alone.
+   `color` rather than a hardcoded fill, so .playMarkMint can recolour it. */
 .playMark {
+  color: #fff;
   display: block;
   width: clamp(104px, 15vw, 168px);
   transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.3, 1), filter 0.2s ease;
   filter: drop-shadow(0 3px 22px rgba(0, 0, 0, 0.6));
 }
 .playMark svg { display: block; width: 100%; height: auto; }
+/* The homepage variant. The dark shadow stays and a mint glow joins it: a mint glyph on an
+   arbitrary video frame has no guaranteed contrast on its own. */
+.playMarkMint {
+  color: var(--mint);
+  filter: drop-shadow(0 3px 18px rgba(0, 0, 0, 0.7))
+    drop-shadow(0 0 22px color-mix(in srgb, var(--mint) 45%, transparent));
+}
+.playBtn:hover .playMarkMint,
+.playBtn:focus-visible .playMarkMint {
+  filter: drop-shadow(0 3px 18px rgba(0, 0, 0, 0.7))
+    drop-shadow(0 0 30px color-mix(in srgb, var(--mint) 65%, transparent));
+}
 .playBtn:hover .playMark,
 .playBtn:focus-visible .playMark {
   transform: scale(1.06);
