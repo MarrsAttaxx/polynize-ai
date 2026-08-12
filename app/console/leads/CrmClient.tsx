@@ -420,3 +420,150 @@ export function NotifyEditor({
     </div>
   );
 }
+
+/**
+ * FIREFLIES REVIEW. Pull recent meetings, tick who is real, add them.
+ *
+ * Nothing is written until a box is ticked and Add is pressed. His Fireflies holds personal
+ * meetings alongside sales calls and no filter can reliably tell them apart, so the meeting
+ * TITLE is shown against every candidate: that is the thing a person reads to know whether a
+ * contact belongs in a CRM at all.
+ */
+export function FirefliesReview({ owner }: { owner: string }) {
+  const router = useRouter();
+  const [state, setState] = useState<'idle' | 'loading' | 'ready' | 'saving'>('idle');
+  const [err, setErr] = useState<string | null>(null);
+  const [msg, setMsg] = useState<string | null>(null);
+  const [candidates, setCandidates] = useState<
+    { email: string; meetingTitle: string; meetingDate?: string; transcriptUrl: string }[]
+  >([]);
+  const [ticked, setTicked] = useState<Set<string>>(new Set());
+
+  const scan = async () => {
+    setState('loading');
+    setErr(null);
+    setMsg(null);
+    try {
+      const res = await fetch(`/console/leads/${owner}/fireflies`);
+      const b = (await res.json().catch(() => null)) as {
+        candidates?: typeof candidates;
+        scanned?: number;
+        error?: string;
+      } | null;
+      if (!res.ok) {
+        setErr(b?.error ?? 'Could not reach Fireflies.');
+        setState('idle');
+        return;
+      }
+      setCandidates(b?.candidates ?? []);
+      setTicked(new Set());
+      if ((b?.candidates ?? []).length === 0) {
+        setMsg(
+          `Looked at ${b?.scanned ?? 0} recent meetings. Nobody new outside Polynize, so there is nothing to add.`
+        );
+      }
+      setState('ready');
+    } catch {
+      setErr('Network error.');
+      setState('idle');
+    }
+  };
+
+  const add = async () => {
+    if (ticked.size === 0) return;
+    setState('saving');
+    setErr(null);
+    try {
+      const res = await fetch(`/console/leads/${owner}/fireflies`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ accept: [...ticked] }),
+      });
+      const b = (await res.json().catch(() => null)) as
+        | { added?: number; failed?: string[]; error?: string }
+        | null;
+      if (!res.ok) {
+        setErr(b?.error ?? 'Could not add those.');
+        setState('ready');
+        return;
+      }
+      setMsg(
+        `${b?.added ?? 0} added${b?.failed?.length ? `, ${b.failed.length} could not be saved` : ''}.`
+      );
+      setCandidates((prev) => prev.filter((c) => !ticked.has(c.email)));
+      setTicked(new Set());
+      setState('ready');
+      router.refresh();
+    } catch {
+      setErr('Network error.');
+      setState('ready');
+    }
+  };
+
+  const toggle = (email: string) =>
+    setTicked((prev) => {
+      const next = new Set(prev);
+      if (next.has(email)) next.delete(email);
+      else next.add(email);
+      return next;
+    });
+
+  return (
+    <div className={c.notifyBar}>
+      <button
+        type="button"
+        className={c.notifyBtn}
+        onClick={() => void scan()}
+        disabled={state === 'loading' || state === 'saving'}
+      >
+        {state === 'loading' ? 'Looking…' : 'Pull contacts from my meetings'}
+      </button>
+      <span className={c.notifyText}>
+        {err ? <span className={c.ffError}>{err}</span> : (msg ?? 'Reads your recent Fireflies meetings and proposes anyone outside Polynize. Nothing is added until you tick it.')}
+      </span>
+
+      {candidates.length > 0 ? (
+        <>
+          <ul className={c.ffList}>
+            {candidates.map((cand) => (
+              <li key={cand.email} className={c.ffItem}>
+                <label className={c.ffLabel}>
+                  <input
+                    type="checkbox"
+                    checked={ticked.has(cand.email)}
+                    onChange={() => toggle(cand.email)}
+                  />
+                  <span className={c.ffEmail}>{cand.email}</span>
+                  <span className={c.ffMeeting}>
+                    {cand.meetingTitle}
+                    {cand.meetingDate ? ` · ${cand.meetingDate.slice(0, 10)}` : ''}
+                  </span>
+                </label>
+                <a
+                  className={c.transcript}
+                  href={cand.transcriptUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  transcript ↗
+                </a>
+              </li>
+            ))}
+          </ul>
+          <div className={c.ffActions}>
+            <button
+              type="button"
+              className={c.addBtn}
+              onClick={() => void add()}
+              disabled={ticked.size === 0 || state === 'saving'}
+            >
+              {state === 'saving'
+                ? 'Adding…'
+                : `Add ${ticked.size || ''}${ticked.size === 1 ? ' contact' : ' contacts'}`.trim()}
+            </button>
+          </div>
+        </>
+      ) : null}
+    </div>
+  );
+}
