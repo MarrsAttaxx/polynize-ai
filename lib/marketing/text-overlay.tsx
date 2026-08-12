@@ -6,13 +6,14 @@
  * highlighted words change; the font (Space Grotesk) and colours are fixed defaults.
  *
  * Flow: source image URL -> data URI + dimensions -> render text layer over it ->
- * PNG bytes -> host on the Higgsfield CDN (reuse uploadReferenceImage) -> URL.
+ * PNG bytes -> stored in PAM's own bucket and served from /console/generated -> URL.
+ * (It used to go to the Higgsfield CDN; see lib/marketing/image-host.ts for why it moved.)
  * Server-side only. Highlight words by wrapping them in *asterisks*.
  */
 
 import { ImageResponse } from 'next/og';
 import imageSizeFrom from 'image-size';
-import { uploadReferenceImage } from './higgsfield';
+import { hostGeneratedImage } from './image-host';
 
 export type OverlayPosition = 'top' | 'upper' | 'centre' | 'lower' | 'bottom';
 export type OverlayHAlign = 'left' | 'centre' | 'right';
@@ -86,7 +87,8 @@ function layoutFor(p: OverlayPosition): VLayout {
 
 export async function renderAndHostOverlay(
   imageUrl: string,
-  opts: OverlayOpts
+  opts: OverlayOpts,
+  host: { stream: string; requestOrigin?: string }
 ): Promise<OverlayResult> {
   // 1. Fetch the source image -> data URI (so Satori embeds it, no refetch) + dims.
   let dataUri: string;
@@ -193,11 +195,6 @@ export async function renderAndHostOverlay(
     return { error: 'Could not render the text overlay. Try again.' };
   }
 
-  try {
-    const url = await uploadReferenceImage(Buffer.from(png), 'image/png');
-    return { url };
-  } catch (e) {
-    console.error('[overlay] host upload failed:', e);
-    return { error: 'The overlay was created but could not be saved. Try again.' };
-  }
+  // Rendered fine; only storing it can fail from here.
+  return hostGeneratedImage(Buffer.from(png), 'image/png', host);
 }

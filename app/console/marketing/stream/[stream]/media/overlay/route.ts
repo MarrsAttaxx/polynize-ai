@@ -66,6 +66,11 @@ export async function POST(
     size: body.size ?? 'medium',
     baseColor: body.baseColor ?? '#ffffff',
     highlightColor: body.highlightColor ?? '#69fccb',
+  }, {
+    // Keyed by stream, url built from the request origin, so the link is right on
+    // localhost, on a preview and in production.
+    stream,
+    requestOrigin: new URL(req.url).origin,
   });
   if (res.error || !res.url) {
     return NextResponse.json({ error: res.error ?? 'Overlay failed.' }, { status: 502 });

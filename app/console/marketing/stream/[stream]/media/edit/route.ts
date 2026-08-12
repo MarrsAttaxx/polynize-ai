@@ -47,7 +47,12 @@ export async function POST(
     return NextResponse.json({ error: 'invalid request' }, { status: 400 });
   }
 
-  const res = await editImage(body.imageUrl, body.prompt.trim());
+  // The stream keys the stored object and the request origin builds the url, so the
+  // resulting link is right on localhost, on a preview and in production.
+  const res = await editImage(body.imageUrl, body.prompt.trim(), {
+    stream,
+    requestOrigin: new URL(req.url).origin,
+  });
   if (res.error || !res.url) {
     return NextResponse.json({ error: res.error ?? 'Editing failed.' }, { status: 502 });
   }

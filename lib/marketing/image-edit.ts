@@ -10,7 +10,8 @@
  * (Vercel Blob etc.) is needed. Server-side only. Never throws to the caller.
  */
 
-import { uploadReferenceImage, isHiggsfieldConfigured } from './higgsfield';
+import { isHiggsfieldConfigured } from './higgsfield';
+import { hostGeneratedImage } from './image-host';
 
 const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions';
 // Nano Banana = Gemini 2.5 Flash Image (GA). The 3.x image previews 404 on this
@@ -26,7 +27,16 @@ export function isImageEditConfigured(): boolean {
   return hasKey && isHiggsfieldConfigured();
 }
 
-export async function editImage(imageUrl: string, prompt: string): Promise<EditResult> {
+/**
+ * `host` says WHERE the finished image is stored. Required rather than defaulted, because
+ * defaulting it is how the previous version ended up silently depending on an AI vendor's
+ * file service for permanent hosting.
+ */
+export async function editImage(
+  imageUrl: string,
+  prompt: string,
+  host: { stream: string; requestOrigin?: string }
+): Promise<EditResult> {
   const apiKey = process.env.APRIL_OPENROUTER_API_KEY ?? process.env.OPENROUTER_API_KEY;
   if (!apiKey) return { error: 'Image editing is not configured (OpenRouter key missing).' };
 
@@ -75,11 +85,7 @@ export async function editImage(imageUrl: string, prompt: string): Promise<EditR
   if (!m) return { error: 'The editor returned an unreadable image.' };
   const bytes = Buffer.from(m[2], 'base64');
 
-  try {
-    const url = await uploadReferenceImage(bytes, m[1]);
-    return { url };
-  } catch (e) {
-    console.error(`[image-edit] host upload failed: ${e instanceof Error ? e.message : String(e)}`);
-    return { error: 'The image was created but could not be saved. Try again.' };
-  }
+  // The edit succeeded; only storing it can fail from here, and hostGeneratedImage returns
+  // a message that names the actual reason rather than "try again".
+  return hostGeneratedImage(bytes, m[1], host);
 }
