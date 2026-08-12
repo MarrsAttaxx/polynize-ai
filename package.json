@@ -4,6 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "check:css": "node scripts/check-css-modules.mjs",
+    "prebuild": "npm run check:css",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",

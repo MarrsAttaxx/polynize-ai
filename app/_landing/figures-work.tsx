@@ -19,11 +19,11 @@
  *           individual, so pointing it at unmapped work does not straighten the process,
  *           it runs the same crooked process louder. The output waveform is the input
  *           waveform, bigger and with the same kink in it.
- *   beat 4  Redesign. An org chart whose blocks will not sit still: every box drifting,
- *           the reporting lines faint behind them, the whole structure mid-rearrangement.
- *           This is the pivot of the page (not a technology problem, an organisation
- *           design problem) and it also sets up the org chart the reader is about to be
- *           handed in the next section, so the two read as the same object.
+ *   beat 4  Redesign. A LOCKED org chart on fixed reporting lines, where pairs of boxes
+ *           trade places one swap at a time. This is the pivot of the page (not a
+ *           technology problem, an organisation design problem) and it also sets up the
+ *           org chart the reader is handed in the next section, so the two read as the
+ *           same object.
  *
  * Everything the AI figures' header comment says applies here too: procedural and
  * deterministic, merged paths, bloom without filters, CSS keyframes so a stalled ticker
@@ -31,7 +31,7 @@
  */
 
 import { LoneCompass, TorchDiagram, VendorDrift } from './figures-ai';
-import { Person, brackets, f, graticule, rand } from './hud';
+import { f, graticule } from './hud';
 import type { FigureRegistry } from './BeatFigure';
 import s from './story.module.css';
 
@@ -96,23 +96,29 @@ function Amplifier() {
 /* ================================================================== beat 4
    The organisation being redesigned.
 
-   An org chart of identical boxes on identical reporting lines, and none of the boxes will
-   hold still. They drift, ease back, and drift again on their own clocks, so the structure
-   reads as mid-rearrangement rather than as a diagram of something settled.
+   A LOCKED org chart. The boxes sit exactly on their anchors and the reporting lines never
+   move. What happens is that pairs of boxes trade places: one lifts, crosses, and settles
+   into the other's slot while its partner comes the other way. One trade at a time, on a
+   long cycle, so the chart is still far more often than it is moving.
 
-   IT REPLACED A CROSSING LINE, and the reason matters. The first version drew the work as
-   one bright curve cutting across the chart, which said "AI does not fit in here" but said
-   it ABOUT the chart rather than THROUGH it. Moving the boxes themselves says the same
-   thing from the inside: the answer is not routing something past the structure, it is
-   changing the structure. It also sets up the org chart in the next section, so the reader
-   meets the same object twice.
+   TWO EARLIER VERSIONS, and why they went. The first drew a bright curve cutting across
+   the chart, which said "AI does not fit in here" but said it ABOUT the structure rather
+   than through it. The second had all nine boxes drifting continuously, which Marrs read
+   as floating rather than as redesign (12 Aug 2026), and he was right: a structure that
+   never holds still is not being redesigned, it is just unstable. A locked chart with
+   deliberate swaps is the actual claim. The org is not wobbling, it is being rearranged.
 
-   The lines stay put on purpose. They are the thing the boxes are straining against, and
-   a chart where the wiring moves too would read as noise rather than as redesign. */
+   The pairs are chosen so the two straight paths cross in the empty band BETWEEN tiers and
+   never pass over a stationary box. Check that if you change them.
+
+   No graticule. The page already has a drafting grid behind it and a second one inside the
+   figure was just noise (Marrs, same note). */
 
 const BOX_W = 132;
 const BOX_H = 54;
-const CHART = { top: 40, gap: 84 };
+/* Sits in a 300-tall frame now that the grid is gone, so the chart is not floating in a
+   half-empty 400. `top` is set to centre the three tiers in it. */
+const CHART = { top: 66, gap: 84 };
 
 /** Three tiers: one at the top, three beneath, five beneath that. */
 const TIERS = [1, 3, 5];
@@ -141,34 +147,74 @@ const ORG = (() => {
   return { boxes, lines: lines.join(' ') };
 })();
 
-/** Four drift patterns, assigned by index, so no two neighbours move together. */
-const DRIFTS = [s.orgDriftA, s.orgDriftB, s.orgDriftC, s.orgDriftD];
+/**
+ * Which boxes trade places. Indices into ORG.boxes: tier 1 is [0], tier 2 is [1,2,3],
+ * tier 3 is [4..8].
+ *
+ * EVERY PAIR IS CROSS-TIER ON PURPOSE. Two boxes swapping along a straight line meet at
+ * the midpoint, and for a cross-tier pair that midpoint falls in the empty band between
+ * rows, so the crossing is legible and nothing is ever hidden behind a stationary box.
+ * A same-tier pair would slide straight through its neighbours.
+ */
+const SWAPS: [number, number][] = [
+  [1, 5], // tier 2 left  <-> tier 3, second from left
+  [2, 8], // tier 2 centre <-> tier 3, far right. The long one.
+  [3, 7], // tier 2 right <-> tier 3, second from right
+];
+
+/**
+ * Per-box swap vector, cycle slot, and which of the pair passes in front.
+ *
+ * The second element of each pair is the OVER card. That is not arbitrary: it is the
+ * later index, so document order already paints it on top, and the two facts have to stay
+ * agreed or the card that shrinks will be the one drawn in front.
+ */
+const SWAP_BY_BOX = new Map<number, { dx: number; dy: number; k: number; over: boolean }>();
+SWAPS.forEach(([a, b], k) => {
+  const A = ORG.boxes[a];
+  const B = ORG.boxes[b];
+  SWAP_BY_BOX.set(a, { dx: B.x - A.x, dy: B.y - A.y, k, over: false });
+  SWAP_BY_BOX.set(b, { dx: A.x - B.x, dy: A.y - B.y, k, over: true });
+});
 
 function Redesign() {
   return (
     <g className={s.hudScene}>
-      <path className={s.hudGrid} d={graticule(1000, 400, 44, 24)} />
-
-      {/* The wiring stays put. It is what the boxes are straining against. */}
+      {/* The wiring never moves. It is the structure; the boxes are what gets rearranged
+          inside it. */}
       <path className={s.hudOrgLine} d={ORG.lines} />
 
-      {/* The boxes will not hold still. */}
-      {ORG.boxes.map((b, i) => (
-        <g key={i} className={DRIFTS[i % DRIFTS.length]} style={{ ['--i' as string]: i }}>
-          <rect
-            className={s.hudOrgBox}
-            x={f(b.x - BOX_W / 2)}
-            y={f(b.y - BOX_H / 2)}
-            width={BOX_W}
-            height={BOX_H}
-            rx="6"
-          />
-          <path
-            className={s.hudOrgRule}
-            d={`M ${f(b.x - 38)} ${f(b.y - 8)} h 76 M ${f(b.x - 38)} ${f(b.y + 7)} h 48`}
-          />
-        </g>
-      ))}
+      {ORG.boxes.map((b, i) => {
+        const sw = SWAP_BY_BOX.get(i);
+        return (
+          <g
+            key={i}
+            className={sw ? (sw.over ? s.orgSwapOver : s.orgSwapUnder) : undefined}
+            style={
+              sw
+                ? ({
+                    ['--dx' as string]: `${f(sw.dx)}px`,
+                    ['--dy' as string]: `${f(sw.dy)}px`,
+                    ['--k' as string]: sw.k,
+                  } as React.CSSProperties)
+                : undefined
+            }
+          >
+            <rect
+              className={s.hudOrgBox}
+              x={f(b.x - BOX_W / 2)}
+              y={f(b.y - BOX_H / 2)}
+              width={BOX_W}
+              height={BOX_H}
+              rx="6"
+            />
+            <path
+              className={s.hudOrgRule}
+              d={`M ${f(b.x - 38)} ${f(b.y - 8)} h 76 M ${f(b.x - 38)} ${f(b.y + 7)} h 48`}
+            />
+          </g>
+        );
+      })}
     </g>
   );
 }
@@ -194,5 +240,5 @@ export const WORK_FIGURES: FigureRegistry = {
     place: 'right',
     render: () => <Amplifier />,
   },
-  misfit: { viewBox: '0 0 1000 400', place: 'wide', render: () => <Redesign /> },
+  misfit: { viewBox: '0 0 1000 300', place: 'wide', render: () => <Redesign /> },
 };

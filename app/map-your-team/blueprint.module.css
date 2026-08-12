@@ -926,6 +926,9 @@
 }
 .teamListTag { font-size: 9.5px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-3); padding-top: 3px; }
 .teamListBot { color: var(--mint); opacity: 0.75; line-height: 0; padding-top: 1px; }
+/* The 1fr cell. min-width:0 is the load-bearing part: without it a long description
+   blows the grid out sideways instead of wrapping. */
+.teamListBody { min-width: 0; }
 .teamListName { font-size: 14px; font-weight: 600; color: var(--text); }
 .teamListRole { font-size: 12px; font-weight: 400; color: var(--mint); margin-left: 8px; }
 .teamListDesc { font-size: 12.5px; color: var(--text-2); line-height: 1.5; margin-top: 5px; }

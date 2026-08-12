@@ -58,20 +58,21 @@ export function HeroVideo({
       {!started && (
         <button type="button" className={s.playBtn} onClick={play} aria-label={label}>
           <span className={s.playMark} aria-hidden="true">
+            {/* Triangle only. The ring came off (Marrs, 12 Aug 2026) and the triangle
+                doubled to carry the frame on its own.
+
+                The corners are rounded by stroking the path in the same white as its fill
+                with a round line-join, which offsets the outline outwards by half the
+                stroke. That is why the drawn points are inset from the visual bounds:
+                the 10px stroke inflates 27,20 → 73,76 back out to roughly 22,15 → 78,81. */}
             <svg viewBox="0 0 96 96" width="96" height="96">
-              {/* The ring, thin, the way every other line in this design system is thin. */}
-              <circle
-                cx="48"
-                cy="48"
-                r="46"
-                fill="none"
+              <path
+                d="M27 20 L73 48 L27 76 Z"
+                fill="#fff"
                 stroke="#fff"
-                strokeWidth="2"
-                opacity="0.9"
+                strokeWidth="10"
+                strokeLinejoin="round"
               />
-              {/* Nudged right of true centre, because a triangle centred on its bounding
-                  box reads as sitting left of centre inside a circle. */}
-              <path d="M40 32 L67 48 L40 64 Z" fill="#fff" />
             </svg>
           </span>
         </button>

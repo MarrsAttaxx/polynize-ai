@@ -846,6 +846,18 @@
   margin: 0;
 }
 
+/* The label above the change-request textarea. Referenced by LockControl since it was
+   written and never defined here, so it rendered unstyled. */
+.editLabel {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--bp-text-3, var(--bp-text-2));
+  margin: 14px 0 6px;
+}
+
 /* ---------- Export button ---------- */
 .exportButton {
   display: inline-flex;

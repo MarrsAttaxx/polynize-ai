@@ -306,9 +306,10 @@
 .playBtn:hover { background: rgba(0, 0, 0, 0.3); }
 .playBtn:focus-visible { outline: 2px solid var(--mint); outline-offset: -4px; }
 
+/* Doubled from the ringed version, because the triangle is now carrying the frame alone. */
 .playMark {
   display: block;
-  width: clamp(64px, 9vw, 96px);
+  width: clamp(104px, 15vw, 168px);
   transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.3, 1), filter 0.2s ease;
   filter: drop-shadow(0 3px 22px rgba(0, 0, 0, 0.6));
 }
@@ -895,36 +896,56 @@
    nine boxes wobbling for no reason. */
 .hudOrgLine { fill: none; stroke: var(--hud-3); stroke-width: 1.6; }
 
-.orgDriftA,
-.orgDriftB,
-.orgDriftC,
-.orgDriftD {
+/* One trade at a time. The transform is the whole animation: lift, cross to the partner's
+   slot, settle. Then the same in reverse later in the cycle, because a CSS loop snaps back
+   to 0% and a snap would undo the point.
+
+   TWO PARTNERS, TWO DEPTHS. A straight swap puts both boxes on the same line, so at the
+   midpoint their centres coincide exactly and it reads as a rendering fault rather than as
+   two cards passing. Bowing the paths apart would need ~140px of separation to clear a
+   132px box, which is a bigger arc than the figure has room for. So one card goes OVER
+   (lifts, stays full strength) and the other goes UNDER (shrinks and dims), which is the
+   same idiom as any drag-to-reorder list and needs no extra space at all. The over card is
+   always the later-indexed partner, so document order already draws it on top.
+
+   --dx / --dy are set per box from the real geometry; --k is the pair index and only drives
+   the negative delay, which spreads the three pairs a third of a cycle apart so the chart
+   is still far more often than it is moving. */
+@keyframes orgSwapOver {
+  0%, 5%    { transform: translate(0, 0) scale(1); }
+  8%        { transform: translate(0, 0) scale(1.08); }
+  18%       { transform: translate(var(--dx), var(--dy)) scale(1.08); }
+  21%, 51%  { transform: translate(var(--dx), var(--dy)) scale(1); }
+  54%       { transform: translate(var(--dx), var(--dy)) scale(1.08); }
+  64%       { transform: translate(0, 0) scale(1.08); }
+  67%, 100% { transform: translate(0, 0) scale(1); }
+}
+@keyframes orgSwapUnder {
+  0%, 5%    { transform: translate(0, 0) scale(1); opacity: 1; }
+  8%        { transform: translate(0, 0) scale(0.9); opacity: 0.6; }
+  18%       { transform: translate(var(--dx), var(--dy)) scale(0.9); opacity: 0.6; }
+  21%, 51%  { transform: translate(var(--dx), var(--dy)) scale(1); opacity: 1; }
+  54%       { transform: translate(var(--dx), var(--dy)) scale(0.9); opacity: 0.6; }
+  64%       { transform: translate(0, 0) scale(0.9); opacity: 0.6; }
+  67%, 100% { transform: translate(0, 0) scale(1); opacity: 1; }
+}
+.orgSwapOver,
+.orgSwapUnder {
   transform-box: fill-box;
   transform-origin: 50% 50%;
 }
-@keyframes orgA {
-  0%, 100% { transform: translate(0, 0); }
-  33% { transform: translate(14px, -7px) rotate(-0.6deg); }
-  66% { transform: translate(-9px, 6px) rotate(0.4deg); }
+.play .orgSwapOver {
+  animation: orgSwapOver 18s ease-in-out infinite;
+  animation-delay: calc(var(--k, 0) * -6s);
 }
-@keyframes orgB {
-  0%, 100% { transform: translate(0, 0); }
-  40% { transform: translate(-13px, 8px) rotate(0.7deg); }
-  75% { transform: translate(7px, -9px) rotate(-0.3deg); }
+.play .orgSwapUnder {
+  animation: orgSwapUnder 18s ease-in-out infinite;
+  animation-delay: calc(var(--k, 0) * -6s);
 }
-@keyframes orgC {
-  0%, 100% { transform: translate(0, 0) scale(1); }
-  50% { transform: translate(10px, 9px) scale(1.035); }
+@media (prefers-reduced-motion: reduce) {
+  .play .orgSwapOver,
+  .play .orgSwapUnder { animation: none; }
 }
-@keyframes orgD {
-  0%, 100% { transform: translate(0, 0); }
-  30% { transform: translate(-8px, -10px) rotate(-0.5deg); }
-  70% { transform: translate(12px, 4px) rotate(0.6deg); }
-}
-.play .orgDriftA { animation: orgA 7.5s ease-in-out infinite; animation-delay: calc(var(--i, 0) * -0.9s); }
-.play .orgDriftB { animation: orgB 8.8s ease-in-out infinite; animation-delay: calc(var(--i, 0) * -1.3s); }
-.play .orgDriftC { animation: orgC 6.4s ease-in-out infinite; animation-delay: calc(var(--i, 0) * -0.7s); }
-.play .orgDriftD { animation: orgD 9.6s ease-in-out infinite; animation-delay: calc(var(--i, 0) * -1.1s); }
 
 /* ---------- The route ----------
    A dashed path down the left margin with a waypoint per beat and a mint trail that
