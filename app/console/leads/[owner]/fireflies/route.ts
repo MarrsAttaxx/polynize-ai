@@ -22,7 +22,7 @@ import {
   notesFor,
   type Candidate,
 } from '@/lib/crm/fireflies';
-import { STREAMS } from '@/lib/marketing/streams';
+import { STREAMS, streamEmail } from '@/lib/marketing/streams';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -49,6 +49,20 @@ export async function GET(
     );
   }
 
+  /**
+   * WHOSE MEETINGS. One API key sees the whole team's, so without this every CRM was offered
+   * the same set: "Shourov's lead list is pulling my meetings not his." No address means this
+   * CRM does not take meeting contacts at all (Polynize, which is website-inbound), rather
+   * than silently falling back to everyone's.
+   */
+  const mine = streamEmail(owner);
+  if (!mine) {
+    return NextResponse.json(
+      { error: 'This CRM does not take contacts from meetings. Its leads come from the website.' },
+      { status: 400 }
+    );
+  }
+
   try {
     const [meetings, existing, ignored] = await Promise.all([
       fetchRecentMeetings({ limit: 25 }),
@@ -59,6 +73,7 @@ export async function GET(
     // go into the same exclusion set and the pure filter needs no knowledge of either.
     const candidates = meetingsToCandidates(meetings, {
       alreadyHave: new Set([...existing.map((c) => c.email.toLowerCase()), ...ignored]),
+      attendedBy: mine,
     });
     return NextResponse.json({ ok: true, scanned: meetings.length, candidates });
   } catch (err) {
@@ -126,10 +141,17 @@ export async function POST(
    * carries which EMAILS were ticked, so the notes and the transcript link come from
    * Fireflies again instead of from whatever the browser sent.
    */
+  const mine = streamEmail(owner);
+  if (!mine) {
+    return NextResponse.json({ error: 'This CRM does not take contacts from meetings.' }, { status: 400 });
+  }
+
   let candidates: Candidate[] = [];
   try {
     const meetings = await fetchRecentMeetings({ limit: 25 });
-    candidates = meetingsToCandidates(meetings, { alreadyHave: new Set() });
+    // The SAME attendance filter as the GET. Without it a ticked address could be matched
+    // against a meeting this person was never in.
+    candidates = meetingsToCandidates(meetings, { alreadyHave: new Set(), attendedBy: mine });
   } catch (err) {
     const detail = err instanceof Error ? err.message : String(err);
     console.error('[crm.fireflies] re-fetch failed:', detail);

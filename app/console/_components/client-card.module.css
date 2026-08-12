@@ -745,6 +745,17 @@
   justify-content: center;
   flex-shrink: 0;
 }
+/* THE MINT MARK, for a stream with no photo. Half the circle's diameter, per Marrs, so the
+   brand card carries a mark rather than a logo squeezed into a portrait frame. The emboss on
+   .streamAvatar::after still applies, so the dot sits in the same recess a photo would. */
+.streamAvatarMark {
+  width: 50%;
+  height: 50%;
+  border-radius: 50%;
+  background: var(--mint);
+  flex-shrink: 0;
+}
+
 .streamAvatarImg {
   width: 100%;
   height: 100%;

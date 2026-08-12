@@ -17,15 +17,49 @@ export const STREAMS = [
 /**
  * Stream avatars shown on the dashboard cards (mint-ringed circles). Files live
  * in public/pam/avatars/ and are registered here as they land; streams without
- * an entry render an initial-letter circle instead.
+ * an entry render a MINT DOT instead, at half the circle's diameter (see .streamAvatarMark).
  *
  * Patricia, Dhamiri and Avik left the team (Marrs, 2026-07-28) and are gone from
  * STREAMS above, but their avatars are kept registered on purpose: removing a
  * stream only HIDES it, it does not delete anything the stream owns, so restoring
  * one is a single line above rather than a hunt for what else was stripped out.
  */
+/**
+ * WHOSE MEETINGS BELONG TO WHICH CRM.
+ *
+ * Marrs: "Shourov's lead list is pulling my meetings not his." Correct, and it was my bug: the
+ * Fireflies scan fetched recent meetings and offered the same set to every CRM, so every list
+ * showed whoever the API key could see.
+ *
+ * It does NOT need a second API key. One key already sees the whole team's meetings, which the
+ * live data proved: the Polynize Weekly Sync came back with shourov@polynize.com as organiser
+ * under Marrs's key. So the fix is to filter by who ATTENDED rather than to authenticate as
+ * each person.
+ *
+ * These addresses are taken from real attendee lists in that data. Polynize is deliberately
+ * absent: it is the website-inbound CRM, and a meeting's contacts belong to the person who was
+ * in the meeting. A stream with no address here is not offered the meeting pull at all.
+ */
+export const STREAM_EMAILS: Record<string, string> = {
+  marrs: 'marrs@polynize.io',
+  shourov: 'shourov@polynize.com',
+  kristin: 'kristin@polynize.io',
+  julian: 'julian@polynize.io',
+};
+
+/** The address whose meetings feed this CRM, if any. */
+export function streamEmail(id: string): string | undefined {
+  return STREAM_EMAILS[id];
+}
+
 export const STREAM_AVATARS: Record<string, string> = {
-  polynize: '/pam/avatars/polynize.png',
+  /**
+   * POLYNIZE HAS NO IMAGE ON PURPOSE. Marrs: "remove the Polynize logos on the console cards
+   * and replace with a simple brand mint circle that's about half the diameter of the size of
+   * the actual circle." A stream with no entry here now renders that mint dot, so the brand
+   * card is a mark rather than a shrunk logo. `/pam/avatars/polynize.png` is still on disk if
+   * the logo is ever wanted back.
+   */
   marrs: '/pam/avatars/marrs.jpeg',
   shourov: '/pam/avatars/shourov.jpeg',
   patricia: '/pam/avatars/patricia.png',
@@ -33,7 +67,6 @@ export const STREAM_AVATARS: Record<string, string> = {
   dhamiri: '/pam/avatars/dhamiri.png',
   avik: '/pam/avatars/avik.jpeg',
   kristin: '/pam/avatars/kristin.jpeg',
-  // polynize: logo pending — shows the "P" initial until it lands.
 };
 
 export type StreamId = (typeof STREAMS)[number]['id'];

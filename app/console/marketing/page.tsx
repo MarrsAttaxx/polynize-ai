@@ -94,7 +94,9 @@ export default async function MarketingPage() {
                     // eslint-disable-next-line @next/next/no-img-element
                     <img src={avatar} alt="" className={s.streamAvatarImg} />
                   ) : (
-                    <span className={s.streamAvatarInitial}>{st.label[0]}</span>
+                    /* The mint mark. Half the circle's diameter, centred, so the brand card
+                       reads as a mark and not as a logo that has been shrunk. */
+                    <span className={s.streamAvatarMark} />
                   )}
                 </span>
                 <span className={l.cardTitle}>{st.label}</span>

@@ -98,12 +98,15 @@ export default async function LeadsPage() {
                     {n.new_count} new, untouched
                   </span>
                 ) : null}
-                {avatar ? (
-                  <div className={s.streamAvatar}>
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                <div className={s.streamAvatar}>
+                  {avatar ? (
+                    /* eslint-disable-next-line @next/next/no-img-element */
                     <img className={s.streamAvatarImg} src={avatar} alt="" />
-                  </div>
-                ) : null}
+                  ) : (
+                    /* No image means the mint mark, not an empty circle. */
+                    <span className={s.streamAvatarMark} />
+                  )}
+                </div>
               </Link>
             );
           })}

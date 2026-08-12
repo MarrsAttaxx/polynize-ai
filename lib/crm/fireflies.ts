@@ -168,14 +168,30 @@ export function transcriptUrl(id: string): string {
  */
 export function meetingsToCandidates(
   meetings: FirefliesMeeting[],
-  opts: { alreadyHave: Set<string>; internalDomains?: string[] }
+  opts: {
+    alreadyHave: Set<string>;
+    internalDomains?: string[];
+    /**
+     * Only consider meetings this person was in.
+     *
+     * Marrs: "Shourov's lead list is pulling my meetings not his." One API key sees the whole
+     * team's meetings, so without this every CRM was offered the same set. Required rather
+     * than optional in practice: a caller that forgets it gets everyone's meetings, which is
+     * the bug this exists to fix.
+     */
+    attendedBy?: string;
+  }
 ): Candidate[] {
   const domains = opts.internalDomains ?? INTERNAL_DOMAINS;
+  const who = opts.attendedBy?.trim().toLowerCase();
   const out: Candidate[] = [];
   const seen = new Set<string>();
 
   for (const m of meetings) {
     if (!m.id) continue;
+    // Attendance is checked against BOTH lists plus the organiser, because the live data had
+    // meetings where meeting_attendees was empty and only participants held the addresses.
+    if (who && !m.attendees.includes(who) && m.organizerEmail !== who) continue;
     for (const email of m.attendees) {
       if (isInternal(email, domains)) continue;
       if (opts.alreadyHave.has(email)) continue;
