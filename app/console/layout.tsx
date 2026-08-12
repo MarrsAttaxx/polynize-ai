@@ -35,7 +35,14 @@ export default async function ConsoleLayout({
   return (
     <div className={s.shell}>
       <nav className={s.topNav}>
-        <Link href="/console/marketing" className={s.eyebrow}>PAM control centre</Link>
+        {/* Goes to the Control Centre, which is what it says. It used to point at
+            /console/marketing, from when Marketing was the only thing in here; now that
+            the launcher is Marketing AND Leads, a link labelled "PAM control centre" that
+            lands on Marketing is just wrong. `/console` resolves on both hosts, since the
+            pam.polynize.ai rewrite only fires for paths not already under /console. */}
+        <Link href="/console" className={s.eyebrow}>
+          PAM control centre
+        </Link>
         <div className={s.userBlock}>
           <ThemeToggle />
           <span className={s.userEmail}>{email}</span>

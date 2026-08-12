@@ -1,7 +1,7 @@
-/* PAM Control Centre launcher — three section cards (Marketing / Leads /
-   Blueprinting). Marketing is the featured, full-width card (the console's
-   new primary); Leads and Blueprinting sit beneath it. Tactile substrate,
-   same tokens as the rest of the console. */
+/* PAM Control Centre launcher — TWO equal doors: Marketing and Leads.
+   Nothing is featured over the other (see .cardDoor). This file also styles the
+   stream/CRM cards on both dashboards. Tactile substrate, same tokens as the rest
+   of the console. */
 
 .cards {
   display: grid;
