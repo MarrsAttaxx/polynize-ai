@@ -67,17 +67,47 @@
 
 /* ---- a contact ---- */
 .rows {
-  margin-top: 12px;
+  margin-top: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
+/* Marrs: "each contact needs to be wrapped and contained in its own little section."
+   The same leathered card language as the rest of the console, so a contact reads as an
+   object you act on rather than a row in a list. */
 .row {
-  padding: 16px 0;
-  border-bottom: 1px solid rgba(244, 236, 228, 0.08);
+  composes: tacCardTexture from global;
+  padding: 16px 18px;
+  border-radius: 14px;
+  background:
+    radial-gradient(130% 100% at 18% 0%, rgba(255, 255, 255, 0.04), transparent 60%),
+    var(--tac-surface-2);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.07),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.3),
+    var(--tac-shadow-raised);
+}
+:global(body.theme-light) .row {
+  background:
+    radial-gradient(130% 100% at 18% 0%, rgba(255, 255, 255, 0.5), transparent 62%),
+    var(--tac-surface-2);
+  box-shadow:
+    inset 0 1px 0 var(--tac-edge-light),
+    inset 0 -1px 0 rgba(15, 40, 35, 0.09),
+    var(--tac-shadow-raised);
 }
 .rowTop {
   display: flex;
   align-items: baseline;
   gap: 12px;
   flex-wrap: wrap;
+  /* A flex item will not shrink below its content unless told to, so without this a long
+     address pushes the card wider than the screen instead of wrapping inside it. */
+  min-width: 0;
+}
+.rowTop > * {
+  min-width: 0;
+  max-width: 100%;
 }
 .name {
   margin: 0;
@@ -94,6 +124,9 @@
   font-size: 12px;
   color: var(--text-3);
   text-decoration: none;
+  /* Break inside the address rather than overflow. `anywhere` and not `break-all`, so it
+     only breaks when it has to. */
+  overflow-wrap: anywhere;
 }
 .email:hover {
   color: var(--mint);
@@ -365,4 +398,192 @@
 .ffActions {
   width: 100%;
   margin-top: 10px;
+}
+
+/* ---- header row: title left, Add owner right ---- */
+.headRow {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+}
+.ownerBtn {
+  flex: none;
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: var(--mint);
+  background: rgba(105, 252, 203, 0.08);
+  border: 1px solid rgba(105, 252, 203, 0.4);
+  border-radius: 10px;
+  padding: 10px 14px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.ownerBtn:hover {
+  background: rgba(105, 252, 203, 0.14);
+}
+
+/* ---- the Add owner modal ---- */
+.modalScrim {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(6, 6, 10, 0.6);
+}
+.modal {
+  width: 100%;
+  max-width: 420px;
+  padding: 22px 24px 20px;
+  border-radius: 16px;
+  background: var(--tac-surface-2);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 24px 60px rgba(0, 0, 0, 0.5);
+}
+.modalTitle {
+  margin: 0 0 8px;
+  font-size: 19px;
+  color: var(--text);
+}
+.modalText {
+  margin: 0 0 14px;
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--text-2);
+}
+.modalHint {
+  margin: 10px 0 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-3);
+}
+.modalActions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 16px;
+}
+.modal .textInput {
+  width: 100%;
+  min-width: 0;
+}
+
+/* ---- the toolbar holding Add a contact + the Fireflies pull ---- */
+.toolbar {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+}
+
+/* ---- a Fireflies candidate's own controls ---- */
+.ffRowActions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: none;
+}
+.ffDismiss {
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--text-3);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px 2px;
+  white-space: nowrap;
+}
+.ffDismiss:hover {
+  color: var(--coral);
+}
+
+/* ===================================================================
+ * PHONE. Marrs: "it needs to be smart phone friendly."
+ *
+ * The CRM is the screen most likely to be opened away from a desk, and a contact row is a
+ * dense set of controls that wraps badly. At phone width everything goes full-bleed and
+ * single column, and the touch targets grow: a 12px date input is not a thing you can hit
+ * while walking.
+ * =================================================================== */
+@media (max-width: 560px) {
+  .headRow {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .ownerBtn {
+    align-self: flex-start;
+  }
+  .toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .toolbar > * {
+    width: 100%;
+  }
+  .addWrap,
+  .notifyBar {
+    width: 100%;
+  }
+  .addBtn,
+  .notifyBtn,
+  .ownerBtn {
+    width: 100%;
+    padding: 14px 16px;
+    font-size: 13px;
+  }
+  .row {
+    padding: 14px 14px 16px;
+  }
+  /* Name, role, address and source on their own lines. Four things on one line at 375px is
+     four truncated things. */
+  .rowTop {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 5px;
+  }
+  .name {
+    font-size: 16px;
+  }
+  /* One control per line, each full width and thumb-sized. */
+  .rowMid {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+  .stageSelect,
+  .dateInput,
+  .textInput {
+    width: 100%;
+    min-width: 0;
+    padding: 12px;
+    font-size: 13px;
+  }
+  .filters {
+    gap: 6px;
+  }
+  .filter,
+  .filterOn {
+    padding: 9px 12px;
+  }
+  /* A long address must wrap rather than push the card wider than the screen. */
+  .email,
+  .ffEmail {
+    word-break: break-all;
+  }
+  .ffItem {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+  .ffRowActions {
+    justify-content: space-between;
+  }
+  .modal {
+    max-width: none;
+  }
 }

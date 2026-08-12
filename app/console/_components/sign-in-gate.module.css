@@ -262,3 +262,12 @@
   .main { padding: 0 !important; }
   .shell { background: none !important; }
 }
+
+/* PHONE. Marrs: "it needs to be smart phone friendly." 28px of gutter each side costs 15%
+   of an iPhone SE's width, which is the difference between a contact card fitting and not.
+   Console-wide, since every page inherits this shell. */
+@media (max-width: 560px) {
+  .main {
+    padding: 24px 16px 60px;
+  }
+}

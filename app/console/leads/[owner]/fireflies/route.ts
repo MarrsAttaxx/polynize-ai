@@ -14,6 +14,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getCurrentUser } from '@/lib/console-auth';
 import { listContacts, upsertContact } from '@/lib/crm/contact-store';
+import { getIgnored, ignoreEmails } from '@/lib/crm/ignored-store';
 import {
   fetchRecentMeetings,
   isFirefliesConfigured,
@@ -49,12 +50,15 @@ export async function GET(
   }
 
   try {
-    const [meetings, existing] = await Promise.all([
+    const [meetings, existing, ignored] = await Promise.all([
       fetchRecentMeetings({ limit: 25 }),
       listContacts(owner).catch(() => []),
+      getIgnored(owner),
     ]);
+    // Already a contact, or waved away once. Both mean "stop proposing this person", so they
+    // go into the same exclusion set and the pure filter needs no knowledge of either.
     const candidates = meetingsToCandidates(meetings, {
-      alreadyHave: new Set(existing.map((c) => c.email.toLowerCase())),
+      alreadyHave: new Set([...existing.map((c) => c.email.toLowerCase()), ...ignored]),
     });
     return NextResponse.json({ ok: true, scanned: meetings.length, candidates });
   } catch (err) {
@@ -69,6 +73,38 @@ export async function GET(
 const AcceptSchema = z.object({
   accept: z.array(z.string().trim().toLowerCase().email()).min(1).max(50),
 });
+
+const IgnoreSchema = z.object({
+  ignore: z.array(z.string().trim().toLowerCase().email()).min(1).max(50),
+});
+
+/**
+ * Stop proposing these people. A dismissal has to be remembered or it is not a dismissal:
+ * the scan reads the same recent meetings each time, so anyone waved away would come back on
+ * the next press and the list would never get shorter.
+ */
+export async function DELETE(
+  req: NextRequest,
+  { params }: { params: Promise<{ owner: string }> }
+) {
+  const { owner } = await params;
+  const g = await guard(owner);
+  if ('error' in g) return NextResponse.json({ error: g.error }, { status: g.status });
+
+  let body: z.infer<typeof IgnoreSchema>;
+  try {
+    body = IgnoreSchema.parse(await req.json());
+  } catch {
+    return NextResponse.json({ error: 'Nothing was selected.' }, { status: 400 });
+  }
+  try {
+    await ignoreEmails(owner, body.ignore);
+  } catch (err) {
+    console.error('[crm.fireflies] ignore failed:', err);
+    return NextResponse.json({ error: 'Could not save that.' }, { status: 502 });
+  }
+  return NextResponse.json({ ok: true, ignored: body.ignore.length });
+}
 
 export async function POST(
   req: NextRequest,

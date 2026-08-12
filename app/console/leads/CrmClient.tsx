@@ -328,20 +328,21 @@ export function ContactRow({ contact }: { contact: CrmContact }) {
 }
 
 /**
- * WHO GETS TOLD when a lead lands in this CRM.
+ * ADD OWNER. Who hears about a new lead here.
  *
- * Free text rather than a repeating field, because it is edited about twice a year and
- * pasting two addresses is the whole job. The store parses commas, newlines and
- * semicolons, de-duplicates, and drops anything that is not an address.
+ * Marrs: "let's just try and consolidate that whole idea into one button in the top right,
+ * which says 'Add owner'. When you click that, it opens up a little modal."
+ *
+ * It was a full-width bar carrying a sentence nobody needs to read twice. Now it is one
+ * button, and the state it holds (a count) is on the button itself, so the page does not
+ * spend a row on a setting that is changed about twice a year.
  */
-export function NotifyEditor({
+export function AddOwner({
   owner,
   recipients,
-  ownerLabel,
 }: {
   owner: string;
   recipients: string[];
-  ownerLabel: string;
 }) {
   const [open, setOpen] = useState(false);
   const [raw, setRaw] = useState(recipients.join(', '));
@@ -350,6 +351,16 @@ export function NotifyEditor({
   const [err, setErr] = useState<string | null>(null);
 
   const current = saved ?? recipients;
+
+  // Escape closes it, because a modal you cannot dismiss with the keyboard is a trap.
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setOpen(false);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [open]);
 
   const save = async () => {
     if (busy) return;
@@ -377,47 +388,53 @@ export function NotifyEditor({
     }
   };
 
-  if (!open) {
-    return (
-      <div className={c.notifyBar}>
-        <span className={c.notifyText}>
-          {current.length === 0 ? (
-            <>Nobody is told when a lead lands in {ownerLabel}.</>
-          ) : (
-            <>Pinged on a new lead: {current.join(', ')}</>
-          )}
-        </span>
-        <button type="button" className={c.notifyBtn} onClick={() => setOpen(true)}>
-          {current.length === 0 ? 'Add someone' : 'Change'}
-        </button>
-      </div>
-    );
-  }
-
   return (
-    <div className={c.notifyBar}>
-      <div className={c.notifyEdit}>
-        <input
-          className={c.textInput}
-          value={raw}
-          onChange={(e) => setRaw(e.target.value)}
-          placeholder="name@example.com, someone@example.com"
-          aria-label={`Who to notify about new ${ownerLabel} leads`}
-          autoFocus
-        />
-        <button type="button" className={c.addBtn} onClick={() => void save()} disabled={busy}>
-          {busy ? 'Saving…' : 'Save'}
-        </button>
-        <button type="button" className={c.cancel} onClick={() => setOpen(false)}>
-          Cancel
-        </button>
-        {err ? <p className={c.formError}>{err}</p> : null}
-        <p className={c.notifyHint}>
-          Separate addresses with commas. Each person gets their own email, so nobody sees
-          the rest of the list. Leave it empty to turn the ping off.
-        </p>
-      </div>
-    </div>
+    <>
+      <button type="button" className={c.ownerBtn} onClick={() => setOpen(true)}>
+        Add owner{current.length > 0 ? ` · ${current.length}` : ''}
+      </button>
+
+      {open ? (
+        <div
+          className={c.modalScrim}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Add owner"
+          // Clicking the backdrop closes; clicking the panel must not, hence the guard.
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setOpen(false);
+          }}
+        >
+          <div className={c.modal}>
+            <h2 className={c.modalTitle}>Add owner</h2>
+            <p className={c.modalText}>
+              Enter your email if you want to know when someone is contacted.
+            </p>
+            <input
+              className={c.textInput}
+              value={raw}
+              onChange={(e) => setRaw(e.target.value)}
+              placeholder="you@polynize.io"
+              aria-label="Email addresses to notify"
+              autoFocus
+            />
+            <p className={c.modalHint}>
+              Separate several with commas. Each person gets their own email. Leave it empty to
+              turn it off.
+            </p>
+            {err ? <p className={c.formError}>{err}</p> : null}
+            <div className={c.modalActions}>
+              <button type="button" className={c.addBtn} onClick={() => void save()} disabled={busy}>
+                {busy ? 'Saving…' : 'Save'}
+              </button>
+              <button type="button" className={c.cancel} onClick={() => setOpen(false)}>
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+    </>
   );
 }
 
@@ -500,6 +517,27 @@ export function FirefliesReview({ owner }: { owner: string }) {
     }
   };
 
+  const dismiss = async (email: string) => {
+    // Optimistic: the row goes at once. Waiting on a round trip to remove something you have
+    // decided is junk makes the list feel broken.
+    setCandidates((prev) => prev.filter((x) => x.email !== email));
+    setTicked((prev) => {
+      const next = new Set(prev);
+      next.delete(email);
+      return next;
+    });
+    try {
+      const res = await fetch(`/console/leads/${owner}/fireflies`, {
+        method: 'DELETE',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ ignore: [email] }),
+      });
+      if (!res.ok) setErr('That one will come back on the next scan: the dismissal did not save.');
+    } catch {
+      setErr('That one will come back on the next scan: the dismissal did not save.');
+    }
+  };
+
   const toggle = (email: string) =>
     setTicked((prev) => {
       const next = new Set(prev);
@@ -539,14 +577,26 @@ export function FirefliesReview({ owner }: { owner: string }) {
                     {cand.meetingDate ? ` · ${cand.meetingDate.slice(0, 10)}` : ''}
                   </span>
                 </label>
-                <a
-                  className={c.transcript}
-                  href={cand.transcriptUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  transcript ↗
-                </a>
+                <span className={c.ffRowActions}>
+                  <a
+                    className={c.transcript}
+                    href={cand.transcriptUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    transcript ↗
+                  </a>
+                  {/* Not a delete: it removes them from the PROPOSALS and remembers, so the
+                      same person stops being offered every scan. */}
+                  <button
+                    type="button"
+                    className={c.ffDismiss}
+                    onClick={() => void dismiss(cand.email)}
+                    title="Not a lead. Stop proposing this person."
+                  >
+                    not a lead
+                  </button>
+                </span>
               </li>
             ))}
           </ul>

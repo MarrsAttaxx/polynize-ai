@@ -5,7 +5,7 @@ import { listContacts, type CrmContact } from '@/lib/crm/contact-store';
 import { getNotifyMap, type NotifyMap } from '@/lib/crm/notify-store';
 import { CRM_STAGES, isCrmStage, isDue, sortForWork } from '@/lib/crm/model';
 import { STREAMS, streamLabel } from '@/lib/marketing/streams';
-import { AddContact, ContactRow, FirefliesReview, NotifyEditor } from '../CrmClient';
+import { AddContact, AddOwner, ContactRow, FirefliesReview } from '../CrmClient';
 import s from '../../_components/client-card.module.css';
 import c from '../crm.module.css';
 
@@ -72,8 +72,13 @@ export default async function OwnerCrmPage({
           <Link href="/console/leads" className={s.marketingBack}>
             ← Leads
           </Link>
-          <div className={s.eyebrow}>crm</div>
-          <h1 className={s.title}>{streamLabel(owner)}</h1>
+          <div className={c.headRow}>
+            <div>
+              <div className={s.eyebrow}>crm</div>
+              <h1 className={s.title}>{streamLabel(owner)}</h1>
+            </div>
+            {inbound ? <AddOwner owner={owner} recipients={notify} /> : null}
+          </div>
           <p className={c.subhead}>
             {contacts.length === 0
               ? inbound
@@ -87,15 +92,12 @@ export default async function OwnerCrmPage({
 
         {loadError ? <p className={c.error}>{loadError}</p> : null}
 
-        <AddContact owner={owner} />
-
-        {/* Who hears about a new lead here. Marrs: "if a new lead comes in on Polynize,
-            Shourov and I get pinged on email." */}
-        <NotifyEditor owner={owner} recipients={notify} ownerLabel={streamLabel(owner)} />
-
-        {/* Meetings become contacts, by review. On every CRM, since each person's meetings
-            belong in their own. */}
-        <FirefliesReview owner={owner} />
+        <div className={c.toolbar}>
+          <AddContact owner={owner} />
+          {/* Meetings become contacts, by review. On every CRM, since each person's meetings
+              belong in their own. */}
+          <FirefliesReview owner={owner} />
+        </div>
 
         {contacts.length > 0 ? (
           <div className={c.filters}>
