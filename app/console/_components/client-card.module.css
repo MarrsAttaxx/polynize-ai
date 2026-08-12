@@ -751,6 +751,33 @@
   object-fit: cover;
   display: block;
 }
+
+/* EMBOSSED IN. Marrs: "can we add a little embossing so it looks like the image is
+   embossed into the card?"
+ *
+ * An inset shadow on .streamAvatar itself would paint UNDER the img, so it has to be a
+ * pseudo-element sitting above it.
+ *
+ * The lighting INVERTS for a recess. Everything raised in this design language is lit
+ * upper-left and shadowed lower-right; something pressed in is the opposite, because the
+ * near wall of the hollow is the one in shade. So: shade upper-left inside, and a lit
+ * lower-right lip. Get this backwards and the portrait pops out instead of sinking in. */
+.streamAvatar::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  pointer-events: none;
+  box-shadow:
+    inset 2px 2px 5px rgba(0, 0, 0, 0.55),
+    inset -1px -1px 3px rgba(255, 255, 255, 0.1);
+}
+
+:global(body.theme-light) .streamAvatar::after {
+  box-shadow:
+    inset 2px 2px 5px rgba(15, 40, 35, 0.28),
+    inset -1px -1px 3px rgba(255, 255, 255, 0.85);
+}
 .streamAvatarInitial {
   font-family: var(--font-space-grotesk), 'Space Grotesk', sans-serif;
   font-size: 22px;
@@ -760,22 +787,46 @@
 
 /* Brand-voice / asset card — sits at the right of the CTA row on a stream page.
    Green (mint) accent when set/ready, red (coral) when missing. */
+/* Marrs: "they're textured cards with a black outline. Can we change that to the other
+   type of card, which has the drop shadow at the bottom and the light at the top?"
+   The outline was --tac-edge-dark, which is rgba(0,0,0,.55) in the dark theme, so it
+   read as a drawn black line rather than as an edge. Gone: these are raised cards now,
+   same language as every other card, lit at the top and shadowed at the bottom. */
 .brandVoiceCard {
+  composes: tacCardTexture from global;
   display: flex;
   flex-direction: column;
   gap: 6px;
   max-width: 340px;
   min-width: 240px;
   text-decoration: none;
-  background: var(--tac-surface-2, var(--tac-surface));
-  border: 1px solid var(--tac-edge-dark, rgba(255, 255, 255, 0.1));
+  background:
+    radial-gradient(130% 100% at 18% 0%, rgba(255, 255, 255, 0.05), transparent 60%),
+    var(--tac-surface-2);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.09),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.34),
+    var(--tac-shadow-raised);
   border-radius: 12px;
   padding: 12px 16px;
-  transition: transform var(--tac-transition), border-color var(--tac-transition);
+  transition: transform var(--tac-transition), box-shadow var(--tac-transition);
+}
+
+:global(body.theme-light) .brandVoiceCard {
+  background:
+    radial-gradient(130% 100% at 18% 0%, rgba(255, 255, 255, 0.55), transparent 62%),
+    var(--tac-surface-2);
+  box-shadow:
+    inset 0 1px 0 var(--tac-edge-light),
+    inset 0 -1px 0 rgba(15, 40, 35, 0.1),
+    var(--tac-shadow-raised);
 }
 .brandVoiceCard:hover {
   transform: translateY(-1px);
-  border-color: rgba(105, 252, 203, 0.4);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    0 10px 22px rgba(0, 0, 0, 0.18),
+    var(--tac-shadow-raised);
 }
 .bvHead {
   display: flex;
