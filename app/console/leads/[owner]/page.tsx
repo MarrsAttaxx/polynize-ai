@@ -2,9 +2,10 @@ import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 import { getCurrentUser } from '@/lib/console-auth';
 import { listContacts, type CrmContact } from '@/lib/crm/contact-store';
+import { getNotifyMap, type NotifyMap } from '@/lib/crm/notify-store';
 import { CRM_STAGES, isCrmStage, isDue, sortForWork } from '@/lib/crm/model';
 import { STREAMS, streamLabel } from '@/lib/marketing/streams';
-import { AddContact, ContactRow } from '../CrmClient';
+import { AddContact, ContactRow, ImportEngagements, NotifyEditor } from '../CrmClient';
 import s from '../../_components/client-card.module.css';
 import c from '../crm.module.css';
 
@@ -52,6 +53,11 @@ export default async function OwnerCrmPage({
     loadError = 'Could not load this CRM. Nothing below is real.';
   }
 
+  // Separately, and tolerant of its own failure: not knowing the notify list must not stop
+  // the contacts rendering.
+  const notify =
+    (await getNotifyMap().catch((): NotifyMap => ({})))[owner] ?? [];
+
   const shown = sortForWork(filter ? contacts.filter((x) => x.stage === filter) : contacts);
   const perStage = new Map<string, number>();
   for (const x of contacts) perStage.set(x.stage, (perStage.get(x.stage) ?? 0) + 1);
@@ -82,6 +88,16 @@ export default async function OwnerCrmPage({
         {loadError ? <p className={c.error}>{loadError}</p> : null}
 
         <AddContact owner={owner} />
+
+        {/* Who hears about a new lead here. Marrs: "if a new lead comes in on Polynize,
+            Shourov and I get pinged on email." */}
+        <NotifyEditor owner={owner} recipients={notify} ownerLabel={streamLabel(owner)} />
+
+        {/* The old engagement roster, brought in as contacts. Polynize only, because those
+            records are inbound prospects for the business rather than anyone's personal
+            contacts, and offering it on all five would invite five copies of the same
+            people. */}
+        {inbound ? <ImportEngagements /> : null}
 
         {contacts.length > 0 ? (
           <div className={c.filters}>

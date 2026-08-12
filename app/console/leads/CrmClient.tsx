@@ -326,3 +326,164 @@ export function ContactRow({ contact }: { contact: CrmContact }) {
     </article>
   );
 }
+
+/**
+ * WHO GETS TOLD when a lead lands in this CRM.
+ *
+ * Free text rather than a repeating field, because it is edited about twice a year and
+ * pasting two addresses is the whole job. The store parses commas, newlines and
+ * semicolons, de-duplicates, and drops anything that is not an address.
+ */
+export function NotifyEditor({
+  owner,
+  recipients,
+  ownerLabel,
+}: {
+  owner: string;
+  recipients: string[];
+  ownerLabel: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const [raw, setRaw] = useState(recipients.join(', '));
+  const [busy, setBusy] = useState(false);
+  const [saved, setSaved] = useState<string[] | null>(null);
+  const [err, setErr] = useState<string | null>(null);
+
+  const current = saved ?? recipients;
+
+  const save = async () => {
+    if (busy) return;
+    setBusy(true);
+    setErr(null);
+    try {
+      const res = await fetch('/console/leads/notify', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ owner, recipients: raw }),
+      });
+      const b = (await res.json().catch(() => null)) as
+        | { recipients?: string[]; error?: string }
+        | null;
+      if (!res.ok) {
+        setErr(b?.error ?? 'Could not save that.');
+        return;
+      }
+      setSaved(b?.recipients ?? []);
+      setOpen(false);
+    } catch {
+      setErr('Network error. Try again.');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  if (!open) {
+    return (
+      <div className={c.notifyBar}>
+        <span className={c.notifyText}>
+          {current.length === 0 ? (
+            <>Nobody is told when a lead lands in {ownerLabel}.</>
+          ) : (
+            <>Pinged on a new lead: {current.join(', ')}</>
+          )}
+        </span>
+        <button type="button" className={c.notifyBtn} onClick={() => setOpen(true)}>
+          {current.length === 0 ? 'Add someone' : 'Change'}
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className={c.notifyBar}>
+      <div className={c.notifyEdit}>
+        <input
+          className={c.textInput}
+          value={raw}
+          onChange={(e) => setRaw(e.target.value)}
+          placeholder="name@example.com, someone@example.com"
+          aria-label={`Who to notify about new ${ownerLabel} leads`}
+          autoFocus
+        />
+        <button type="button" className={c.addBtn} onClick={() => void save()} disabled={busy}>
+          {busy ? 'Saving…' : 'Save'}
+        </button>
+        <button type="button" className={c.cancel} onClick={() => setOpen(false)}>
+          Cancel
+        </button>
+        {err ? <p className={c.formError}>{err}</p> : null}
+        <p className={c.notifyHint}>
+          Separate addresses with commas. Each person gets their own email, so nobody sees
+          the rest of the list. Leave it empty to turn the ping off.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Bring the old engagement roster in as contacts. Polynize only.
+ *
+ * Reports what it did rather than just succeeding, because "move my old leads in" is a
+ * one-way-feeling action and the useful answer is which ones needed a hand.
+ */
+export function ImportEngagements() {
+  const router = useRouter();
+  const [busy, setBusy] = useState(false);
+  const [result, setResult] = useState<string | null>(null);
+  const [reasons, setReasons] = useState<string[]>([]);
+
+  const run = async () => {
+    if (busy) return;
+    setBusy(true);
+    setResult(null);
+    setReasons([]);
+    try {
+      const res = await fetch('/console/leads/import-engagements', { method: 'POST' });
+      const b = (await res.json().catch(() => null)) as {
+        found?: number;
+        imported?: number;
+        alreadyThere?: number;
+        skipped?: number;
+        reasons?: string[];
+        error?: string;
+      } | null;
+      if (!res.ok) {
+        setResult(b?.error ?? 'Could not run the import.');
+        return;
+      }
+      const parts = [`${b?.imported ?? 0} brought in`];
+      if (b?.alreadyThere) parts.push(`${b.alreadyThere} already here`);
+      if (b?.skipped) parts.push(`${b.skipped} needs a hand`);
+      setResult(
+        (b?.found ?? 0) === 0
+          ? 'Nothing on the old roster is flagged as a lead, so there was nothing to bring in.'
+          : parts.join(' · ')
+      );
+      setReasons(b?.reasons ?? []);
+      router.refresh();
+    } catch {
+      setResult('Network error. Try again.');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className={c.importBar}>
+      <button type="button" className={c.notifyBtn} onClick={() => void run()} disabled={busy}>
+        {busy ? 'Importing…' : 'Import the old lead roster'}
+      </button>
+      <span className={c.notifyText}>
+        {result ?? 'Brings the engagement records the old Leads page showed in as contacts. Safe to run twice.'}
+      </span>
+      {reasons.length > 0 ? (
+        <ul className={c.importReasons}>
+          {reasons.map((r) => (
+            <li key={r}>{r}</li>
+          ))}
+        </ul>
+      ) : null}
+    </div>
+  );
+}

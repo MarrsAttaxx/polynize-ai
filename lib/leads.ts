@@ -1,4 +1,5 @@
 import { supabaseService } from './supabase';
+import { pingNewLead } from './crm/notify';
 
 /**
  * Lead capture for the polynize.ai capability blueprint funnel.
@@ -45,6 +46,29 @@ export async function captureLead(input: LeadInput): Promise<boolean> {
   // Touch updated_at on every upsert so re-submissions surface as recent.
   row.updated_at = new Date().toISOString();
 
+  /**
+   * IS THIS PERSON NEW? Asked BEFORE the upsert, because an upsert cannot tell you
+   * afterwards whether it inserted or updated, and the ping must only fire for someone
+   * genuinely new. Otherwise a returning visitor re-running the blueprint form would
+   * announce themselves again as a fresh lead, which is how a notification becomes noise
+   * and then gets muted.
+   *
+   * A failure to check is treated as "not new", so an unreadable table costs a
+   * notification rather than sending a false one.
+   */
+  let isNew = false;
+  try {
+    const { data } = await supabaseService()
+      .from('leads')
+      .select('id')
+      .eq('owner', 'polynize')
+      .eq('email', email)
+      .maybeSingle();
+    isNew = !data;
+  } catch {
+    isNew = false;
+  }
+
   try {
     const { error } = await supabaseService()
       .from('leads')
@@ -54,6 +78,26 @@ export async function captureLead(input: LeadInput): Promise<boolean> {
       // logged and swallowed. The blueprint still saved; the lead just did not.
       console.warn(`[leads.capture] lead not stored (${error.code ?? 'error'}): ${error.message}`);
       return false;
+    }
+
+    /**
+     * Ping whoever is on the Polynize notify list. AWAITED, not fired and forgotten: on
+     * a serverless function the response can end the invocation and kill an unawaited
+     * promise mid-flight, so a background send is a send that sometimes silently does not
+     * happen. pingNewLead never throws and returns quickly, and the lead is already
+     * committed by this point, so awaiting it cannot cost the lead.
+     */
+    if (isNew) {
+      const res = await pingNewLead({
+        owner: 'polynize',
+        email,
+        name: input.name,
+        business: input.business,
+        blueprintId: input.blueprintId,
+      });
+      console.log(
+        `[leads.capture] new lead ${email}; pinged ${res.sent}${res.skipped ? ` (${res.skipped})` : ''}`
+      );
     }
     return true;
   } catch (e) {
