@@ -3,7 +3,7 @@ import { addToEmailSet, getEmailSet } from './email-set-store';
 import { fetchRecentMeetings, isFirefliesConfigured, meetingsToCandidates, type Candidate } from './fireflies';
 import { getIgnored } from './ignored-store';
 import { getNotifyMap, type NotifyMap } from './notify-store';
-import { STREAMS, streamEmail, streamLabel } from '@/lib/marketing/streams';
+import { STREAMS, streamEmails, streamLabel } from '@/lib/marketing/streams';
 import { sendEmail } from '@/lib/resend-client';
 
 /**
@@ -47,8 +47,8 @@ export async function buildDigest(): Promise<DigestGroup[]> {
   const groups: DigestGroup[] = [];
   for (const st of STREAMS) {
     // Only CRMs that take meeting contacts, and only that person's meetings.
-    const mine = streamEmail(st.id);
-    if (!mine) continue;
+    const mine = streamEmails(st.id);
+    if (mine.length === 0) continue;
     const [existing, ignored, digested] = await Promise.all([
       listContacts(st.id).catch(() => []),
       getIgnored(st.id),

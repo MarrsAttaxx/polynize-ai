@@ -4,7 +4,7 @@ import { getCurrentUser } from '@/lib/console-auth';
 import { listContacts, type CrmContact } from '@/lib/crm/contact-store';
 import { getNotifyMap, type NotifyMap } from '@/lib/crm/notify-store';
 import { CRM_STAGES, isCrmStage, isDue, sortForWork } from '@/lib/crm/model';
-import { STREAMS, streamEmail, streamLabel } from '@/lib/marketing/streams';
+import { STREAMS, streamLabel, takesMeetingContacts } from '@/lib/marketing/streams';
 import { AddContact, AddOwner, ContactRow, FirefliesReview } from '../CrmClient';
 import s from '../../_components/client-card.module.css';
 import c from '../crm.module.css';
@@ -97,7 +97,7 @@ export default async function OwnerCrmPage({
           {/* Meetings become contacts, by review, and only that person's meetings. Not offered
               where the CRM has no owner address: Polynize's leads come from the website, and a
               meeting's contacts belong to whoever was in the meeting. */}
-          {streamEmail(owner) ? <FirefliesReview owner={owner} /> : null}
+          {takesMeetingContacts(owner) ? <FirefliesReview owner={owner} /> : null}
         </div>
 
         {contacts.length > 0 ? (

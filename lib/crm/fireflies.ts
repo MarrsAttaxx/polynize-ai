@@ -172,18 +172,24 @@ export function meetingsToCandidates(
     alreadyHave: Set<string>;
     internalDomains?: string[];
     /**
-     * Only consider meetings this person was in.
+     * Only consider meetings one of these addresses was in.
      *
      * Marrs: "Shourov's lead list is pulling my meetings not his." One API key sees the whole
      * team's meetings, so without this every CRM was offered the same set. Required rather
      * than optional in practice: a caller that forgets it gets everyone's meetings, which is
      * the bug this exists to fix.
+     *
+     * A LIST because a person's real address and the one their calendar puts in Fireflies are
+     * not always the same: Shourov is @polynize.io but appears as @polynize.com on some
+     * meetings. Any match counts.
      */
-    attendedBy?: string;
+    attendedBy?: string | string[];
   }
 ): Candidate[] {
   const domains = opts.internalDomains ?? INTERNAL_DOMAINS;
-  const who = opts.attendedBy?.trim().toLowerCase();
+  const whoList = (Array.isArray(opts.attendedBy) ? opts.attendedBy : opts.attendedBy ? [opts.attendedBy] : [])
+    .map((e) => e.trim().toLowerCase())
+    .filter((e) => e !== '');
   const out: Candidate[] = [];
   const seen = new Set<string>();
 
@@ -191,7 +197,12 @@ export function meetingsToCandidates(
     if (!m.id) continue;
     // Attendance is checked against BOTH lists plus the organiser, because the live data had
     // meetings where meeting_attendees was empty and only participants held the addresses.
-    if (who && !m.attendees.includes(who) && m.organizerEmail !== who) continue;
+    if (
+      whoList.length > 0 &&
+      !whoList.some((who) => m.attendees.includes(who) || m.organizerEmail === who)
+    ) {
+      continue;
+    }
     for (const email of m.attendees) {
       if (isInternal(email, domains)) continue;
       if (opts.alreadyHave.has(email)) continue;

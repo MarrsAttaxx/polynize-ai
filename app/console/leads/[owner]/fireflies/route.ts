@@ -22,7 +22,7 @@ import {
   notesFor,
   type Candidate,
 } from '@/lib/crm/fireflies';
-import { STREAMS, streamEmail } from '@/lib/marketing/streams';
+import { STREAMS, streamEmails } from '@/lib/marketing/streams';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -55,8 +55,8 @@ export async function GET(
    * CRM does not take meeting contacts at all (Polynize, which is website-inbound), rather
    * than silently falling back to everyone's.
    */
-  const mine = streamEmail(owner);
-  if (!mine) {
+  const mine = streamEmails(owner);
+  if (mine.length === 0) {
     return NextResponse.json(
       { error: 'This CRM does not take contacts from meetings. Its leads come from the website.' },
       { status: 400 }
@@ -141,8 +141,8 @@ export async function POST(
    * carries which EMAILS were ticked, so the notes and the transcript link come from
    * Fireflies again instead of from whatever the browser sent.
    */
-  const mine = streamEmail(owner);
-  if (!mine) {
+  const mine = streamEmails(owner);
+  if (mine.length === 0) {
     return NextResponse.json({ error: 'This CRM does not take contacts from meetings.' }, { status: 400 });
   }
 

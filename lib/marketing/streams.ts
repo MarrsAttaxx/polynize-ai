@@ -40,16 +40,28 @@ export const STREAMS = [
  * absent: it is the website-inbound CRM, and a meeting's contacts belong to the person who was
  * in the meeting. A stream with no address here is not offered the meeting pull at all.
  */
-export const STREAM_EMAILS: Record<string, string> = {
-  marrs: 'marrs@polynize.io',
-  shourov: 'shourov@polynize.com',
-  kristin: 'kristin@polynize.io',
-  julian: 'julian@polynize.io',
+/**
+ * A LIST PER PERSON, NOT ONE ADDRESS, because the two do not always agree. Marrs confirmed
+ * Shourov is `shourov@polynize.io`, but Fireflies recorded him as `shourov@polynize.com` on the
+ * Weekly Sync, as both attendee and organiser. Matching only the real address would have left
+ * his list empty for a second time; matching only what Fireflies showed would break if the
+ * alias stops being used. So both count, and adding an alias later is one entry.
+ */
+export const STREAM_EMAILS: Record<string, string[]> = {
+  marrs: ['marrs@polynize.io'],
+  shourov: ['shourov@polynize.io', 'shourov@polynize.com'],
+  kristin: ['kristin@polynize.io'],
+  julian: ['julian@polynize.io'],
 };
 
-/** The address whose meetings feed this CRM, if any. */
-export function streamEmail(id: string): string | undefined {
-  return STREAM_EMAILS[id];
+/** Every address whose meetings feed this CRM. Empty when the CRM takes no meeting contacts. */
+export function streamEmails(id: string): string[] {
+  return STREAM_EMAILS[id] ?? [];
+}
+
+/** True when this CRM takes contacts from meetings at all. */
+export function takesMeetingContacts(id: string): boolean {
+  return streamEmails(id).length > 0;
 }
 
 export const STREAM_AVATARS: Record<string, string> = {
