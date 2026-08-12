@@ -87,10 +87,7 @@ export default async function MarketingPage() {
               <Link
                 key={st.id}
                 href={`/console/marketing/stream/${st.id}`}
-                /* LEATHERED + GRAINED: the lifted face lives in this page's own module (see
-                   .leathered), the grain is the global tactile utility. Marrs is trying it here
-                   first; if it works it goes on every card. */
-                className={`${l.card} ${s.hasAvatar} ${s.leathered} tacCardTexture`}
+                className={`${l.card} ${s.hasAvatar}`}
               >
                 <span className={s.streamAvatar} aria-hidden>
                   {avatar ? (

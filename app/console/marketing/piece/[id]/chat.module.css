@@ -2,6 +2,8 @@
    below on narrow. Same tactile surface language as the Script screen. */
 
 .panel {
+  /* Leather grain, from tactile.css, so every card shares one definition. */
+  composes: tacCardTexture from global;
   display: flex;
   flex-direction: column;
   background: var(--tac-surface);

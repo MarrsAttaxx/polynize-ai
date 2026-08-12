@@ -19,6 +19,8 @@
   padding: 64px 20px;
 }
 .gateCard {
+  /* Leather grain, from tactile.css, so every card shares one definition. */
+  composes: tacCardTexture from global;
   width: 100%;
   max-width: 480px;
   padding: 36px 36px 32px;

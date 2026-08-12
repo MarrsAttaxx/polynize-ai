@@ -245,11 +245,30 @@ body.theme-light[data-depth='tactile'] .tacCardTexture::after {
 
 **Grain alone is not enough.** The complaint that prompted this was contrast: the card
 was `--tac-surface` on a `--tac-bg` page, a step small enough to read as no step, so
-grain would only have textured an invisible card. Pair the grain with a lifted face
-(`--tac-surface-2` plus a top-left sheen) and lit/shaded edges. In the console that
-half lives in `client-card.module.css` as `.leathered`, deliberately doubled
-(`.leathered.leathered`) so it outranks `launcher.module.css`'s own `.card`
-`background` regardless of module import order.
+grain would only have textured an invisible card. So a leathered card is two things —
+the grain, plus a **lifted face**: `--tac-surface-2`, a top-left sheen, and lit/shaded
+inset edges.
+
+**How it is applied across the console.** The grain comes from one definition via CSS
+Modules `composes`, so no card carries a copy:
+
+```css
+.card {
+  composes: tacCardTexture from global; /* must be the first declaration */
+  /* ...then the lifted face: background + inset edges... */
+}
+```
+
+Applied to the card and panel surfaces in `app/console/**`: the launcher and
+client cards, the concept doc/outputs/prezie cards, the library, chat and media
+panels, the prezie columns, and the sign-in gate. The lifted face is only on the two
+top-level `.card` rules (`launcher`, `client-card`), because those are the ones sitting
+directly on the page background; nested panels already have context around them.
+
+**Deliberately not grained:** textareas (`.script`, `.transcript`) where texture sits
+behind live text, media thumbnails where it fights the image, and progress bars. Also
+not the client-facing blueprint pages or the public site, which are separate design
+contexts.
 
 ---
 

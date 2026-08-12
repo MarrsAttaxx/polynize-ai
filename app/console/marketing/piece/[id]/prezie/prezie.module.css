@@ -20,6 +20,8 @@
   min-width: 0;
 }
 .scriptCol {
+  /* Leather grain, from tactile.css, so every card shares one definition. */
+  composes: tacCardTexture from global;
   background: var(--tac-surface);
   border-radius: 16px;
   padding: 18px 20px;
@@ -74,6 +76,8 @@
 
 /* One card per slide: only the two things a human decides. */
 .card {
+  /* Leather grain, from tactile.css, so every card shares one definition. */
+  composes: tacCardTexture from global;
   background: var(--tac-surface);
   border-radius: 14px;
   padding: 14px 16px 16px;
@@ -255,6 +259,8 @@
 
 /* THE BUILT DECK: pick a state, see it, say what to change about that one. */
 .deckPanel {
+  /* Leather grain, from tactile.css, so every card shares one definition. */
+  composes: tacCardTexture from global;
   margin-top: 22px;
   background: var(--tac-surface);
   border-radius: 16px;

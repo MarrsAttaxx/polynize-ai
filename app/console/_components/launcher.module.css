@@ -10,15 +10,26 @@
 }
 
 .card {
+  /* Leather grain, from tactile.css, so every card shares one definition. */
+  composes: tacCardTexture from global;
   position: relative;
   display: flex;
   flex-direction: column;
   gap: 8px;
   text-decoration: none;
   color: inherit;
-  background: var(--tac-surface);
+  /* THE LIFTED FACE. Was --tac-surface (#1c1c27) on a --tac-bg page (#161620), a step
+     small enough to read as none: "the cards are the same colour as the background".
+     Lifted to surface-2 with a top-left sheen and lit/shaded edges, so the grain has an
+     actual surface to sit on. */
+  background:
+    radial-gradient(130% 100% at 18% 0%, rgba(255, 255, 255, 0.05), transparent 60%),
+    var(--tac-surface-2);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.09),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.34),
+    var(--tac-shadow-raised);
   border-radius: 18px;
-  box-shadow: var(--tac-shadow-raised);
   padding: 28px 30px 24px;
   min-height: 158px;
   transition:
@@ -30,6 +41,19 @@
   transform: translateY(-2px);
   box-shadow: 0 12px 28px rgba(0, 0, 0, 0.18), var(--tac-shadow-raised);
 }
+
+/* On cream the sheen would be white on near-white, and a black bottom edge reads as
+   grime rather than shadow, so the light theme uses its own edge tokens. */
+:global(body.theme-light) .card {
+  background:
+    radial-gradient(130% 100% at 18% 0%, rgba(255, 255, 255, 0.55), transparent 62%),
+    var(--tac-surface-2);
+  box-shadow:
+    inset 0 1px 0 var(--tac-edge-light),
+    inset 0 -1px 0 rgba(15, 40, 35, 0.1),
+    var(--tac-shadow-raised);
+}
+
 
 /* Marketing — featured: spans both columns, taller, mint ring + glow. */
 .cardFeatured {

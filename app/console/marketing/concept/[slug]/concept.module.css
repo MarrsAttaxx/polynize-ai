@@ -165,6 +165,8 @@
 }
 
 .outputs {
+  /* Leather grain, from tactile.css, so every card shares one definition. */
+  composes: tacCardTexture from global;
   margin: 0 0 26px;
   padding: 18px 20px;
   border-radius: 16px;
@@ -241,6 +243,8 @@
 }
 
 .doc {
+  /* Leather grain, from tactile.css, so every card shares one definition. */
+  composes: tacCardTexture from global;
   background: var(--tac-surface);
   border-radius: 18px;
   box-shadow: var(--tac-shadow-raised);
@@ -339,6 +343,8 @@
   flex-wrap: wrap;
 }
 .prezieCard {
+  /* Leather grain, from tactile.css, so every card shares one definition. */
+  composes: tacCardTexture from global;
   display: flex;
   flex-direction: column;
   gap: 5px;

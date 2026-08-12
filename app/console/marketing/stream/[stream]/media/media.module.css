@@ -238,6 +238,8 @@
 
 /* ---- Generate with AI panel ---- */
 .genPanel {
+  /* Leather grain, from tactile.css, so every card shares one definition. */
+  composes: tacCardTexture from global;
   background: var(--tac-surface);
   border: 1px solid var(--tac-edge-dark, rgba(255, 255, 255, 0.1));
   border-radius: 16px;
