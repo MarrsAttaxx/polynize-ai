@@ -123,25 +123,44 @@ const CHART = { top: 66, gap: 84 };
 /** Three tiers: one at the top, three beneath, five beneath that. */
 const TIERS = [1, 3, 5];
 
+/**
+ * Box centres and the reporting lines between them.
+ *
+ * THE GEOMETRY BUG THIS FIXES IS WORTH NAMING, because it is easy to reintroduce. `y` here
+ * is a box CENTRE, not its top. The first version placed the bus at `y - 16` and ran each
+ * stub from `y` up to it, which put the whole wiring 11px INSIDE a 54-tall box: the bus cut
+ * horizontally through every box in its row and the spine ran straight down through the
+ * middle column (Marrs, 12 Aug 2026). Every offset below is expressed against an EDGE
+ * (`y - BOX_H / 2`) for exactly that reason. No line should ever enter a box.
+ *
+ * The bus sits centred in the empty band between two tiers, so:
+ *   band top    = parent centre + BOX_H / 2
+ *   band bottom = child centre  - BOX_H / 2
+ *   bus         = midway between them
+ */
+const BUS_DROP = BOX_H / 2 + (CHART.gap - BOX_H) / 2;
+
 const ORG = (() => {
   const boxes: { x: number; y: number }[] = [];
   const lines: string[] = [];
   TIERS.forEach((n, tier) => {
     const y = CHART.top + tier * CHART.gap;
     const span = 1000;
+    const busY = y - BUS_DROP;
     for (let i = 0; i < n; i++) {
       const x = span * ((i + 0.5) / n);
       boxes.push({ x, y });
-      if (tier > 0) {
-        // A stub up to the bus, and the bus itself, so it reads as reporting lines.
-        lines.push(`M ${f(x)} ${f(y)} V ${f(y - 16)}`);
-      }
+      // A drop from the bus down to this box's TOP EDGE. It stops there; it does not
+      // continue into the box.
+      if (tier > 0) lines.push(`M ${f(x)} ${f(busY)} V ${f(y - BOX_H / 2)}`);
     }
     if (tier > 0) {
+      // The bus, spanning the outermost children in this tier.
       const first = span * (0.5 / n);
       const last = span * ((n - 0.5) / n);
-      lines.push(`M ${f(first)} ${f(y - 16)} H ${f(last)}`);
-      lines.push(`M 500 ${f(y - 16)} V ${f(y - CHART.gap + BOX_H / 2)}`);
+      lines.push(`M ${f(first)} ${f(busY)} H ${f(last)}`);
+      // And the spine, from the bus up to the parent row's BOTTOM EDGE.
+      lines.push(`M 500 ${f(busY)} V ${f(y - CHART.gap + BOX_H / 2)}`);
     }
   });
   return { boxes, lines: lines.join(' ') };

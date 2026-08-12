@@ -899,8 +899,16 @@
 
    Four patterns assigned by index so no two neighbours move together. Small amplitudes on
    purpose: this is a structure being reconsidered, not a structure falling over. */
+/* OPAQUE, not translucent, and that is the whole fix.
+
+   The fill was 4% mint over `transparent`, so the page's dashed route was visible straight
+   THROUGH the boxes and a bright mint diagonal appeared to run inside the chart as if it
+   were part of the wiring (Marrs, 12 Aug 2026). .figBand already sits above .rail in the
+   stacking order, so the route was never painted on top of the boxes; it was showing
+   through them. Mixing over --bg-deep instead of over transparent keeps the same tint and
+   occludes what is behind. A card on a chart is opaque. */
 .hudOrgBox {
-  fill: color-mix(in srgb, var(--mint) 4%, transparent);
+  fill: color-mix(in srgb, var(--mint) 5%, var(--bg-deep, #0f0f17));
   stroke: var(--hud-2);
   stroke-width: 1.5;
 }
