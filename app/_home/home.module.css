@@ -265,6 +265,17 @@
   background: var(--bg-deep);
   box-shadow: var(--inset-soft);
 }
+/* A mark between a section's eyebrow and its h2. Left-aligned, because every section head
+   on this page is: a centred glyph over left-aligned type reads as a mistake. */
+.dcSectionGlyph {
+  display: block;
+  margin: 4px 0 14px;
+  color: var(--mint);
+  line-height: 0;
+  opacity: 0.9;
+}
+.dcSectionGlyph svg { display: block; }
+
 .dcH2 {
   font-size: clamp(32px, 3.6vw, 48px);
   font-weight: 600;
@@ -729,6 +740,9 @@
   gap: 18px;
 }
 .dcHowGrid3 { grid-template-columns: repeat(3, 1fr); }
+/* Two-up. Used where the story genuinely has two halves and padding it to three or four
+   would invent a third. */
+.dcSplitGrid { grid-template-columns: repeat(2, 1fr); max-width: 860px; margin: 0 auto; }
 .dcHowCard {
   position: relative;
   padding: 28px 26px 30px;
@@ -1012,6 +1026,7 @@
   .dcEqCard { max-width: 220px; }
   .dcHowGrid { grid-template-columns: repeat(2, 1fr); }
   .dcHowGrid3 { grid-template-columns: 1fr; }
+  .dcSplitGrid { grid-template-columns: 1fr; }
   .dcPodGrid { grid-template-columns: 1fr; }
   .dcMapMeta { grid-template-columns: 1fr; gap: 18px; }
   .dcMidCta { grid-template-columns: 1fr; }
@@ -1115,4 +1130,97 @@
   0% { box-shadow: 0 0 0 0 rgba(105, 252, 203, 0.5); }
   70% { box-shadow: 0 0 0 9px rgba(105, 252, 203, 0); }
   100% { box-shadow: 0 0 0 0 rgba(105, 252, 203, 0); }
+}
+
+
+/* ---------- The minimal team shape (homepage, "what the map led to") ----------
+   The full dossier diagram still lives in app/_components/AjTeamDiagram.tsx and is what
+   the Console dashboard renders. This is the shape only: photographs and paragraphs made
+   the agentic half of that section visually outweigh the human half beside it, which is
+   the imbalance the section was rewritten to fix.
+
+   Coral is the human and mint is an agent. That is the token contract across the whole
+   site and it is not a local styling choice. */
+.miniTeam {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 30px 20px 34px;
+  border-radius: 18px;
+  background: var(--surface);
+  box-shadow: var(--raise);
+}
+.miniCaption {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  margin-bottom: 22px;
+}
+.miniNode {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-width: 150px;
+  padding: 11px 18px;
+  border: 1px solid color-mix(in srgb, var(--mint) 36%, transparent);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--mint) 5%, transparent);
+}
+.miniHuman {
+  border-color: color-mix(in srgb, var(--coral) 46%, transparent);
+  background: color-mix(in srgb, var(--coral) 6%, transparent);
+}
+.miniName {
+  font-family: var(--font-space-grotesk), sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+}
+.miniRole { font-size: 11.5px; color: var(--text-3); }
+.miniHuman .miniRole { color: var(--coral); }
+
+.miniStem {
+  width: 1px;
+  height: 20px;
+  background: color-mix(in srgb, var(--mint) 34%, transparent);
+}
+/* One bus with three drops. Three cards in a row with no wiring read as a list; the
+   wiring is what makes it a team. */
+.miniBus {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  width: 100%;
+  max-width: 540px;
+  height: 20px;
+}
+.miniBusLine {
+  position: absolute;
+  top: 0;
+  left: 16.66%;
+  right: 16.66%;
+  height: 1px;
+  background: color-mix(in srgb, var(--mint) 34%, transparent);
+}
+.miniDrop {
+  justify-self: center;
+  width: 1px;
+  height: 100%;
+  background: color-mix(in srgb, var(--mint) 34%, transparent);
+}
+.miniRow {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  width: 100%;
+  max-width: 540px;
+}
+.miniRow .miniNode { min-width: 0; padding: 11px 10px; }
+
+@media (max-width: 620px) {
+  .miniBus { display: none; }
+  .miniRow { grid-template-columns: 1fr; }
 }

@@ -1,13 +1,14 @@
 import Link from 'next/link';
 import s from './_home/home.module.css';
 import { CapabilityMapPreview } from './_home/CapabilityMapPreview';
-import { AjTeamDiagram } from './_components/AjTeamDiagram';
 import { DraftingGrid } from './_components/DraftingGrid';
 import { TrackedLink } from './_components/TrackedLink';
 
 const BOOKING_URL = 'https://calendar.app.google/rw8Vpd7BkJh5wwig9';
 const POLYNIZE_IO = 'https://polynize.io';
 const YOUTUBE_CHANNEL = 'https://www.youtube.com/@polynize.agentic';
+/** Episode 6. Featured because it is the one that explains capability mapping. */
+const EP06_URL = 'https://youtu.be/Xq_Hoyx_ccg';
 const LINKEDIN_URL = 'https://www.linkedin.com/company/polynize';
 const INSTAGRAM_URL = 'https://www.instagram.com/polynize.ai';
 
@@ -38,7 +39,7 @@ export default function HomePage() {
         <DirCAjQuoteProblem />
         {/* Act 2 — we mapped the business */}
         <DirCMapHero />
-        {/* Act 3 — the team that emerges */}
+        {/* Act 3 — what the map led to: enablement and deployment */}
         <DirCAjTeam />
         {/* Act 4 — the result */}
         <DirCAjQuoteResult />
@@ -92,9 +93,7 @@ function DirCHero() {
         <br />
         <span className={s.dcMintEmph}>amplified.</span>
       </h1>
-      <p className={s.dcLede}>
-        We build the human capability that makes an AI economy work.
-      </p>
+      <p className={s.dcLede}>We build human capability that drives the AI economy.</p>
 
       <div className={s.dcCtaRow}>
         <TrackedLink
@@ -139,15 +138,36 @@ const MODEL_STEPS = [
   },
 ];
 
+/**
+ * A folded map, line art at a single weight. Drawn rather than imported so it sits in the
+ * same vocabulary as the rest of the site's marks: three panels with the fold creases
+ * visible, a route across it, and a pin where the route ends.
+ */
+function MapGlyph() {
+  return (
+    <span className={s.dcSectionGlyph} aria-hidden="true">
+      <svg viewBox="0 0 48 40" width="44" height="37" fill="none">
+        <g stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" strokeLinecap="round">
+          <path d="M2 9l15-6 14 6 15-6v28l-15 6-14-6-15 6z" />
+          <path d="M17 3v28M31 9v28" opacity="0.55" />
+          <path d="M9 24c5-6 9 2 14-4s8 1 12-4" strokeDasharray="2.5 3.5" opacity="0.8" />
+        </g>
+        <circle cx="35" cy="16" r="3" fill="currentColor" />
+      </svg>
+    </span>
+  );
+}
+
 function DirCModelling() {
   return (
     <section className={s.dcSection}>
       <div className={s.dcSectionHead}>
         <div className={s.dcSectionEyebrow}>Our methodology</div>
+        <MapGlyph />
         <h2 className={s.dcH2}>
           It starts with
           <br />
-          <span className={s.dcMintEmph}>capability modelling.</span>
+          <span className={s.dcMintEmph}>capability mapping.</span>
         </h2>
         <p className={s.dcSectionLede}>
           Before anything gets built, we model the work. Where your capability sits today, what good
@@ -219,7 +239,7 @@ function DirCMapHero() {
 
       <div className={s.dcMidCta}>
         <div className={s.dcMidCtaText}>
-          <div className={s.dcMidCtaTitle}>Get your capability blueprint.</div>
+          <div className={s.dcMidCtaTitle}>Start mapping your team&apos;s capabilities.</div>
           <div className={s.dcMidCtaSub}>
             Eight questions about the work. A blueprint you can share with your team.
           </div>
@@ -273,26 +293,116 @@ function DirCAjQuoteProblem() {
 
 /* ---------- Act 3: AJ's team at Optio Capital ---------- */
 
+/**
+ * What the map led to, and it is deliberately TWO things.
+ *
+ * This section used to be "the team that emerged" and showed only the agents, which told
+ * a purely agentic story: map the work, get robots. That is half of what actually
+ * happened and the wrong half to lead with for a company whose thesis is human capability
+ * (Marrs, 12 Aug 2026). Once the work is mapped, two things follow, and enablement comes
+ * first because the sequence is load-bearing: you train people for the work the map says
+ * stays theirs, then you build agents around them.
+ *
+ * The team diagram survives, shrunk to its shape. It is evidence that agents were in fact
+ * built, sitting under the half of the story it belongs to, rather than being the story.
+ */
+const OUTCOMES = [
+  {
+    n: '01',
+    t: 'Capability enablement',
+    d: 'Train our staff on the work they actually need to do, now that we know the work.',
+  },
+  {
+    n: '02',
+    t: 'Capability deployment',
+    d: 'Build the agentic tech to scale our business.',
+  },
+];
+
 function DirCAjTeam() {
   return (
     <section className={s.dcSection}>
       <div className={s.dcSectionHead}>
-        <div className={s.dcSectionEyebrow}>The team that emerged</div>
+        <div className={s.dcSectionEyebrow}>What the map led to</div>
         <h2 className={s.dcH2}>
-          AJ&apos;s team
+          Two things happened
           <br />
           at <span className={s.dcMintEmph}>Optio Capital.</span>
         </h2>
         <p className={s.dcSectionLede}>
-          One human at the centre, amplified. AJ still owns every judgment call that matters. The
-          agents carry the groundwork around him so his attention lands where it counts.
+          Mapping the work does not hand you a pile of agents. It tells you which capabilities have
+          to stay with your people and get sharper, and which ones can be built and scaled. AJ got
+          both, in that order.
         </p>
       </div>
 
+      <div className={`${s.dcHowGrid} ${s.dcSplitGrid}`}>
+        {OUTCOMES.map((o) => (
+          <div key={o.n} className={s.dcHowCard}>
+            <div className={s.dcHowNum}>{o.n}</div>
+            <div className={s.dcHowTitle}>{o.t}</div>
+            <div className={s.dcHowDesc}>{o.d}</div>
+          </div>
+        ))}
+      </div>
+
       <div className={s.ajWrap}>
-        <AjTeamDiagram caption="AJ's team at Optio Capital" />
+        <AjTeamMini />
       </div>
     </section>
+  );
+}
+
+/**
+ * The team, reduced to its shape. Names and roles, nothing else.
+ *
+ * The full dossier version (app/_components/AjTeamDiagram.tsx) is still what the Console
+ * dashboard shows, and it stays there. Here it was doing too much work: photographs and
+ * paragraphs for four agents made the agentic half of the story visually outweigh the
+ * human half sitting beside it, which is the exact imbalance this section was rewritten
+ * to fix. Shape only.
+ */
+const MINI_TEAM = [
+  { name: 'Duke', role: 'Investment Analyst' },
+  { name: 'Bec', role: 'Research Analyst' },
+  { name: 'Verity', role: 'Legal & Compliance' },
+];
+
+function AjTeamMini() {
+  return (
+    <div className={s.miniTeam} aria-label="AJ's agent team at Optio Capital">
+      <div className={s.miniCaption}>The agents built around him</div>
+
+      <div className={`${s.miniNode} ${s.miniHuman}`}>
+        <span className={s.miniName}>AJ</span>
+        <span className={s.miniRole}>Partner</span>
+      </div>
+      <div className={s.miniStem} aria-hidden="true" />
+
+      <div className={s.miniNode}>
+        <span className={s.miniName}>Flow</span>
+        <span className={s.miniRole}>Team Leader</span>
+      </div>
+      <div className={s.miniStem} aria-hidden="true" />
+
+      {/* One bus with three drops, so the fan-out reads as reporting lines rather than as
+          three cards that happen to sit in a row. */}
+      <div className={s.miniBus} aria-hidden="true">
+        <span className={s.miniBusLine} />
+        <span className={s.miniDrop} />
+        <span className={s.miniDrop} />
+        <span className={s.miniDrop} />
+      </div>
+
+      <div className={s.miniRow}>
+        {MINI_TEAM.map((a) => (
+          <div key={a.name} className={s.miniNode}>
+            <span className={s.miniName}>{a.name}</span>
+            <span className={s.miniRole}>{a.role}</span>
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }
 
@@ -313,8 +423,8 @@ function DirCAjQuoteResult() {
       <AjQuoteCard
         body={
           <>
-            The first day I worked with our agent team was the best day of work I had in nine
-            months.
+            The first day we worked with our new structure was the best day of work we had in
+            nine months.
           </>
         }
       />
@@ -527,39 +637,48 @@ function DirCPodcast() {
       <div className={s.dcPodGrid}>
         <TrackedLink
           className={s.dcPodFeat}
-          href={YOUTUBE_CHANNEL}
+          href={EP06_URL}
           external
           event="cta_click"
-          eventProps={{ surface: 'home_podcast', label: 'youtube_channel' }}
-          aria-label="Watch Think Better Podcast Episode 5 on YouTube"
+          eventProps={{ surface: 'home_podcast', label: 'episode_06' }}
+          aria-label="Watch episode 6, How to Map Your Organisation's Capabilities with Polynize, on YouTube"
         >
           <div className={s.dcPodThumb}>
+            {/* sddefault, not maxresdefault: YouTube has generated no maxres or hq720 for
+                this upload (both 404), so sddefault at 640x480 is the largest that exists.
+                It is a 4:3 frame with black bars, which object-fit: cover on a 16:9 box
+                crops back off. Served from YouTube's CDN rather than copied into /public;
+                copy it into /public/assets if the homepage should make no third-party
+                requests. */}
             <img
-              src="/assets/podcast-thumbnail.jpg"
-              alt="The Future of Agentic AI · Think Better Podcast Ep05"
+              src="https://i.ytimg.com/vi/Xq_Hoyx_ccg/sddefault.jpg"
+              alt="How to Map Your Organisation's Capabilities with Polynize, episode 6"
               className={s.dcPodThumbImg}
+              loading="lazy"
             />
             <div className={s.dcPodPlay} aria-hidden>
               <svg viewBox="0 0 24 24" width="22" height="22">
                 <path d="M8 5v14l11-7z" fill="currentColor" />
               </svg>
             </div>
-            <div className={s.dcPodRuntime}>44:49</div>
+            <div className={s.dcPodRuntime}>9:21</div>
           </div>
           <div className={s.dcPodMeta}>
-            <div className={s.dcPodTag}>Latest episode 5</div>
-            <div className={s.dcPodTitle}>Why Your First Agent Changes Everything</div>
+            <div className={s.dcPodTag}>Latest episode 6</div>
+            <div className={s.dcPodTitle}>
+              How to Map Your Organisation&apos;s Capabilities with Polynize
+            </div>
             <div className={s.dcPodDesc}>
-              Marrs and Shourov go deep on the cognitive layer, the thinking framework that gets
-              installed into an agent.
+              Why the systems inside most organisations stopped matching the way people actually
+              work, and why that gap is the real risk in adopting AI.
             </div>
           </div>
         </TrackedLink>
 
         <div className={s.dcPodSide}>
+          <PodMini ep="05" run="44:49" t="Why Your First Agent Changes Everything" />
           <PodMini ep="04" run="1:09:30" t="The Missing Layer Between Your Brain and AI" />
           <PodMini ep="03" run="1:03:55" t="The Only Thing to Stop the AI Bubble Bursting" />
-          <PodMini ep="02" run="1:00:36" t="How to Think Like a Machine and Learn Like a Human" />
           <TrackedLink
             className={s.dcPodAll}
             href={YOUTUBE_CHANNEL}

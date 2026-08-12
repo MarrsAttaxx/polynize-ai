@@ -76,12 +76,6 @@ export function CapabilityMapPreview() {
       <div className={s.dcMapFrame}>
         <div className={s.dcMapStrip} />
 
-        {/* Deliberately not attributed to a named customer: the moves and totals
-            below are illustrative, so they must not read as a real client's data. */}
-        <div className={s.dcMapIdent}>
-          <div className={s.dcMapIdentText}>Sample capability blueprint.</div>
-        </div>
-
         <div className={s.dcMapMeta}>
           <div>
             <div className={s.dcMapMetaK}>Bottleneck</div>
