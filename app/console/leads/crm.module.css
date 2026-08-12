@@ -276,8 +276,7 @@
 }
 
 /* ---- who gets pinged, and the one-off import ---- */
-.notifyBar,
-.importBar {
+.notifyBar {
   display: flex;
   align-items: center;
   gap: 12px;
@@ -326,12 +325,4 @@
   font-size: 12px;
   line-height: 1.5;
   color: var(--text-3);
-}
-.importReasons {
-  width: 100%;
-  margin: 4px 0 0;
-  padding-left: 18px;
-  font-size: 12px;
-  line-height: 1.6;
-  color: var(--coral);
 }
