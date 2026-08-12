@@ -20,6 +20,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import type { MarketingPiece } from '@/lib/marketing/piece-store';
 import { ChatPanel } from './ChatPanel';
+import { ReadyToRecord } from '../../../studio/ShootRowActions';
 import { StageRail } from './StageRail';
 import { PieceDeleteButton } from './PieceDeleteButton';
 import { MediaPicker } from './MediaPicker';
@@ -227,6 +228,9 @@ export function ScriptScreen({
           </div>
         </div>
         <div className={s.headRight}>
+          {/* QUEUE IT FOR THE STUDIO. Here as well as on the Prezie stage, because a piece with no prezie
+              never visits that stage and would otherwise have no way into the shoot queue at all. */}
+          <ReadyToRecord pieceId={initial.piece_id} ready={Boolean(initial.shoot_ready)} />
           <Link
             href={`/console/marketing/piece/${initial.piece_id}/teleprompter`}
             className={s.prompterLink}

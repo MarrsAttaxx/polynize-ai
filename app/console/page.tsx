@@ -21,6 +21,18 @@ const SECTIONS = [
     featured: true,
   },
   {
+    /**
+     * THE STUDIO, second only to Marketing, because it is opened while standing in a room with the
+     * cameras already up. Anything that takes two taps to reach from the front door is a tap too many
+     * when the lights are on.
+     */
+    href: '/console/studio',
+    eyebrow: 'Shoot',
+    title: 'Studio',
+    desc: 'What is ready to record, grouped by rig. Prezie on the screen, script on the iPad, shoot it, next.',
+    featured: false,
+  },
+  {
     href: '/console/leads',
     eyebrow: 'Inbound',
     title: 'Leads',

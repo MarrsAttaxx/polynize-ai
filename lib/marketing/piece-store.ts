@@ -80,6 +80,21 @@ export type MarketingPiece = {
    * prose `treatment` brief, which is kept only so older pieces are not orphaned.
    */
   slides?: string;
+  /**
+   * READY TO RECORD: this piece is queued for the next studio session.
+   *
+   * Marrs described the gap: "once I'm done with the Prezi and I'm ready to go into record stage, I need
+   * a button somewhere... it puts it into a cue somewhere." The queue is CROSS-STREAM by design, because
+   * a studio session is one room and one rig, not one brand: his Polynize split-screen and his Marrs
+   * piece get shot back to back.
+   *
+   * A flag on the piece rather than a separate queue object, so it cannot drift from the piece it points
+   * at, and so deleting a piece cannot leave a row in a queue pointing at nothing.
+   */
+  shoot_ready?: boolean;
+  shoot_ready_at?: string;
+  /** When it was actually shot. Set by the Recorded button, which also advances the stage. */
+  recorded_at?: string;
   /** Attached media asset ids from this stream's media library (D2 amended
    *  2026-07-14). References into media-store; resolved to public URLs at publish
    *  time. Optional so existing pieces stay valid (isValidPiece unchanged). */

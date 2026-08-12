@@ -28,6 +28,7 @@ import type { MarketingPiece } from '@/lib/marketing/piece-store';
 import { scriptSections } from '@/lib/marketing/script-sections';
 import { StageRail } from '../StageRail';
 import { BackLink } from '@/app/console/marketing/_components/BackLink';
+import { ReadyToRecord } from '@/app/console/studio/ShootRowActions';
 import s from '../script.module.css';
 import d from './prezie.module.css';
 
@@ -1434,6 +1435,9 @@ export function PrezieScreen({
             >
               Open on the touchscreen ↗
             </a>
+            {/* THE HANDOVER TO THE STUDIO. Here rather than on a settings page, because this is the
+                moment he decides it is done: the prezie is on screen and he has just watched it. */}
+            <ReadyToRecord pieceId={initial.piece_id} ready={Boolean(initial.shoot_ready)} />
           </div>
 
           <div className={d.chips} hidden={Boolean(open.figures)}>

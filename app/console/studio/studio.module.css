@@ -1,0 +1,237 @@
+/**
+ * The studio page is read STANDING UP, at arm's length, in a room with the lights set for camera.
+ *
+ * So it is deliberately bigger and plainer than the rest of the console: large touch targets, high
+ * contrast, no hover-only affordances, and nothing that needs a second look. Everything here is sized for
+ * "glance, press, turn around", not for reading at a desk.
+ */
+
+.count {
+  margin: 8px 0 0;
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 14px;
+  letter-spacing: 0.06em;
+  color: var(--mint);
+}
+.empty {
+  margin: 24px 0 0;
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--text-2);
+  max-width: 60ch;
+}
+.empty strong {
+  color: var(--mint);
+  font-weight: 600;
+}
+
+.group {
+  margin-top: 34px;
+}
+.groupHead {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(244, 236, 228, 0.14);
+}
+.groupTitle {
+  margin: 0;
+  font-size: 20px;
+  color: var(--text);
+}
+.groupMeta {
+  margin-left: auto;
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+
+/* One take per row: what it is on the left, the iPad's way in on the right. */
+.row {
+  display: flex;
+  gap: 20px;
+  align-items: center;
+  padding: 18px 0;
+  border-bottom: 1px solid rgba(244, 236, 228, 0.08);
+}
+.rowMain {
+  flex: 1;
+  min-width: 0;
+}
+.rowHead {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+/* Which voice he is in. First, because it changes how he speaks before it changes anything else. */
+.stream {
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--amber);
+  border: 1px solid rgba(240, 184, 107, 0.4);
+  border-radius: 999px;
+  padding: 3px 9px;
+  flex: none;
+}
+.rowTitle {
+  margin: 0;
+  font-size: 19px;
+  line-height: 1.25;
+  color: var(--text);
+}
+.words {
+  margin-left: auto;
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: var(--text-3);
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 14px;
+}
+
+/* Big, because these are pressed while standing and looking at something else. */
+.bigBtn,
+.btn,
+.recordBtn {
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 13px;
+  border-radius: 11px;
+  padding: 13px 18px;
+  cursor: pointer;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.bigBtn {
+  color: var(--ink, #0a0a0f);
+  background: var(--mint);
+  border: 1px solid var(--mint);
+  font-weight: 600;
+}
+.btn {
+  color: var(--mint);
+  background: rgba(105, 252, 203, 0.08);
+  border: 1px solid rgba(105, 252, 203, 0.45);
+}
+/* Recorded is the last thing pressed, so it reads as a completion rather than an action. */
+.recordBtn {
+  margin-left: auto;
+  color: var(--gold, #f0e1b6);
+  background: transparent;
+  border: 1px solid rgba(240, 225, 182, 0.45);
+}
+.recordBtn:hover:not(:disabled) {
+  background: rgba(240, 225, 182, 0.1);
+}
+.recordBtn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.recorded {
+  margin-left: auto;
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--mint);
+}
+.quiet {
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: var(--text-3);
+  text-decoration: none;
+}
+.quiet:hover {
+  color: var(--text);
+}
+.warn {
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: var(--coral);
+}
+
+/* The QR, big enough for an iPad to catch it from across a desk without being a feature of the page. */
+.qr {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+}
+.qrCode svg {
+  display: block;
+  width: 116px;
+  height: 116px;
+  border-radius: 8px;
+}
+.qrLabel {
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+.qrFallback {
+  display: block;
+  max-width: 180px;
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 10px;
+  line-height: 1.4;
+  color: var(--text-3);
+  word-break: break-all;
+}
+
+/* The queue button, which lives on the piece's own stage rather than here. */
+.queueBtn,
+.queuedBtn {
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 12px;
+  border-radius: 10px;
+  padding: 10px 15px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.queueBtn {
+  color: var(--gold, #f0e1b6);
+  background: transparent;
+  border: 1px solid rgba(240, 225, 182, 0.45);
+}
+.queuedBtn {
+  color: var(--ink, #0a0a0f);
+  background: var(--mint);
+  border: 1px solid var(--mint);
+  font-weight: 600;
+}
+.queueBtn:disabled,
+.queuedBtn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+@media (max-width: 720px) {
+  .row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .qr {
+    align-items: flex-start;
+  }
+}
+
+/* Over the 90-second house limit for short form. Seen before the room is set up, not after the take. */
+.wordsLong {
+  margin-left: auto;
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: var(--coral);
+}
