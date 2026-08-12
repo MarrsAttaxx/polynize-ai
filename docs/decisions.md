@@ -586,6 +586,8 @@ The thread is deliberately client-side and clears when the figure changes: it is
 
 **Recorded advances the stage.** Marrs's call. Leaving a shot piece at `record` would mean footage exists on a card with nothing in the console pointing at it; disappearing it entirely would be worse. `rough_cut` is where the next work actually is.
 
+**Two doors, and the count is on the button.** The Studio is reached from the console home (a card, second after Marketing) and from the marketing dashboard **beside Calendar**, which is where Marrs looked for it: Calendar and Studio are the two things that are about the whole engine rather than one stream, so they belong together. The marketing button carries the queued count, so it says whether a session is worth setting up rather than merely that a studio exists. The count is taken from the pieces that page already loads, so it costs no extra read.
+
 **The QR code is the iPad's way in.** Nothing here can push a URL to another device, and typing a uuid with two cameras waiting is not a workflow, so each row renders a QR of its teleprompter URL, server-side, at request time. It is built from the request's own host so it is correct on localhost, on a preview and on pam.polynize.ai with nothing configured; the `/console/...` path form works on both hosts because the pam rewrite only fires for paths that are not already under `/console`.
 
 **Written in a hurry and worth knowing:** a read is shown in **seconds**, not minutes, because at short-form length every read rounds to "about 1 min" and the number says nothing; over 90 seconds it turns coral, which is a thing to learn before the room is set up rather than after the take. A video format queued with no prezie is flagged on the row for the same reason.

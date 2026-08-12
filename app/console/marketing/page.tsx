@@ -51,6 +51,10 @@ export default async function MarketingPage() {
     if (c) c.concepts += 1;
   }
 
+  // How many takes are waiting, so the Studio button says whether a session is worth setting up rather than
+  // only that a studio exists. Counted off the pieces already loaded above, so it costs no extra read.
+  const queued = [...byId.values()].filter((p) => p.shoot_ready && !p.recorded_at).length;
+
   return (
     <>
       <div className={s.bgPattern} aria-hidden />
@@ -64,6 +68,12 @@ export default async function MarketingPage() {
           <div className={s.ctaGroup}>
             <Link href="/console/marketing/calendar" className={s.startConceptCta}>
               Calendar
+            </Link>
+            {/* THE STUDIO, beside the Calendar, because they are the two things that are about the whole
+                engine rather than one stream. Carries its count so the button says whether there is a
+                session waiting, not merely that a studio exists. */}
+            <Link href="/console/studio" className={s.startConceptCta}>
+              Studio{queued > 0 ? ` · ${queued}` : ''}
             </Link>
           </div>
         </div>
