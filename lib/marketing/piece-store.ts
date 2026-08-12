@@ -93,6 +93,19 @@ export type MarketingPiece = {
    */
   shoot_ready?: boolean;
   shoot_ready_at?: string;
+  /**
+   * THIS ONE HIT THE STANDARD. Marked by hand, and it becomes a worked example in every
+   * later draft for the same stream and format (lib/marketing/exemplars.ts).
+   *
+   * Marrs: "we don't have something that indicates what good looks like." This is that,
+   * defined by what he blesses rather than by anyone's opinion of good. When the analytics
+   * loop lands, a post that actually performed should set this same flag, so there stays
+   * one definition of good with two sources of evidence.
+   */
+  exemplar?: boolean;
+  /** Why it is good, in his words. Injected with the example, and usually the most useful part. */
+  exemplar_note?: string;
+  exemplar_at?: string;
   /** When it was actually shot. Set by the Recorded button, which also advances the stage. */
   recorded_at?: string;
   /** Attached media asset ids from this stream's media library (D2 amended

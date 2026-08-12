@@ -14,6 +14,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { BackLink } from '@/app/console/marketing/_components/BackLink';
+import { ExemplarToggle } from './ExemplarToggle';
 import { PieceDeleteButton } from './PieceDeleteButton';
 import { MediaPicker } from './MediaPicker';
 import { ChatPanel } from './ChatPanel';
@@ -240,6 +241,12 @@ export function TextOutputScreen({
           </div>
         </div>
         <div className={s.headRight}>
+          {/* Same quality mark as the script screen: text pieces feed the same standard. */}
+          <ExemplarToggle
+            pieceId={initial.piece_id}
+            exemplar={Boolean(initial.exemplar)}
+            note={initial.exemplar_note}
+          />
           <span
             className={`${s.saveInd} ${
               saveState === 'saving'

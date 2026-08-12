@@ -1,0 +1,68 @@
+/* The quality mark. Quiet until it is set, then it says what it does. */
+.wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.off,
+.on,
+.quiet {
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 12px;
+  border-radius: 10px;
+  padding: 9px 13px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.off {
+  color: var(--gold, #f0e1b6);
+  background: transparent;
+  border: 1px solid rgba(240, 225, 182, 0.45);
+}
+.off:hover:not(:disabled) {
+  background: rgba(240, 225, 182, 0.1);
+}
+.on {
+  color: var(--ink, #0a0a0f);
+  background: var(--mint);
+  border: 1px solid var(--mint);
+  font-weight: 600;
+}
+.quiet {
+  color: var(--text-3);
+  background: none;
+  border: none;
+}
+.quiet:hover {
+  color: var(--text);
+}
+.badge {
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink, #0a0a0f);
+  background: var(--mint);
+  border-radius: 999px;
+  padding: 4px 10px;
+}
+.note {
+  font-size: 12px;
+  color: var(--text-2);
+  max-width: 46ch;
+}
+.input {
+  flex: 1;
+  min-width: 240px;
+  font-size: 13px;
+  color: var(--text);
+  background: var(--tac-inset, #0f0f17);
+  border: 1px solid rgba(244, 236, 228, 0.14);
+  border-radius: 9px;
+  padding: 10px 12px;
+}
+.input:focus {
+  outline: none;
+  border-color: rgba(105, 252, 203, 0.5);
+}

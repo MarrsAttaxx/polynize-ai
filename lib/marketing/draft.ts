@@ -21,6 +21,7 @@ import { resolveTemplateRef } from './create-outputs';
 import { complete } from '@/lib/llm';
 import { stripEmDashes } from '@/lib/em-dash';
 import { HOOK_GUIDANCE } from './hook-guidance';
+import { exemplarBlock, pickExemplars } from './exemplars';
 
 /** Why a draft could not be produced, so callers can map to the right response. */
 export type DraftFailure = 'no-concept' | 'llm-unavailable' | 'empty';
@@ -82,6 +83,8 @@ export function recipePartsFromTemplate(t: {
 
 type PromptOpts = {
   formatLabel: string;
+  /** Worked examples of the house standard, already rendered. Empty when none are marked. */
+  exemplars?: string;
   icp?: string;
   brandVoice?: string;
   /** The format's physical output shape (D29), e.g. the two-track touchscreen
@@ -201,6 +204,8 @@ Hard constraints, never overridden by any recipe or voice:
 
 Shape the recipe's beats into the natural prose of a ${opts.formatLabel}: use them as your internal scaffold, but do not print beat labels unless the recipe explicitly says to show them. Open on the hook, and close on a clear point or a single call to action, landing on a final line worth remembering. If a reference script is included below the concept, you may draw on its angle, but the concept is the source of truth and your output is the ${opts.formatLabel}, not a script.
 
+${opts.exemplars ?? ''}
+
 This model reasons before it answers, so plan silently: find the sharpest hook material, map the recipe's beats onto the concept, settle the voice, then write. Before you output, reread once as the editor and fix any miss: the hook earns line two for a cold reader; every beat the recipe named is present and in order; every fact traces to the concept, with anything invented deleted; the voice holds; no banned phrase, filler, or emoji; it lands on a line worth remembering. Return only the finished copy.`;
 }
 
@@ -240,6 +245,8 @@ ${
     `Output shape. Structure the script with plain labels on their own lines, the spoken words beneath each. If the recipe defines the beats, use its labels and its beats in order and honour its own ending, including whether it has a call to action, since some recipes end on the puncture with no CTA. If no recipe is given, use HOOK, then BEAT 1, BEAT 2, and so on for each movement, then CTA. Either way, end on one sharp line worth punching, because the last line always gets the emphasis in the edit. If this is a short-form video, prepend one line labelled ON-SCREEN TEXT holding the first-frame caption that stops the scroll: this is the one non-spoken line, and its words must differ from the spoken hook, which deepens or twists it. Longer video needs only the spoken hook.`
   }
 
+${opts.exemplars ?? ''}
+
 This model reasons before it answers, so plan silently: find the sharpest hook material, map the recipe's beats onto the concept, settle the voice, then write. Before you output, reread once as the editor and fix any miss: the spoken hook stops a cold viewer and earns the next line, and for short-form there is a separate on-screen text hook in different words; every beat the recipe named is present, in order, with its own ending honoured; every fact traces to the concept, with anything invented deleted; the voice holds and reads cleanly aloud; no banned phrase, filler, or emoji; it ends on a line worth punching.${
     opts.scriptShape
       ? ' Also check the output shape above is followed exactly: every beat has its labelled tracks, and each SCREEN line is one bold representational idea plus a touch that reinforces the spoken line, never a bullet slide.'
@@ -267,8 +274,24 @@ async function generate(
   const formatLabel = fmt?.label ?? (kind === 'video' ? 'video' : 'post');
   const brandVoice = await getBrandVoiceForStream(piece.stream);
   const parts = await pieceTemplateParts(piece);
+  /**
+   * The house standard, as worked examples. Loaded in parallel with nothing else because it
+   * is a store read on the critical path of a draft, and tolerant of its own failure: no
+   * example is a weaker prompt, but a failed lookup must never cost the draft.
+   */
+  const picked = await pickExemplars(owner, {
+    stream: piece.stream,
+    format: String(piece.format ?? ''),
+    kind,
+    excludePieceId: piece.piece_id,
+  }).catch(() => ({ items: [], exactFormat: true }) as Awaited<ReturnType<typeof pickExemplars>>);
+
   const promptOpts: PromptOpts = {
     formatLabel,
+    exemplars: exemplarBlock(picked.items, {
+      exactFormat: picked.exactFormat,
+      formatLabel,
+    }),
     icp: icpLabel(piece.icp),
     brandVoice,
     // Two-track / capture-specific shape for the touchscreen hero formats (D29).

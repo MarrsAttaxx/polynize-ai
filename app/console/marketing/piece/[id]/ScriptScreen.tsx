@@ -20,6 +20,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import type { MarketingPiece } from '@/lib/marketing/piece-store';
 import { ChatPanel } from './ChatPanel';
+import { ExemplarToggle } from './ExemplarToggle';
 import { ReadyToRecord } from '../../../studio/ShootRowActions';
 import { StageRail } from './StageRail';
 import { PieceDeleteButton } from './PieceDeleteButton';
@@ -228,6 +229,13 @@ export function ScriptScreen({
           </div>
         </div>
         <div className={s.headRight}>
+          {/* THE QUALITY MARK. Here because this is the screen where he reads the script and
+              forms the opinion; a separate place to record it is a place he would not go. */}
+          <ExemplarToggle
+            pieceId={initial.piece_id}
+            exemplar={Boolean(initial.exemplar)}
+            note={initial.exemplar_note}
+          />
           {/* QUEUE IT FOR THE STUDIO. Here as well as on the Prezie stage, because a piece with no prezie
               never visits that stage and would otherwise have no way into the shoot queue at all. */}
           <ReadyToRecord pieceId={initial.piece_id} ready={Boolean(initial.shoot_ready)} />
