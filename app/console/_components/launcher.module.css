@@ -55,17 +55,6 @@
 }
 
 
-/* Marketing — featured: spans both columns, taller, mint ring + glow. */
-.cardFeatured {
-  grid-column: 1 / -1;
-  min-height: 196px;
-  background: var(--tac-surface-2);
-  box-shadow:
-    var(--tac-shadow-raised),
-    0 0 0 1px rgba(105, 252, 203, 0.22),
-    0 0 26px rgba(105, 252, 203, 0.1);
-}
-
 .cardEyebrow {
   font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
   font-size: 11px;
@@ -74,20 +63,12 @@
   color: var(--text-3);
 }
 
-.cardFeatured .cardEyebrow {
-  color: var(--mint);
-}
-
 .cardTitle {
   font-family: var(--font-space-grotesk), 'Space Grotesk', sans-serif;
   font-size: 26px;
   font-weight: 700;
   letter-spacing: -0.02em;
   color: var(--text);
-}
-
-.cardFeatured .cardTitle {
-  font-size: 36px;
 }
 
 .cardDesc {
@@ -141,7 +122,33 @@
   .cards {
     grid-template-columns: 1fr;
   }
-  .cardFeatured {
-    grid-column: auto;
+}
+
+/* ===================================================================
+ * THE TWO DOORS. Marrs: "just make it 'Marketing' and 'Leads' the same size and the
+ * same weight, just two big buttons."
+ *
+ * There used to be a .cardFeatured here that spanned both columns and drew a mint ring
+ * and glow. Marrs, on the live page: "the marketing button has some kind of a green
+ * highlight around it when it's not selected, can we remove that, just so it looks
+ * exactly like the other ones." A featured class cannot help privileging whichever card
+ * wears it, so with two equal doors it had no job left and was deleted outright. Both
+ * cards are now identical, and just bigger. The hover lift he liked is untouched.
+ * =================================================================== */
+.cardDoor {
+  min-height: 210px;
+  padding: 34px 36px 30px;
+}
+.cardDoor .cardTitle {
+  font-size: 30px;
+}
+
+@media (max-width: 720px) {
+  .cardDoor {
+    min-height: 150px;
+    padding: 26px 26px 22px;
+  }
+  .cardDoor .cardTitle {
+    font-size: 24px;
   }
 }
