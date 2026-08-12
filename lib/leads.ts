@@ -25,7 +25,20 @@ export async function captureLead(input: LeadInput): Promise<boolean> {
   const email = input.email.trim().toLowerCase();
   if (!email) return false;
 
-  const row: Record<string, unknown> = { email, source: 'blueprint' };
+  /**
+   * OWNER = POLYNIZE. Website leads belong to the Polynize CRM, which is exactly what
+   * Marrs described: "That's where we keep the leads that come in through the website
+   * polynize.ai. When a lead fills in the blueprint form, this is where it needs to go."
+   *
+   * Set explicitly rather than left to the column default, so this stays true if the
+   * default ever changes.
+   *
+   * NOTE the conflict target moved with migration 0012: uniqueness is now (owner, email)
+   * and no longer email alone, so that two people can each hold the same contact in
+   * their own CRM. For this path the behaviour is unchanged, since every website lead
+   * has the same owner.
+   */
+  const row: Record<string, unknown> = { email, source: 'blueprint', owner: 'polynize' };
   if (input.name?.trim()) row.name = input.name.trim();
   if (input.business?.trim()) row.business = input.business.trim();
   if (input.blueprintId) row.blueprint_id = input.blueprintId;
@@ -35,7 +48,7 @@ export async function captureLead(input: LeadInput): Promise<boolean> {
   try {
     const { error } = await supabaseService()
       .from('leads')
-      .upsert(row, { onConflict: 'email' });
+      .upsert(row, { onConflict: 'owner,email' });
     if (error) {
       // A missing table (migration not applied yet) or any other write error is
       // logged and swallowed. The blueprint still saved; the lead just did not.

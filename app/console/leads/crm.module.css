@@ -1,0 +1,276 @@
+/**
+ * The CRM. Read at a desk, unlike the studio queue, so it can be denser — but it is a
+ * list of PEOPLE TO CHASE, not a spreadsheet, so what is due has to be findable without
+ * reading every row.
+ */
+
+.subhead {
+  margin: 8px 0 0;
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 13px;
+  letter-spacing: 0.04em;
+  color: var(--mint);
+}
+.error {
+  margin: 18px 0 0;
+  padding: 12px 16px;
+  border-radius: 10px;
+  font-size: 14px;
+  color: var(--coral);
+  background: rgba(255, 122, 107, 0.08);
+  box-shadow: inset 0 0 0 1px rgba(255, 122, 107, 0.28);
+}
+/* "3 new, untouched" on a dashboard card. The one number worth interrupting for. */
+.newFlag {
+  margin-top: 10px;
+  align-self: flex-start;
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink, #0a0a0f);
+  background: var(--mint);
+  border-radius: 999px;
+  padding: 4px 10px;
+}
+
+/* ---- stage filter ---- */
+.filters {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 22px 0 6px;
+}
+.filter,
+.filterOn {
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  text-decoration: none;
+  border-radius: 999px;
+  padding: 8px 14px;
+  white-space: nowrap;
+}
+.filter {
+  color: var(--text-2);
+  background: rgba(244, 236, 228, 0.04);
+  box-shadow: inset 0 0 0 1px rgba(244, 236, 228, 0.12);
+}
+.filter:hover {
+  color: var(--text);
+}
+.filterOn {
+  color: var(--ink, #0a0a0f);
+  background: var(--mint);
+  font-weight: 600;
+}
+
+/* ---- a contact ---- */
+.rows {
+  margin-top: 12px;
+}
+.row {
+  padding: 16px 0;
+  border-bottom: 1px solid rgba(244, 236, 228, 0.08);
+}
+.rowTop {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.name {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--text);
+}
+.at {
+  font-size: 14px;
+  color: var(--text-2);
+}
+.email {
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: var(--text-3);
+  text-decoration: none;
+}
+.email:hover {
+  color: var(--mint);
+}
+/* Where it came from. Quiet, but it changes how you open the conversation. */
+.source {
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  box-shadow: inset 0 0 0 1px rgba(244, 236, 228, 0.14);
+  border-radius: 999px;
+  padding: 3px 8px;
+}
+.sourceInbound {
+  color: var(--amber);
+  box-shadow: inset 0 0 0 1px rgba(240, 184, 107, 0.4);
+}
+
+.rowMid {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+}
+.stageSelect,
+.dateInput,
+.textInput {
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: var(--text);
+  background: var(--tac-inset, #0f0f17);
+  border: 1px solid rgba(244, 236, 228, 0.14);
+  border-radius: 9px;
+  padding: 9px 11px;
+}
+.textInput {
+  flex: 1;
+  min-width: 200px;
+}
+.stageSelect:focus,
+.dateInput:focus,
+.textInput:focus {
+  outline: none;
+  border-color: rgba(105, 252, 203, 0.5);
+}
+/* A dated action that has arrived. The only thing on this page that shouts. */
+.dueFlag {
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--coral);
+}
+.notes {
+  width: 100%;
+  margin-top: 10px;
+  min-height: 64px;
+  resize: vertical;
+  font-family: var(--font-space-grotesk), 'Space Grotesk', sans-serif;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--text);
+  background: var(--tac-inset, #0f0f17);
+  border: 1px solid rgba(244, 236, 228, 0.12);
+  border-radius: 10px;
+  padding: 11px 13px;
+}
+.notes:focus {
+  outline: none;
+  border-color: rgba(105, 252, 203, 0.45);
+}
+.rowActions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+}
+.saveState {
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+.saved {
+  color: var(--mint);
+}
+.failed {
+  color: var(--coral);
+}
+.del {
+  margin-left: auto;
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--text-3);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 6px 8px;
+}
+.del:hover {
+  color: var(--coral);
+}
+.transcript {
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--amber);
+  text-decoration: none;
+}
+
+/* ---- add a contact ---- */
+.addWrap {
+  margin: 26px 0 8px;
+}
+.addBtn {
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 13px;
+  color: var(--ink, #0a0a0f);
+  background: var(--mint);
+  border: 1px solid var(--mint);
+  border-radius: 11px;
+  padding: 12px 18px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.addForm {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  max-width: 640px;
+}
+.addForm .wide {
+  grid-column: 1 / -1;
+}
+.addRow {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  grid-column: 1 / -1;
+}
+.cancel {
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: var(--text-3);
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+.cancel:hover {
+  color: var(--text);
+}
+.formError {
+  grid-column: 1 / -1;
+  font-size: 13px;
+  color: var(--coral);
+}
+
+.empty {
+  margin: 26px 0 0;
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--text-2);
+  max-width: 62ch;
+}
+.empty strong {
+  color: var(--mint);
+  font-weight: 600;
+}
+
+@media (max-width: 720px) {
+  .addForm {
+    grid-template-columns: 1fr;
+  }
+  .textInput {
+    min-width: 0;
+  }
+}
