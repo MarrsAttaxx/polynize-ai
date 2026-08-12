@@ -35,10 +35,39 @@ export type Exemplar = {
   body: string;
 };
 
+/**
+ * How much of an example to show.
+ *
+ * A screen-record long script runs to thousands of words, and two of those would dominate
+ * the prompt and push the real brief (the concept, the recipe, the angle) into the middle,
+ * which is where models attend least. The craft an example teaches is mostly visible in its
+ * first stretch anyway: the opening, the first turns, the rhythm.
+ *
+ * Cut on a paragraph boundary where there is one nearby, since stopping mid-sentence teaches
+ * a truncated cadence, and say plainly that it was cut so the model does not read the stop as
+ * the piece's ending.
+ *
+ * APPLIED WHERE THE BODY IS RENDERED, not only where it is loaded. `exemplarBlock` is
+ * exported and takes an `Exemplar` from wherever, so a cap enforced only in `pickExemplars`
+ * is a cap any other caller silently bypasses. Clipping is idempotent, so doing it in both
+ * places costs nothing.
+ */
+const EXEMPLAR_CHARS = 1600;
+
+const TRUNCATED = '[example truncated here; it continues, so do not read this as its ending]';
+
+function clip(body: string): string {
+  if (body.length <= EXEMPLAR_CHARS || body.endsWith(TRUNCATED)) return body;
+  const head = body.slice(0, EXEMPLAR_CHARS);
+  const lastBreak = Math.max(head.lastIndexOf('\n\n'), head.lastIndexOf('\n'));
+  const cut = lastBreak > EXEMPLAR_CHARS * 0.6 ? head.slice(0, lastBreak) : head;
+  return `${cut.trimEnd()}\n${TRUNCATED}`;
+}
+
 /** An exemplar is only useful if it has something to read. */
 function bodyOf(p: MarketingPiece, kind: 'video' | 'text'): string {
   const raw = kind === 'video' ? p.script : p.body;
-  return typeof raw === 'string' ? raw.trim() : '';
+  return typeof raw === 'string' ? clip(raw.trim()) : '';
 }
 
 /**
@@ -116,7 +145,7 @@ export function exemplarBlock(
       (e, i) =>
         `EXAMPLE ${i + 1}${e.title ? ` (${e.title})` : ''}${
           opts.exactFormat ? '' : ` [a ${e.format} piece, so take its craft and not its rhythm]`
-        }\n${e.note ? `Why this one is good, in the operator's words: ${e.note}\n` : ''}"""\n${e.body}\n"""`
+        }\n${e.note ? `Why this one is good, in the operator's words: ${e.note}\n` : ''}"""\n${clip(e.body)}\n"""`
     )
     .join('\n\n');
 
