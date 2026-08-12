@@ -297,11 +297,13 @@ export default function BlueprintPage() {
         <div className={s.inputStage}>
           <div className={s.introCard}>
             <div className={s.eyebrow}>Polynize · capability mapping</div>
-            <h1 className={s.introTitle}>Map your team.</h1>
+            {/* The title names the unit of work, not the aspiration. "Map your team" is
+                the promise on the homepage button; arriving here and being asked about one
+                bottleneck was the mismatch, so the title now says bottleneck up front
+                (Marrs, 12 Aug 2026). */}
+            <h1 className={s.introTitle}>Map a real bottleneck in your team.</h1>
             <p className={s.introLead}>
-              Five minutes of questions, and you will have a capability blueprint: one
-              piece of your team’s work broken into what it is actually made of, with
-              every capability allocated human, hybrid or agentic.
+              In five minutes you’ll have your own Capability Blueprint.
             </p>
 
             <ol className={s.introSteps}>
@@ -353,9 +355,11 @@ export default function BlueprintPage() {
               </button>
             </div>
 
+            {/* Set in italics, which is the point of it: this is an aside that keeps the
+                sample honest about its own scope, not another claim. */}
             <p className={s.introFoot}>
-              This is the first step of the mapping journey, not the whole of it. A full
-              engagement maps every team, from your own material.
+              This is a small sample of capability mapping which is a much deeper and
+              involved process.
             </p>
           </div>
         </div>

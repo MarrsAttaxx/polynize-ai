@@ -1009,6 +1009,7 @@
   font-size: 12.5px;
   line-height: 1.6;
   color: var(--text-3);
+  font-style: italic;
 }
 @media (max-width: 680px) {
   .introCard { padding: 28px 22px 24px; }

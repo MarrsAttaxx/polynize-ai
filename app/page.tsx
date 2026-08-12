@@ -47,7 +47,6 @@ export default function HomePage() {
         <DirCHow />
         {/* The emotional core of the narrative: why we train before we deploy */}
         <DirCValues />
-        <DirCPodcast />
         <DirCFinal />
         <DirCFooter />
       </div>
@@ -160,7 +159,9 @@ function MapGlyph() {
 
 function DirCModelling() {
   return (
-    <section className={s.dcSection}>
+    /* Tight both ends: it sits between the hero CTA above and the proof below, and all
+       three are one argument. */
+    <section className={`${s.dcSection} ${s.dcSectionTightTop} ${s.dcSectionTightBottom}`}>
       <div className={s.dcSectionHead}>
         <div className={s.dcSectionEyebrow}>Our methodology</div>
         <MapGlyph />
@@ -171,10 +172,13 @@ function DirCModelling() {
         </h2>
         <p className={s.dcSectionLede}>
           Before anything gets built, we model the work. Where your capability sits today, what good
-          looks like, and the distance between the two. Only then does it make sense to talk about
-          training people or deploying agents, because both are built to close that distance.
+          looks like, and the distance between the two.
         </p>
       </div>
+
+      {/* The founders, immediately after the claim. See DirCPodcast for why it lives here
+          rather than at the foot of the page. */}
+      <DirCPodcast />
 
       <div className={`${s.dcHowGrid} ${s.dcHowGrid3}`}>
         {MODEL_STEPS.map((step) => (
@@ -199,7 +203,7 @@ function DirCModelling() {
 
       <div className={s.dcMidCta}>
         <div className={s.dcMidCtaText}>
-          <div className={s.dcMidCtaTitle}>Start with step one.</div>
+          <div className={s.dcMidCtaTitle}>Experience it for yourself.</div>
           <div className={s.dcMidCtaSub}>
             Tell us where the work slows down and we will map the capabilities inside it.
           </div>
@@ -263,7 +267,9 @@ const OPTIO_CAPITAL_URL = 'https://www.optio.capital/';
 
 function DirCAjQuoteProblem() {
   return (
-    <section className={s.dcSection}>
+    /* Tight top: it follows the methodology CTA bar, and the bar is the end of that
+       argument while this is the evidence for it. */
+    <section className={`${s.dcSection} ${s.dcSectionTightTop}`}>
       <div className={s.dcSectionHead}>
         <div className={s.dcSectionEyebrow}>Proof</div>
         <h2 className={s.dcH2}>
@@ -306,18 +312,76 @@ function DirCAjQuoteProblem() {
  * The team diagram survives, shrunk to its shape. It is evidence that agents were in fact
  * built, sitting under the half of the story it belongs to, rather than being the story.
  */
-const OUTCOMES = [
+const OUTCOMES: { n: string; t: string; d: string; icon: 'lift' | 'team' }[] = [
   {
     n: '01',
     t: 'Capability enablement',
     d: 'Train our staff on the work they actually need to do, now that we know the work.',
+    icon: 'lift',
   },
   {
     n: '02',
     t: 'Capability deployment',
     d: 'Build the agentic tech to scale our business.',
+    icon: 'team',
   },
 ];
+
+/**
+ * One mark per outcome, drawn as a pair.
+ *
+ * `lift` is capability rising: four bars getting taller against a baseline, with the
+ * benchmark drawn as a dashed line the last bar reaches. That is what enablement does, so
+ * the bar chart is the argument rather than decoration.
+ *
+ * `team` is the org shape the diagram underneath used to draw at full size. Marrs asked
+ * for that card to come off entirely and for the shape to become this icon instead
+ * (12 Aug 2026), which is the right trade: the section is about two halves of equal
+ * weight, and a full team diagram made one of them visually win.
+ *
+ * Coral is the human node and mint is an agent, same as everywhere else on the site.
+ */
+function OutcomeIcon({ kind }: { kind: 'lift' | 'team' }) {
+  const line = {
+    fill: 'none',
+    stroke: 'currentColor',
+    strokeWidth: 1.7,
+    strokeLinecap: 'round' as const,
+    strokeLinejoin: 'round' as const,
+  };
+  return (
+    <span className={s.dcCardIcon} aria-hidden="true">
+      <svg viewBox="0 0 44 34" width="58" height="45" fill="none">
+        {kind === 'lift' ? (
+          <>
+            <path {...line} d="M3 31h38" opacity="0.5" />
+            {/* The benchmark. Dashed, because it is a target rather than a measurement. */}
+            <path {...line} d="M3 8h38" strokeDasharray="3 4" opacity="0.55" />
+            <path {...line} d="M9 31v-7M19 31v-12M29 31v-17M39 31v-23" strokeWidth="3.4" />
+          </>
+        ) : (
+          <>
+            {/* The human, then the wiring, then three agents. */}
+            <rect
+              x="17"
+              y="2"
+              width="10"
+              height="7"
+              rx="2"
+              fill="none"
+              stroke="var(--coral)"
+              strokeWidth="1.7"
+            />
+            <path {...line} d="M22 9v5M5 14h34M5 14v5M22 14v5M39 14v5" opacity="0.6" />
+            <rect x="1" y="19" width="9" height="7" rx="2" {...line} />
+            <rect x="17.5" y="19" width="9" height="7" rx="2" {...line} />
+            <rect x="34" y="19" width="9" height="7" rx="2" {...line} />
+          </>
+        )}
+      </svg>
+    </span>
+  );
+}
 
 function DirCAjTeam() {
   return (
@@ -340,69 +404,13 @@ function DirCAjTeam() {
         {OUTCOMES.map((o) => (
           <div key={o.n} className={s.dcHowCard}>
             <div className={s.dcHowNum}>{o.n}</div>
+            <OutcomeIcon kind={o.icon} />
             <div className={s.dcHowTitle}>{o.t}</div>
             <div className={s.dcHowDesc}>{o.d}</div>
           </div>
         ))}
       </div>
-
-      <div className={s.ajWrap}>
-        <AjTeamMini />
-      </div>
     </section>
-  );
-}
-
-/**
- * The team, reduced to its shape. Names and roles, nothing else.
- *
- * The full dossier version (app/_components/AjTeamDiagram.tsx) is still what the Console
- * dashboard shows, and it stays there. Here it was doing too much work: photographs and
- * paragraphs for four agents made the agentic half of the story visually outweigh the
- * human half sitting beside it, which is the exact imbalance this section was rewritten
- * to fix. Shape only.
- */
-const MINI_TEAM = [
-  { name: 'Duke', role: 'Investment Analyst' },
-  { name: 'Bec', role: 'Research Analyst' },
-  { name: 'Verity', role: 'Legal & Compliance' },
-];
-
-function AjTeamMini() {
-  return (
-    <div className={s.miniTeam} aria-label="AJ's agent team at Optio Capital">
-      <div className={s.miniCaption}>The agents built around him</div>
-
-      <div className={`${s.miniNode} ${s.miniHuman}`}>
-        <span className={s.miniName}>AJ</span>
-        <span className={s.miniRole}>Partner</span>
-      </div>
-      <div className={s.miniStem} aria-hidden="true" />
-
-      <div className={s.miniNode}>
-        <span className={s.miniName}>Flow</span>
-        <span className={s.miniRole}>Team Leader</span>
-      </div>
-      <div className={s.miniStem} aria-hidden="true" />
-
-      {/* One bus with three drops, so the fan-out reads as reporting lines rather than as
-          three cards that happen to sit in a row. */}
-      <div className={s.miniBus} aria-hidden="true">
-        <span className={s.miniBusLine} />
-        <span className={s.miniDrop} />
-        <span className={s.miniDrop} />
-        <span className={s.miniDrop} />
-      </div>
-
-      <div className={s.miniRow}>
-        {MINI_TEAM.map((a) => (
-          <div key={a.name} className={s.miniNode}>
-            <span className={s.miniName}>{a.name}</span>
-            <span className={s.miniRole}>{a.role}</span>
-          </div>
-        ))}
-      </div>
-    </div>
   );
 }
 
@@ -622,86 +630,47 @@ function DirCValues() {
 
 /* ---------- Podcast ---------- */
 
+/**
+ * The founders on camera, and nothing else.
+ *
+ * MOVED UP AND STRIPPED (Marrs, 12 Aug 2026). It used to sit near the bottom as a
+ * three-episode podcast module with a featured card, titles, runtimes and a side list.
+ * Its job now is different and it is placed to do it: faces and authority immediately
+ * after the methodology claim, before a visitor has to decide whether to believe us. A
+ * side list of other episodes would pull them sideways at exactly the wrong moment, and
+ * the thumbnail already carries the title, so the caption underneath was doing nothing.
+ *
+ * Still a link out to YouTube rather than an embedded player: an iframe would drop
+ * third-party cookies on the homepage to save one click.
+ */
 function DirCPodcast() {
   return (
-    <section className={s.dcSection}>
-      <div className={s.dcSectionHead}>
-        <div className={s.dcSectionEyebrow}>From the founders</div>
-        <h2 className={s.dcH2}>
-          Think Better.
-          <br />
-          <span className={s.dcText3}>Marrs Coiro &amp; Shourov Bhattacharya, weekly.</span>
-        </h2>
-      </div>
+    <div className={s.dcVideoBlock}>
+      <div className={s.dcSectionEyebrow}>From the founders</div>
 
-      <div className={s.dcPodGrid}>
-        <TrackedLink
-          className={s.dcPodFeat}
-          href={EP06_URL}
-          external
-          event="cta_click"
-          eventProps={{ surface: 'home_podcast', label: 'episode_06' }}
-          aria-label="Watch episode 6, How to Map Your Organisation's Capabilities with Polynize, on YouTube"
-        >
-          <div className={s.dcPodThumb}>
-            {/* sddefault, not maxresdefault: YouTube has generated no maxres or hq720 for
-                this upload (both 404), so sddefault at 640x480 is the largest that exists.
-                It is a 4:3 frame with black bars, which object-fit: cover on a 16:9 box
-                crops back off. Served from YouTube's CDN rather than copied into /public;
-                copy it into /public/assets if the homepage should make no third-party
-                requests. */}
-            <img
-              src="https://i.ytimg.com/vi/Xq_Hoyx_ccg/sddefault.jpg"
-              alt="How to Map Your Organisation's Capabilities with Polynize, episode 6"
-              className={s.dcPodThumbImg}
-              loading="lazy"
-            />
-            <div className={s.dcPodPlay} aria-hidden>
-              <svg viewBox="0 0 24 24" width="22" height="22">
-                <path d="M8 5v14l11-7z" fill="currentColor" />
-              </svg>
-            </div>
-            <div className={s.dcPodRuntime}>9:21</div>
+      <TrackedLink
+        className={s.dcVideoSolo}
+        href={EP06_URL}
+        external
+        event="cta_click"
+        eventProps={{ surface: 'home_video', label: 'episode_06' }}
+        aria-label="Watch How to Map Your Organisation's Capabilities with Polynize on YouTube"
+      >
+        <div className={s.dcPodThumb}>
+          <img
+            src="/assets/podcast-ep06.jpg"
+            alt="How to Map Your Organisation's Capabilities with Polynize"
+            className={s.dcPodThumbImg}
+          />
+          <div className={s.dcPodPlay} aria-hidden>
+            <svg viewBox="0 0 24 24" width="22" height="22">
+              <path d="M8 5v14l11-7z" fill="currentColor" />
+            </svg>
           </div>
-          <div className={s.dcPodMeta}>
-            <div className={s.dcPodTag}>Latest episode 6</div>
-            <div className={s.dcPodTitle}>
-              How to Map Your Organisation&apos;s Capabilities with Polynize
-            </div>
-            <div className={s.dcPodDesc}>
-              Why the systems inside most organisations stopped matching the way people actually
-              work, and why that gap is the real risk in adopting AI.
-            </div>
-          </div>
-        </TrackedLink>
-
-        <div className={s.dcPodSide}>
-          <PodMini ep="05" run="44:49" t="Why Your First Agent Changes Everything" />
-          <PodMini ep="04" run="1:09:30" t="The Missing Layer Between Your Brain and AI" />
-          <PodMini ep="03" run="1:03:55" t="The Only Thing to Stop the AI Bubble Bursting" />
-          <TrackedLink
-            className={s.dcPodAll}
-            href={YOUTUBE_CHANNEL}
-            external
-            event="cta_click"
-            eventProps={{ surface: 'home_podcast', label: 'all_episodes' }}
-          >
-            All episodes <span className={s.dcArr}>→</span>
-          </TrackedLink>
+          <div className={s.dcPodRuntime}>9:21</div>
         </div>
-      </div>
-    </section>
-  );
-}
-
-function PodMini({ ep, run, t }: { ep: string; run: string; t: string }) {
-  return (
-    <a className={s.dcPodMini} href={YOUTUBE_CHANNEL} target="_blank" rel="noopener noreferrer">
-      <div className={s.dcPodMiniMeta}>
-        Ep {ep} · {run}
-      </div>
-      <div className={s.dcPodMiniTitle}>{t}</div>
-    </a>
+      </TrackedLink>
+    </div>
   );
 }
 
@@ -762,7 +731,6 @@ function DirCFooter() {
             title="Polynize"
             links={[
               ['polynize.io', POLYNIZE_IO, true],
-              ['Console', '/console-demo', false],
             ]}
           />
           <FootCol
