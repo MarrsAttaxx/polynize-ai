@@ -111,9 +111,19 @@ function audienceBlock(icp?: string): string {
     : '';
 }
 
+/**
+ * HOW TO USE THE VOICE DOC, not just "here is a voice doc".
+ *
+ * The docs are freeform Markdown, so what they contain varies: some describe a register in
+ * adjectives, some carry actual sentences. Adjectives are the weak case and sample lines are
+ * the strong one, for the same reason the hook pattern library beats the hook rules: a
+ * writer can imitate a line and can only approximate an adjective. So the instruction now
+ * says to go looking for real sentences in the doc and match those first, and treats the
+ * descriptive parts as the fallback rather than the main event.
+ */
 function voiceBlock(brandVoice?: string): string {
   return brandVoice
-    ? `\n\nWrite in this brand voice. Match its register, phrasing, and point of view:\n"""\n${brandVoice}\n"""`
+    ? `\n\nTHE BRAND VOICE for this stream. Match its register, phrasing and point of view, and let it override the default Polynize register wherever the two differ.\n"""\n${brandVoice}\n"""\nHOW TO USE IT: if the doc contains ACTUAL SENTENCES in the voice, whether sample lines, quoted phrases or example posts, those are your strongest signal. Read them for sentence length, rhythm, how blunt the openings are, which words recur, and write lines that would sit beside them unnoticed. Treat any adjectives in the doc ("direct", "warm") as a description of that sound rather than as the instruction itself. If the doc has no sample lines, work from its description and stay concrete. Never copy a sample line's subject matter: it demonstrates sound, not content.`
     : '';
 }
 

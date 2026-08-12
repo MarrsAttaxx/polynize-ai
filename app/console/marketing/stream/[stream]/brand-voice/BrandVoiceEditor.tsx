@@ -66,6 +66,47 @@ export function BrandVoiceEditor({ initial }: { initial: string }) {
         }}
         aria-label="Brand voice document"
       />
+      {/* WHAT MAKES A VOICE DOC ACTUALLY WORK. Shown here because the doc is freeform, so
+          what goes in it decides how well every draft in this stream reads, and the single
+          biggest difference is whether it contains real sentences or only adjectives. */}
+      <details className={s.guide}>
+        <summary>What makes a voice doc actually work</summary>
+        <p>
+          The drafting prompt reads this doc on every piece in this stream. The one thing that
+          moves output most is <strong>real sentences in the voice</strong>. A writer can
+          imitate a line; it can only approximate an adjective, so &ldquo;direct and
+          warm&rdquo; produces far less than three sentences that sound like you.
+        </p>
+        <ul>
+          <li>
+            <strong>Five to ten lines you would actually say.</strong> Pull them from posts,
+            transcripts or emails, quoted exactly. This is the highest-value section by a
+            distance.
+          </li>
+          <li>
+            <strong>Words and phrases you reach for</strong>, and ones you never use.
+          </li>
+          <li>
+            <strong>Sentence length and rhythm.</strong> Short and clipped, or longer and
+            considered?
+          </li>
+          <li>
+            <strong>How you open.</strong> Straight into the claim, a question, a story?
+          </li>
+          <li>
+            <strong>Your point of view</strong>, meaning what you argue that others in your
+            field do not.
+          </li>
+          <li>
+            <strong>Who you are talking to</strong>, and what they already know.
+          </li>
+        </ul>
+        <p>
+          Sample lines demonstrate <em>sound</em>, not subject matter. The prompt is told not
+          to reuse what they are about.
+        </p>
+      </details>
+
       <div className={s.actions}>
         <button type="button" className={s.save} onClick={save} disabled={!dirty || state === 'saving'}>
           {label}
