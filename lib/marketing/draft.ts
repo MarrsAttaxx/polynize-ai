@@ -184,7 +184,11 @@ HOW TO FUSE THEM. A great draft is the recipe's structure carrying THIS concept'
 
 ${HOOK_GUIDANCE}
 
-Build the opening from the concept's single sharpest point: a specific number, image, mistake, or named tension it actually contains. If the concept holds no such number or proof, do not manufacture one.
+Build the opening from the concept's single sharpest point: a specific number, image, mistake, or named tension it actually contains.
+
+WHERE THE HOOK'S RAW MATERIAL LIVES. The concept doc carries specific sections for it, and you should go to them first rather than to the thesis: "What they believe instead" is the belief to state and break, "Concrete specifics" is the entire budget of hard material you are allowed to point at, "What it costs them" is the stakes, and "Lines worth keeping" holds the owner's own phrasing, which may be used as final copy. A concept written before these sections existed will not have them; work from Framing, Core thesis and Proof or story in that case.
+
+IF THE CONCEPT HAS NO NUMBER OR PROOF, THAT IS NOT PERMISSION TO BE VAGUE. Do not invent one, and do not retreat to a general statement either. Choose a pattern from the library that does not need a number: a contrarian reframe built from the wrong belief, a provocative image, a reframe by analogy, or a costly-mistake callout drawn from the stakes. A vague hook is a failure with exactly the same consequence as a fabricated one, so it is not the safe option.
 
 ${VOICE_AND_DASH}
 
@@ -216,7 +220,11 @@ HOW TO FUSE THEM. A great script is the recipe's structure carrying THIS concept
 
 ${HOOK_GUIDANCE}
 
-Build the hook from the concept's single sharpest point: a specific number, image, mistake, or named tension it actually contains. If the concept holds no such number or proof, do not manufacture one.
+Build the hook from the concept's single sharpest point: a specific number, image, mistake, or named tension it actually contains.
+
+WHERE THE HOOK'S RAW MATERIAL LIVES. The concept doc carries specific sections for it, and you should go to them first rather than to the thesis: "What they believe instead" is the belief to state and break, "Concrete specifics" is the entire budget of hard material you are allowed to point at, "What it costs them" is the stakes, and "Lines worth keeping" holds the owner's own phrasing, which may be used as final copy. A concept written before these sections existed will not have them; work from Framing, Core thesis and Proof or story in that case.
+
+IF THE CONCEPT HAS NO NUMBER OR PROOF, THAT IS NOT PERMISSION TO BE VAGUE. Do not invent one, and do not retreat to a general statement either. Choose a pattern from the library that does not need a number: a contrarian reframe built from the wrong belief, a provocative image, a reframe by analogy, or a costly-mistake callout drawn from the stakes. A vague hook is a failure with exactly the same consequence as a fabricated one, so it is not the safe option.
 
 ${VOICE_AND_DASH}
 

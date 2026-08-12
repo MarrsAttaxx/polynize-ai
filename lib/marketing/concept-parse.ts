@@ -14,9 +14,18 @@ const SECTIONS = new Set([
   'framing',
   'core thesis',
   'who it is for',
+  // The hook-ammunition sections, added 2026-08-12. The concept used to capture the
+  // ARGUMENT (thesis, beats, where it lands) and almost none of the raw material a hook is
+  // built from, which is why scripts drafted from a thin concept came out generic: the
+  // script prompt forbids inventing specifics, so with nothing concrete in the concept a
+  // vague hook was the correct output.
+  'what they believe instead',
   'key beats',
+  'concrete specifics',
+  'what it costs them',
   'proof or story',
   'where it lands',
+  'lines worth keeping',
   'source voice',
 ]);
 
