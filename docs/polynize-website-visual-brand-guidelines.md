@@ -198,23 +198,58 @@ body[data-depth="tactile"]::before {
 }
 ```
 
-### 2e. Optional card grain — `tactile.css` (`.tacCardTexture::after`)
+### 2e. Card leather grain — `tactile.css` (`.tacCardTexture`)
 
-A finer brushed-metal grain for individual cards (opt-in by adding the class to a
-`position: relative` card):
+Opt-in card grain. Add the class to any card; it sets its own `position` and
+`isolation`, so the card only needs a `border-radius` for the overlay to inherit.
+
+**This was a brushed-metal noise at `baseFrequency: 2` until 2026-08-12.** Two is
+finer than a device pixel at a 160px tile, so it rendered as nothing, and the class
+was applied to no card in the console. Marrs, on the marketing dashboard: *"the cards
+are the same colour as the background... if we put a grain over it that has a bit of
+depth to it, it'll give it a bit of a leathery feel."*
+
+**Why it reads as a surface and not as noise:** `feTurbulence` on its own is flat
+static. Running it through `feDiffuseLighting` lights the noise as a **height field**,
+so every grain gets a lit face and a shaded face and the eye reads relief. The light
+sits at **azimuth 315 (upper-left)**, which is the invariant light-source convention
+in §2 — move it and the grain disagrees with every shadow on the page.
+
+`baseFrequency: 0.4` over a 160px tile is the pebble. Higher collapses back to
+invisible static, which is how this shipped doing nothing the first time.
 
 ```css
+.tacCardTexture {
+  position: relative;
+  isolation: isolate; /* else the grain blends with the page, not the card */
+}
 .tacCardTexture::after {
   content: '';
   position: absolute;
   inset: 0;
   border-radius: inherit;
   pointer-events: none;
-  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='2' numOctaves='2' stitchTiles='stitch' seed='3'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.45 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
-  opacity: 0.18;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg'><filter id='g'><feTurbulence type='fractalNoise' baseFrequency='0.4' numOctaves='5' seed='3' stitchTiles='stitch'/><feDiffuseLighting lighting-color='white' surfaceScale='3'><feDistantLight azimuth='315' elevation='56'/></feDiffuseLighting></filter><rect width='100%' height='100%' filter='url(%23g)'/></svg>");
+  background-size: 160px 160px;
+  opacity: 0.14;
   mix-blend-mode: overlay;
 }
+/* On cream, overlay has nothing to lighten. multiply reads as tooth instead, and much
+   lower, because darkening a light surface is far louder than lightening a dark one:
+   at the dark theme's 14% this looked like stucco. */
+body.theme-light[data-depth='tactile'] .tacCardTexture::after {
+  mix-blend-mode: multiply;
+  opacity: 0.08;
+}
 ```
+
+**Grain alone is not enough.** The complaint that prompted this was contrast: the card
+was `--tac-surface` on a `--tac-bg` page, a step small enough to read as no step, so
+grain would only have textured an invisible card. Pair the grain with a lifted face
+(`--tac-surface-2` plus a top-left sheen) and lit/shaded edges. In the console that
+half lives in `client-card.module.css` as `.leathered`, deliberately doubled
+(`.leathered.leathered`) so it outranks `launcher.module.css`'s own `.card`
+`background` regardless of module import order.
 
 ---
 
