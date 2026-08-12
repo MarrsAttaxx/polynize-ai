@@ -1,6 +1,7 @@
 import { Fragment } from 'react';
 import Link from 'next/link';
 import { DraftingGrid } from '../_components/DraftingGrid';
+import { HeroVideo } from './HeroVideo';
 import { TrackedLink } from '../_components/TrackedLink';
 import { SiteFooter } from '../_components/SiteFooter';
 import { SiloGlyph, StageGlyph, MapGlyph } from './icons';
@@ -115,11 +116,7 @@ export function StoryLanding({
             </div>
           </div>
 
-          <div className={s.videoWrap}>
-            <video className={s.video} controls preload="metadata" poster={c.video.poster} playsInline>
-              <source src={c.video.src} type="video/mp4" />
-            </video>
-          </div>
+          <HeroVideo src={c.video.src} poster={c.video.poster} label={`Play: ${c.video.h2}`} />
           <div className={s.videoMeta}>
             <span className={s.avatars} aria-hidden="true">
               {c.video.people.map((p) => (

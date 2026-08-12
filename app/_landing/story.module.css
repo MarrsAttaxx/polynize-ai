@@ -272,6 +272,7 @@
 }
 
 .videoWrap {
+  position: relative;
   border: 1px solid var(--border-soft);
   border-radius: 14px;
   overflow: hidden;
@@ -281,6 +282,49 @@
   box-shadow: 0 30px 80px rgba(0, 0, 0, 0.35);
 }
 .video { display: block; width: 100%; height: auto; }
+
+/* The play mark. See HeroVideo.tsx for why this exists rather than native `controls`.
+   Covers the whole frame, so the poster is one big target rather than a 96px bullseye. */
+.playBtn {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  /* Darkens the poster just enough that a white mark holds on any frame, without
+     turning the thumbnail into a grey card. */
+  background: radial-gradient(
+    ellipse at center,
+    rgba(0, 0, 0, 0.44) 0%,
+    rgba(0, 0, 0, 0.22) 55%,
+    rgba(0, 0, 0, 0.08) 100%
+  );
+  transition: background 0.2s ease;
+}
+.playBtn:hover { background: rgba(0, 0, 0, 0.3); }
+.playBtn:focus-visible { outline: 2px solid var(--mint); outline-offset: -4px; }
+
+.playMark {
+  display: block;
+  width: clamp(64px, 9vw, 96px);
+  transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.3, 1), filter 0.2s ease;
+  filter: drop-shadow(0 3px 22px rgba(0, 0, 0, 0.6));
+}
+.playMark svg { display: block; width: 100%; height: auto; }
+.playBtn:hover .playMark,
+.playBtn:focus-visible .playMark {
+  transform: scale(1.06);
+  /* The one mint note. White mark, brand glow. */
+  filter: drop-shadow(0 3px 22px rgba(0, 0, 0, 0.6))
+    drop-shadow(0 0 18px color-mix(in srgb, var(--mint) 55%, transparent));
+}
+@media (prefers-reduced-motion: reduce) {
+  .playMark { transition: none; }
+  .playBtn:hover .playMark,
+  .playBtn:focus-visible .playMark { transform: none; }
+}
 .videoMeta {
   display: flex;
   align-items: center;
@@ -704,6 +748,12 @@
   stroke-linejoin: round;
   filter: drop-shadow(0 0 6px color-mix(in srgb, var(--mint) 55%, transparent));
 }
+/* Group wrappers. They carry no paint of their own, but a CSS-module class that resolves
+   to `undefined` puts class="undefined" in the DOM, where any other stray .undefined
+   selector will match it. Cheaper to define them than to debug that twice. */
+.hudGauge,
+.hudAmp { fill: none; }
+
 .hudAmpBody {
   fill: color-mix(in srgb, var(--mint) 5%, transparent);
   stroke: var(--hud-2);
@@ -716,6 +766,117 @@
   50% { opacity: 1; }
 }
 .play .hudAmpStep { animation: hudGain 2.4s ease-in-out infinite; }
+
+/* ---- beat 3 on BOTH pages: the torch on the systems diagram ----
+
+   THIS BLOCK IS LOAD-BEARING IN AN UNUSUAL WAY. Every shape in TorchDiagram sits inside a
+   luminance mask on a near-black page, so an unstyled shape does not fall back to
+   "plain": SVG defaults it to fill:black, stroke:none, and it paints black on black. The
+   figure went out once with these eleven classes missing and the entire diagram was
+   invisible, leaving only .hudGrid, which read as an empty grid. If you rename anything
+   here, rename it in figures-ai.tsx in the same edit.
+
+   The wiring is dotted because a systems diagram is dotted. The AI nodes are hexagons so
+   they read as a different kind of object from the process steps. */
+.dgStep {
+  fill: color-mix(in srgb, var(--mint) 5%, transparent);
+  stroke: var(--hud-2);
+  stroke-width: 1.5;
+}
+.dgStepRule { fill: none; stroke: var(--hud-3); stroke-width: 2; stroke-linecap: round; }
+.dgLink {
+  fill: none;
+  stroke: var(--hud-2);
+  stroke-width: 1.6;
+  stroke-dasharray: 2 7;
+  stroke-linecap: round;
+}
+/* Fainter than the spine: these are the speculative attachments, not the work itself. */
+.dgAiLink {
+  fill: none;
+  stroke: var(--hud-3);
+  stroke-width: 1.4;
+  stroke-dasharray: 2 8;
+  stroke-linecap: round;
+}
+/* Coral, the human/failure token. A wide gap so the break is legible before the X is. */
+.dgBroken {
+  fill: none;
+  stroke: color-mix(in srgb, var(--coral) 42%, transparent);
+  stroke-width: 1.6;
+  stroke-dasharray: 3 16;
+  stroke-linecap: round;
+}
+.dgBreak {
+  fill: none;
+  stroke: var(--coral);
+  stroke-width: 2.2;
+  stroke-linecap: round;
+}
+.dgAiHex {
+  fill: color-mix(in srgb, var(--mint) 8%, transparent);
+  stroke: var(--hud-1);
+  stroke-width: 1.8;
+  stroke-linejoin: round;
+}
+.dgAiSpark {
+  fill: none;
+  stroke: var(--hud-0);
+  stroke-width: 1.8;
+  stroke-linecap: round;
+}
+.dgFlow {
+  fill: var(--hud-0);
+  stroke: none;
+  filter: drop-shadow(0 0 5px color-mix(in srgb, var(--mint) 60%, transparent));
+}
+
+/* The AI nodes pulse out of phase, so the diagram is alive under the beam rather than a
+   still the torch is panning across. */
+@keyframes dgPulse {
+  0%, 100% { opacity: 0.55; }
+  50% { opacity: 1; }
+}
+.play .dgAi { animation: dgPulse 3.4s ease-in-out infinite; animation-delay: calc(var(--i, 0) * -0.7s); }
+
+/* Work in flight, travelling its own run. --dx is the run length, set per traveller. */
+@keyframes dgTravel {
+  0% { transform: translateX(0); opacity: 0; }
+  12% { opacity: 1; }
+  88% { opacity: 1; }
+  100% { transform: translateX(var(--dx, 100px)); opacity: 0; }
+}
+.play .dgFlow { animation: dgTravel 2.8s linear infinite; animation-delay: calc(var(--i, 0) * -0.95s); }
+
+/* The beam. Thirteen uneven stops over twelve seconds, with the dwell times deliberately
+   irregular: a torch being carried by somebody searching, not a security camera on a
+   sweep. The radius is FIXED and only the position moves. Widening it until the diagram
+   is legible is the obvious edit and it is the opposite of the argument the beat makes.
+
+   No .play gate. With no animation at all the beam rests at its start position and one
+   section of the diagram is lit, which is the fail-safe: something is always visible. */
+@keyframes torchSweep {
+  0%   { transform: translate(0, 0); }
+  7%   { transform: translate(196px, 34px); }
+  15%  { transform: translate(168px, 186px); }
+  24%  { transform: translate(402px, 148px); }
+  30%  { transform: translate(346px, -66px); }
+  39%  { transform: translate(596px, 22px); }
+  47%  { transform: translate(654px, 174px); }
+  54%  { transform: translate(452px, 232px); }
+  63%  { transform: translate(712px, 118px); }
+  71%  { transform: translate(268px, 264px); }
+  79%  { transform: translate(86px, 208px); }
+  88%  { transform: translate(324px, 96px); }
+  94%  { transform: translate(122px, 62px); }
+  100% { transform: translate(0, 0); }
+}
+.torchMove { animation: torchSweep 12s cubic-bezier(0.5, 0, 0.5, 1) infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .torchMove { animation: none; }
+  .play .dgAi,
+  .play .dgFlow { animation: none; }
+}
 
 /* ---- /capability-mapping beat 4: the organisation being redesigned ----
    The boxes drift and the LINES DO NOT. The lines are what the boxes are straining

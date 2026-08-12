@@ -12,6 +12,10 @@
   text-align: left;
 }
 
+/* The horizontal scroller. Named in the markup since the matrix was built and never
+   defined here, so on a narrow screen the grid overflowed instead of scrolling. */
+.scroll { max-width: 100%; }
+
 .grid {
   display: grid;
   gap: 3px;
@@ -343,7 +347,7 @@
 
 @media (max-width: 1000px) {
   /* Swipe the map rather than shrink the cells into texture. */
-  .wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 }
 @media (max-width: 680px) {
   .modal { padding: 24px 20px 20px; }
