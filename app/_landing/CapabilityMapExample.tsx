@@ -182,6 +182,11 @@ export function CapabilityMapExample() {
             >
               Map a different team
             </button>
+            {/* Amber, which on this site is the hybrid/caution token, and italic so it
+                reads as an aside rather than a fourth claim. It sits with the map, not
+                only inside the picker: a reader who never opens the picker still has to
+                know this map is illustrative. */}
+            <p className={s.indicative}>indicative only</p>
           </div>
 
           <div className={s.map}>

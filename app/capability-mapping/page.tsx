@@ -8,7 +8,6 @@ import {
   workArtefactsIntro,
   workBeats,
   workContent,
-  workInputs,
 } from '../_landing/content-work';
 
 /**
@@ -46,7 +45,6 @@ export default function CapabilityMappingPage() {
       artefacts={workArtefacts}
       artefactsIntro={workArtefactsIntro}
       artefactsFootnote={workArtefactsFootnote}
-      inputs={workInputs}
       surface="capmap"
     />
   );

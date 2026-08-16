@@ -4,7 +4,7 @@ import { DraftingGrid } from '../_components/DraftingGrid';
 import { HeroVideo } from './HeroVideo';
 import { TrackedLink } from '../_components/TrackedLink';
 import { SiteFooter } from '../_components/SiteFooter';
-import { SiloGlyph, StageGlyph, MapGlyph } from './icons';
+import { CardGlyph, MapGlyph, StageGlyph } from './icons';
 import { StoryPath } from './StoryPath';
 import { StoryMotion } from './StoryMotion';
 import { FocusVeil } from './FocusVeil';
@@ -16,7 +16,6 @@ import {
   type Artefact,
   type Beat,
   type MappingContent,
-  type Silo,
 } from './content-base';
 import s from './story.module.css';
 
@@ -55,7 +54,6 @@ export function StoryLanding({
   artefacts,
   artefactsIntro,
   artefactsFootnote,
-  inputs,
   scale,
   surface,
 }: {
@@ -69,7 +67,6 @@ export function StoryLanding({
   artefacts: Artefact[];
   artefactsIntro: string;
   artefactsFootnote: string;
-  inputs: Silo[];
   /**
    * Optional. Sits between the result and the proof, and says the thing a reader is
    * thinking the moment they finish reading the result: this was one team and one
@@ -170,6 +167,11 @@ export function StoryLanding({
           <div className={s.cards3}>
             {c.whatItIs.cards.map((card) => (
               <div key={card.title} className={`${s.card} ${s.rise}`}>
+                {card.icon && (
+                  <span className={s.cardIcon} aria-hidden="true">
+                    <CardGlyph kind={card.icon} />
+                  </span>
+                )}
                 <div className={s.cardTitle}>{card.title}</div>
                 <div className={s.cardBody}>{card.body}</div>
               </div>
@@ -182,36 +184,32 @@ export function StoryLanding({
           <div className={`${s.sectionHead} ${s.rise}`}>
             <div className={s.eyebrow}>The process</div>
             <h2 className={s.h2}>{c.howItRuns.h2}</h2>
+            <p className={s.leadLine}>{c.howItRuns.lead}</p>
           </div>
 
           <Timeline howItRuns={c.howItRuns} />
 
           {/* What each phase actually involves. The chart says when and who; this says
-              what, which is the one thing a bar cannot carry. */}
+              what, which is the one thing a bar cannot carry, and how much of the client's
+              own time it costs, which is the question a two week chart provokes. */}
           <div className={`${s.phaseNotes} ${s.rise}`}>
             {c.howItRuns.stages.map((st) => (
               <div key={st.n} className={s.phaseNote}>
-                <span className={s.phaseNoteN}>{st.n}</span>
+                <div className={s.phaseNoteHead}>
+                  <span className={s.phaseNoteIcon}>
+                    <StageGlyph kind={st.icon} />
+                  </span>
+                  <span className={s.phaseNoteTitle}>{st.title}</span>
+                </div>
                 <p>{st.what}</p>
-              </div>
-            ))}
-          </div>
-
-          {/* The three inputs step 01 asks for, shown rather than only listed. */}
-          <div className={`${s.inputs} ${s.rise}`}>
-            {inputs.map((it) => (
-              <div key={it.label} className={s.input}>
-                <span className={s.inputIcon}>
-                  <SiloGlyph kind={it.kind} />
-                </span>
                 <div>
-                  <div className={s.inputLabel}>{it.label}</div>
-                  <div className={s.inputNote}>{it.note}</div>
+                  <span className={s.timePill}>{st.duration}</span>
                 </div>
               </div>
             ))}
           </div>
-          <p className={s.stagesLine}>{c.howItRuns.line}</p>
+
+          {c.howItRuns.line && <p className={s.stagesLine}>{c.howItRuns.line}</p>}
         </section>
 
         {/* 4b. The mid-page CTA. A reader who is convinced by the map should not have to

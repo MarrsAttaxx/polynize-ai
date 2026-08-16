@@ -1238,6 +1238,15 @@
 /* ---------- Cards ---------- */
 .cards3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 34px; }
 .cards2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+/* The mark above a card's title. Optional in the data, so pages that have nothing
+   sensible to draw simply do not render one. */
+.cardIcon {
+  display: inline-flex;
+  color: var(--mint);
+  line-height: 0;
+  margin-bottom: 14px;
+}
+
 .card {
   border: 1px solid var(--border-soft);
   border-radius: 12px;
@@ -1481,13 +1490,45 @@
   margin: 0 0 26px;
   text-align: left;
 }
+/* Head, body, time. The head used to be a bare "01" in a left column; it is now the icon
+   and the phase name, because the Gantt above already numbers and orders the phases and
+   repeating that here cost a column and said nothing. */
 .phaseNote {
   display: grid;
-  grid-template-columns: auto 1fr;
-  gap: 12px;
-  align-items: start;
+  gap: 10px;
+  align-content: start;
 }
 .phaseNote p { margin: 0; font-size: 13.5px; line-height: 1.6; color: var(--text-2); }
+.phaseNoteHead {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.phaseNoteIcon {
+  display: inline-flex;
+  color: var(--mint);
+  line-height: 0;
+}
+.phaseNoteTitle {
+  font-family: var(--font-space-grotesk), sans-serif;
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--text);
+}
+/* The client's own time cost. A pill rather than a line of body text, because it is the
+   number a reader scans for and it should be findable without reading the paragraph. */
+.timePill {
+  display: inline-block;
+  font-family: var(--font-inter), monospace;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: var(--mint);
+  background: color-mix(in srgb, var(--mint) 9%, transparent);
+  border: 1px solid color-mix(in srgb, var(--mint) 28%, transparent);
+  border-radius: 999px;
+  padding: 5px 12px;
+}
 .phaseNoteN {
   font-family: var(--font-inter), monospace;
   font-size: 11px;

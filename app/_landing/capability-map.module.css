@@ -135,7 +135,21 @@
 .revealBreathe { animation: revealBreathe 3.2s ease-in-out infinite; }
 
 /* ---------- The control, where the legend used to be ---------- */
-.controls { display: flex; justify-content: center; margin: 0 0 20px; }
+/* Column, so the caveat sits under the button rather than beside it. */
+.controls {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 20px;
+}
+.indicative {
+  margin: 0;
+  font-size: 12px;
+  font-style: italic;
+  letter-spacing: 0.01em;
+  color: var(--amber);
+}
 .swapCta {
   font-family: var(--font-inter), sans-serif;
   font-size: 13px;

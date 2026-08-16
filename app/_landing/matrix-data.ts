@@ -80,7 +80,7 @@ export const MATRIX_SCENARIOS: Scenario[] = [
     tag: 'Work scenario 3',
     name: 'Pricing and scoping the work using Copilot',
     cat: 'analytic',
-    flag: 'Issue',
+    flag: 'GAP',
     caps: [
       ['Estimate Reasoning', 'Assumption Testing', 'Model Scepticism'],
       ['Risk Framing', 'Numbers Discipline', null],

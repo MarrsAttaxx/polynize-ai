@@ -3,7 +3,6 @@ import {
   type Artefact,
   type Beat,
   type MappingContent,
-  type Silo,
 } from './content-base';
 
 /**
@@ -38,12 +37,6 @@ import {
 /** The figures this page declares. See figures-work.tsx for the registry. */
 export type WorkFigureKind = 'lost' | 'options' | 'torch' | 'misfit';
 
-/** The three inputs the engagement asks for. Same three, different emphasis. */
-const INPUTS: Silo[] = [
-  { kind: 'process', label: 'The bottleneck', note: 'One piece of work that is costing you. Not the whole company.' },
-  { kind: 'people', label: 'Whatever you have', note: 'Documents, frameworks, half-finished spreadsheets. Real and imperfect beats polished.' },
-  { kind: 'technology', label: 'The decision makers', note: 'The people who can say yes in the room while it is being built.' },
-];
 
 /**
  * The five beats.
@@ -165,65 +158,28 @@ export const workContent: MappingContent = {
       {
         title: 'Built from your material',
         body: 'Documents, frameworks, half-finished spreadsheets. Everything the map says traces back to something you gave us.',
+        icon: 'source',
       },
       {
         title: 'One team at a time',
         body: 'Not a top-down inventory of the whole company in one go. Map a team properly, then run the same method across the next one.',
+        icon: 'oneTeam',
       },
       {
         title: 'The human column matters',
         body: 'The map is as much about protecting judgment as it is about finding automation. Both get the same scrutiny.',
+        icon: 'human',
       },
     ],
   },
 
   /**
-   * The fixed sequence from the thesis: model, then train, then deploy.
-   *
-   * ON THE TIMELINE, AND THIS NEEDS A DECISION. The chart frames two weeks, which is
-   * honest for Model and is the length of a mapping engagement. Train and Deploy are the
-   * rest of the transformation and plainly do not finish inside a fortnight; they are
-   * drawn here because Marrs asked for the same treatment on both pages and to keep the
-   * existing data. Flagged to him on 10 Aug 2026. The better version is probably Model
-   * filling the frame with the other two running off the right-hand edge, which would
-   * say "mapping fits in two weeks and the rest follows" rather than implying all three
-   * do. Do not quietly harden this into a delivery promise.
+   * Inherited from mappingContent: Model / Measure / Matrix, taken back from the version
+   * running at polynize.io (see content-base). This page used to override it with
+   * Model / Train / Deploy plus a "Working sessions" spanning lane, and carried a standing
+   * flag that drawing Train and Deploy inside a two week frame overstated them. Adopting
+   * the .io process retires both the override and that problem.
    */
-  howItRuns: {
-    h2: 'The sequence is fixed.',
-    spanning: {
-      label: 'Working sessions',
-      note: 'Throughout',
-      text: 'Built with your people in the room',
-    },
-    stages: [
-      {
-        n: '01',
-        title: 'Model',
-        span: [1, 6],
-        what: 'We take your inputs in whatever state they are in, pick the bottleneck, and build the work model. Then the capability map, then the benchmark.',
-        who: 'Your project lead',
-        icon: 'setup',
-      },
-      {
-        n: '02',
-        title: 'Train',
-        span: [5, 9],
-        what: 'Lift the human capability the map says has to stay human. This comes second on purpose. Doing it first builds for a job the agents are about to change.',
-        who: 'Your team',
-        icon: 'session',
-      },
-      {
-        n: '03',
-        title: 'Deploy',
-        span: [8, 10],
-        what: 'Agents take the capabilities the map allocated to them, designed around the people who own the rest. Only possible once the gaps are known.',
-        who: 'Your leadership',
-        icon: 'handover',
-      },
-    ],
-    line: 'Skip a step and you are building the plane while you are flying it.',
-  },
 
   proof: mappingContent.proof,
 
@@ -233,4 +189,3 @@ export const workContent: MappingContent = {
   },
 };
 
-export const workInputs = INPUTS;

@@ -8,7 +8,6 @@ import {
   artefactsIntro,
   storyBeats,
   storyContent,
-  storyInputs,
   storyScale,
 } from '../_landing/content-ai';
 
@@ -48,7 +47,6 @@ export default function MappingPage() {
       artefacts={artefacts}
       artefactsIntro={artefactsIntro}
       artefactsFootnote={artefactsFootnote}
-      inputs={storyInputs}
       scale={storyScale}
       surface="mapping"
     />

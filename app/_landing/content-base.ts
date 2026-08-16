@@ -11,7 +11,7 @@
  * company, never a price, Australian spelling, no em-dashes, human led.
  */
 
-import type { StageIcon } from './icons';
+import type { CardIcon, StageIcon } from './icons';
 import type { SiloIcon } from './icons';
 
 /** People / process / technology, as a labelled item. Used by the story's Inputs row.
@@ -47,7 +47,8 @@ export type Artefact = {
   use: string;
 };
 
-export type Card = { title: string; body: string };
+/** `icon` is optional: a page with nothing sensible to draw should draw nothing. */
+export type Card = { title: string; body: string; icon?: CardIcon };
 export type WalkawayItem = { n: string; title: string; body: string };
 export type Stage = {
   n: string;
@@ -55,6 +56,13 @@ export type Stage = {
   what: string;
   who: string;
   icon: StageIcon;
+  /**
+   * How much of the client's own time this phase costs, e.g. "2 to 3 hours". It answers
+   * the question the Gantt raises and cannot itself answer: the bars show elapsed days,
+   * and a reader looking at a two week chart needs to know they are not being asked for
+   * two weeks of their people.
+   */
+  duration: string;
   /**
    * Where the phase sits on the timeline, as inclusive 1-indexed working days out of
    * ten. `[1, 3]` is the first three days. Ten because two weeks is the engagement and
@@ -78,8 +86,11 @@ export type MappingContent = {
   walkaway: { h2: string; intro: string; items: WalkawayItem[]; footnote: string };
   howItRuns: {
     h2: string;
+    /** One line under the heading, framing the three phases before they are listed. */
+    lead: string;
     stages: Stage[];
-    line: string;
+    /** Optional closing line. A section that has said everything should not add a coda. */
+    line?: string;
     /**
      * The lane that runs the whole way across the chart, drawn dashed above the phases.
      * Optional: a page with nothing genuinely continuous should not invent one.
@@ -177,46 +188,53 @@ export const mappingContent: MappingContent = {
     footnote: 'Everyone who takes part also receives their own individual report.',
   },
 
+  /**
+   * THE PROCESS, taken from the version running at polynize.io/mapping (12 Aug 2026).
+   *
+   * That page is an iframe of a static export of this one which had been hand-edited
+   * after export, so it had drifted ahead of the repo. Marrs asked for its version to
+   * come back, and this is that copy verbatim rather than a rewrite of it.
+   *
+   * IT REPLACED "Model / Train / Deploy", which is a different argument. That version
+   * said: build the model, lift the humans, then hand the rest to agents. This one says:
+   * build the model, MEASURE people against it, hand back the matrix. Both landing pages
+   * now carry this, so a change here changes both.
+   *
+   * The spans are the .io chart's, converted into this component's coordinates (it has a
+   * label column and .io's did not): .io drew columns 1/4, 3/9 and 8/11 across ten days.
+   */
   howItRuns: {
-    h2: 'How it runs.',
+    h2: 'How It Works.',
+    lead: 'Simple three-step process, powered by the Polynize Capability Platform.',
     stages: [
       {
         n: '01',
-        title: 'Discovery',
-        what: 'We work out what is worth mapping, and what a result would be worth to you.',
-        who: 'You, and whoever holds the budget',
-        icon: 'discovery',
+        title: 'Model',
+        span: [1, 3],
+        what: 'We build the model with you from your documents, roles, people and process, and from conversation, to create realistic scenarios. You set the benchmark.',
+        who: 'Your project lead',
+        duration: '2 to 3 hours',
+        icon: 'model',
       },
       {
         n: '02',
-        title: 'Agreement',
-        what: 'Scope and price confirmed.',
-        who: 'You',
-        icon: 'agreement',
+        title: 'Measure',
+        span: [3, 8],
+        what: 'Your team works through the work scenarios in their own words and at their own pace. Their capability is measured and uplifted in the flow of work, relative to the benchmark.',
+        who: 'Your team',
+        duration: 'Under 1 hour per participant',
+        icon: 'measure',
       },
       {
         n: '03',
-        title: 'Input and setup',
-        what: 'We build the scenarios from your real work. Either a short session or online, whichever suits.',
-        who: 'Your project lead',
-        icon: 'setup',
-      },
-      {
-        n: '04',
-        title: 'The session',
-        what: 'Three hours. Your team works through the scenarios and the map builds live.',
-        who: 'Your team',
-        icon: 'session',
-      },
-      {
-        n: '05',
-        title: 'Handover showcase',
-        what: 'One hour. We walk your leadership through the map, the report, and what we would do next.',
+        title: 'Matrix',
+        span: [8, 10],
+        what: 'You receive the completed capability matrix, showing capability and uplift, and a capability report for your leadership, investment and decision-making.',
         who: 'Your leadership',
-        icon: 'handover',
+        duration: '1 to 2 hours',
+        icon: 'matrix',
       },
     ],
-    line: 'No cap on how many people take part. We scope that with you up front.',
   },
 
   matrixImage: {

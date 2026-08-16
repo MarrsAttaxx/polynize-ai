@@ -23,9 +23,53 @@ const props = {
 };
 
 /** The five stages of how the session runs. */
-export type StageIcon = 'discovery' | 'agreement' | 'setup' | 'session' | 'handover';
+/**
+ * `model` | `measure` | `matrix` are the three phases of the engagement as it actually
+ * runs. The older five (discovery, agreement, setup, session, handover) describe an
+ * earlier shape of the process and are kept because nothing forces a page to use the
+ * new set, and a union member costs nothing.
+ */
+export type StageIcon =
+  | 'discovery'
+  | 'agreement'
+  | 'setup'
+  | 'session'
+  | 'handover'
+  | 'model'
+  | 'measure'
+  | 'matrix';
 
 export function StageGlyph({ kind }: { kind: StageIcon }) {
+  // A solid built from your material: a cube drawn in isometric, with its three visible
+  // edges meeting at the centre. Something assembled rather than found.
+  if (kind === 'model') {
+    return (
+      <svg {...props} aria-hidden="true">
+        <path d="M14 3 23 8v10l-9 5-9-5V8z" />
+        <path d="M14 13 23 8M14 13v10M14 13 5 8" />
+      </svg>
+    );
+  }
+  // A gauge with its needle short of full: capability read against a benchmark, which is
+  // the whole of what this phase does.
+  if (kind === 'measure') {
+    return (
+      <svg {...props} aria-hidden="true">
+        <path d="M4.5 21a9.5 9.5 0 1 1 19 0" />
+        <path d="M14 21 19.5 12.5" />
+        <path d="M8 21v-1.5M14 12.5V11M20 21v-1.5" />
+      </svg>
+    );
+  }
+  // The artefact itself: a grid with one cell filled.
+  if (kind === 'matrix') {
+    return (
+      <svg {...props} aria-hidden="true">
+        <path d="M4 5h20v18H4zM4 11h20M4 17h20M10.7 5v18M17.3 5v18" />
+        <path d="M10.7 11h6.6v6h-6.6z" fill="currentColor" stroke="none" opacity="0.5" />
+      </svg>
+    );
+  }
   if (kind === 'discovery') {
     // Magnifier: working out what is worth mapping.
     return (
@@ -141,6 +185,57 @@ export function GitHubMark({ size = 26 }: { size?: number }) {
         clipRule="evenodd"
         d="M8 0C3.58 0 0 3.58 0 8C0 11.54 2.29 14.53 5.47 15.59C5.87 15.66 6.02 15.42 6.02 15.21C6.02 15.02 6.01 14.39 6.01 13.72C4 14.09 3.48 13.23 3.32 12.78C3.23 12.55 2.84 11.84 2.5 11.65C2.22 11.5 1.82 11.13 2.49 11.12C3.12 11.11 3.57 11.7 3.72 11.94C4.44 13.15 5.59 12.81 6.05 12.6C6.12 12.08 6.33 11.73 6.56 11.53C4.78 11.33 2.92 10.64 2.92 7.58C2.92 6.71 3.23 5.99 3.74 5.43C3.66 5.23 3.38 4.41 3.82 3.31C3.82 3.31 4.49 3.1 6.02 4.13C6.66 3.95 7.34 3.86 8.02 3.86C8.7 3.86 9.38 3.95 10.02 4.13C11.55 3.09 12.22 3.31 12.22 3.31C12.66 4.41 12.38 5.23 12.3 5.43C12.81 5.99 13.12 6.7 13.12 7.58C13.12 10.65 11.25 11.33 9.47 11.53C9.76 11.78 10.01 12.26 10.01 13.01C10.01 14.08 10 14.94 10 15.21C10 15.42 10.15 15.67 10.55 15.59C13.71 14.53 16 11.53 16 8C16 3.58 12.42 0 8 0Z"
       />
+    </svg>
+  );
+}
+
+/**
+ * Marks for the three cards under the capability map. Line art at the same weight as the
+ * stage glyphs, so the page reads as one drawing set rather than an assortment.
+ */
+export type CardIcon = 'source' | 'oneTeam' | 'human';
+
+export function CardGlyph({ kind }: { kind: CardIcon }) {
+  const props = {
+    width: 26,
+    height: 26,
+    viewBox: '0 0 28 28',
+    fill: 'none' as const,
+    stroke: 'currentColor',
+    strokeWidth: 1.7,
+    strokeLinecap: 'round' as const,
+    strokeLinejoin: 'round' as const,
+  };
+  if (kind === 'source') {
+    // A stack of documents feeding in: everything the map says traces back to something
+    // you handed over.
+    return (
+      <svg {...props} aria-hidden="true">
+        <path d="M7 3.5h9l4 4v13H7z" />
+        <path d="M16 3.5V8h4" />
+        <path d="M10.5 12.5h6M10.5 16h4" />
+        <path d="M4 8v16.5h13" />
+      </svg>
+    );
+  }
+  if (kind === 'oneTeam') {
+    // One group picked out of several: mapped properly, then the method runs again.
+    return (
+      <svg {...props} aria-hidden="true">
+        <path d="M3.5 4.5h9v9h-9z" />
+        <path d="M17 6.5h8M17 10.5h8" opacity="0.55" />
+        <path d="M17 18.5h8M17 22.5h8" opacity="0.55" />
+        <path d="M3.5 17.5h9v9h-9z" opacity="0.4" />
+        <path d="M5.5 9 7.5 11l3.5-4" />
+      </svg>
+    );
+  }
+  // A person with the judgment kept, drawn as a shield rather than a cog.
+  return (
+    <svg {...props} aria-hidden="true">
+      <path d="M11 9.5a3.6 3.6 0 1 1 7.2 0 3.6 3.6 0 0 1-7.2 0" />
+      <path d="M8 24a6.6 6.6 0 0 1 13.2 0" />
+      <path d="M4.5 5.5 8 4l3.5 1.5v4A5 5 0 0 1 8 14a5 5 0 0 1-3.5-4.5z" opacity="0.6" />
     </svg>
   );
 }
