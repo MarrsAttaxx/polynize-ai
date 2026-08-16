@@ -153,14 +153,17 @@ export const mappingContent: MappingContent = {
       {
         title: 'Built from real work',
         body: 'Scenarios drawn from the work your team does every week.',
+        icon: 'realWork',
       },
       {
         title: 'People, work and technology together',
         body: 'The map holds all three at once, because you cannot change one without moving the others.',
+        icon: 'triad',
       },
       {
         title: 'Your team comes in cold',
         body: 'No preparation, no homework, no rehearsal. That is what makes the reading honest.',
+        icon: 'cold',
       },
     ],
   },

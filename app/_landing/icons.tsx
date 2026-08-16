@@ -193,7 +193,16 @@ export function GitHubMark({ size = 26 }: { size?: number }) {
  * Marks for the three cards under the capability map. Line art at the same weight as the
  * stage glyphs, so the page reads as one drawing set rather than an assortment.
  */
-export type CardIcon = 'source' | 'oneTeam' | 'human';
+export type CardIcon =
+  // /capability-mapping's three
+  | 'source'
+  | 'oneTeam'
+  | 'human'
+  // /mapping's three. Separate marks rather than the same three reused: those cards make
+  // different claims, and a mark that does not carry its card's argument is decoration.
+  | 'realWork'
+  | 'triad'
+  | 'cold';
 
 export function CardGlyph({ kind }: { kind: CardIcon }) {
   const props = {
@@ -227,6 +236,38 @@ export function CardGlyph({ kind }: { kind: CardIcon }) {
         <path d="M17 18.5h8M17 22.5h8" opacity="0.55" />
         <path d="M3.5 17.5h9v9h-9z" opacity="0.4" />
         <path d="M5.5 9 7.5 11l3.5-4" />
+      </svg>
+    );
+  }
+  if (kind === 'realWork') {
+    // A working week with one day live: scenarios drawn from what the team does every
+    // week, not from a description of it.
+    return (
+      <svg {...props} aria-hidden="true">
+        <path d="M4 6.5h20v17H4zM4 12h20M9 3.5v5M19 3.5v5" />
+        <path d="M9.5 15.5h4.5v4.5H9.5z" fill="currentColor" stroke="none" opacity="0.5" />
+      </svg>
+    );
+  }
+  if (kind === 'triad') {
+    // People, work and technology held at once: three nodes, all three joined, because
+    // you cannot move one without moving the others.
+    return (
+      <svg {...props} aria-hidden="true">
+        <path d="M14 3.5 23.5 21H4.5z" opacity="0.45" />
+        <circle cx="14" cy="4.5" r="2.8" />
+        <circle cx="5" cy="22" r="2.8" />
+        <circle cx="23" cy="22" r="2.8" />
+      </svg>
+    );
+  }
+  if (kind === 'cold') {
+    // No preparation and no rehearsal: a closed notebook, struck through.
+    return (
+      <svg {...props} aria-hidden="true">
+        <path d="M6.5 4.5h13a1.5 1.5 0 0 1 1.5 1.5v16a1.5 1.5 0 0 1-1.5 1.5h-13z" />
+        <path d="M6.5 4.5v19" />
+        <path d="M4 24 24 4" />
       </svg>
     );
   }
