@@ -35,7 +35,15 @@ async function converse(req: ConverseRequest): Promise<ConverseResult> {
   const reply = await complete({
     system: interviewerSystemPrompt(brandVoice),
     messages: [...req.history, { role: 'user', content: req.message }],
-    maxTokens: 700,
+    /**
+     * ABOVE THE REASONING FLOOR. The production model is a thinking model whose reasoning
+     * tokens are mandatory, undisableable, and counted against max_tokens: measured at roughly
+     * 800-950 on this codebase. A ceiling below that is spent entirely on reasoning and returns
+     * an EMPTY string, which on screen looks like the agent not answering at all rather than
+     * like an error. Same fault that truncated drafts (decision log, 2026-07-20); the short
+     * conversational calls were missed at the time.
+     */
+    maxTokens: 2500,
     temperature: 0.7,
     json: false,
     // Bill April's own key when set; falls back to the console's key otherwise.

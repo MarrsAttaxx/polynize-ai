@@ -123,8 +123,16 @@ export function isDue(c: CrmContact, now = new Date()): boolean {
  *
  * Defined once because two callers need it (the CRM row and the new-lead email) and a link
  * that works in one place and 404s in the other is worse than no link. The row lives in
- * `sales_blueprints`, which is served at /map-your-team/[id], NOT /blueprints/[id].
+ * `sales_blueprints`, served at /map-your-team/[id] and NOT /blueprints/[id].
+ *
+ * ABSOLUTE TO THE PUBLIC SITE, NEVER RELATIVE, and that is the whole reason this went wrong
+ * once already. A blueprint lives on polynize.ai, but the CRM that links to it is served from
+ * pam.polynize.ai, where the middleware rewrites every path that does not already start with
+ * /console into /console/... A relative "/map-your-team/abc" therefore becomes
+ * "/console/map-your-team/abc" on that host, which does not exist: a hard 404, verified
+ * against production. The same rewrite caught the studio QR codes.
  */
-export function blueprintUrl(blueprintId: string, origin = ''): string {
-  return `${origin.replace(/\/+$/, '')}/map-your-team/${blueprintId}`;
+export function blueprintUrl(blueprintId: string, origin?: string): string {
+  const base = (origin ?? process.env.NEXT_PUBLIC_SITE_URL ?? 'https://polynize.ai').replace(/\/+$/, '');
+  return `${base}/map-your-team/${blueprintId}`;
 }

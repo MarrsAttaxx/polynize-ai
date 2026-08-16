@@ -23,28 +23,8 @@ import s from './ideas.module.css';
 
 export function Ideas({ stream, initial }: { stream: string; initial: Idea[] }) {
   const router = useRouter();
-  const [open, setOpen] = useState(initial.length > 0);
+  const [open, setOpen] = useState(true);
   const [ideas, setIdeas] = useState<Idea[]>(initial);
-  const [busy, setBusy] = useState(false);
-
-  const add = async () => {
-    if (busy) return;
-    setBusy(true);
-    try {
-      const res = await fetch(`/console/marketing/stream/${stream}/ideas`, { method: 'POST' });
-      const b = (await res.json().catch(() => null)) as { idea?: Idea; error?: string } | null;
-      if (!res.ok || !b?.idea) {
-        window.alert(b?.error ?? 'Could not start a note.');
-        return;
-      }
-      setIdeas((prev) => [b.idea as Idea, ...prev]);
-      setOpen(true);
-    } catch {
-      window.alert('Network error. Try again.');
-    } finally {
-      setBusy(false);
-    }
-  };
 
   const drop = (id: string) => setIdeas((prev) => prev.filter((i) => i.id !== id));
 
@@ -60,34 +40,139 @@ export function Ideas({ stream, initial }: { stream: string; initial: Idea[] }) 
           {open ? '▾' : '▸'} Ideas
         </button>
         <span className={s.count}>{ideas.length}</span>
-        <button type="button" className={s.add} onClick={() => void add()} disabled={busy}>
-          {busy ? 'Adding…' : '+ New note'}
-        </button>
       </div>
 
       {open ? (
-        ideas.length === 0 ? (
-          <p className={s.empty}>
-            Somewhere to think out loud before a concept exists. Write badly, come back later,
-            and turn it into a concept when it is ready.
-          </p>
-        ) : (
-          <div className={s.cards}>
-            {ideas.map((idea) => (
-              <IdeaCard
-                key={idea.id}
-                stream={stream}
-                idea={idea}
-                onDeleted={() => {
-                  drop(idea.id);
-                  router.refresh();
-                }}
-              />
-            ))}
-          </div>
-        )
+        <>
+          {/* THE COMPOSER. Marrs: "we need a commit button that commits an idea into the
+              library... It needs to commit to one below leaving the top blank for the next new
+              idea." So the top box is permanent and always empty: there is never a step
+              between having a thought and typing it, and a committed note stops being the
+              thing in your way. */}
+          <Composer
+            stream={stream}
+            onCommitted={(idea) => {
+              setIdeas((prev) => [idea, ...prev]);
+              router.refresh();
+            }}
+          />
+
+          {ideas.length === 0 ? (
+            <p className={s.empty}>
+              Nothing committed yet. Write above and press Commit, and it files itself here.
+            </p>
+          ) : (
+            <div className={s.cards}>
+              {ideas.map((idea) => (
+                <IdeaCard
+                  key={idea.id}
+                  stream={stream}
+                  idea={idea}
+                  onDeleted={() => {
+                    drop(idea.id);
+                    router.refresh();
+                  }}
+                />
+              ))}
+            </div>
+          )}
+        </>
       ) : null}
     </section>
+  );
+}
+
+/**
+ * The always-blank box at the top.
+ *
+ * IT DOES NOT AUTOSAVE, and that is the difference from a committed note. Autosaving here is
+ * what produced the behaviour he objected to: the thing he was typing stayed pinned at the top
+ * as the "current" idea forever. Committing is the act that files it and clears the box.
+ *
+ * The text is held in localStorage between visits, so a half-typed thought is not lost to a
+ * closed tab just because it has not been committed.
+ */
+function Composer({
+  stream,
+  onCommitted,
+}: {
+  stream: string;
+  onCommitted: (idea: Idea) => void;
+}) {
+  const key = `pam:idea-draft:${stream}`;
+  const [text, setText] = useState('');
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    try {
+      setText(localStorage.getItem(key) ?? '');
+    } catch {
+      /* private mode, no draft */
+    }
+  }, [key]);
+
+  const onChange = (v: string) => {
+    setText(v);
+    try {
+      localStorage.setItem(key, v);
+    } catch {
+      /* not fatal: the note is still on screen */
+    }
+  };
+
+  const commit = async () => {
+    const body = text.trim();
+    if (busy || body === '') return;
+    setBusy(true);
+    try {
+      // Created WITH its text in one call, so a commit cannot half-happen and leave an empty
+      // note behind.
+      const res = await fetch(`/console/marketing/stream/${stream}/ideas`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ text: body }),
+      });
+      const b = (await res.json().catch(() => null)) as { idea?: Idea; error?: string } | null;
+      if (!res.ok || !b?.idea) {
+        window.alert(b?.error ?? 'Could not commit that.');
+        return;
+      }
+      onCommitted(b.idea);
+      // Cleared only after it is safely filed.
+      setText('');
+      try {
+        localStorage.removeItem(key);
+      } catch {
+        /* nothing to clear */
+      }
+    } catch {
+      window.alert('Network error. Your note is still here, try again.');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className={s.composer}>
+      <textarea
+        className={s.composerText}
+        value={text}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder="What are you circling around?"
+        aria-label="New idea"
+      />
+      <div className={s.composerFoot}>
+        <button
+          type="button"
+          className={s.commit}
+          onClick={() => void commit()}
+          disabled={busy || text.trim() === ''}
+        >
+          {busy ? 'Committing…' : 'Commit'}
+        </button>
+        <span className={s.composerHint}>Files it below and clears this box.</span>
+      </div>
+    </div>
   );
 }
 

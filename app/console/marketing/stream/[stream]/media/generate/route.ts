@@ -112,7 +112,15 @@ export async function POST(
           content: `Model: ${model.label} (${model.blurb}).\nRough idea:\n"""\n${body.prompt.trim()}\n"""`,
         },
       ],
-      maxTokens: 400,
+      /**
+       * ABOVE THE REASONING FLOOR. The production model is a thinking model whose reasoning
+       * tokens are mandatory, undisableable, and counted against max_tokens: measured at roughly
+       * 800-950 on this codebase. A ceiling below that is spent entirely on reasoning and returns
+       * an EMPTY string, which on screen looks like the agent not answering at all rather than
+       * like an error. Same fault that truncated drafts (decision log, 2026-07-20); the short
+       * conversational calls were missed at the time.
+       */
+      maxTokens: 2000,
       temperature: 0.7,
       json: false,
       apiKey: process.env.APRIL_OPENROUTER_API_KEY,

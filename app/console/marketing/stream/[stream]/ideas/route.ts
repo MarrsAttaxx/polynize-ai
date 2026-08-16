@@ -25,12 +25,21 @@ async function guard(stream: string) {
   return { ok: true } as const;
 }
 
-export async function POST(_req: NextRequest, { params }: { params: Promise<{ stream: string }> }) {
+const CreateSchema = z.object({ text: z.string().max(20000).optional() });
+
+/** Commit a note. Created WITH its text, so a commit cannot half-happen and leave a blank. */
+export async function POST(req: NextRequest, { params }: { params: Promise<{ stream: string }> }) {
   const { stream } = await params;
   const g = await guard(stream);
   if ('error' in g) return NextResponse.json({ error: g.error }, { status: g.status });
+  // A body is optional so an empty note can still be created directly if anything needs to.
+  const body = await req.json().catch(() => ({}));
+  const parsed = CreateSchema.safeParse(body);
   try {
-    return NextResponse.json({ ok: true, idea: await createIdea(stream) });
+    return NextResponse.json({
+      ok: true,
+      idea: await createIdea(stream, parsed.success ? (parsed.data.text ?? '') : ''),
+    });
   } catch (err) {
     console.error('[ideas] create failed:', err);
     return NextResponse.json({ error: 'Could not start a note.' }, { status: 502 });
