@@ -31,16 +31,22 @@ const OPENER: Msg = {
 export function IntakeScreen({
   owner,
   initialStream,
+  initialInput = '',
 }: {
   owner: string;
   initialStream: StreamId;
+  /**
+   * A note carried in from the Ideas section, pre-filled into the box but NOT sent. He reads
+   * it back and edits before April sees it, which is the point of writing it down rough.
+   */
+  initialInput?: string;
 }) {
   const router = useRouter();
   const draftKey = `${DRAFT_KEY_BASE}:${owner}`;
   const [framing, setFraming] = useState('');
   const [stream, setStream] = useState<StreamId>(initialStream);
   const [messages, setMessages] = useState<Msg[]>([OPENER]);
-  const [input, setInput] = useState('');
+  const [input, setInput] = useState(initialInput);
   const [sending, setSending] = useState(false);
   const [finalizing, setFinalizing] = useState(false);
   const [error, setError] = useState<string | null>(null);

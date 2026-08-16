@@ -12,7 +12,7 @@ import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState } from 'react';
 // From model, NOT contact-store: the store imports the Supabase service-role client and
 // this is a client component.
-import { CRM_STAGES, type CrmContact, type CrmStage } from '@/lib/crm/model';
+import { blueprintUrl, CRM_STAGES, type CrmContact, type CrmStage } from '@/lib/crm/model';
 import c from './crm.module.css';
 
 type SaveState = 'idle' | 'saving' | 'saved' | 'failed';
@@ -242,6 +242,18 @@ export function ContactRow({ contact }: { contact: CrmContact }) {
         <span className={`${c.source} ${inbound ? c.sourceInbound : ''}`}>
           {inbound ? 'from the website' : contact.source}
         </span>
+        {/* The blueprint they built on the website. The single most useful thing to open
+            before replying to an inbound lead, so it sits with their identity. */}
+        {contact.blueprint_id ? (
+          <a
+            className={c.blueprintLink}
+            href={blueprintUrl(contact.blueprint_id)}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            their blueprint ↗
+          </a>
+        ) : null}
         {contact.fireflies_url ? (
           <a
             className={c.transcript}

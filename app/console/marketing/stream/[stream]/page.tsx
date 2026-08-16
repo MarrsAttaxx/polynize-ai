@@ -3,6 +3,8 @@ import { redirect } from 'next/navigation';
 import { getCurrentUser } from '@/lib/console-auth';
 import { listSavedPieces, type MarketingPiece } from '@/lib/marketing/piece-store';
 import { listConcepts, type ConceptDoc } from '@/lib/marketing/concept-store';
+import { listIdeas, type Idea } from '@/lib/marketing/idea-store';
+import { Ideas } from './Ideas';
 import { isStreamId, streamLabel, DEFAULT_STREAM } from '@/lib/marketing/streams';
 import { getBrandVoiceForStream } from '@/lib/marketing/brand-voice-store';
 import { listTemplates } from '@/lib/marketing/template-store';
@@ -50,6 +52,13 @@ export default async function StreamPage({
   // stacked five round trips (each of which was itself serial internally) into the time
   // to first byte: opening a stream took three to four seconds. Every one still degrades
   // on its own, so a single store being down costs its section and not the page.
+  // Ideas load alongside everything else and tolerate their own failure: a broken note list
+  // must not take the concepts and pieces down with it.
+  const ideasPromise: Promise<Idea[]> = listIdeas(stream).catch((err) => {
+    console.error('[marketing.stream] idea list failed:', err);
+    return [] as Idea[];
+  });
+
   const [conceptsRes, piecesRes, brandVoiceRes, templatesRes, mediaRes, episodesRes] = await Promise.all([
     listConcepts(user.email).catch((err) => {
       console.error('[marketing.stream] concept list failed:', err);
@@ -76,6 +85,9 @@ export default async function StreamPage({
       return [];
     }),
   ]);
+
+  // Started before the block above so it overlaps with it rather than adding a round trip.
+  const ideas = await ideasPromise;
 
   const concepts: ConceptDoc[] = conceptsRes.filter(
     (c) => (c.stream || DEFAULT_STREAM) === stream
@@ -230,6 +242,10 @@ export default async function StreamPage({
               ))}
             </div>
           )}
+
+          {/* Marrs: "a place under the core concepts, like an idea section." Inside this panel
+              rather than beside it, because an idea is a concept that has not happened yet. */}
+          <Ideas stream={stream} initial={ideas} />
         </section>
 
         <section className={`${s.dashSection} ${s.panel}`}>

@@ -1,6 +1,7 @@
 import { sendEmail } from '@/lib/resend-client';
 import { getNotifyMap } from './notify-store';
 import { streamLabel } from '@/lib/marketing/streams';
+import { blueprintUrl } from './model';
 
 /**
  * The new-lead ping.
@@ -73,7 +74,7 @@ export async function pingNewLead(
       lead.business?.trim() ? `Company: ${lead.business.trim()}` : null,
       '',
       `Open the CRM: ${crmUrl}`,
-      lead.blueprintId ? `Their blueprint: ${origin}/blueprints/${lead.blueprintId}` : null,
+      lead.blueprintId ? `Their blueprint: ${blueprintUrl(lead.blueprintId, origin)}` : null,
       '',
       'They are sitting at New until someone moves them.',
     ].filter((x): x is string => x !== null);
@@ -83,7 +84,7 @@ export async function pingNewLead(
 <p style="margin:0 0 6px">Email: <a href="mailto:${escapeHtml(lead.email)}">${escapeHtml(lead.email)}</a></p>
 ${lead.business?.trim() ? `<p style="margin:0 0 6px">Company: ${escapeHtml(lead.business.trim())}</p>` : ''}
 <p style="margin:18px 0"><a href="${escapeHtml(crmUrl)}" style="background:#0f7d61;color:#fff;text-decoration:none;padding:11px 18px;border-radius:9px;display:inline-block">Open the CRM</a></p>
-${lead.blueprintId ? `<p style="margin:0 0 6px"><a href="${escapeHtml(`${origin}/blueprints/${lead.blueprintId}`)}">See the blueprint they generated</a></p>` : ''}
+${lead.blueprintId ? `<p style="margin:18px 0 0"><a href="${escapeHtml(blueprintUrl(lead.blueprintId, origin))}" style="color:#0f7d61;font-weight:600">See the capability blueprint they built &rarr;</a></p>` : ''}
 <p style="margin:16px 0 0;color:#6f7a72;font-size:13px">They are sitting at New until someone moves them.</p>
 </div>`;
 

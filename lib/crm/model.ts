@@ -114,3 +114,17 @@ export function isDue(c: CrmContact, now = new Date()): boolean {
   if (!c.next_action_at) return false;
   return new Date(c.next_action_at).getTime() <= now.getTime();
 }
+
+/**
+ * WHERE A LEAD'S CAPABILITY BLUEPRINT LIVES.
+ *
+ * Marrs: "have the link in the email that gets sent to me and in the dashboard itself to the
+ * capability blueprint that they created. That's important so I can see the blueprint."
+ *
+ * Defined once because two callers need it (the CRM row and the new-lead email) and a link
+ * that works in one place and 404s in the other is worse than no link. The row lives in
+ * `sales_blueprints`, which is served at /map-your-team/[id], NOT /blueprints/[id].
+ */
+export function blueprintUrl(blueprintId: string, origin = ''): string {
+  return `${origin.replace(/\/+$/, '')}/map-your-team/${blueprintId}`;
+}
