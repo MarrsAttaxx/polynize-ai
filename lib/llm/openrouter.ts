@@ -24,6 +24,25 @@ export function resolveModel(override?: string): string {
 }
 
 /**
+ * The sampling block for a model, which for some models is nothing at all.
+ *
+ * Anthropic REMOVED temperature/top_p/top_k on its current models: sending temperature
+ * is not ignored, it is a 400, and the call fails outright. Every call here has always
+ * sent `temperature: 0.7`, so pointing any *_MODEL env var at an Anthropic model would
+ * hard-fail with an error that reads like a key or quota problem rather than a parameter
+ * one. That is a trap worth closing at the client, once, rather than at each call site.
+ *
+ * Matching the vendor prefix rather than a list of model ids is deliberate: on the models
+ * that still accept temperature, omitting it just uses the provider default, so the
+ * conservative branch is harmless everywhere and there is no list to keep in sync as new
+ * models ship.
+ */
+function samplingFor(model: string, temperature?: number): Record<string, number> {
+  if (model.startsWith('anthropic/')) return {};
+  return { temperature: temperature ?? 0.7 };
+}
+
+/**
  * What arrives from the model while it is still working.
  *
  * `reasoning` is the model thinking out loud, where it emits any; `content` is the answer being
@@ -80,7 +99,7 @@ export async function streamWithOpenRouter(
         model,
         stream: true,
         max_tokens: args.maxTokens ?? 1000,
-        temperature: args.temperature ?? 0.7,
+        ...samplingFor(model, args.temperature),
         ...(args.json === false ? {} : { response_format: { type: 'json_object' } }),
         messages: [{ role: 'system', content: args.system }, ...args.messages],
       }),
@@ -203,7 +222,7 @@ export async function completeWithOpenRouter(args: CompleteArgs): Promise<string
       body: JSON.stringify({
         model,
         max_tokens: args.maxTokens ?? 1000,
-        temperature: args.temperature ?? 0.7,
+        ...samplingFor(model, args.temperature),
         // OpenAI-standard JSON mode. Passed through by OpenRouter to upstream
         // providers (Gemini, OpenAI, DeepSeek, Anthropic) that support it.
         // Structurally guarantees the model's output is parseable JSON —

@@ -113,9 +113,25 @@ Marrs: *"test two different models with the same prompt once we get it refined, 
 
 Right instinct, and the sequencing in that sentence is the important part: **refined first, then compare.** Comparing models on a starved prompt measures which model best disguises missing input, which is worth nothing. Now that the prompt carries the pattern library and the concept carries ammunition, a comparison means something.
 
-The shape when it is built: one route, one concept, one recipe, N models, output side by side and unlabelled so the judgment is not primed by knowing which is which. `resolveModel(override?)` and per-task model env vars already exist, so the switch afterwards is a config change and not a build.
+The shape when it is built: one route, one concept, one recipe, N models, output side by side and unlabelled so the judgment is not primed by knowing which is which.
 
-Not built yet, deliberately: the next real signal is what the fixed prompt produces from a concept that has its ammunition filled in.
+**The switch itself is now in place.** `SCRIPT_MODEL` (in `lib/marketing/draft.ts`) overrides the model for drafting only, falling through to `OPENROUTER_MODEL` when unset, the same per-task shape as `FIGURE_MODEL` and `PODCAST_MODEL`. It is an env var rather than a constant so the same concept can be run through two models back to back without a deploy in between, which is the whole point of a bake-off.
+
+**Cost turned out not to be the constraint, and the reason is worth recording.** Live OpenRouter list prices, per million tokens in / out:
+
+| Model | In | Out | Per draft (~8k in / 6k out) |
+| --- | --- | --- | --- |
+| `google/gemini-3.5-flash` (current default) | $1.50 | $9.00 | ~$0.07 |
+| `anthropic/claude-sonnet-5` | $2.00 | $10.00 | ~$0.08 |
+| `anthropic/claude-opus-5` | $5.00 | $25.00 | ~$0.19 |
+
+Gemini 3.5 Flash is not a cheap model. It is a *fast* model priced within about ten percent of Sonnet 5, so the implicit trade of "we accept weaker writing to keep the bill down" was never actually being made. Worse, its 800 to 950 mandatory reasoning tokens are billed at the $9 output rate and cannot be turned off, so roughly a cent of every call buys reasoning nobody reads. Sonnet 5's thinking is adaptive.
+
+This does not touch the Claude Max subscription, which is a developer tool and not API credit (see the root `CLAUDE.md` anti-goals). It is the OpenRouter bill either way.
+
+**One trap closed on the way.** Anthropic removed `temperature` / `top_p` / `top_k` on its current models: sending them is a 400, not a silently ignored field. Every call in `lib/llm/openrouter.ts` had always sent `temperature: 0.7`, so pointing any `*_MODEL` variable at an Anthropic model would have hard-failed with an error that reads like a key or quota problem. `samplingFor()` now omits the sampling block for `anthropic/` models on both the streaming and blocking paths. Matched on the vendor prefix rather than a list of model ids: on models that still accept temperature, omitting it just takes the provider default, so there is no list to keep in sync as models ship.
+
+Not run yet: the comparison itself. The next real signal is what the fixed prompt produces from a concept that has its ammunition filled in, on both models.
 
 ### 3. The concept backfill
 

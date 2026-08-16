@@ -23,6 +23,18 @@ import { stripEmDashes } from '@/lib/em-dash';
 import { HOOK_GUIDANCE } from './hook-guidance';
 import { exemplarBlock, pickExemplars } from './exemplars';
 
+/**
+ * The model that writes. Falls through to OPENROUTER_MODEL when unset, so this is a
+ * no-op until it is set and nothing changes by adding it.
+ *
+ * Drafting is the one job in PAM that is pure writing, and writing quality is the thing
+ * that is actually being judged here. Same per-task shape as FIGURE_MODEL and
+ * PODCAST_MODEL: the choice sits next to the code that knows what kind of work it is, and
+ * moving it does not move any of the others. An env var rather than a constant so the same
+ * concept can be run through two models back to back without a deploy between them.
+ */
+const scriptModel = () => process.env.SCRIPT_MODEL || undefined;
+
 /** Why a draft could not be produced, so callers can map to the right response. */
 export type DraftFailure = 'no-concept' | 'llm-unavailable' | 'empty';
 
@@ -330,17 +342,19 @@ async function generate(
       system:
         kind === 'video' ? scriptSystemPrompt(promptOpts) : textSystemPrompt(promptOpts),
       messages: [{ role: 'user', content: `${source}\n\n${ask}` }],
-      // Generous ceiling: the model is a thinking model (Gemini 3.5 Flash), whose
+      // Generous ceiling: the default model is a thinking model (Gemini 3.5 Flash), whose
       // reasoning tokens count against max_tokens. The editor-style master prompt
       // reasons harder (measured ~2000-2300 reasoning tokens for text, ~2000 for
       // video on a representative fixture), so these leave ample room for reasoning
       // AND the full output on rich concepts, well clear of mid-sentence truncation.
       // Video now returns TWO artifacts in one pass (script + the animator's build
       // brief, which is long and per-state), on top of ~2000-2300 reasoning tokens,
-      // so the video ceiling is generous. max_tokens is a cap, not a target.
+      // so the video ceiling is generous. max_tokens is a cap, not a target, so a
+      // model that reasons less simply uses less of it.
       maxTokens: kind === 'video' ? 16000 : 6000,
       temperature: 0.7,
       json: false,
+      model: scriptModel(),
       apiKey: process.env.APRIL_OPENROUTER_API_KEY,
     });
   } catch (e) {
