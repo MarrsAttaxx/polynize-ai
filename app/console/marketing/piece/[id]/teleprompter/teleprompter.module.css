@@ -140,11 +140,19 @@
   pointer-events: none;
 }
 
-/* MIRRORED for beam-splitter glass. Only the stage flips: the controls and counter stay
-   readable to whoever is standing beside the rig. */
-.mirrored {
-  transform: scaleX(-1);
-}
+/* FLIPPED for beam-splitter glass. The transform is applied INLINE, on `.scroll`, from the two
+   rig toggles: see Teleprompter.tsx. Two reasons it is not a class here.
+ *
+ * 1. It has to sit on `.scroll` and not on `.column`. `.scroll` is `inset: 0`, so it is exactly
+ *    viewport-sized and flips about the middle of the screen. `.column` is the whole script and
+ *    is thousands of pixels tall, so a vertical flip there would pivot about a point far off
+ *    screen and show the wrong part of the document rather than an upside-down one.
+ * 2. Two classes cannot both set `transform`: the second declaration replaces the first rather
+ *    than composing with it, so a horizontal and a vertical class would silently cancel one
+ *    another. One inline transform carrying both axes cannot do that.
+ *
+ * Only the scroll flips. The rig strip stays upright and readable for whoever is standing
+ * beside the rig, which is the same reason it was only the stage before. */
 
 /* The stage's font-size is set inline from the size control, so the text scales from one
    place and the header keeps its relative proportion. */

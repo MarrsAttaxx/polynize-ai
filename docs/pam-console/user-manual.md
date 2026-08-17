@@ -94,7 +94,15 @@ From a concept's development hub, click **Create content**.
 
 ### 8b. Script screen (video) ✅
 - An editable **script** with an on-screen **chat** that rewrites it by command (every chat edit is one-click undoable; the editor locks while the chat is working).
-- **Teleprompter** — a recording view at its own URL.
+- **Teleprompter** — a recording view at its own URL. Continuous scroll of the whole script;
+  space starts and stops it, up/down set the speed, `+`/`-` the size, `Home` returns to the top.
+  **`m` mirrors left to right and `f` flips top to bottom, independently.** A beam-splitter rig
+  needs one, the other, or both depending on its geometry (a single reflection off the glass
+  flips one axis; an iPad mounted the other way up in the hood adds the other, and both together
+  is a 180 degree turn), so set them once by looking at the glass. Both persist **per device**,
+  not per piece, because they belong to the rig: the iPad in the hood stays set and the laptop
+  stays plain. In a flipped state the first line sits at the bottom of the physical screen and at
+  the top through the glass, which is correct; scrolling always advances the script.
 - **Media** — attach the recorded video / b-roll from this stream's library. 🧪
 - *Note:* the automated **video cut / treatment middle** (Descript-orchestrated Podcast Clips, etc.) is 🔜 **the next build**. Today the script screen + teleprompter are the video tools; the finished video is added to the piece via the media library.
 

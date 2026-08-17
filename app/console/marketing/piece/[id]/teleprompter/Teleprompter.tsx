@@ -46,7 +46,18 @@ export function Teleprompter({
   backHref: string;
 }) {
   const scrollRef = useRef<HTMLDivElement | null>(null);
-  const [mirror, setMirror] = useState(false);
+  /**
+   * TWO AXES, INDEPENDENTLY. Marrs: "the mirror function is mirroring horizontally, but it also
+   * has to mirror vertically. They both have to mirror at the same time for it to work properly."
+   *
+   * One boolean was the bug. Which axes a rig needs is a property of its geometry: a single
+   * reflection off the glass flips one axis, and an iPad mounted the other way up in the hood
+   * adds the other. Both together is a 180 degree turn, and there is no way to reach it from one
+   * toggle. Rather than guess his rig from here, both axes are exposed and he sets them once by
+   * looking at the glass, which is the only place the answer actually lives.
+   */
+  const [flipH, setFlipH] = useState(false);
+  const [flipV, setFlipV] = useState(false);
   const [sizeIx, setSizeIx] = useState(DEFAULT_SIZE);
   const [speedIx, setSpeedIx] = useState(DEFAULT_SPEED);
   const [running, setRunning] = useState(false);
@@ -57,7 +68,10 @@ export function Teleprompter({
   // would mean setting them before every take.
   useEffect(() => {
     try {
-      if (window.localStorage.getItem('pam.prompter.mirror') === '1') setMirror(true);
+      // `pam.prompter.mirror` is the old single-axis key, still read so an iPad that was already
+      // set up does not come back unmirrored the first time it loads this version.
+      if (window.localStorage.getItem('pam.prompter.mirror') === '1') setFlipH(true);
+      if (window.localStorage.getItem('pam.prompter.flipv') === '1') setFlipV(true);
       const z = Number(window.localStorage.getItem('pam.prompter.size'));
       if (Number.isFinite(z) && z >= 0 && z < SIZES.length) setSizeIx(z);
       const v = Number(window.localStorage.getItem('pam.prompter.speed'));
@@ -74,8 +88,12 @@ export function Teleprompter({
     }
   };
   const setMirrored = (on: boolean) => {
-    setMirror(on);
+    setFlipH(on);
     persist('pam.prompter.mirror', on ? '1' : '0');
+  };
+  const setFlipped = (on: boolean) => {
+    setFlipV(on);
+    persist('pam.prompter.flipv', on ? '1' : '0');
   };
   const setSize = (n: number) => {
     const c = Math.max(0, Math.min(SIZES.length - 1, n));
@@ -149,7 +167,10 @@ export function Teleprompter({
         setSpeed(speedIx - 1);
       } else if (k === 'm' || k === 'M') {
         e.preventDefault();
-        setMirrored(!mirror);
+        setMirrored(!flipH);
+      } else if (k === 'f' || k === 'F') {
+        e.preventDefault();
+        setFlipped(!flipV);
       } else if (k === 'Home') {
         e.preventDefault();
         toTop();
@@ -157,17 +178,32 @@ export function Teleprompter({
     }
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [sizeIx, speedIx, mirror, toTop]);
+  }, [sizeIx, speedIx, flipH, flipV, toTop]);
 
   return (
     <div className={t.root}>
       {/* THE SCROLL. The whole script in one column, so nothing has to fit and nothing is
           paged. The wheel works here with no code: it is an ordinary scroll container. */}
-      <div className={t.scroll} ref={scrollRef}>
-        <div
-          className={`${t.column} ${mirror ? t.mirrored : ''}`}
-          style={{ fontSize: `${SIZES[sizeIx]}px` }}
-        >
+      <div
+        className={t.scroll}
+        ref={scrollRef}
+        /**
+         * The flip goes HERE, on the viewport-sized scroll box, not on the column inside it.
+         * `.scroll` is `inset: 0`, so it pivots about the middle of the screen; the column is the
+         * whole script and would pivot about a point far below the bottom of it.
+         *
+         * Flipping the box rather than the text also keeps the scroll direction honest without a
+         * second setting. The presentation and the motion are the same rendered output, so both
+         * turn together: text still travels the reading direction on the glass. `undefined` when
+         * neither axis is on, so an unflipped prompter is not paying for a compositing layer.
+         */
+        style={
+          flipH || flipV
+            ? { transform: `scale(${flipH ? -1 : 1}, ${flipV ? -1 : 1})` }
+            : undefined
+        }
+      >
+        <div className={t.column} style={{ fontSize: `${SIZES[sizeIx]}px` }}>
           {sections.length === 0 ? (
             <p className={t.body}>No script yet.</p>
           ) : (
@@ -213,13 +249,23 @@ export function Teleprompter({
           <button type="button" onClick={() => setSize(sizeIx + 1)} aria-label="Bigger text">
             A+
           </button>
+          {/* Two buttons, not one cycling control: on set he needs to see at a glance which
+              axes are on, and a four-state cycle hides that. */}
           <button
             type="button"
-            className={mirror ? t.rigOn : ''}
-            onClick={() => setMirrored(!mirror)}
-            aria-label="Mirror for teleprompter glass"
+            className={flipH ? t.rigOn : ''}
+            onClick={() => setMirrored(!flipH)}
+            aria-label="Mirror left to right for teleprompter glass"
           >
             mirror
+          </button>
+          <button
+            type="button"
+            className={flipV ? t.rigOn : ''}
+            onClick={() => setFlipped(!flipV)}
+            aria-label="Flip top to bottom for teleprompter glass"
+          >
+            flip
           </button>
           <button type="button" onClick={toTop} aria-label="Back to the top">
             top
@@ -241,7 +287,8 @@ export function Teleprompter({
 
       <div className={t.hint} hidden={!chromeOn}>
         Scroll with the wheel at any time, even while it is running. Space starts and stops,
-        up and down set the speed, + and - the size, m mirrors, Home returns to the top.
+        up and down set the speed, + and - the size, m mirrors and f flips, Home returns to the
+        top.
       </div>
     </div>
   );

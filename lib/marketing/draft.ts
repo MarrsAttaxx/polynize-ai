@@ -19,6 +19,7 @@ import { getBrandVoiceForStream } from './brand-voice-store';
 import { icpLabel, formatById, defaultLengthFor, HOOK_CRAFT } from './output-plan';
 import { resolveTemplateRef } from './create-outputs';
 import { complete } from '@/lib/llm';
+import { resolveModel } from '@/lib/llm/openrouter';
 import { stripEmDashes } from '@/lib/em-dash';
 import { HOOK_GUIDANCE } from './hook-guidance';
 import { exemplarBlock, pickExemplars } from './exemplars';
@@ -34,6 +35,20 @@ import { exemplarBlock, pickExemplars } from './exemplars';
  * concept can be run through two models back to back without a deploy between them.
  */
 const scriptModel = () => process.env.SCRIPT_MODEL || undefined;
+
+/**
+ * Which model actually wrote this, resolved from the same line of code that picks it.
+ *
+ * Marrs asked "are we using Gemini Flash for April? Is that what she's actually using?" and
+ * nothing in the console could answer him: the model is a Vercel env var, so the only honest
+ * answers were the OpenRouter bill or a guess. The figure and clip paths already expose
+ * `figureModelInUse` / `clipModelInUse` for exactly this reason. Drafting did not, which is
+ * how the question became unanswerable for the one job whose output is judged most often.
+ *
+ * Derived, never stored: a readout reconstructed anywhere else drifts the moment one of them
+ * changes, which is worse than no readout because it is believed.
+ */
+export const scriptModelInUse = () => resolveModel(scriptModel());
 
 /** Why a draft could not be produced, so callers can map to the right response. */
 export type DraftFailure = 'no-concept' | 'llm-unavailable' | 'empty';

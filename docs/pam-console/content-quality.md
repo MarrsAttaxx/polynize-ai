@@ -121,13 +121,17 @@ The shape when it is built: one route, one concept, one recipe, N models, output
 
 | Model | In | Out | Per draft (~8k in / 6k out) |
 | --- | --- | --- | --- |
-| `google/gemini-3.5-flash` (current default) | $1.50 | $9.00 | ~$0.07 |
+| `deepseek/deepseek-v4-flash` | $0.08 | $0.17 | ~$0.002 |
+| `deepseek/deepseek-v4-pro` | $1.32 | $3.96 | ~$0.03 |
+| `google/gemini-3.5-flash` | $1.50 | $9.00 | ~$0.07 |
 | `anthropic/claude-sonnet-5` | $2.00 | $10.00 | ~$0.08 |
 | `anthropic/claude-opus-5` | $5.00 | $25.00 | ~$0.19 |
 
-Gemini 3.5 Flash is not a cheap model. It is a *fast* model priced within about ten percent of Sonnet 5, so the implicit trade of "we accept weaker writing to keep the bill down" was never actually being made. Worse, its 800 to 950 mandatory reasoning tokens are billed at the $9 output rate and cannot be turned off, so roughly a cent of every call buys reasoning nobody reads. Sonnet 5's thinking is adaptive.
+Two things fall out of that table. **Gemini 3.5 Flash is not a cheap model.** It is a *fast* model priced within about ten percent of Sonnet 5, so the implicit trade of "we accept weaker writing to keep the bill down" was never actually being made. Its 800 to 950 mandatory reasoning tokens are also billed at the $9 output rate and cannot be turned off, so roughly a cent of every call buys reasoning nobody reads. **And DeepSeek v4 Pro is about half the price of the model in front of it**, which makes it the obvious third leg of the comparison rather than a budget compromise.
 
-This does not touch the Claude Max subscription, which is a developer tool and not API credit (see the root `CLAUDE.md` anti-goals). It is the OpenRouter bill either way.
+Marrs's assumption was that April was already on DeepSeek. That the question could not be answered from inside the console is its own finding, and `scriptModelInUse()` now fixes it: both draft routes return the resolved model alongside the draft, the same way the figure and clip routes already did. The definitive answer for any past draft is the OpenRouter activity log, which lists the model per call.
+
+None of this touches the Claude Max subscription, which is a developer tool and not API credit (see the root `CLAUDE.md` anti-goals). It is the OpenRouter bill either way.
 
 **One trap closed on the way.** Anthropic removed `temperature` / `top_p` / `top_k` on its current models: sending them is a 400, not a silently ignored field. Every call in `lib/llm/openrouter.ts` had always sent `temperature: 0.7`, so pointing any `*_MODEL` variable at an Anthropic model would have hard-failed with an error that reads like a key or quota problem. `samplingFor()` now omits the sampling block for `anthropic/` models on both the streaming and blocking paths. Matched on the vendor prefix rather than a list of model ids: on models that still accept temperature, omitting it just takes the provider default, so there is no list to keep in sync as models ship.
 

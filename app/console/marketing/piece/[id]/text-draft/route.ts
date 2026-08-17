@@ -14,7 +14,7 @@ import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/console-auth';
 import { getPiece } from '@/lib/marketing/piece-store';
-import { draftTextBody, DraftError } from '@/lib/marketing/draft';
+import { draftTextBody, DraftError, scriptModelInUse } from '@/lib/marketing/draft';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -43,7 +43,8 @@ export async function POST(
 
   try {
     const body = await draftTextBody(owner, piece);
-    return NextResponse.json({ body });
+    // The model rides back with the draft so the screen can say who wrote it.
+    return NextResponse.json({ body, model: scriptModelInUse() });
   } catch (e) {
     if (e instanceof DraftError) {
       if (e.reason === 'no-concept') {
