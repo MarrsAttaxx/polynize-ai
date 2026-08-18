@@ -13,7 +13,21 @@ export type LeadInput = {
   email: string;
   name?: string;
   business?: string;
+  /**
+   * ONLY EVER A sales_blueprints ID. `leads.blueprint_id` is a foreign key to that table
+   * (migration 0011), so passing an id from any other table makes the upsert fail its FK
+   * check, and because this function swallows write errors by design the lead then
+   * disappears in silence. That is exactly what happened to the first cut of /job-mapping.
+   * Funnels with their own blueprint table must leave this unset and be identified by
+   * `source` instead; their own row already carries the email to join on.
+   */
   blueprintId?: string;
+  /**
+   * Which funnel this came from. Free text on the table with a default of 'blueprint', so
+   * a new funnel can label itself without a migration. Used to tell a team map apart from
+   * a job map in the CRM.
+   */
+  source?: string;
 };
 
 /**
@@ -39,7 +53,7 @@ export async function captureLead(input: LeadInput): Promise<boolean> {
    * their own CRM. For this path the behaviour is unchanged, since every website lead
    * has the same owner.
    */
-  const row: Record<string, unknown> = { email, source: 'blueprint', owner: 'polynize' };
+  const row: Record<string, unknown> = { email, source: input.source ?? 'blueprint', owner: 'polynize' };
   if (input.name?.trim()) row.name = input.name.trim();
   if (input.business?.trim()) row.business = input.business.trim();
   if (input.blueprintId) row.blueprint_id = input.blueprintId;

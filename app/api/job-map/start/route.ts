@@ -79,18 +79,26 @@ export async function POST(req: Request) {
   const id: string = row.id;
 
   /**
-   * AWAITED, and that word is the whole fix. This was `void captureLead(...)` and the lead
-   * silently never landed: on Vercel the invocation can be frozen the moment the response is
-   * returned, so an un-awaited promise that is not registered with waitUntil is racing the
-   * response and losing. Caught by testing the flow end to end against production and then
-   * querying the leads table, which is the only way this shows up: the blueprint generated,
-   * the email sent, and the one row that pays for the page was missing.
+   * NO blueprintId, AND THAT IS THE LOAD-BEARING PART. `leads.blueprint_id` is a foreign
+   * key to sales_blueprints (migration 0011). Passing this route's job_blueprints id failed
+   * that FK check, and because captureLead swallows write errors by design the lead vanished
+   * without a trace: the row inserted, the map generated, the email sent, and the one record
+   * that pays for the page was simply absent. Found by querying the leads table after an
+   * end-to-end run rather than trusting that it worked.
    *
-   * captureLead never throws by contract and is a single upsert, so awaiting it costs tens
-   * of milliseconds and makes the write certain before anyone is told we started. The
-   * ordering was always right; the mechanism was not.
+   * The link back is `job_blueprints.email`, which this route already stores, so nothing is
+   * lost by leaving the column unset. `source` is what tells a job map apart from a team map
+   * in the CRM.
+   *
+   * Awaited rather than fired and forgotten, because on Vercel the invocation can be frozen
+   * the moment the response is returned. captureLead never throws and is one upsert, so this
+   * costs tens of milliseconds and makes the write certain before we tell anyone we started.
    */
-  const leadLanded = await captureLead({ email: body.email, name: body.name, blueprintId: id });
+  const leadLanded = await captureLead({
+    email: body.email,
+    name: body.name,
+    source: 'job_map',
+  });
   if (!leadLanded) console.error(`[job-map.start] ${id} lead capture failed for ${body.email}`);
 
   const baseUrl = originFrom(req);
