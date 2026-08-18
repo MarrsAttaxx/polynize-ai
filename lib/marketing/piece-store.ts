@@ -112,6 +112,29 @@ export type MarketingPiece = {
    *  2026-07-14). References into media-store; resolved to public URLs at publish
    *  time. Optional so existing pieces stay valid (isValidPiece unchanged). */
   media?: string[];
+  /**
+   * THE AGREED HOOKS AND THE AGREED ARC (D39). The staged build replaces the one-shot angle box.
+   *
+   * Marrs, on why the one box was not working: "I get to this page, I'm a little ambiguous on
+   * what to do. What angle do I want to take is a little weird." And on what he wants instead:
+   * "a collaborative process to excavate the good stuff out of me to get to a good script."
+   *
+   * The measurement that settled it: the angle he typed was 1% of the instruction April read, and
+   * she wrote 100% of the piece from it in a single call. Every disagreement therefore surfaced
+   * only in the finished script, where it is most expensive to fix. These two fields are the two
+   * cheap checkpoints in front of that: agree the hooks, agree the arc, then write.
+   *
+   * `concept_read` is April's account of the usable material in the concept, kept because it is
+   * the answer to a separate complaint ("it's kind of a big document, I'm not really taking note
+   * of what's in that"). Seeing what she can actually use, repeatedly, is what will eventually
+   * tell us what a good concept has to contain.
+   *
+   * All optional, and `isValidPiece` is untouched: a piece from before this existed stays valid
+   * and simply falls back to the one-shot path.
+   */
+  hooks?: string[];
+  outline?: string;
+  concept_read?: string;
 };
 
 function keyFor(owner: string, pieceId: string): string {

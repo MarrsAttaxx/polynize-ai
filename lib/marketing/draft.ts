@@ -51,7 +51,7 @@ const scriptModel = () => process.env.SCRIPT_MODEL || undefined;
 export const scriptModelInUse = () => resolveModel(scriptModel());
 
 /** Why a draft could not be produced, so callers can map to the right response. */
-export type DraftFailure = 'no-concept' | 'llm-unavailable' | 'empty';
+export type DraftFailure = 'no-concept' | 'no-hooks' | 'llm-unavailable' | 'empty';
 
 export class DraftError extends Error {
   constructor(public reason: DraftFailure) {
@@ -299,11 +299,25 @@ function cleanOutput(raw: string): string {
   return stripEmDashes(body);
 }
 
-async function generate(
+type Materials = {
+  conceptBody: string;
+  formatLabel: string;
+  promptOpts: PromptOpts;
+};
+
+/**
+ * Everything April reads about a piece, gathered once.
+ *
+ * Shared by all three stages (hooks, outline, script) on purpose. The whole point of agreeing
+ * hooks and an arc up front is that the script is then bound by them, and that only holds if
+ * every stage was looking at the same concept, template recipe, voice and examples. Two stages
+ * reading different materials would make the agreement decorative.
+ */
+async function gather(
   owner: string,
   piece: MarketingPiece,
   kind: 'text' | 'video'
-): Promise<string> {
+): Promise<Materials> {
   const conceptBody = await conceptBodyForPiece(owner, piece);
   if (!conceptBody.trim()) throw new DraftError('no-concept');
 
@@ -338,6 +352,16 @@ async function generate(
     length: parts.length || defaultLengthFor(piece.format) || undefined,
   };
 
+  return { conceptBody, formatLabel, promptOpts };
+}
+
+async function generate(
+  owner: string,
+  piece: MarketingPiece,
+  kind: 'text' | 'video'
+): Promise<string> {
+  const { conceptBody, formatLabel, promptOpts } = await gather(owner, piece, kind);
+
   // For text, if a script draft already exists, offer it as reference.
   // The ANGLE goes FIRST in the message, because it is the reason this piece exists and is
   // different from the last one built off the same concept. It cannot introduce facts (the
@@ -345,10 +369,35 @@ async function generate(
   const angleBlock = piece.angle?.trim()
     ? `THE ANGLE FOR THIS PIECE (the operator's own words: the argument to make and who it is for. Follow it. It selects and orders what matters from the concept, and never adds a fact the concept does not contain):\n"""\n${piece.angle.trim()}\n"""\n\n`
     : '';
+
+  /**
+   * THE AGREED DECISIONS (D39), when the staged path was used.
+   *
+   * These go ABOVE the concept and above the angle, because they are no longer proposals: the
+   * operator has already chosen them, and the only remaining job is to execute them. That is
+   * the whole value of the staging, and it is lost if the script stage treats them as
+   * suggestions to be re-derived from the concept.
+   *
+   * Absent on a piece built the old way, or when he skipped straight to the script, in which
+   * case this collapses to nothing and the one-shot path is unchanged.
+   */
+  const agreedHooks = (piece.hooks ?? []).map((h) => h.trim()).filter(Boolean);
+  const hooksBlock =
+    kind === 'video' && agreedHooks.length > 0
+      ? `THE AGREED HOOKS. The operator chose these, so they are FINAL COPY. Reproduce each one word for word as its own hook, in this order, and write no others. Do not paraphrase, tighten, correct or improve them, even if you would have written them differently: a changed hook is a failure of this step, not an edit.\n${agreedHooks
+          .map((h, i) => `HOOK ${i + 1}: ${h}`)
+          .join('\n')}\n\n`
+      : '';
+  const outlineBlock =
+    kind === 'video' && piece.outline?.trim()
+      ? `THE AGREED NARRATIVE ARC. The operator reviewed and approved this, so it is the binding structure for the body: write these beats, in this order, arguing what each one says it argues, from the material it says it stands on. It OUTRANKS the recipe's default beat structure, because it is that structure already applied to this concept. Turn each beat into the spoken words; do not reprint its "Argues" or "Stands on" lines.\n"""\n${piece.outline.trim()}\n"""\n\n`
+      : '';
+  const agreed = `${hooksBlock}${outlineBlock}`;
+
   const source =
     kind === 'text' && piece.script?.trim()
       ? `${angleBlock}CONCEPT:\n"""\n${conceptBody}\n"""\n\nSCRIPT (draft, for reference):\n"""\n${piece.script}\n"""`
-      : `${angleBlock}CONCEPT:\n"""\n${conceptBody}\n"""`;
+      : `${agreed}${angleBlock}CONCEPT:\n"""\n${conceptBody}\n"""`;
   const ask = kind === 'video' ? `Write the ${formatLabel} script.` : `Write the ${formatLabel}.`;
 
   let raw: string;
@@ -396,4 +445,227 @@ export function draftTextBody(owner: string, piece: MarketingPiece): Promise<str
  */
 export function draftVideoScript(owner: string, piece: MarketingPiece): Promise<string> {
   return generate(owner, piece, 'video');
+}
+
+/* ------------------------------------------------------------------------------------------
+ * THE STAGED BUILD (D39): hooks, then the arc, then the script.
+ *
+ * Replaces the one-shot angle box for video. The angle Marrs typed measured ~49 tokens against
+ * ~4,940 tokens of fixed instruction, and April wrote the entire piece from it in a single call,
+ * so the first thing he could review was also the last thing produced. Any disagreement about
+ * which part of the concept mattered could only be expressed by rewriting the angle and
+ * regenerating everything.
+ *
+ * These two stages put the two cheap decisions in front of the expensive one. Neither invents:
+ * both read the same materials the script will read, via gather().
+ * ---------------------------------------------------------------------------------------- */
+
+/** One proposed hook, with its reasoning shown so the choice is informed rather than blind. */
+export type HookOption = {
+  hook: string;
+  /** Which pattern from the library it uses, named, so a set of six is visibly varied. */
+  pattern: string;
+  /** The concept material it stands on. This is what makes a bad hook diagnosable. */
+  material: string;
+};
+
+export type HookProposal = {
+  /**
+   * What April can actually use out of the concept.
+   *
+   * Marrs: "it's kind of a big document. I'm not really taking note of what's in that." This is
+   * the answer to that, and it is shown ABOVE the hooks because it is also the evidence for
+   * them: a weak set of hooks with a thin read tells you the concept is thin, not that April is.
+   */
+  concept_read: string[];
+  hooks: HookOption[];
+};
+
+const HOOKS_TO_PROPOSE = 6;
+
+function hooksSystemPrompt(opts: PromptOpts): string {
+  return `You are April, Polynize's copy chief. You are NOT writing a script yet. Two jobs, in order.
+
+JOB ONE: read the concept and report what is actually usable in it, as 3 to 5 short lines. Each line names one piece of hard material the concept genuinely contains: a number, a named moment, a belief someone holds, a real cost, a phrase in the owner's own words. Quote or point at the concept's own wording. This is a stock-take, not a summary of the argument: if the concept is thin, a short honest list is the correct output and far more useful than a padded one. Do not list material the concept does not contain.
+
+JOB TWO: propose ${HOOKS_TO_PROPOSE} candidate hooks for a ${opts.formatLabel}, for the operator to choose from.
+
+The ${HOOKS_TO_PROPOSE} must be genuinely DIFFERENT WAYS IN, not one idea reworded. Vary the pattern, vary which material each one stands on, and vary the emotional register. Two hooks that could be swapped without changing the piece are one hook and a wasted slot. Spread them: some should be safe and some should be sharp, because the operator is choosing and a set with no range gives him nothing to choose between.
+
+Every hook must be ONE SPOKEN LINE, the words said to camera. No on-screen caption line, no labels, no stage directions.
+
+For each hook also report, honestly:
+- pattern: which hook pattern from the library it uses, named in a few words.
+- material: the specific thing in the concept it stands on, in a few words. If it stands on nothing concrete and is working from the argument alone, say so plainly. Do not dress up a general claim as though it came from evidence.
+${audienceBlock(opts.icp)}${voiceBlock(opts.brandVoice)}${recipeBlock(opts)}
+
+${HOOK_GUIDANCE}
+
+Hard constraints:
+- Ground strictly in the concept. Do not invent facts, names, numbers, quotes, clients, or outcomes it does not contain, in the read or in any hook.
+- If the operator's message supplies hooks or lines of his own, treat them as FINAL COPY: include them as given, unchanged, and propose the remainder around them. Do not paraphrase or improve them.
+- Never use the em-dash character (U+2014). Use a comma, a period, or a colon.
+
+Return ONLY a JSON object, no prose around it and no code fences:
+{"concept_read":["...","..."],"hooks":[{"hook":"...","pattern":"...","material":"..."}]}`;
+}
+
+/**
+ * Propose the concept read and ${HOOKS_TO_PROPOSE} hooks. Throws DraftError on failure.
+ *
+ * `steer` is the optional box on the hooks screen: the remains of the angle, demoted from the
+ * thing that drove the whole piece to one input among several. Hooks he supplies there survive
+ * verbatim, which is the behaviour that made his own hooks come through the old path intact.
+ */
+export async function proposeHooks(
+  owner: string,
+  piece: MarketingPiece,
+  steer?: string
+): Promise<HookProposal> {
+  const { conceptBody, formatLabel, promptOpts } = await gather(owner, piece, 'video');
+  const steerBlock = steer?.trim()
+    ? `WHAT THE OPERATOR ALREADY KNOWS HE WANTS (his own words. Any complete line here is final copy and goes in as written; anything that reads as direction rather than as copy steers the set):\n"""\n${steer.trim()}\n"""\n\n`
+    : '';
+
+  let raw: string;
+  try {
+    raw = await complete({
+      system: hooksSystemPrompt(promptOpts),
+      messages: [
+        {
+          role: 'user',
+          content: `${steerBlock}CONCEPT:\n"""\n${conceptBody}\n"""\n\nReport what is usable in this concept, then propose ${HOOKS_TO_PROPOSE} hooks for the ${formatLabel}.`,
+        },
+      ],
+      // Well clear of the reasoning floor: six hooks plus their reasoning is a small output
+      // but the model still reasons over the whole concept to produce it.
+      maxTokens: 6000,
+      temperature: 0.8,
+      json: true,
+      model: scriptModel(),
+      apiKey: process.env.APRIL_OPENROUTER_API_KEY,
+    });
+  } catch (e) {
+    console.error(`[hooks] LLM call threw: ${e instanceof Error ? e.message : String(e)}`);
+    throw new DraftError('llm-unavailable');
+  }
+  return parseHookProposal(raw);
+}
+
+/**
+ * Parse the hooks JSON defensively.
+ *
+ * Exported for its tests. Tolerant on shape and strict on emptiness: a proposal with no hooks
+ * must fail loudly as 'empty' rather than render as an empty chooser, which reads as "April had
+ * no ideas" when the truth is that the response was malformed.
+ */
+export function parseHookProposal(raw: string): HookProposal {
+  let obj: unknown;
+  try {
+    const body = cleanOutput(raw);
+    const start = body.indexOf('{');
+    const end = body.lastIndexOf('}');
+    if (start === -1 || end === -1) throw new Error('no JSON object');
+    obj = JSON.parse(body.slice(start, end + 1));
+  } catch (e) {
+    console.error(`[hooks] unparseable response: ${e instanceof Error ? e.message : String(e)}`);
+    throw new DraftError('empty');
+  }
+  const o = (obj ?? {}) as Record<string, unknown>;
+  const line = (v: unknown) => (typeof v === 'string' ? stripEmDashes(v).trim() : '');
+  const read = Array.isArray(o.concept_read)
+    ? o.concept_read.map(line).filter(Boolean).slice(0, 8)
+    : [];
+  const hooks: HookOption[] = Array.isArray(o.hooks)
+    ? o.hooks
+        .map((h) => {
+          const r = (h ?? {}) as Record<string, unknown>;
+          return {
+            hook: line(r.hook),
+            pattern: line(r.pattern),
+            material: line(r.material),
+          };
+        })
+        .filter((h) => h.hook !== '')
+        .slice(0, 12)
+    : [];
+  if (hooks.length === 0) throw new DraftError('empty');
+  return { concept_read: read, hooks };
+}
+
+function outlineSystemPrompt(opts: PromptOpts): string {
+  return `You are April, Polynize's copy chief. You are NOT writing the script yet. Propose the NARRATIVE ARC for a ${opts.formatLabel}: the beats it moves through, in order.
+
+This is the step the operator reviews before the script exists, so its job is to make your choices VISIBLE and cheap to change. For every beat, two things:
+- what it argues, in one or two plain sentences. Not the words he will say: the move the beat makes.
+- what it stands on: the specific material from the concept this beat uses. Point at the concept's own wording. If a beat rests on the argument rather than on hard material, say that plainly instead of implying evidence you do not have.
+
+The hooks are ALREADY AGREED and given in the message. Do not rewrite them, do not propose alternatives, and do not treat them as beat one. They are the entry points; the arc is what every one of them must hand over to cleanly. Beat one therefore has to work for ALL of the agreed hooks, since only one of them survives the edit.
+${audienceBlock(opts.icp)}${recipeBlock(opts)}
+
+Hard constraints:
+- Ground strictly in the concept. Do not invent facts, names, numbers, quotes, clients, or outcomes it does not contain.
+- Follow the recipe's beat structure and count where it gives one.
+- Never use the em-dash character (U+2014). Use a comma, a period, or a colon.
+
+Output shape, plain text, no markdown fences and no preamble:
+
+BEAT 1
+Argues: <the move this beat makes>
+Stands on: <the concept material it uses, or "the argument itself, no hard material">
+
+BEAT 2
+(same two lines)
+
+...then, if the recipe asks for them:
+
+CTA
+Argues: <the ask>
+
+CLOSE
+Argues: <what the last line has to land, since it gets the emphasis in the edit>`;
+}
+
+/**
+ * Propose the narrative arc, given the agreed hooks. Throws DraftError on failure.
+ *
+ * Deliberately prose and not JSON: this is the artifact the operator edits by hand, and a
+ * textarea he can rewrite freely beats a structured editor he has to fight. The script stage
+ * consumes it as given.
+ */
+export async function proposeOutline(
+  owner: string,
+  piece: MarketingPiece
+): Promise<string> {
+  const { conceptBody, formatLabel, promptOpts } = await gather(owner, piece, 'video');
+  const hooks = (piece.hooks ?? []).map((h) => h.trim()).filter(Boolean);
+  if (hooks.length === 0) throw new DraftError('no-hooks');
+
+  const hookBlock = `THE AGREED HOOKS (already chosen by the operator, final, not to be rewritten):\n${hooks
+    .map((h, i) => `${i + 1}. ${h}`)
+    .join('\n')}\n\n`;
+
+  let raw: string;
+  try {
+    raw = await complete({
+      system: outlineSystemPrompt(promptOpts),
+      messages: [
+        {
+          role: 'user',
+          content: `${hookBlock}CONCEPT:\n"""\n${conceptBody}\n"""\n\nPropose the narrative arc for the ${formatLabel}.`,
+        },
+      ],
+      maxTokens: 6000,
+      temperature: 0.7,
+      json: false,
+      model: scriptModel(),
+      apiKey: process.env.APRIL_OPENROUTER_API_KEY,
+    });
+  } catch (e) {
+    console.error(`[outline] LLM call threw: ${e instanceof Error ? e.message : String(e)}`);
+    throw new DraftError('llm-unavailable');
+  }
+  const out = cleanOutput(raw);
+  if (!out) throw new DraftError('empty');
+  return out;
 }
