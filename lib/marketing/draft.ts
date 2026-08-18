@@ -275,7 +275,7 @@ That is the default register, and a given brand voice overrides it on register a
 Hard constraints, never overridden by any recipe or voice:
 - Ground strictly in the concept. Do not invent facts, names, numbers, quotes, clients, or outcomes it does not contain. A sharp line the concept cannot support is a fabrication, and it fails.
 - Never use the em-dash character (U+2014). Use a comma, a period, or a colon instead.
-- Output ONLY the script, meaning the labels and the spoken lines (plus the ON-SCREEN TEXT line for short-form): no preamble, no "here is your script", no notes on your reasoning, no markdown code fences.
+- Output ONLY the script: the labels, and the spoken lines beneath them. Add a non-spoken ON-SCREEN TEXT line ONLY where the output shape below explicitly asks for one. No preamble, no "here is your script", no notes on your reasoning, no markdown code fences.
 
 ${
     opts.scriptShape ??
@@ -284,9 +284,9 @@ ${
 
 ${opts.exemplars ?? ''}
 
-This model reasons before it answers, so plan silently: find the sharpest hook material, map the recipe's beats onto the concept, settle the voice, then write. Before you output, reread once as the editor and fix any miss: the spoken hook stops a cold viewer and earns the next line, and for short-form there is a separate on-screen text hook in different words; every beat the recipe named is present, in order, with its own ending honoured; every fact traces to the concept, with anything invented deleted; the voice holds and reads cleanly aloud; no banned phrase, filler, or emoji; it ends on a line worth punching.${
+This model reasons before it answers, so plan silently: find the sharpest hook material, map the recipe's beats onto the concept, settle the voice, then write. Before you output, reread once as the editor and fix any miss: the spoken hook stops a cold viewer and earns the next line, and there is an on-screen text hook in different words ONLY if the shape asked for one; every beat the recipe named is present, in order, with its own ending honoured; every fact traces to the concept, with anything invented deleted; the voice holds and reads cleanly aloud; no banned phrase, filler, or emoji; it ends on a line worth punching.${
     opts.scriptShape
-      ? ' Also check the output shape above is followed exactly: every beat has its labelled tracks, and each SCREEN line is one bold representational idea plus a touch that reinforces the spoken line, never a bullet slide.'
+      ? ' Also check the output shape above is followed exactly: every label it names is present, in its order, and nothing carries a caption, screen note or stage direction the shape did not ask for.'
       : ''
   } Return only the finished script.`;
 }

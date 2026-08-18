@@ -46,6 +46,14 @@
   color: var(--coral);
 }
 
+/* Attribution for the draft just produced. Quiet on purpose: it is diagnostic information for
+   whoever is comparing models, not part of the script's own furniture. */
+.draftModel {
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: var(--text-3);
+}
+
 .head {
   display: flex;
   align-items: flex-start;

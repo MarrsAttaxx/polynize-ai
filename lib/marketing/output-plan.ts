@@ -83,10 +83,10 @@ WHAT EVERY HOOK DOES
 - IT CARRIES AUTHORITY OR A GUARANTEE. "The smartest companies in the world". "I guarantee". A flat claim with nothing behind it does not survive the first second.
 - IT IS SECOND PERSON, PRESENT TENSE, ABOUT THEIR COMPANY, NOW. Never about the presenter. No greeting, no "in this video", and never a question as the opening line.
 
-THE TWO LINES DO DIFFERENT JOBS
-- ON-SCREEN TEXT is the headline: 6 to 10 words, declarative, readable on mute at a glance. It states the claim or the prize.
-- SPOKEN is longer, 15 to 25 words, one breath. It qualifies who this is for and carries the guarantee or the authority.
-- They must NOT be the same sentence reworded. Read together they open a gap that the beats then close.
+HOW MANY LINES A HOOK HAS DEPENDS ON THE FORMAT, and the format's own output shape is the authority. Follow it over this section.
+- Where the shape asks for a SPOKEN line only (the split-screen hero, where the first-frame text is the prezie's own title), the spoken line carries the whole job on its own: 15 to 25 words, one breath, and it must still withhold, qualify and carry authority.
+- Where the shape also asks for an ON-SCREEN TEXT line, that line is the headline: 6 to 10 words, declarative, readable on mute at a glance, stating the claim or the prize. It must NOT be the spoken line reworded. Read together the two open a gap that the beats then close.
+- The three verbatim examples above were written for a two-line format, so read their ON-SCREEN halves as evidence of how his headlines work, not as proof that every format has one.
 
 THREE WAYS IN, one per hook when several are asked for. These are different ENTRY POINTS to the same argument, never rewordings of each other:
 - THE ELITE ALREADY DO IT: name what the best operators do before the thing the viewer is rushing into, and withhold what "it" is.
@@ -189,18 +189,17 @@ export const FORMATS: FormatDef[] = [
 THE SHAPE, exactly. This is Marrs's own short-form structure, taken from a script he wrote; it is the house standard for short form, not a suggestion.
 
 HOOK 1:
-ON-SCREEN TEXT: <the headline claim, 6 to 10 words>
-SPOKEN: <what he says, one breath, 15 to 25 words>
+<what he says, one breath, 15 to 25 words>
 
 ----
 
 HOOK 2:
-(same two lines)
+(same)
 
 ----
 
 HOOK 3:
-(same two lines)
+(same)
 
 ----
 
@@ -224,8 +223,8 @@ CLOSE
 
 Rules that follow from that shape:
 - Write as many HOOKS as asked for (the default is one; a template can ask for three), each separated by a line of four hyphens. Every hook is a DIFFERENT way in to the same argument, and every one must hand over cleanly to BEAT 1, because only one of them will survive the edit.
-- ON-SCREEN TEXT and SPOKEN are NOT the same sentence. The on-screen line is the headline: shorter, flatter, declarative, the thing that stops a scroll on mute. The spoken line is said out loud and usually qualifies who this is for. Together they should open a gap, not repeat each other.
-- THE BEATS CARRY SPOKEN WORDS ONLY. No screen notes, no stage directions, no shot marks: the beats are read off a teleprompter and the screen is planned separately as the prezie. The ON-SCREEN TEXT line inside a hook is the ONE exception, because that text is part of the hook itself.
+- A HOOK IS ONE SPOKEN LINE. No on-screen caption line: on this format the first-frame text is the PREZIE's own title and is authored there, so a caption in the script would only be a second draft of it that then has to be reconciled. Write the words he says and nothing else.
+- THE WHOLE SCRIPT IS SPOKEN WORDS ONLY, hooks and beats alike. No screen notes, no captions, no stage directions, no shot marks: every line is read off a teleprompter, and the screen is planned separately as the prezie.
 - CTA and CLOSE are separate sections and both are needed. The CTA is the ask. The CLOSE is one line AFTER it, the actual last thing said, and it is punched in the edit, so it has to be worth punching.
 - Three beats is the norm and four is allowed when the argument genuinely has a fourth move. One idea per beat.`,
     screenPromptShape: `Before the first beat, add one line labelled "ON-SCREEN TEXT:" holding the first-frame caption that stops the scroll, or write "none" if the opening is purely visual. It is never spoken, and if used its words differ from the spoken hook so the two together open a gap.

@@ -39,6 +39,14 @@ export function ScriptScreen({
   conceptBody?: string;
 }) {
   const [script, setScript] = useState(initial.script);
+  /**
+   * Which model wrote the draft on screen, for as long as this draft is on screen.
+   *
+   * Deliberately NOT persisted with the piece. It is a fact about one generation, not about the
+   * script: once the script has been hand-edited or chat-edited, "written by X" stops being true,
+   * and a stored attribution would keep asserting it. So it lives and dies with the draft action.
+   */
+  const [draftModel, setDraftModel] = useState<string | null>(null);
   const [saveState, setSaveState] = useState<SaveState>('idle');
   const [chatBusy, setChatBusy] = useState(false);
   const [drafting, setDrafting] = useState(false);
@@ -180,7 +188,11 @@ export function ScriptScreen({
         setDraftError(b?.error ?? 'Could not draft the script.');
         return;
       }
-      const { script: drafted } = (await res.json()) as { script: string };
+      const { script: drafted, model } = (await res.json()) as {
+        script: string;
+        model?: string;
+      };
+      setDraftModel(model ?? null);
       applyChatEdit(drafted);
     } catch {
       setDraftError('Network error. Try again.');
@@ -278,6 +290,11 @@ export function ScriptScreen({
                   : 'Draft from the concept'}
             </button>
             {draftError ? <span className={s.draftError}>{draftError}</span> : null}
+            {/* Who wrote it. Shown only right after a draft, so a two-model comparison is
+                attributable instead of taken on faith about which env var was live. */}
+            {!draftError && draftModel ? (
+              <span className={s.draftModel}>written by {draftModel}</span>
+            ) : null}
           </div>
           {undo !== null ? (
             <div className={s.undoBar}>
