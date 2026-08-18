@@ -78,8 +78,20 @@ export async function POST(req: Request) {
 
   const id: string = row.id;
 
-  // Before generation, deliberately. A model failure must not cost the lead.
-  void captureLead({ email: body.email, name: body.name, blueprintId: id });
+  /**
+   * AWAITED, and that word is the whole fix. This was `void captureLead(...)` and the lead
+   * silently never landed: on Vercel the invocation can be frozen the moment the response is
+   * returned, so an un-awaited promise that is not registered with waitUntil is racing the
+   * response and losing. Caught by testing the flow end to end against production and then
+   * querying the leads table, which is the only way this shows up: the blueprint generated,
+   * the email sent, and the one row that pays for the page was missing.
+   *
+   * captureLead never throws by contract and is a single upsert, so awaiting it costs tens
+   * of milliseconds and makes the write certain before anyone is told we started. The
+   * ordering was always right; the mechanism was not.
+   */
+  const leadLanded = await captureLead({ email: body.email, name: body.name, blueprintId: id });
+  if (!leadLanded) console.error(`[job-map.start] ${id} lead capture failed for ${body.email}`);
 
   const baseUrl = originFrom(req);
   waitUntil(runGeneration({ id, jd: body.jd, name: body.name, email: body.email, baseUrl }));
