@@ -1,0 +1,575 @@
+/* /job-mapping.
+ 
+   Built on the site's brand tokens rather than the homepage's Direction C overrides, so it
+   inherits the canonical palette from globals.css: --mint #69fccb, --coral, --amber.
+ 
+   THE THREE LANE COLOURS ARE THE CONTRACT and are not local styling choices: coral is
+   human, amber is hybrid, mint is agent, the same as the capability map on
+   /capability-mapping, the matrix on /mapping, the blueprint and the Console. */
+
+.page {
+  position: relative;
+  z-index: 1;
+  min-height: 100vh;
+  padding: 0 24px 80px;
+}
+
+.flow,
+.doc {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.eyebrow {
+  display: inline-block;
+  font-family: var(--font-inter), sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--mint);
+  margin-bottom: 16px;
+}
+
+/* ---------- Hero ---------- */
+.hero {
+  text-align: center;
+  padding: 72px 0 36px;
+}
+.h1 {
+  font-family: var(--font-space-grotesk), sans-serif;
+  font-size: clamp(36px, 5.4vw, 62px);
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  line-height: 1.02;
+  margin: 0 auto;
+  max-width: 20ch;
+  color: var(--text);
+  text-wrap: balance;
+}
+.mint { color: var(--mint); font-style: italic; }
+.sub {
+  font-size: 17px;
+  line-height: 1.6;
+  color: var(--text-2);
+  max-width: 60ch;
+  margin: 22px auto 0;
+}
+
+/* ---------- The panel: paste, gate, working, error all share it ---------- */
+.panel {
+  border: 1px solid var(--border-soft);
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--mint) 2%, var(--surface));
+  padding: 26px 26px 22px;
+  margin: 0 auto;
+}
+.panelLabel {
+  display: block;
+  font-family: var(--font-space-grotesk), sans-serif;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 12px;
+}
+.textarea {
+  display: block;
+  width: 100%;
+  resize: vertical;
+  font-family: var(--font-inter), sans-serif;
+  font-size: 14.5px;
+  line-height: 1.6;
+  color: var(--text);
+  background: var(--bg);
+  border: 1px solid var(--border-soft);
+  border-radius: 10px;
+  padding: 16px 18px;
+}
+.textarea::placeholder { color: var(--text-3); }
+.textarea:focus-visible { outline: 2px solid var(--mint); outline-offset: 1px; }
+
+.panelFoot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-top: 16px;
+}
+.count { font-size: 13px; color: var(--text-3); }
+/* Turns mint the moment there is enough to work with, so the reader is told they can go
+   rather than having to infer it from a button changing state. */
+.countOk { font-size: 13px; color: var(--mint); }
+.privacy {
+  margin: 14px 0 0;
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: var(--text-3);
+}
+
+/* ---------- Buttons ---------- */
+.btnPrimary {
+  font-family: var(--font-inter), sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--bg);
+  background: var(--mint);
+  border: 0;
+  border-radius: 999px;
+  padding: 13px 26px;
+  cursor: pointer;
+  transition: transform 0.16s ease, box-shadow 0.16s ease, opacity 0.16s ease;
+}
+.btnPrimary:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 0 22px color-mix(in srgb, var(--mint) 35%, transparent);
+}
+.btnPrimary:disabled { opacity: 0.35; cursor: not-allowed; }
+.btnPrimary:focus-visible { outline: 2px solid var(--mint); outline-offset: 3px; }
+
+.btnGhost {
+  display: inline-block;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--mint);
+  text-decoration: none;
+  border: 1px solid color-mix(in srgb, var(--mint) 40%, transparent);
+  border-radius: 999px;
+  padding: 11px 22px;
+}
+.btnGhost:hover { background: color-mix(in srgb, var(--mint) 10%, transparent); }
+
+.backLink {
+  display: inline-block;
+  margin-top: 16px;
+  font-size: 13px;
+  color: var(--text-3);
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-color: var(--border-soft);
+}
+.backLink:hover { color: var(--text-2); }
+
+/* ---------- The gate ---------- */
+.gateHead { margin-bottom: 22px; }
+.gateTitle {
+  font-family: var(--font-space-grotesk), sans-serif;
+  font-size: clamp(21px, 2.8vw, 28px);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--text);
+  margin: 0 0 10px;
+}
+.gateBody { font-size: 15px; line-height: 1.6; color: var(--text-2); margin: 0; max-width: 56ch; }
+
+.gateForm {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: 14px;
+  align-items: end;
+}
+.field { display: grid; gap: 6px; }
+.fieldLabel {
+  font-family: var(--font-inter), sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+.input {
+  font-family: var(--font-inter), sans-serif;
+  font-size: 15px;
+  color: var(--text);
+  background: var(--bg);
+  border: 1px solid var(--border-soft);
+  border-radius: 10px;
+  padding: 12px 14px;
+}
+.input:focus-visible { outline: 2px solid var(--mint); outline-offset: 1px; }
+
+/* ---------- Working ---------- */
+.workingPanel { text-align: center; padding: 52px 26px 44px; }
+.spinner { display: flex; justify-content: center; gap: 8px; margin-bottom: 22px; }
+.spinner span {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--mint);
+  animation: jmPulse 1.2s ease-in-out infinite;
+}
+.spinner span:nth-child(2) { animation-delay: 0.15s; }
+.spinner span:nth-child(3) { animation-delay: 0.3s; }
+@keyframes jmPulse {
+  0%, 100% { opacity: 0.25; transform: scale(0.8); }
+  50% { opacity: 1; transform: scale(1); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .spinner span { animation: none; opacity: 0.7; }
+}
+.workingMsg {
+  font-family: var(--font-space-grotesk), sans-serif;
+  font-size: 19px;
+  font-weight: 600;
+  color: var(--text);
+}
+.workingNote { margin: 14px 0 0; font-size: 13.5px; color: var(--text-3); }
+
+/* ---------- Proof and what-you-get ---------- */
+.proof, .gets { text-align: center; padding: 64px 0 0; }
+.proofH2, .getsH2 {
+  font-family: var(--font-space-grotesk), sans-serif;
+  font-size: clamp(26px, 3.4vw, 38px);
+  font-weight: 600;
+  letter-spacing: -0.025em;
+  color: var(--text);
+  margin: 0 auto 18px;
+  max-width: 26ch;
+  text-wrap: balance;
+}
+.proofBody {
+  font-size: 16px;
+  line-height: 1.65;
+  color: var(--text-2);
+  max-width: 62ch;
+  margin: 0 auto;
+}
+.proofNote { margin: 14px auto 0; font-size: 12.5px; color: var(--text-3); }
+
+.getsGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+  margin-top: 30px;
+  text-align: left;
+}
+/* The lane tint is a 3px left rule rather than a border on all four sides: it marks which
+   lane the card belongs to without turning four cards into four coloured boxes. */
+.getCard {
+  border: 1px solid var(--border-soft);
+  border-left: 3px solid var(--border-soft);
+  border-radius: 12px;
+  background: var(--surface);
+  padding: 20px 22px;
+}
+.getCard.lHuman { border-left-color: var(--coral); }
+.getCard.lHybrid { border-left-color: var(--amber); }
+.getCard.lAgentic { border-left-color: var(--mint); }
+.getTitle {
+  font-family: var(--font-space-grotesk), sans-serif;
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 8px;
+}
+.getBody { font-size: 14px; line-height: 1.6; color: var(--text-2); }
+
+/* ================================================================= the document */
+
+.doc { padding: 56px 0 0; }
+.docHead { text-align: center; margin-bottom: 34px; }
+.docTitle {
+  font-family: var(--font-space-grotesk), sans-serif;
+  font-size: clamp(30px, 4.4vw, 48px);
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  line-height: 1.05;
+  color: var(--text);
+  margin: 0 auto 14px;
+  max-width: 24ch;
+  text-wrap: balance;
+}
+.docLead {
+  font-size: 16.5px;
+  line-height: 1.6;
+  color: var(--text-2);
+  max-width: 58ch;
+  margin: 0 auto;
+}
+.docMeta {
+  margin-top: 12px;
+  font-family: var(--font-inter), monospace;
+  font-size: 11.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+
+/* The three-number summary. The shape of the answer before the detail of it. */
+.split {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  margin-bottom: 18px;
+}
+.splitCell {
+  border: 1px solid var(--border-soft);
+  border-top: 3px solid var(--border-soft);
+  border-radius: 12px;
+  background: var(--surface);
+  padding: 18px 20px;
+  text-align: center;
+}
+.splitCell.lHuman { border-top-color: var(--coral); }
+.splitCell.lHybrid { border-top-color: var(--amber); }
+.splitCell.lAgentic { border-top-color: var(--mint); }
+.splitN {
+  font-family: var(--font-space-grotesk), sans-serif;
+  font-size: 34px;
+  font-weight: 600;
+  line-height: 1;
+  color: var(--text);
+}
+.splitLane {
+  margin-top: 6px;
+  font-family: var(--font-inter), monospace;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+.splitCell.lHuman .splitLane { color: var(--coral); }
+.splitCell.lHybrid .splitLane { color: var(--amber); }
+.splitCell.lAgentic .splitLane { color: var(--mint); }
+.splitShare { margin-top: 6px; font-size: 12px; color: var(--text-3); }
+
+/* The exposure read. A word and a sentence, never a score. */
+.exposure {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  flex-wrap: wrap;
+  border: 1px solid var(--border-soft);
+  border-radius: 12px;
+  background: var(--surface);
+  padding: 16px 20px;
+  margin-bottom: 26px;
+}
+.expBadge {
+  font-family: var(--font-inter), monospace;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  border-radius: 999px;
+  padding: 5px 12px;
+  flex: none;
+}
+.exp_low { color: var(--mint); background: color-mix(in srgb, var(--mint) 12%, transparent); }
+.exp_moderate { color: var(--amber); background: color-mix(in srgb, var(--amber) 12%, transparent); }
+.exp_high { color: var(--coral); background: color-mix(in srgb, var(--coral) 12%, transparent); }
+.expLine { margin: 0; font-size: 14.5px; line-height: 1.6; color: var(--text-2); }
+
+/* ---------- The map ---------- */
+.mapWrap {
+  border: 1px solid var(--border-soft);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--mint) 2%, var(--surface));
+  overflow: hidden;
+  margin-bottom: 30px;
+}
+.mapHead,
+.row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 92px 92px 92px;
+  align-items: center;
+}
+.mapHead { padding: 14px 18px 10px; }
+.mapHeadCap,
+.mapHeadLane {
+  font-family: var(--font-inter), monospace;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+.mapHeadCap { color: var(--text-3); }
+.mapHeadLane { text-align: center; }
+.mapHeadLane.lHuman { color: var(--coral); }
+.mapHeadLane.lHybrid { color: var(--amber); }
+.mapHeadLane.lAgentic { color: var(--mint); }
+
+.cluster {
+  padding: 18px 18px 8px;
+  border-top: 1px solid var(--border-soft);
+  font-family: var(--font-space-grotesk), sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.rowWrap { border-bottom: 1px solid color-mix(in srgb, var(--border-soft) 55%, transparent); }
+.row {
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: 0;
+  padding: 11px 18px;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+}
+.row:disabled { cursor: default; }
+.row:hover:not(:disabled) { background: color-mix(in srgb, var(--mint) 3%, transparent); }
+.row:focus-visible { outline: 2px solid var(--mint); outline-offset: -2px; }
+.rowCap { display: flex; align-items: baseline; gap: 9px; min-width: 0; }
+.rowChev {
+  font-family: var(--font-inter), monospace;
+  font-size: 13px;
+  color: var(--text-3);
+  flex: none;
+  width: 10px;
+}
+.rowName { display: block; font-size: 14.5px; color: var(--text); }
+/* The mechanism line. This is where "AI drafts, you approve" and "runs without you" become
+   visibly different jobs inside the same lane. */
+.rowMech { display: block; font-size: 12.5px; line-height: 1.45; color: var(--text-3); margin-top: 2px; }
+
+.cell {
+  justify-self: center;
+  width: 62px;
+  height: 22px;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--text-3) 12%, transparent);
+  font-family: var(--font-inter), monospace;
+  font-size: 10.5px;
+  font-weight: 700;
+  color: transparent;
+  display: grid;
+  place-items: center;
+}
+.cellOn { color: var(--bg); }
+.cellOn.lHuman { background: var(--coral); }
+.cellOn.lHybrid { background: var(--amber); }
+.cellOn.lAgentic { background: var(--mint); }
+
+.rowBody { padding: 2px 18px 18px 37px; }
+.rowBody p { margin: 0 0 10px; font-size: 13.5px; line-height: 1.6; color: var(--text-2); }
+.taskList { margin: 0 0 10px; padding-left: 18px; }
+.taskList li { font-size: 13px; line-height: 1.6; color: var(--text-2); }
+.why {
+  border-left: 2px solid var(--border-soft);
+  padding-left: 12px;
+}
+.whyLabel {
+  display: block;
+  font-family: var(--font-inter), monospace;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  margin-bottom: 4px;
+}
+.mapFoot { margin: 0; padding: 14px 18px 16px; font-size: 12px; color: var(--text-3); }
+
+/* ---------- Lane summaries and the closing blocks ---------- */
+.lanes {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  margin-bottom: 34px;
+}
+.laneCard {
+  border: 1px solid var(--border-soft);
+  border-top: 3px solid var(--border-soft);
+  border-radius: 12px;
+  background: var(--surface);
+  padding: 18px 20px;
+}
+.laneCard.lHuman { border-top-color: var(--coral); }
+.laneCard.lHybrid { border-top-color: var(--amber); }
+.laneCard.lAgentic { border-top-color: var(--mint); }
+.laneCard p { margin: 0; font-size: 13.5px; line-height: 1.6; color: var(--text-2); }
+.laneCardTitle {
+  font-family: var(--font-inter), monospace;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  margin-bottom: 9px;
+}
+.laneCard.lHuman .laneCardTitle { color: var(--coral); }
+.laneCard.lHybrid .laneCardTitle { color: var(--amber); }
+.laneCard.lAgentic .laneCardTitle { color: var(--mint); }
+
+.block { margin-bottom: 30px; }
+.blockTitle {
+  font-family: var(--font-space-grotesk), sans-serif;
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--text);
+  margin: 0 0 14px;
+}
+.blockBody { font-size: 15.5px; line-height: 1.7; color: var(--text-2); margin: 0; max-width: 68ch; }
+.list { margin: 0; padding-left: 0; list-style: none; display: grid; gap: 10px; }
+.list li {
+  position: relative;
+  padding-left: 20px;
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--text-2);
+}
+.list li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 9px;
+  width: 7px;
+  height: 7px;
+  border-radius: 2px;
+}
+.listHuman li::before { background: var(--coral); }
+.listAgentic li::before { background: var(--mint); }
+
+.afterDoc {
+  max-width: 900px;
+  margin: 10px auto 0;
+  text-align: center;
+  padding: 26px 0 0;
+  border-top: 1px solid var(--border-soft);
+}
+.afterLine { font-size: 14px; color: var(--text-3); margin: 0 0 16px; }
+
+/* ---------- Pending / failed states on the permalink ---------- */
+.stateCard {
+  max-width: 620px;
+  margin: 90px auto 0;
+  text-align: center;
+  border: 1px solid var(--border-soft);
+  border-radius: 16px;
+  background: var(--surface);
+  padding: 44px 32px 38px;
+}
+.stateTitle {
+  font-family: var(--font-space-grotesk), sans-serif;
+  font-size: clamp(24px, 3.2vw, 32px);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--text);
+  margin: 0 0 12px;
+}
+.stateBody { font-size: 15px; line-height: 1.65; color: var(--text-2); margin: 0 auto 24px; max-width: 46ch; }
+.stateBtn {
+  display: inline-block;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--bg);
+  background: var(--mint);
+  border-radius: 999px;
+  padding: 13px 26px;
+  text-decoration: none;
+}
+
+@media (max-width: 760px) {
+  .gateForm { grid-template-columns: 1fr; }
+  .getsGrid { grid-template-columns: 1fr; }
+  .split, .lanes { grid-template-columns: 1fr; }
+  .mapHead, .row { grid-template-columns: minmax(0, 1fr) 52px 52px 52px; }
+  .cell { width: 40px; }
+  .hero { padding: 48px 0 28px; }
+}
