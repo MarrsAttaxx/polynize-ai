@@ -1,0 +1,473 @@
+/* The gate screens (D40), adapted from the approved mockup. The rules it encodes:
+   one gate is one screen, the one mint element is the decision bar, you advance by
+   deciding, and back goes back. Nothing here explains what the operator already knows. */
+
+.app {
+  max-width: 620px;
+  margin: 0 auto;
+  padding: 10px 16px 140px;
+}
+.appWide {
+  max-width: 980px;
+}
+
+.top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 0 18px;
+}
+.back {
+  background: none;
+  border: none;
+  color: var(--text-3, #8b857f);
+  font-size: 20px;
+  cursor: pointer;
+  padding: 4px 8px 4px 0;
+}
+.back:hover {
+  color: var(--text, #f4ece4);
+}
+.where {
+  font-family: var(--font-jetbrains-mono), monospace;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-3, #8b857f);
+}
+.dots {
+  margin-left: auto;
+  display: flex;
+  gap: 6px;
+}
+.dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--surface-2, #22222e);
+}
+.dotOn {
+  background: var(--mint, #69fccb);
+}
+.dotPast {
+  background: var(--text-3, #6f6a64);
+}
+
+.card {
+  background: var(--tac-surface, #1b1b26);
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.1));
+  border-radius: 16px;
+  padding: 18px;
+  margin-bottom: 12px;
+}
+.meta {
+  font-family: var(--font-jetbrains-mono), monospace;
+  font-size: 11px;
+  color: var(--text-3, #8b857f);
+}
+.err {
+  font-family: var(--font-jetbrains-mono), monospace;
+  font-size: 12px;
+  color: var(--coral, #ff7a6b);
+  margin: 8px 0 0;
+}
+
+/* Gate 1 */
+.newidea {
+  width: 100%;
+  box-sizing: border-box;
+  background: var(--tac-surface, #1b1b26);
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.1));
+  border-radius: 14px;
+  color: var(--text, #f4ece4);
+  font-family: inherit;
+  font-size: 16px;
+  line-height: 1.5;
+  padding: 15px;
+  margin-bottom: 10px;
+  resize: vertical;
+}
+.newidea::placeholder {
+  color: var(--text-3, #6f6a64);
+}
+.newidea:focus {
+  outline: none;
+  border-color: var(--mint, #69fccb);
+}
+.idea {
+  width: 100%;
+  box-sizing: border-box;
+  text-align: left;
+  background: var(--tac-surface, #1b1b26);
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.1));
+  border-radius: 14px;
+  color: var(--text, #f4ece4);
+  font-family: inherit;
+  font-size: 15.5px;
+  line-height: 1.45;
+  padding: 15px;
+  margin-bottom: 10px;
+  cursor: pointer;
+}
+.idea .meta {
+  display: block;
+  margin-top: 6px;
+}
+.ideaOn {
+  border-color: var(--mint, #69fccb);
+  box-shadow: 0 0 0 1px var(--mint, #69fccb) inset;
+}
+.lanes {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 16px;
+}
+.lane {
+  font-family: var(--font-jetbrains-mono), monospace;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  padding: 18px 10px;
+  border-radius: 14px;
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.1));
+  background: var(--tac-surface, #1b1b26);
+  color: var(--text, #f4ece4);
+  cursor: pointer;
+}
+.laneOn {
+  border-color: var(--mint, #69fccb);
+  box-shadow: 0 0 0 1px var(--mint, #69fccb) inset;
+}
+
+/* Gate 2 */
+.duo {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+@media (min-width: 820px) {
+  .duo {
+    grid-template-columns: 3fr 2fr;
+    align-items: start;
+  }
+}
+.article {
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 46vh;
+  background: transparent;
+  border: none;
+  color: var(--text, #f4ece4);
+  font-family: inherit;
+  font-size: 15.5px;
+  line-height: 1.6;
+  resize: vertical;
+}
+.article:focus {
+  outline: none;
+}
+.hint {
+  font-family: var(--font-jetbrains-mono), monospace;
+  font-size: 11px;
+  color: var(--text-3, #6f6a64);
+  text-align: center;
+  margin: 8px 0 0;
+}
+.chat {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.chatHead {
+  font-family: var(--font-jetbrains-mono), monospace;
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-3, #8b857f);
+}
+.msg {
+  border-radius: 12px;
+  padding: 10px 13px;
+  font-size: 14px;
+  max-width: 92%;
+  white-space: pre-wrap;
+}
+.msgYou {
+  background: var(--surface-2, #23232f);
+  align-self: flex-end;
+}
+.msgApril {
+  background: rgba(105, 252, 203, 0.08);
+  border: 1px solid rgba(105, 252, 203, 0.25);
+  align-self: flex-start;
+}
+.who {
+  font-family: var(--font-jetbrains-mono), monospace;
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-3, #6f6a64);
+  display: block;
+  margin-bottom: 3px;
+}
+.chatrow {
+  display: flex;
+  gap: 8px;
+}
+.chatrow input {
+  flex: 1;
+  background: var(--surface-2, #23232f);
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.1));
+  border-radius: 10px;
+  color: var(--text, #f4ece4);
+  font-size: 14px;
+  padding: 11px 12px;
+}
+.chatrow input::placeholder {
+  color: var(--text-3, #6f6a64);
+}
+.chatrow input:focus {
+  outline: none;
+  border-color: var(--mint, #69fccb);
+}
+.chatrow button {
+  font-family: var(--font-jetbrains-mono), monospace;
+  font-size: 13px;
+  background: var(--surface-2, #23232f);
+  color: var(--text, #f4ece4);
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.1));
+  border-radius: 10px;
+  padding: 0 16px;
+  cursor: pointer;
+}
+.chatrow button:disabled {
+  opacity: 0.5;
+}
+
+/* Gate 3 */
+.plat {
+  margin-bottom: 14px;
+}
+.plathead {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 4px 2px 8px;
+}
+.logo {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  display: grid;
+  place-items: center;
+  font-family: var(--font-jetbrains-mono), monospace;
+  font-size: 11px;
+  font-weight: 700;
+  flex: 0 0 auto;
+  color: #fff;
+}
+.logoLi {
+  background: #0a66c2;
+}
+.logoIg {
+  background: linear-gradient(45deg, #f09433, #dc2743, #bc1888);
+}
+.logoTt {
+  background: #000;
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.2));
+}
+.logoYt {
+  background: #f00;
+}
+.platname {
+  font-family: var(--font-jetbrains-mono), monospace;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text, #f4ece4);
+}
+.kitCard {
+  background: var(--tac-surface, #1b1b26);
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.1));
+  border-radius: 16px;
+  padding: 4px 16px;
+}
+.row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 13px 2px;
+  border-bottom: 1px solid var(--border, rgba(255, 255, 255, 0.08));
+}
+.row:last-child {
+  border-bottom: none;
+}
+.row input {
+  width: 22px;
+  height: 22px;
+  accent-color: var(--mint, #69fccb);
+  flex: 0 0 auto;
+  cursor: pointer;
+}
+.row label {
+  flex: 1;
+  font-size: 15.5px;
+  cursor: pointer;
+}
+.row label small {
+  display: block;
+  font-family: var(--font-jetbrains-mono), monospace;
+  font-size: 10.5px;
+  color: var(--text-3, #6f6a64);
+}
+.n {
+  font-family: var(--font-jetbrains-mono), monospace;
+  font-size: 12px;
+  color: var(--text-3, #8b857f);
+  white-space: nowrap;
+}
+
+/* Gate 4 */
+.makeRow {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  text-decoration: none;
+  color: var(--text, #f4ece4);
+}
+.makeBody {
+  flex: 1;
+}
+.makeBody h3 {
+  margin: 0 0 3px;
+  font-size: 16px;
+}
+.badge {
+  display: inline-block;
+  font-family: var(--font-jetbrains-mono), monospace;
+  font-size: 10px;
+  padding: 3px 8px;
+  border-radius: 6px;
+}
+.badgeGold {
+  background: var(--gold, #f0e1b6);
+  color: var(--bg, #0a0a0f);
+}
+.badgeDim {
+  background: var(--surface-2, #23232f);
+  color: var(--text-3, #8b857f);
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.1));
+}
+.open {
+  font-family: var(--font-jetbrains-mono), monospace;
+  font-size: 12px;
+  color: var(--mint, #69fccb);
+  white-space: nowrap;
+}
+
+/* Gate 5 */
+.weekwrap {
+  overflow-x: auto;
+  margin: 0 -4px;
+}
+.week {
+  border-collapse: collapse;
+  min-width: 560px;
+  width: 100%;
+}
+.week th,
+.week td {
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.08));
+  padding: 7px 6px;
+  font-size: 11px;
+  text-align: left;
+  vertical-align: top;
+}
+.week th {
+  font-family: var(--font-jetbrains-mono), monospace;
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-3, #6f6a64);
+  background: var(--surface-2, #23232f);
+  font-weight: 500;
+}
+.chip {
+  display: inline-block;
+  font-family: var(--font-jetbrains-mono), monospace;
+  font-size: 9.5px;
+  color: var(--text-2, #cfc8c1);
+  background: var(--surface-2, #23232f);
+  border-radius: 5px;
+  padding: 2px 5px;
+  margin: 1px 2px 1px 0;
+  white-space: nowrap;
+}
+.chipV {
+  color: var(--mint, #69fccb);
+}
+.honesty {
+  font-family: var(--font-jetbrains-mono), monospace;
+  font-size: 11px;
+  color: var(--coral, #ff7a6b);
+  margin-top: 10px;
+  line-height: 1.5;
+}
+
+/* Shipped */
+.big {
+  font-size: 44px;
+  text-align: center;
+  margin: 26px 0 6px;
+}
+.shipline {
+  text-align: center;
+  font-family: var(--font-jetbrains-mono), monospace;
+  font-size: 13px;
+  color: var(--text, #f4ece4);
+  margin-bottom: 26px;
+}
+.loop {
+  font-family: var(--font-jetbrains-mono), monospace;
+  font-size: 11px;
+  color: var(--text-3, #6f6a64);
+  text-align: center;
+  margin-top: 14px;
+  line-height: 1.7;
+}
+
+/* The decision bar: the one mint thing on every screen. */
+.bar {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(620px, calc(100% - 24px));
+  padding: 0 0 max(12px, env(safe-area-inset-bottom));
+  background: linear-gradient(transparent, var(--bg, #101018) 35%);
+  z-index: 20;
+}
+.go {
+  width: 100%;
+  font-family: var(--font-jetbrains-mono), monospace;
+  font-size: 15px;
+  font-weight: 700;
+  background: var(--mint, #69fccb);
+  color: var(--bg, #0a0a0f);
+  border: none;
+  border-radius: 14px;
+  padding: 18px;
+  cursor: pointer;
+}
+.go:disabled {
+  background: var(--surface-2, #23232f);
+  color: var(--text-3, #6f6a64);
+  cursor: default;
+}
+.go:focus-visible,
+.lane:focus-visible,
+.idea:focus-visible {
+  outline: 2px solid var(--mint, #69fccb);
+  outline-offset: 2px;
+}

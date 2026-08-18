@@ -717,3 +717,23 @@ All three stages read the same materials through one `gather()`. Agreement about
 
 **Deliberately NOT done yet.** The concept document itself is the deeper problem, and Marrs named it: *"we definitely have to refine the process of writing the core concept... it's kind of a big document. I'm not really taking note of what's in that."* It is second, not first, because stage one shows what April can actually use out of a concept. Watching that repeatedly is what will tell us what a good concept must contain. Fixing the concept first would be guessing.
 
+---
+
+## D40: The Gates. the console's marketing flow is a linear pipeline of five gates over one Story
+
+**Adopted 18 August 2026, the same day D39 shipped, and superseding most of it.** Marrs reset the console's direction ("in the attempt to make it the everything platform for my content, it is now the nothing platform") and the redesign was workshopped through a clickable mockup to a build plan he answered five decisions on, verbatim: "1 yes 2 draft-first 3 yes 4 yes 5 yes".
+
+**The shape.** One Story moves through five gates, one screen per gate, one mint decision bar per screen, back goes back, and you advance only by deciding:
+
+1. **Idea.** The inbox plus a fresh-idea box. Two decisions: which idea, which lane. The lane (Marrs Attacks = opinion, Polynize = educational) is the fork that sets channels, voice and CTA, and lane ids deliberately equal stream ids so brand voice and Metricool mappings resolve with no translation.
+2. **Article.** The long form, 300 to 450 words, drafted by April the moment the gate is first seen and refined by direct edit or one instruction at a time in a docked chat. **The interview is dead** (decision 1). The article is the source of truth for everything downstream and publishes as-is.
+3. **Kit.** Per-platform tick list (LinkedIn, Instagram, TikTok, YouTube: decision 3), counts in "pieces of content", never "placements". Confirming creates MASTER pieces: one per master asset (article, texts, shorts, long, carousel, images), not one per post.
+4. **Create.** The masters, video first because it is the long pole. V1 links to the existing editors; the one-card-at-a-time flow is the next build.
+5. **Ship.** The kit expands into per-channel calendar entries as DRAFTS at each channel's next open slot (decision 2: draft-first), and one button flips the whole wave live through the existing publishEntry path.
+
+**The cadence layer.** Ultimate state, Marrs's words: "at least two posts a day per channel per platform". Slots are per channel (channel-schedule.ts), two a day, morning and early afternoon, staggered across networks. The times shipped as placeholders pending the Metricool best-times spike. The channel's queue is one queue across all stories, so two stories in the same week interleave rather than collide.
+
+**What this supersedes and what it keeps.** The board replaces the stream-cards dashboard as the marketing home (decision 4); the old dashboard moved intact to /console/marketing/streams because Marrs was explicit that the prior design is set aside, not deleted: "we're going to have to repurpose some things from there. The image things, there are some interfaces we're going to have to repurpose." Concepts migrate to Stories only when picked up, never in bulk (decision 5). D39's staged build survives inside Gate 4's script editor. The template picker as a user-facing choice is gone from this flow; recipes survive as kit internals.
+
+**Deliberately not in v1:** the one-card Create flow, per-channel caption generation (drafts carry the master's own text until then, hand-tuned on the calendar screens that already exist), prezie frame export, the Learn loop (Metricool analytics pull: built during the four-story hold, since it needs published data to pull).
+

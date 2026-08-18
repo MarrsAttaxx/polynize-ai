@@ -1,0 +1,146 @@
+/* The board (D40): stories at their gates. Quiet by design: the loudest thing on the
+   page is the one mint action, same rule as the gate screens themselves. */
+
+.root {
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 8px 18px 80px;
+}
+
+.head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-bottom: 26px;
+}
+.kicker {
+  font-family: var(--font-jetbrains-mono), monospace;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-3, #8b857f);
+  margin: 0 0 4px;
+}
+.title {
+  font-family: var(--font-space-grotesk), sans-serif;
+  font-size: 26px;
+  margin: 0;
+  color: var(--text, #f4ece4);
+}
+.headActions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.ghost {
+  font-family: var(--font-jetbrains-mono), monospace;
+  font-size: 12px;
+  color: var(--text-3, #8b857f);
+  text-decoration: none;
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.1));
+  border-radius: 9px;
+  padding: 9px 13px;
+}
+.ghost:hover {
+  color: var(--mint, #69fccb);
+  border-color: var(--mint, #69fccb);
+}
+.new {
+  font-family: var(--font-jetbrains-mono), monospace;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--bg, #0a0a0f);
+  background: var(--mint, #69fccb);
+  text-decoration: none;
+  border-radius: 10px;
+  padding: 11px 16px;
+}
+.new:hover {
+  filter: brightness(1.08);
+}
+
+.empty {
+  border: 1px dashed var(--border, rgba(255, 255, 255, 0.14));
+  border-radius: 16px;
+  padding: 44px 20px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+  color: var(--text-2, #cfc8c1);
+}
+.empty p {
+  margin: 0;
+  max-width: 44ch;
+}
+
+.lane {
+  margin-bottom: 26px;
+}
+.laneName {
+  font-family: var(--font-jetbrains-mono), monospace;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-3, #8b857f);
+  margin: 0 0 10px;
+  font-weight: 500;
+}
+.count {
+  color: var(--mint, #69fccb);
+  margin-left: 8px;
+}
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 10px;
+}
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: var(--tac-surface, #1b1b26);
+  border-radius: 14px;
+  box-shadow: var(--tac-shadow-raised, 0 1px 0 rgba(255, 255, 255, 0.05) inset);
+  padding: 15px 16px;
+  text-decoration: none;
+  color: var(--text, #f4ece4);
+  border: 1px solid transparent;
+}
+.card:hover {
+  border-color: rgba(105, 252, 203, 0.4);
+}
+.laneTag {
+  font-family: var(--font-jetbrains-mono), monospace;
+  font-size: 9.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  border-radius: 5px;
+  padding: 3px 7px;
+  align-self: flex-start;
+}
+.ma {
+  background: rgba(255, 122, 107, 0.14);
+  color: var(--coral, #ff7a6b);
+}
+.pz {
+  background: rgba(105, 252, 203, 0.12);
+  color: var(--mint, #69fccb);
+}
+.headline {
+  font-size: 15px;
+  line-height: 1.45;
+}
+
+@media (max-width: 640px) {
+  .root {
+    padding: 4px 12px 60px;
+  }
+  .cards {
+    grid-template-columns: 1fr;
+  }
+}

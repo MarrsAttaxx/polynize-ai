@@ -1,0 +1,130 @@
+/**
+ * POST /console/marketing/story/[id]/build: Gate 3's confirm (D40).
+ *
+ * The ticks become MASTER pieces: one piece per master asset, not one per
+ * scheduled post. The expansion into per-channel posts happens at Gate 5,
+ * on the calendar, which already models one entry per channel post. This
+ * split matches how the work is actually done: a script is written once and
+ * placed nine times.
+ *
+ * Idempotent on masters: re-confirming with different ticks creates only the
+ * masters that are missing and never duplicates or deletes one that exists,
+ * because a master may already carry edits or media. An unticked master's
+ * placements simply stop being planned at Gate 5.
+ */
+
+import type { NextRequest } from 'next/server';
+import { NextResponse } from 'next/server';
+import { randomUUID } from 'node:crypto';
+import { getCurrentUser } from '@/lib/console-auth';
+import { getStory, saveStory, storyHeadline } from '@/lib/marketing/story-store';
+import { piecesForTicks, type MasterAsset } from '@/lib/marketing/kit';
+import { listSavedPieces, savePiece, type MarketingPiece } from '@/lib/marketing/piece-store';
+
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+
+/** Master asset to the existing format id its editor expects. */
+const FORMAT_FOR: Record<MasterAsset, string> = {
+  article: 'long_form_written',
+  texts: 'linkedin_text',
+  shorts: 'split_screen_short',
+  long: 'screen_record_long',
+  carousel: 'pdf_carousel',
+  images: 'single_image',
+};
+
+export async function POST(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id } = await params;
+  const user = await getCurrentUser();
+  if (!user || user.scope.type !== 'team') {
+    return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
+  }
+  const owner = user.email;
+
+  const body = (await req.json().catch(() => null)) as { ticks?: unknown } | null;
+  const ticks = Array.isArray(body?.ticks)
+    ? body.ticks.filter((x): x is string => typeof x === 'string').slice(0, 40)
+    : [];
+  if (ticks.length === 0) {
+    return NextResponse.json({ error: 'tick at least one piece' }, { status: 400 });
+  }
+
+  let story;
+  try {
+    story = await getStory(id);
+  } catch (err) {
+    console.error('[story.build] read failed:', err);
+    return NextResponse.json({ error: 'could not read the story' }, { status: 502 });
+  }
+  if (!story) return NextResponse.json({ error: 'story not found' }, { status: 404 });
+
+  const plans = piecesForTicks(ticks);
+  if (plans.length === 0) {
+    return NextResponse.json({ error: 'nothing recognisable was ticked' }, { status: 400 });
+  }
+
+  /**
+   * Which masters already exist for this story. Keyed on story_ref, the durable link,
+   * NOT on story.piece_ids: confirmed in review that piece_ids gets truncated to the
+   * currently ticked masters, so an untick-then-retick minted a duplicate empty master
+   * and orphaned the one carrying the script and the media. story_ref also survives
+   * the other confirmed failure: a mid-loop crash before piece_ids was ever written,
+   * whose retry used to recreate every master.
+   */
+  const existing = new Map<string, MarketingPiece>();
+  try {
+    for (const p of await listSavedPieces(owner)) {
+      if (p.story_ref === story.id && p.master) existing.set(p.master, p);
+    }
+  } catch (err) {
+    // A failed scan must fail the confirm: proceeding would recreate masters that
+    // exist, which is precisely the duplication this map prevents.
+    console.error('[story.build] piece scan failed:', err);
+    return NextResponse.json({ error: 'could not read the pieces. Try again.' }, { status: 502 });
+  }
+
+  const headline = storyHeadline(story.idea, 60);
+  const pieceIds: string[] = [];
+  try {
+    for (const plan of plans) {
+      const found = existing.get(plan.master);
+      if (found) {
+        pieceIds.push(found.piece_id);
+        continue;
+      }
+      const piece: MarketingPiece = {
+        piece_id: randomUUID(),
+        owner,
+        stream: story.lane,
+        format: FORMAT_FOR[plan.master],
+        title: `${headline}: ${plan.label}`,
+        script: '',
+        kind: plan.kind,
+        status: 'draft',
+        story_ref: story.id,
+        master: plan.master,
+        platforms: plan.placements.map((p) => p.network),
+        provenance: 'ai_generated',
+      };
+      // The article master arrives with its body already written: the article IS
+      // the deliverable, approved at gate 2. Everything else starts empty.
+      if (plan.master === 'article') piece.body = story.article;
+      await savePiece(owner, piece);
+      pieceIds.push(piece.piece_id);
+    }
+
+    story.kit = ticks;
+    story.piece_ids = pieceIds;
+    story.gate = 4;
+    await saveStory(story);
+  } catch (err) {
+    console.error('[story.build] piece creation failed:', err);
+    return NextResponse.json({ error: 'could not create the pieces' }, { status: 500 });
+  }
+
+  return NextResponse.json({ story, pieces: pieceIds.length });
+}

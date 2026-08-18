@@ -27,9 +27,21 @@ PAM (Polynize Agent Management) is the marketing engine: it takes an idea, shape
 
 ---
 
-## 3. The dashboard (control centre) ✅
+## 3. The marketing home: the board 🧪 (D40, replaces the stream dashboard)
 
-The landing page. Shows a card per **stream**, each with the brand's avatar. Click a stream to open its home. There's also a **Calendar** button for the publishing calendar.
+`/console/marketing` is now **the board**: every Story sitting at its gate, in gate order, with **New story** as the primary action. A Story is one idea exploited into a week of content, and it moves through five gates: **Idea → Article → Kit → Create → Ship**. One gate on screen at a time, one decision per screen, back goes back.
+
+- **Gate 1 · Idea**: type a fresh idea or pick from the inbox, then pick the lane (**Marrs Attacks** = opinion, **Polynize** = educational). The lane sets channels, voice and CTA downstream.
+- **Gate 2 · Article**: April drafts the long form (300 to 450 words) on first view; edit it directly or give her one instruction at a time in the docked chat. The article is the source of truth for every piece cut from it, and it publishes as-is. The interview step is retired.
+- **Gate 3 · Kit**: per-platform ticks (LinkedIn, Instagram, TikTok, YouTube). Confirming creates one **master piece** per asset (article, texts, shorts, long, carousel, images).
+- **Gate 4 · Create**: the masters, video first. Each opens its existing editor (the one-card flow is the next build).
+- **Gate 5 · Ship**: the week laid out from each channel's ideal slots (two a day, morning and early afternoon, per `channel-schedule`), queued as **drafts** first. One button flips the whole wave live through Metricool.
+
+The old stream dashboard is intact at **`/console/marketing/streams`** (brand voice, series, media library and concepts all still live there); parts of it will be repurposed into the gates.
+
+## 3b. The old dashboard ✅ (now at /streams)
+
+Shows a card per **stream**, each with the brand's avatar. Click a stream to open its home. There's also a **Calendar** button for the publishing calendar.
 
 ---
 

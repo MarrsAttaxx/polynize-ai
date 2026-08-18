@@ -136,6 +136,14 @@ export type MarketingPiece = {
   outline?: string;
   /** April's read of the usable material, one line per item. Array, matching HookProposal. */
   concept_read?: string[];
+  /**
+   * The Story this piece was built from (the Gates, D40). A master piece carries one
+   * master asset (the article, the shorts, the carousel...) and Gate 5 expands it into
+   * per-channel calendar entries. Optional: pieces from before the Gates stay valid.
+   */
+  story_ref?: string;
+  /** Which master asset a Gates master piece carries: article, texts, shorts, long, carousel, images. */
+  master?: string;
 };
 
 function keyFor(owner: string, pieceId: string): string {
