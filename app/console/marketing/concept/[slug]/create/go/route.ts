@@ -21,8 +21,7 @@ import {
 } from '@/lib/marketing/create-outputs';
 import { getPiece, savePiece } from '@/lib/marketing/piece-store';
 import { stripEmDashes } from '@/lib/em-dash';
-import { draftTextBody, draftVideoScript } from '@/lib/marketing/draft';
-import { scaffoldScript } from '@/lib/marketing/concept-parse';
+import { draftTextBody } from '@/lib/marketing/draft';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -189,16 +188,19 @@ export async function POST(
             const body = await draftTextBody(user.email, piece);
             await savePiece(user.email, { ...piece, body });
           }
-        } else {
-          // "Untouched" = empty, or still exactly the scaffold createOutputs seeded.
-          const scaffold = scaffoldScript(concept.framing, concept.body_md);
-          if (!piece.script?.trim() || piece.script === scaffold) {
-            // Script only: the interface is built on its own stage, from
-            // this locked script plus the operator's direction (D29 amended).
-            const script = await draftVideoScript(user.email, piece);
-            await savePiece(user.email, { ...piece, script });
-          }
         }
+        /**
+         * VIDEO NO LONGER AUTO-DRAFTS (D39).
+         *
+         * It used to write the whole script here, which is precisely what made the angle box the
+         * only decision in the process: by the time the operator reached the screen, the piece
+         * was already written and his only remaining move was to reject it. Video pieces now land
+         * on the staged build (hooks, then the arc, then the script), so his first decision comes
+         * before the writing rather than after it.
+         *
+         * Text still auto-drafts. A post is short and cheap to redraft, and the staging exists to
+         * make an expensive one-shot cheap.
+         */
       }
     } catch (err) {
       console.error('[concept.create] auto-draft failed (piece still created):', err);

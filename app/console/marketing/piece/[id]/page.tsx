@@ -5,6 +5,7 @@ import { getPiece, type MarketingPiece } from '@/lib/marketing/piece-store';
 import { getConcept } from '@/lib/marketing/concept-store';
 import { kindOf } from '@/lib/marketing/output-plan';
 import { ScriptScreen } from './ScriptScreen';
+import { scaffoldScript } from '@/lib/marketing/concept-parse';
 import { TextOutputScreen } from './TextOutputScreen';
 import s from './script.module.css';
 
@@ -75,5 +76,25 @@ export default async function MarketingPiecePage({
   if (kind === 'text') {
     return <TextOutputScreen initial={piece} conceptBody={conceptBody} />;
   }
-  return <ScriptScreen initial={piece} conceptBody={conceptBody} />;
+  /**
+   * IS THE SCRIPT REAL, OR STILL THE SEEDED PLACEHOLDER?
+   *
+   * createOutputs seeds every video piece with `scaffoldScript(...)`, so a brand new piece has a
+   * non-empty `script` that nobody wrote. The staged build has to know the difference: treating
+   * the scaffold as a finished script would collapse the panel on exactly the pieces that need
+   * it most, which is every new one. The old auto-draft made the same comparison for the same
+   * reason; it is decided here because only the server has the concept to rebuild it from.
+   */
+  const scriptIsScaffold =
+    !piece.script?.trim() ||
+    (conceptBody !== undefined &&
+      piece.script.trim() === scaffoldScript(piece.framing ?? '', conceptBody).trim());
+
+  return (
+    <ScriptScreen
+      initial={piece}
+      conceptBody={conceptBody}
+      scriptIsScaffold={scriptIsScaffold}
+    />
+  );
 }

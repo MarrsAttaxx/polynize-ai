@@ -35,9 +35,12 @@ type SaveState = 'idle' | 'saving' | 'saved' | 'error';
 export function ScriptScreen({
   initial,
   conceptBody,
+  scriptIsScaffold = false,
 }: {
   initial: MarketingPiece;
   conceptBody?: string;
+  /** True when `script` is still the placeholder createOutputs seeded, so nothing real exists. */
+  scriptIsScaffold?: boolean;
 }) {
   const [script, setScript] = useState(initial.script);
   /**
@@ -333,7 +336,7 @@ export function ScriptScreen({
               onConceptReadChange={commitConceptRead}
               onWriteScript={draft}
               writing={drafting}
-              hasScript={script.trim() !== ''}
+              hasScript={script.trim() !== '' && !(scriptIsScaffold && script === initial.script)}
             />
           ) : null}
           <div className={s.toolbar}>

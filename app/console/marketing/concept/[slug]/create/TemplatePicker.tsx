@@ -128,9 +128,10 @@ export function TemplatePicker({
   const streamIds = new Set(streamTemplates.map((t) => t.template_id));
   const library = libraryTemplates.filter((t) => !streamIds.has(t.template_id));
 
-  const create = async () => {
-    if (!chosen || busy) return;
-    const { t, source } = chosen;
+  const create = async (pick?: { t: AnyTemplate; source: 'stream' | 'library' }) => {
+    const target = pick ?? chosen;
+    if (!target || busy) return;
+    const { t, source } = target;
     const key = `${source}:${t.template_id}`;
     setBusy(key);
     setError(null);
@@ -195,8 +196,20 @@ export function TemplatePicker({
               type="button"
               className={s.useBtn}
               onClick={() => {
-                setChosen({ t, source });
                 setError(null);
+                /**
+                 * VIDEO SKIPS THE ANGLE SCREEN (D39).
+                 *
+                 * Marrs: "this stage should replace the angle box, which is not quite working for
+                 * me now." A video piece is created straight away and lands on the staged build,
+                 * where the first decision is which hooks to keep. Text keeps the angle box: a
+                 * post still auto-drafts from it, and it is cheap to redraft.
+                 */
+                if (fmt?.kind === 'video') {
+                  void create({ t, source });
+                } else {
+                  setChosen({ t, source });
+                }
               }}
               disabled={busy !== null}
             >
@@ -252,12 +265,17 @@ export function TemplatePicker({
           <button
             type="button"
             className={s.useBtn}
-            onClick={create}
+            onClick={() => void create()}
             disabled={busy !== null || !angle.trim()}
           >
             {busy ? 'Writing it\u2026' : 'Create the piece \u2192'}
           </button>
-          <button type="button" className={s.angleSkip} onClick={create} disabled={busy !== null}>
+          <button
+            type="button"
+            className={s.angleSkip}
+            onClick={() => void create()}
+            disabled={busy !== null}
+          >
             Skip, just use the concept
           </button>
         </div>
