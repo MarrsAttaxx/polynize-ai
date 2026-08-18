@@ -25,6 +25,7 @@ import { ReadyToRecord } from '../../../studio/ShootRowActions';
 import { StageRail } from './StageRail';
 import { PieceDeleteButton } from './PieceDeleteButton';
 import { MediaPicker } from './MediaPicker';
+import { StagedBuild } from './StagedBuild';
 import { BackLink } from '@/app/console/marketing/_components/BackLink';
 import s from './script.module.css';
 import c from './chat.module.css';
@@ -53,11 +54,26 @@ export function ScriptScreen({
   const [draftError, setDraftError] = useState<string | null>(null);
   const [undo, setUndo] = useState<string | null>(null);
   const [media, setMedia] = useState<string[]>(initial.media ?? []);
+  /**
+   * THE AGREED DECISIONS (D39), held here because the parent owns the only save path.
+   *
+   * These MUST be mirrored into refs and into the autosave body. Autosave re-sends `...initial`,
+   * the piece as the server loaded it, plus one ref per mutable field. A field that lives only in
+   * React state is therefore silently reverted by the next autosave a second later, which would
+   * have looked exactly like "the hooks do not save" and been miserable to diagnose.
+   */
+  const [hooks, setHooks] = useState<string[]>(initial.hooks ?? []);
+  const [outline, setOutline] = useState(initial.outline ?? '');
+  const [conceptRead, setConceptRead] = useState<string[]>(initial.concept_read ?? []);
 
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   // `latest` is the single source of truth for what should be persisted; every
   // edit path writes it. The save loop always reconciles against it.
   const latest = useRef(initial.script);
+  const latestHooks = useRef<string[]>(initial.hooks ?? []);
+  const latestOutline = useRef(initial.outline ?? '');
+  const latestConceptRead = useRef<string[]>(initial.concept_read ?? []);
+  const scheduleSaveRef = useRef<((next: string) => void) | null>(null);
   const latestMedia = useRef<string[]>(initial.media ?? []);
   // The INTERFACE plan rides along on the autosave purely to PRESERVE it: this screen
   // PUTs the whole piece, so without carrying it a script save would wipe the screen
@@ -109,6 +125,9 @@ export function ScriptScreen({
               script: content,
               media: mediaContent,
               treatment: latestTreatment.current,
+              hooks: latestHooks.current,
+              outline: latestOutline.current,
+              concept_read: latestConceptRead.current,
             }),
           });
           ok = res.ok;
@@ -129,6 +148,30 @@ export function ScriptScreen({
     }
   }, [initial]);
 
+  /**
+   * Agreeing a hook or editing the arc has to persist like any other edit. Each setter writes
+   * state (for the render), the ref (for the save body), then nudges the same debounced save with
+   * the unchanged script, so there is still exactly one write path and one in-flight PUT.
+   */
+  const commitHooks = useCallback(
+    (next: string[]) => {
+      setHooks(next);
+      latestHooks.current = next;
+      scheduleSaveRef.current?.(latest.current);
+    },
+    []
+  );
+  const commitOutline = useCallback((next: string) => {
+    setOutline(next);
+    latestOutline.current = next;
+    scheduleSaveRef.current?.(latest.current);
+  }, []);
+  const commitConceptRead = useCallback((next: string[]) => {
+    setConceptRead(next);
+    latestConceptRead.current = next;
+    scheduleSaveRef.current?.(latest.current);
+  }, []);
+
   const scheduleSave = useCallback(
     (next: string) => {
       latest.current = next;
@@ -141,6 +184,7 @@ export function ScriptScreen({
     },
     [save]
   );
+  scheduleSaveRef.current = scheduleSave;
 
   const flush = useCallback(() => {
     if (timer.current) {
@@ -276,6 +320,22 @@ export function ScriptScreen({
 
       <div className={c.workspace}>
         <div className={s.editorCol}>
+          {/* THE STAGED BUILD (D39). Above the editor because it comes first: hooks, then the
+              arc, then the script. Collapsed to one line once a script exists, so it stops
+              competing with the thing he came to the screen to edit. */}
+          {initial.kind !== 'text' ? (
+            <StagedBuild
+              hooks={hooks}
+              outline={outline}
+              conceptRead={conceptRead}
+              onHooksChange={commitHooks}
+              onOutlineChange={commitOutline}
+              onConceptReadChange={commitConceptRead}
+              onWriteScript={draft}
+              writing={drafting}
+              hasScript={script.trim() !== ''}
+            />
+          ) : null}
           <div className={s.toolbar}>
             <button
               type="button"

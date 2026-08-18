@@ -134,7 +134,8 @@ export type MarketingPiece = {
    */
   hooks?: string[];
   outline?: string;
-  concept_read?: string;
+  /** April's read of the usable material, one line per item. Array, matching HookProposal. */
+  concept_read?: string[];
 };
 
 function keyFor(owner: string, pieceId: string): string {

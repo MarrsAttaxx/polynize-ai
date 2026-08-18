@@ -1,0 +1,262 @@
+/* The staged build (D39): hooks chooser, arc editor, then the script.
+   Borrows the console's existing tactile card language rather than inventing a second one. */
+
+.wrap {
+  background: var(--tac-surface);
+  border-radius: 18px;
+  box-shadow: var(--tac-shadow-raised);
+  padding: 20px;
+  margin-bottom: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+.title {
+  font-family: var(--font-space-grotesk), sans-serif;
+  font-size: 19px;
+  font-weight: 600;
+  color: var(--text);
+  margin: 0;
+}
+.close,
+.reopen {
+  font-family: var(--font-jetbrains-mono), monospace;
+  font-size: 12px;
+  color: var(--text-3);
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 7px 12px;
+  cursor: pointer;
+}
+.close:hover,
+.reopen:hover {
+  color: var(--mint);
+  border-color: var(--mint);
+}
+.reopen {
+  margin-bottom: 16px;
+}
+
+.step {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.stepLabel {
+  font-family: var(--font-jetbrains-mono), monospace;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  margin: 0;
+}
+.count {
+  color: var(--mint);
+  text-transform: none;
+  letter-spacing: 0;
+  margin-left: 8px;
+}
+
+/* April's read of the concept. Set apart, because it is evidence rather than a control. */
+.readBox {
+  border-left: 2px solid var(--mint);
+  padding: 2px 0 2px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.readList {
+  margin: 0;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.readList li {
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--text-2);
+}
+
+.steer,
+.outline,
+.hookText {
+  width: 100%;
+  box-sizing: border-box;
+  background: var(--surface-2);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 11px 13px;
+  font-family: inherit;
+  font-size: 15px;
+  line-height: 1.5;
+  resize: vertical;
+}
+.steer::placeholder {
+  color: var(--text-3);
+}
+.steer:focus,
+.outline:focus,
+.hookText:focus {
+  outline: none;
+  border-color: var(--mint);
+}
+.outline {
+  font-family: var(--font-jetbrains-mono), monospace;
+  font-size: 13px;
+  line-height: 1.65;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.primary,
+.write,
+.ghost {
+  font-family: var(--font-jetbrains-mono), monospace;
+  font-size: 13px;
+  border-radius: 9px;
+  padding: 10px 16px;
+  cursor: pointer;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-2);
+}
+.primary:hover:not(:disabled),
+.ghost:hover:not(:disabled) {
+  color: var(--mint);
+  border-color: var(--mint);
+}
+.write {
+  background: var(--mint);
+  border-color: var(--mint);
+  color: var(--bg, #0a0a0f);
+  font-weight: 600;
+}
+.write:hover:not(:disabled) {
+  filter: brightness(1.08);
+}
+.primary:disabled,
+.write:disabled,
+.ghost:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+/* THE CHOOSER. One row per hook: a tick, the editable line, and why it exists. */
+.hookList {
+  list-style: none;
+  margin: 4px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.hook {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 11px;
+  background: var(--surface);
+}
+.hookOn {
+  border-color: var(--mint);
+}
+.tick {
+  flex: 0 0 auto;
+  width: 26px;
+  height: 26px;
+  margin-top: 4px;
+  border-radius: 7px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--bg, #0a0a0f);
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+}
+.hookOn .tick {
+  background: var(--mint);
+  border-color: var(--mint);
+}
+.hookBody {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+/* The reasoning. Quiet, but present: this is what makes a bad hook diagnosable. */
+.why {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-jetbrains-mono), monospace;
+  font-size: 11px;
+}
+.tag {
+  color: var(--bg, #0a0a0f);
+  background: var(--gold);
+  border-radius: 5px;
+  padding: 3px 7px;
+  white-space: nowrap;
+}
+.material {
+  color: var(--text-3);
+  line-height: 1.45;
+}
+
+.hint,
+.err,
+.model {
+  margin: 0;
+  font-family: var(--font-jetbrains-mono), monospace;
+  font-size: 12px;
+  line-height: 1.5;
+}
+.hint {
+  color: var(--text-3);
+}
+.err {
+  color: var(--coral);
+}
+.model {
+  color: var(--text-3);
+}
+
+/* Phone. The chooser is the part that has to survive a narrow screen, since choosing hooks
+   is exactly the thing likely to happen away from a desk. */
+@media (max-width: 640px) {
+  .wrap {
+    padding: 14px;
+    gap: 18px;
+  }
+  .hook {
+    padding: 10px;
+    gap: 9px;
+  }
+  .primary,
+  .write,
+  .ghost {
+    flex: 1 1 auto;
+    text-align: center;
+  }
+}
