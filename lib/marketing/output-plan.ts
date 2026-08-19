@@ -165,6 +165,18 @@ Output the brief ONLY: no preamble, no closing commentary, no markdown code fenc
  * The channel-agnostic format catalogue (the swappable-middle registry). Only
  * `built` formats can be created into pieces today: the text module (this build)
  * and short-form video (the existing Script screen). Everything else is `coming`.
+ *
+ * ON `defaultLength`, AND WHICH FILE WINS (D42). These strings reach April, and three of them
+ * used to contradict docs/pam-console/output-spec.md: linkedin_text said 150 to 250 words with
+ * a 50-to-100-word "quick post" that sat under the 400-character floor every study agrees on,
+ * pdf_carousel said 6 to 10 pages against 7 to 12, and image_carousel said 5 to 8 slides when
+ * the API caps a carousel at 10. They now match the spec and carry their source strength.
+ *
+ * For a piece cut from a Story, this default is NOT used at all: lib/marketing/kit.ts supplies
+ * the typed output's own spec and draft.ts prefers it, because a frame-specific band beats a
+ * format-wide one. These strings are the fallback for the older custom Output-plan path, which
+ * has no typed output behind it. Two length authorities for one post is how a model ends up
+ * following whichever it read last, so if you change a number here, change the spec too.
  */
 export const FORMATS: FormatDef[] = [
   {
@@ -173,7 +185,8 @@ export const FORMATS: FormatDef[] = [
     kind: 'text',
     module: 'built',
     channels: ['linkedin'],
-    defaultLength: 'A standard in-depth post is 150 to 250 words. A quick post is 50 to 100 words. Keep it tight; cut any line that does not earn its place.',
+    defaultLength:
+      'Aim for 1,300 to 2,500 characters, and never under 400. The band is the overlap of two large studies that disagree with each other (AuthoredUp on 372k posts, Taplio), so treat it as a hint; the 400 floor is the one length claim every study agrees on. Hard cap 3,000. Keep it tight: cut any line that does not earn its place.',
   },
   {
     id: 'split_screen_short',
@@ -282,7 +295,8 @@ FRAMING for this format, state it in the DESIGN SYSTEM section: the screen recor
     kind: 'image',
     module: 'coming',
     channels: ['linkedin'],
-    defaultLength: '6 to 10 slides, one idea per slide, a few words each.',
+    defaultLength:
+      '7 to 12 pages, one idea per page, under 60 words each. That range is a loose practitioner consensus with no completion-rate data behind it. Every page must land on its own: animation flattens to a still and links inside the file are unreliable.',
   },
   {
     id: 'image_carousel',
@@ -290,7 +304,8 @@ FRAMING for this format, state it in the DESIGN SYSTEM section: the screen recor
     kind: 'image',
     module: 'coming',
     channels: ['instagram'],
-    defaultLength: '5 to 8 slides, one idea per slide.',
+    defaultLength:
+      '10 slides, one idea per slide. 10 is a hard ceiling for us, not a preference: the Instagram API caps a carousel at 10 items and our scheduler is an API client.',
   },
   {
     id: 'single_image',

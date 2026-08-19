@@ -18,16 +18,30 @@ import { NextResponse } from 'next/server';
 import { randomUUID } from 'node:crypto';
 import { getCurrentUser } from '@/lib/console-auth';
 import { getStory, saveStory, storyHeadline } from '@/lib/marketing/story-store';
-import { piecesForTicks, type MasterAsset } from '@/lib/marketing/kit';
+import { plansForTicks, type MasterAsset } from '@/lib/marketing/kit';
 import { listSavedPieces, savePiece, type MarketingPiece } from '@/lib/marketing/piece-store';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
-/** Master asset to the existing format id its editor expects. */
+/**
+ * Master asset to the existing format id its editor expects.
+ *
+ * ZERO NEW FORMAT IDS on purpose: piece.format is read by draft.ts for the prompt shape,
+ * by exemplars.ts to pool blessed work by exact format string, and by shoot-queue.ts to
+ * decide which rig group raises the touchscreen. Every LinkedIn text frame therefore maps
+ * to 'linkedin_text', so no exemplar is orphaned. What makes the frames differ is
+ * kit.promptFragment(master), which draft.ts reads alongside the format.
+ *
+ * Record<MasterAsset, string> is deliberate: adding a master to the union is a compile
+ * error until it is mapped here, which is the one guardrail in this chain.
+ */
 const FORMAT_FOR: Record<MasterAsset, string> = {
   article: 'long_form_written',
   texts: 'linkedin_text',
+  texts_hard: 'linkedin_text',
+  texts_list: 'linkedin_text',
+  texts_field: 'linkedin_text',
   shorts: 'split_screen_short',
   long: 'screen_record_long',
   carousel: 'pdf_carousel',
@@ -62,7 +76,7 @@ export async function POST(
   }
   if (!story) return NextResponse.json({ error: 'story not found' }, { status: 404 });
 
-  const plans = piecesForTicks(ticks);
+  const plans = plansForTicks(ticks, story.lane);
   if (plans.length === 0) {
     return NextResponse.json({ error: 'nothing recognisable was ticked' }, { status: 400 });
   }
@@ -93,6 +107,24 @@ export async function POST(
     for (const plan of plans) {
       const found = existing.get(plan.master);
       if (found) {
+        /**
+         * ADOPTION, and the retitle that has to come with it. A v1 story's text piece was
+         * called "<headline>: 4 text posts" and carries master 'texts', which now means the
+         * contrarian frame. Keeping the old title would leave a card whose name disagrees
+         * with its content, and wave/route.ts stamps that title onto every calendar entry it
+         * creates, so the wrong name would travel all the way to the week grid.
+         *
+         * The body, script, media and hooks are untouched: only the label changes.
+         */
+        const wanted = `${headline}: ${plan.label}`;
+        if (found.title !== wanted) {
+          try {
+            await savePiece(owner, { ...found, title: wanted });
+          } catch (err) {
+            // A failed retitle is cosmetic. The piece still works, so do not fail the confirm.
+            console.error('[story.build] retitle failed:', err);
+          }
+        }
         pieceIds.push(found.piece_id);
         continue;
       }

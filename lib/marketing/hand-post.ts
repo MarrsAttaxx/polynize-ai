@@ -138,6 +138,9 @@ export function handPostFromEntry(entry: CalendarEntry): HandPost {
   return {
     channel: entry.channel,
     copy: entry.post_copy ?? '',
+    // Kept separate from the body on purpose: the link goes in the first comment, which is the
+    // whole reason this field is separate from the copy he long-presses to select.
+    firstComment: entry.first_comment?.trim() || undefined,
     media: entry.media ?? [],
     // 'YYYY-MM-DDTHH:mm:ss' to something readable, without pulling in a date library.
     when: entry.scheduled_at

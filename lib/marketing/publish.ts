@@ -69,6 +69,9 @@ export async function publishEntry(owner: string, entry: CalendarEntry): Promise
       timezone: schedule.timezone,
       media,
       draft: false,
+      // The link belongs in the first comment on LinkedIn, never in the body (D42). The client
+      // has always accepted this and it was never passed, so the rule was documented and inert.
+      firstCommentText: entry.first_comment?.trim() || undefined,
     });
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);

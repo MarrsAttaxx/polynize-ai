@@ -346,13 +346,15 @@ Two caveats worth carrying: both Google and Meta describe these as **ad** guidan
 
 ## 10. What this means for the build
 
-**Gate 3's kit stops being counts and becomes typed outputs.** Each tick names a real end state from this document: a LinkedIn text post of a chosen TYPE with a 4:5 image, a document carousel of 7 to 12 self-contained slides, the Pulse article, the cutdown text post, and so on.
+**Gate 3's kit stops being counts and becomes typed outputs. BUILT, 19 August 2026 (D42).** Each tick names a real end state from this document, and the spec reaches April as an instruction rather than staying in this file. `lib/marketing/kit.ts` is now the machine-readable version of everything below: every number is wrapped with its source strength, every NO DATA entry above became an absent field plus a `doNotAssert` line the model is told not to fill, and there is deliberately no target-duration field anywhere.
+
+One thing this document was wrong about, worth recording. It said keeping zero new format ids meant "draft.ts keeps its length limits", which was true and was the problem: `linkedin_text`'s registry default said **150 to 250 words**, with a "quick post" floor of 50 to 100 words that sits **under the ~400 character floor every study here agrees on**. So the console held two length authorities for the same post, and the unsourced one was the one writing it. Same for the carousels: 6 to 10 pages against 7 to 12, and 5 to 8 slides against the API-capped 10. All three are reconciled.
 
 **Every LinkedIn post carries an image**, per Marrs's instinct and the data behind it. The image comes from the existing Higgsfield generation plus the deterministic text overlay already in the media library.
 
 **Carousels are generated, not extracted.** April writes the slide narrative first, then per-slide image prompts, then the images are generated and text is overlaid, then composed to PDF.
 
-**The link always goes in the first comment.** Our Metricool client already supports `firstCommentText`, so this is a wiring detail, not a build.
+**The link always goes in the first comment.** I wrote that our Metricool client already supports `firstCommentText` so this was "a wiring detail, not a build". The client did support it and **`publishEntry` never sent it**, and the hand-post brief had a place to print a first comment and nothing to read it from. `CalendarEntry.first_comment` now closes both paths. Nothing writes the field yet, and it is deliberately empty rather than filled with a guessed url: the Gate 4 caption card is what will write it.
 
 **One image size does most of the work.** 1080 x 1350 (4:5) is LinkedIn's tallest legal ratio and Instagram's recommended format at the same time, so the playground renders one primary size for both.
 

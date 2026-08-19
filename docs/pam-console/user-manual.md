@@ -33,9 +33,22 @@ PAM (Polynize Agent Management) is the marketing engine: it takes an idea, shape
 
 - **Gate 1 · Idea**: type a fresh idea or pick from the inbox, then pick the lane (**Marrs** = opinion in his own voice, **Polynize** = educational). The lane sets channels, voice and CTA downstream.
 - **Gate 2 · Article**: April drafts the long form (300 to 450 words) on first view; edit it directly or give her one instruction at a time in the docked chat. The article is the source of truth for every piece cut from it, and it publishes as-is. The interview step is retired.
-- **Gate 3 · Kit**: per-platform ticks (LinkedIn, Instagram, TikTok, YouTube). Confirming creates one **master piece** per asset (article, texts, shorts, long, carousel, images).
-- **Gate 4 · Create**: the masters, video first. Each opens its existing editor (the one-card flow is the next build).
+- **Gate 3 · Kit**: per-platform ticks, and each one now names the actual post rather than a count (D42). LinkedIn gives you the **Article**, a **Contrarian post**, a **Hard moment** (or a **Field report** on the Polynize lane), **Numbered rules**, and the **Document carousel** (off, no PDF builder yet). Instagram gives **Reels x3**, the **Carousel** and one **Image**. TikTok and YouTube carry the same three cuts. Defaults total **15 posts**, and the button says so. Confirming creates one piece per thing that has to be written, so three named LinkedIn posts are three pieces with three drafts, not one draft shown three times.
+- **Gate 4 · Create**: one card per thing to make, video first because it is the long pole. Seven cards on the default kit. April is told what each one has to BE: the contrarian post gets "state the belief, then break it" and a 1,300 to 2,500 character band; the numbered rules post gets a different instruction; the video script is told there is no target duration and where on-screen text is allowed to sit.
 - **Gate 5 · Ship**: the week laid out from each channel's ideal slots (two a day, morning and early afternoon, per `channel-schedule`), queued as **drafts** first. One button ships the wave: scheduled posts go live through Metricool, hand-posts are emailed to you (see §3c).
+
+### 3b2. What the kit knows about each post 🧪 (D42)
+
+Every tick carries the finished post's real spec, and the spec reaches April rather than sitting in a document. What that buys you:
+
+- **Length** comes from the data, not a guess. A LinkedIn post targets 1,300 to 2,500 characters and never under 400. (That band is the overlap of two large studies that disagree with each other, so it is a hint. The 400 floor is the one thing every study agrees on.)
+- **The link never goes in the body** on LinkedIn. One body link costs about 18.8% of median reach, and you cannot have a link preview and an image in the same post. It goes in the first comment.
+- **Every post ships with an image.** 1080 x 1350 does double duty: it is LinkedIn's tallest legal ratio and Instagram's recommended format at once.
+- **Hashtags are off** on Instagram, against common practice, on a 24 million post study measuring 31.70% fewer views on posts that carry them.
+- **Captions are counted in the platform's own unit.** LinkedIn 3,000 characters, Instagram and TikTok 2,200, and YouTube's description is 5,000 **bytes**, where an emoji costs three or four.
+- **What we do not know is passed on as an instruction.** April is told not to claim a target video duration (no platform publishes one), not to treat the character band as best practice, and not to repeat the "single images get 30% less reach" line, which has no dataset behind it.
+
+*Where the numbers live:* `docs/pam-console/output-spec.md` is the research, `lib/marketing/kit.ts` is the version the code reads, and `lib/marketing/safe-area.ts` holds the vertical safe area. Change one, change the others.
 
 ### 3c. Two ways a post can ship 🧪 (D41)
 

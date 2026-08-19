@@ -18,6 +18,7 @@ import { getConcept } from './concept-store';
 import { getStory } from './story-store';
 import { getBrandVoiceForStream } from './brand-voice-store';
 import { icpLabel, formatById, defaultLengthFor, HOOK_CRAFT } from './output-plan';
+import { promptFragment } from './kit';
 import { resolveTemplateRef } from './create-outputs';
 import { complete } from '@/lib/llm';
 import { resolveModel } from '@/lib/llm/openrouter';
@@ -139,6 +140,13 @@ type PromptOpts = {
   /** The format's physical output shape (D29), e.g. the two-track touchscreen
    *  formats. Replaces the default script shape when present. */
   scriptShape?: string;
+  /**
+   * THE END STATE, from the kit catalogue: what this finished post actually has to be, with
+   * its length band, its image, its link rule, and the things we do not know and must not
+   * claim. Present on any piece cut from a Story (D42), absent on the older custom
+   * Output-plan path, which has no typed output behind it.
+   */
+  outputSpec?: string;
 } & RecipeParts;
 
 /** The piece's Content Template recipe parts, if any (degrades to none on failure). */
@@ -224,6 +232,22 @@ export function recipeBlock(parts: RecipeParts): string {
   )}`;
 }
 
+/**
+ * The output spec, as an instruction. Placed AFTER the recipe on purpose: a Content Template is
+ * the operator's own house style for a piece and outranks a platform default, so where the two
+ * give a length the recipe's wins. Everything else here is a platform fact rather than a
+ * preference, and none of it is negotiable.
+ */
+function outputSpecBlock(spec?: string, hasRecipeLength?: boolean): string {
+  if (!spec) return '';
+  const note = hasRecipeLength
+    ? '\n\nWhere the Content Template above gives its own length, that wins over the length here.'
+    : '';
+  return `\n\nTHE END STATE. This is what the finished post has to be on its platform. These are
+facts about the platform and about what performs on it, not preferences, so they are not traded
+away:\n"""\n${spec}\n"""${note}`;
+}
+
 const VOICE_AND_DASH = `Polynize voice:
 - Direct, contrarian, concrete. No hype, no filler, no corporate throat-clearing.
 - Short sentences. Say the sharp thing plainly.
@@ -240,7 +264,7 @@ Three materials go into this piece. Hold all three at once and let none crowd ou
 2. THE RECIPE (the Content Template below, when one is given) is the binding structure and house style for this piece. Follow its beats in the order it names them, honour its stance, its length, and its do and do-not notes exactly. Its structure wins over any default shape here. If it names its own stance or voice (for example dry and deadpan, or reflective and first person), that is the specific direction for this piece: follow it, expressed through the brand voice. If no recipe is given, use the strongest natural shape for a ${opts.formatLabel}.
 3. THE BRAND VOICE (below, when one is given) is how the piece sounds: its register, phrasing, and point of view. Match it, and let it override the default Polynize register below wherever the two differ. If none is given, write in the default Polynize register below.
 
-Precedence when they pull against each other: the concept governs what you may say, the recipe governs how the piece is built, the brand voice governs how it sounds. The hard constraints at the end override all three and are never traded away.${audienceBlock(opts.icp)}${voiceBlock(opts.brandVoice)}${recipeBlock(opts)}
+Precedence when they pull against each other: the concept governs what you may say, the recipe governs how the piece is built, the brand voice governs how it sounds. The hard constraints at the end override all three and are never traded away.${audienceBlock(opts.icp)}${voiceBlock(opts.brandVoice)}${recipeBlock(opts)}${outputSpecBlock(opts.outputSpec, !!opts.length)}
 
 HOW TO FUSE THEM. A great draft is the recipe's structure carrying THIS concept's specific material in THIS voice, for the reader named above. The recipe alone is a hollow template. The concept alone is an info dump. Fill every beat the recipe names with something concrete from the concept, and make every line sound like the voice. A draft that nails one material by dropping another has failed.
 
@@ -278,7 +302,7 @@ Three materials go into this script. Hold all three at once and let none crowd o
 2. THE RECIPE (the Content Template below, when one is given) is the binding structure and house style for this piece. Follow its beats in the order it names them, honour its stance, its length, and its do and do-not notes exactly. Its structure wins over any default shape here. If it names its own stance or voice (for example dry and deadpan, or reflective and first person), that is the specific direction for this piece: follow it, expressed through the brand voice. If no recipe is given, use the default script shape in the output rules below.
 3. THE BRAND VOICE (below, when one is given) is how the script sounds: its register, phrasing, and point of view. Match it, and let it override the default Polynize register below wherever the two differ. If none is given, write in the default Polynize register below.
 
-Precedence when they pull against each other: the concept governs what you may say, the recipe governs how the script is built, the brand voice governs how it sounds. The hard constraints at the end override all three and are never traded away.${audienceBlock(opts.icp)}${voiceBlock(opts.brandVoice)}${recipeBlock(opts)}
+Precedence when they pull against each other: the concept governs what you may say, the recipe governs how the script is built, the brand voice governs how it sounds. The hard constraints at the end override all three and are never traded away.${audienceBlock(opts.icp)}${voiceBlock(opts.brandVoice)}${recipeBlock(opts)}${outputSpecBlock(opts.outputSpec, !!opts.length)}
 
 HOW TO FUSE THEM. A great script is the recipe's structure carrying THIS concept's specific material in THIS voice, for the reader named above, written for the mouth and the ear: short sentences, no subclauses that die on camera. The recipe alone is a hollow template. The concept alone is an info dump read aloud. Fill every beat the recipe names with something concrete from the concept. A script that nails one material by dropping another has failed.
 
@@ -359,8 +383,17 @@ async function gather(
     excludePieceId: piece.piece_id,
   }).catch(() => ({ items: [], exactFormat: true }) as Awaited<ReturnType<typeof pickExemplars>>);
 
+  /**
+   * The typed output behind this piece, if it came from a Story's kit. This is the whole reason
+   * the kit catalogue exists: without it every LinkedIn frame writes format 'linkedin_text' and
+   * arrives here as one identical instruction, so a contrarian post and a numbered list come
+   * back as the same post and the frames on the Gate 3 screen are decoration.
+   */
+  const outputSpec = piece.master ? promptFragment(piece.master) : undefined;
+
   const promptOpts: PromptOpts = {
     formatLabel,
+    outputSpec,
     exemplars: exemplarBlock(picked.items, {
       exactFormat: picked.exactFormat,
       formatLabel,
@@ -370,8 +403,13 @@ async function gather(
     // Two-track / capture-specific shape for the touchscreen hero formats (D29).
     scriptShape: fmt?.scriptShape,
     ...parts,
-    // Always hand the model a length limit: the template's, else the format default.
-    length: parts.length || defaultLengthFor(piece.format) || undefined,
+    /**
+     * The template's length, else the format registry's default. NOT the registry default when
+     * a typed output spec is present: the spec carries a sourced character band and the
+     * registry carried a word count that contradicted it, and two length authorities in one
+     * prompt means the model follows whichever it read last.
+     */
+    length: parts.length || (outputSpec ? undefined : defaultLengthFor(piece.format)) || undefined,
   };
 
   return { conceptBody, formatLabel, promptOpts };
@@ -519,7 +557,7 @@ Every hook must be ONE SPOKEN LINE, the words said to camera. No on-screen capti
 For each hook also report, honestly:
 - pattern: which hook pattern from the library it uses, named in a few words.
 - material: the specific thing in the concept it stands on, in a few words. If it stands on nothing concrete and is working from the argument alone, say so plainly. Do not dress up a general claim as though it came from evidence.
-${audienceBlock(opts.icp)}${voiceBlock(opts.brandVoice)}${recipeBlock(opts)}
+${audienceBlock(opts.icp)}${voiceBlock(opts.brandVoice)}${recipeBlock(opts)}${outputSpecBlock(opts.outputSpec, !!opts.length)}
 
 ${HOOK_GUIDANCE}
 

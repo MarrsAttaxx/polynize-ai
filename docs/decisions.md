@@ -760,3 +760,63 @@ Gate 5's button stops claiming to do one thing. It reads "schedule 16, send me 3
 
 **Follows from this, and still to build:** the LinkedIn document carousel is a hand-post by nature, since we cannot schedule a document through Metricool anyway (see `output-spec.md` section 0), so the PDF has to reach his phone. Marrs: *"we'll find a way to create the PDFs in the console and then present them to me to post organically myself via the mobile app."*
 
+---
+
+## D42: The kit stops counting posts and starts naming them
+
+**Adopted 19 August 2026.** Marrs asked the question v1's kit could not answer: *"Is it a contrarian post? Is it an informative post?"* A count cannot answer it. And the question that follows: *"they need to express the idea in slightly different frames. Maybe four is too much."*
+
+**What changed.** Every Gate 3 tick now names a real END STATE from `output-spec.md`, and the frame reaches April as a different instruction. The screen went from 9 rows to 11 per lane; the default kit went from 19 posts to 15.
+
+| v1 | v2 |
+|---|---|
+| `4 posts / text, one per beat` | **Contrarian post**, **Hard moment** (marrs) or **Field report** (polynize), **Numbered rules**, one post each |
+| `3 images / hook lines on prezie stills` | **Image**, one 4:5 card |
+| `Article` | **Article**, plus its cutdown, which IS the contrarian post rather than a fourth item |
+| A count pill on every row | A pill only on the three series rows, reading `x3` |
+| `Confirm · 19 pieces of content` | `Confirm · 15 posts`, which is literally the number of calendar entries |
+
+### The four rules the file now enforces, each one a thing that was wrong
+
+**1. One output, one piece, for anything with its own words.** This is the load-bearing decision and the one three independent reviews converged on. `piece.master` is used as a unique key per story in both the build route and the wave route, so two outputs sharing a master collapse to one piece, last write wins, and the loser keeps its draft while being invisible and never planned. v1 had exactly that shape: four LinkedIn text posts on one piece with one body, so the wave copied the same text onto four calendar entries. **Naming the frames without splitting the pieces would have shipped three identical posts under three different labels**, which is worse than v1's vagueness because it looks like it worked.
+
+So `MasterAsset` gained `texts_hard`, `texts_list` and `texts_field`. The six v1 values are frozen and `texts` now means the **contrarian** frame specifically, which is why an in-flight story's existing text piece is adopted (and retitled) rather than orphaned. Every text placement count is therefore 1, which makes Gate 5's existing `missing = count - have` guard exact rather than approximate, and means **no new persisted field was needed on the piece or the entry**.
+
+**2. Every post carries an image**, per Marrs. `visual` is required on every artifact with no optional escape, so an output that forgets one does not compile.
+
+**3. Source strength is part of the data.** Every number is wrapped in `Sourced<T>` with one of `official`, `large_study`, `practitioner`, `ad_data`, `ours`, because a figure with no provenance reads identically whether it came from LinkedIn's API reference or an SEO blog. Where the spec says NO DATA there is **no field**, and `doNotAssert` carries the gap forward as an instruction so the model cannot fill it either. There is deliberately **no target-duration field anywhere**: not one of the three platforms publishes an optimal length, and a field would invite the circulating figures (watch time, or TikTok's five-year-old ad conversion data) to become instructions.
+
+**4. The spec reaches the writer.** `promptFragment(master)` is read by `draft.ts`. Without it the frames are labels: every LinkedIn frame writes format `linkedin_text`, so a contrarian post and a numbered list arrived at the model as the same instruction. Three separate reviews made this the condition on the whole design and they were right.
+
+### Numbers this corrected on the way
+
+**The format registry contradicted the spec, and the registry was the one writing the post.** `linkedin_text.defaultLength` said "150 to 250 words. A quick post is 50 to 100 words" against the spec's sourced 1,300 to 2,500 characters, and that quick-post floor sat **under the ~400 character floor every study agrees on**. `pdf_carousel` said 6 to 10 pages against 7 to 12; `image_carousel` said 5 to 8 slides when the API caps a carousel at 10. All three now match the spec and carry their strength, and for a piece cut from a Story the kit's own spec is preferred, because two length authorities in one prompt means the model follows whichever it read last.
+
+**The blanket 4,000 character trim was above every platform's cap.** LinkedIn is 3,000 and Instagram and TikTok are 2,200, so `capCopy` now trims in the platform's own unit. Those units are three different things: characters, UTF-16 code units (TikTok's "runes") and bytes (YouTube's description, where an emoji costs three or four).
+
+**The Gate 5 week grid held a second copy of the master vocabulary** and defaulted anything unknown to "Post", so it would have shown "Post 1 Post 2 Post 3" against a Gate 3 that promised Contrarian, Hard moment and Rules. It reads the catalogue now.
+
+**The first comment was documented and inert.** The Metricool client has always accepted `firstCommentText` and `publishEntry` never sent it; the hand-post brief has always had a place to print it and never had one to read. `CalendarEntry.first_comment` closes both. **Nothing writes it yet** and it is deliberately empty rather than filled with a guessed url: the Gate 4 caption card is what will write it.
+
+### Manual-ness moved onto the output
+
+D41 stores publish mode per lane per channel, and `MANUAL_BY_DEFAULT` only covers marrs. A LinkedIn document cannot be scheduled through Metricool at all, so it is a hand-post **by nature**, not by channel setting: without `handPost` on the output, the polynize lane would have planned it as an auto entry and posted a flat image instead of a swipeable document.
+
+### Which frames, and why not four posts
+
+Three text posts, three different frames, never the same one twice. The count is decided by supply and capacity rather than taste: the Gate 2 article is 300 to 450 words, about **one** text post's worth of material at the spec's character band, so four posts is not a cut, it is a thousand words of invention. Different frames rather than one repeated because the types differ in **which** engagement they produce (the listicle is a comment machine with ordinary ER, the hard moment is the reverse), the ranking behind them is classifier-assigned on somebody else's audience, and three frames on one idea with the idea held constant is the only shape the Learn loop can ever learn from.
+
+Four frames are in the vocabulary and deliberately **off** the screen (win, challenge, recap, explainer). A row he has to decide about every week to serve the rare week he has the material is exactly the overload he named. Explainer is not a default on either lane, because the article and the carousel are already explainers.
+
+**Two risks recorded rather than solved.** The hard moment needs a real cost actually paid, and a 400-word article about an idea usually contains none, so its `doNotAssert` forbids inventing one and it must degrade to the field report. And contrarian fires on both lanes every week, so a story with no actual position must say so rather than manufacture a disagreement.
+
+### Flagged, NOT changed: the cadence arithmetic is wrong and it is Marrs's call
+
+The build plan says 56 weekly slots divided by a 19-post kit is "roughly 3 stories a week". **Slots are not fungible across networks**: a LinkedIn post cannot fill an idle TikTok slot. The honest figure is the per-network floor, which for v1 was **2** (set by Instagram at exactly 14 of 14), and for the typed kit is 1 if LinkedIn respects its own evidence. Section 4 of the output spec measures **4 to 5 LinkedIn posts a week** as the sweet spot; the target of 2 a day is 14. Nothing enforces capacity either: `nextOpenSlots` walks 60 days forward and always finds something, so an oversubscribed channel silently slides posts into future weeks, and past the 60-day walk an entry is created with no `scheduled_at` and is dropped from every wave forever.
+
+Marrs set the 2-a-day target explicitly, so this is flagged rather than changed. The recommendation is LinkedIn at 1 slot a day on weekdays.
+
+### The known migration edge, stated plainly
+
+A story that already **planned a wave** under v1 keeps its v1 entries and gains the new typed ones on top, because the wave never deletes a draft the operator did not ask to delete. The plan response returns `extra` so Gate 5 can say so rather than the operator finding out on the grid. A story at Gate 3 or Gate 4 migrates cleanly: its ticks resolve, its pieces are adopted and retitled, and only the two new text masters are created.
+

@@ -21,7 +21,14 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import type { Story } from '@/lib/marketing/story-store';
-import { kitForLane, tickCount, type KitItem } from '@/lib/marketing/kit';
+import {
+  kitRows,
+  tickCount,
+  resolveTicks,
+  defaultTicks,
+  KIT_NETWORK_ORDER,
+  type KitRow,
+} from '@/lib/marketing/kit';
 import g from '../gates.module.css';
 
 type PieceRow = { id: string; label: string; master: string; kind: string; href: string };
@@ -247,15 +254,26 @@ export function StoryGates({
 
   /* ---------------- Gate 3: the kit ---------------- */
 
-  const catalogue: KitItem[] = kitForLane(story.lane);
-  const [ticks, setTicks] = useState<string[]>(
-    initial.kit && initial.kit.length > 0
-      ? initial.kit
-      : catalogue.filter((k) => k.defaultOn).map((k) => k.id)
-  );
-  const toggleTick = (id: string) =>
-    setTicks((t) => (t.includes(id) ? t.filter((x) => x !== id) : [...t, id]));
-  const count = tickCount(ticks);
+  const rows: KitRow[] = kitRows(story.lane);
+  /**
+   * A saved kit is RESOLVED before it becomes tick state, so a story saved under the v1
+   * catalogue opens with its retired ids already expanded into the typed ones. Without that,
+   * every box would render unticked, the count would read 0, and the confirm button would be
+   * disabled with nothing on screen saying why.
+   *
+   * A kit that resolves to nothing falls back to the lane's defaults for the same reason.
+   */
+  const [ticks, setTicks] = useState<string[]>(() => {
+    const saved = resolveTicks(initial.kit ?? [], story.lane);
+    return saved.length > 0 ? saved : defaultTicks(story.lane);
+  });
+  /** A row owns one id or a whole series, and a series is one decision. */
+  const toggleRow = (row: KitRow) =>
+    setTicks((t) => {
+      const on = row.ids.some((id) => t.includes(id));
+      return on ? t.filter((x) => !row.ids.includes(x)) : [...t, ...row.ids];
+    });
+  const count = tickCount(ticks, story.lane);
 
   const buildKit = async () => {
     if (busy) return;
@@ -462,8 +480,8 @@ export function StoryGates({
 
       {gate === 3 ? (
         <>
-          {(['linkedin', 'instagram', 'tiktok', 'youtube'] as const).map((net) => {
-            const items = catalogue.filter((k) => k.network === net);
+          {KIT_NETWORK_ORDER.map((net) => {
+            const items = rows.filter((k) => k.network === net);
             if (items.length === 0) return null;
             const cls =
               net === 'linkedin'
@@ -483,18 +501,21 @@ export function StoryGates({
                 </div>
                 <div className={g.kitCard}>
                   {items.map((k) => (
-                    <div key={k.id} className={g.row}>
+                    <div key={k.key} className={g.row}>
                       <input
                         type="checkbox"
-                        id={k.id}
-                        checked={ticks.includes(k.id)}
-                        onChange={() => toggleTick(k.id)}
+                        id={k.key}
+                        checked={k.ids.some((id) => ticks.includes(id))}
+                        onChange={() => toggleRow(k)}
                       />
-                      <label htmlFor={k.id}>
+                      <label htmlFor={k.key}>
                         {k.label}
                         <small>{k.sub}</small>
                       </label>
-                      <span className={g.n}>{k.count}</span>
+                      {/* The pill is a SERIES SIZE, and it appears only where there is one.
+                          A column of "1"s down the screen is noise, and the label already
+                          says the row is one post. */}
+                      {k.pill ? <span className={g.n}>{k.pill}</span> : null}
                     </div>
                   ))}
                 </div>
@@ -509,7 +530,7 @@ export function StoryGates({
               onClick={buildKit}
               disabled={busy !== null || count === 0}
             >
-              {busy === 'build' ? 'Building…' : `Confirm · ${count} pieces of content →`}
+              {busy === 'build' ? 'Building…' : `Confirm · ${count} posts →`}
             </button>
           </div>
         </>

@@ -19,7 +19,7 @@ import { NextResponse } from 'next/server';
 import { randomUUID } from 'node:crypto';
 import { getCurrentUser } from '@/lib/console-auth';
 import { getStory, saveStory } from '@/lib/marketing/story-store';
-import { piecesForTicks } from '@/lib/marketing/kit';
+import { plansForTicks, capCopy, bodyCapFor, type KitOutput } from '@/lib/marketing/kit';
 import { getPiece, type MarketingPiece } from '@/lib/marketing/piece-store';
 import {
   getEntry,
@@ -200,8 +200,8 @@ export async function POST(
     return NextResponse.json({ shipped, failed, skipped, handed });
   }
 
-  // PLAN. Expand kit placements into missing draft entries at next open slots.
-  const plans = piecesForTicks(story.kit ?? []);
+  // PLAN. Expand the kit's OUTPUTS into missing draft entries at next open slots.
+  const plans = plansForTicks(story.kit ?? [], story.lane);
   const schedule = await getChannelSchedule(story.lane);
 
   // Slots already occupied per channel, across ALL stories on this stream:
@@ -215,52 +215,84 @@ export async function POST(
   }
 
   let created = 0;
+  /**
+   * Entries a story already has that the CURRENT kit no longer asks for. It happens on a story
+   * planned under the v1 catalogue: v1 put four interchangeable LinkedIn text posts on one
+   * piece, and the typed kit asks for one per frame. Nothing is deleted here, because deleting
+   * a draft the operator did not ask to delete is a worse failure than leaving one behind, but
+   * the count is returned so Gate 5 can say so instead of the operator finding out on the grid.
+   */
+  let extra = 0;
   try {
     for (const plan of plans) {
       const piece = masters.get(plan.master);
       if (!piece) continue;
-      for (const placement of plan.placements) {
-        const have = mine.filter(
-          (e) => e.piece_id === piece.piece_id && e.channel === placement.network
-        ).length;
-        const missing = placement.count - have;
-        if (missing <= 0) continue;
+      // Group the plan's outputs by network, so each entry created corresponds to a real
+      // finished post rather than to an index in a count.
+      const byNetwork = new Map<Network, KitOutput[]>();
+      for (const o of plan.outputs) {
+        const list = byNetwork.get(o.network) ?? [];
+        list.push(o);
+        byNetwork.set(o.network, list);
+      }
+      const cap = bodyCapFor(plan.master);
 
-        const taken = takenByNetwork.get(placement.network) ?? [];
-        const slots = nextOpenSlots(
-          schedule,
-          placement.network as Network,
-          missing,
-          taken
-        );
-        for (let i = 0; i < missing; i++) {
+      for (const [network, outputs] of byNetwork) {
+        const have = mine.filter(
+          (e) => e.piece_id === piece.piece_id && e.channel === network
+        ).length;
+        const missing = outputs.length - have;
+        if (missing <= 0) {
+          if (missing < 0) extra += -missing;
+          continue;
+        }
+
+        const taken = takenByNetwork.get(network) ?? [];
+        const slots = nextOpenSlots(schedule, network, missing, taken);
+        // Fill the TAIL: the first `have` outputs are the ones already on the calendar, so a
+        // retry after a mid-plan crash creates what is missing rather than repeating the front.
+        const todo = outputs.slice(have);
+        for (let i = 0; i < todo.length; i++) {
+          const output = todo[i];
           const slot = slots[i];
+          const raw = piece.body ?? piece.script ?? piece.title ?? '';
           const entry: CalendarEntry = {
             entry_id: randomUUID(),
             owner,
             stream: story.lane,
             piece_id: piece.piece_id,
             title: piece.title,
-            channel: placement.network,
-            // The caption card at Gate 4 will own per-channel copy in the next
-            // build. Until then the master's own text rides along so a draft is
-            // never empty, and the calendar screens (which already exist) are
-            // where a caption gets hand-tuned before shipping.
-            post_copy: (piece.body ?? piece.script ?? piece.title ?? '').slice(0, 4000),
+            channel: network,
+            // The caption card at Gate 4 will own per-channel copy in the next build. Until
+            // then the master's own text rides along so a draft is never empty, and it is
+            // trimmed to THIS network's own cap in THIS network's own unit. The old blanket
+            // 4,000 character slice was above LinkedIn's 3,000 and above Instagram's and
+            // TikTok's 2,200, so it trimmed nothing that mattered and hid nothing that did.
+            post_copy: cap ? capCopy(raw, cap) : raw.slice(0, 4000),
             scheduled_at: slot?.dateTime,
             status: 'draft',
             media: piece.media ?? [],
-            // Stamped now, not read at ship time: changing the lane's setting later must
-            // not silently rewrite how an already-planned wave goes out.
-            publish_mode: schedule.modes[placement.network as Network] ?? 'auto',
+            /**
+             * Stamped now, not read at ship time: changing the lane's setting later must not
+             * silently rewrite how an already-planned wave goes out.
+             *
+             * An output can also demand manual on its own account (D41 tail): a LinkedIn
+             * document cannot be scheduled through Metricool at all, so it is a hand-post by
+             * NATURE rather than by channel setting. Without this the polynize lane, whose
+             * LinkedIn is 'auto', would push it through as flat media and post a picture
+             * instead of a swipeable document.
+             */
+            publish_mode: output.handPost
+              ? 'manual'
+              : (schedule.modes[network] ?? 'auto'),
             created_at: new Date().toISOString(),
           };
           await saveEntry(owner, entry);
           created += 1;
           if (slot) {
-            const list = takenByNetwork.get(placement.network) ?? [];
+            const list = takenByNetwork.get(network) ?? [];
             list.push(slot.dateTime);
-            takenByNetwork.set(placement.network, list);
+            takenByNetwork.set(network, list);
           }
         }
       }
@@ -275,5 +307,5 @@ export async function POST(
   }
 
   await unlock();
-  return NextResponse.json({ created });
+  return NextResponse.json({ created, extra });
 }

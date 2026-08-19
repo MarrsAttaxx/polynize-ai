@@ -60,6 +60,19 @@ export type CalendarEntry = {
   publish_mode?: 'auto' | 'manual';
   /** When the operator was sent a manual post to publish by hand. */
   handed_at?: string;
+  /**
+   * THE FIRST COMMENT, which is where a link goes on LinkedIn (D42).
+   *
+   * One external link in the body costs about 18.8% of median reach, and a post cannot carry
+   * both a link preview and an image, so the kit catalogue declares `link: 'first_comment'` on
+   * every LinkedIn text output. This is the field that makes that declaration real: the
+   * Metricool client has always accepted firstCommentText and publishEntry never sent it, and
+   * the hand-post brief has always had a place to print it and never had one to read.
+   *
+   * Nothing writes it yet. The caption card at Gate 4 is what will, and until it exists this
+   * is deliberately empty rather than filled with a guessed url.
+   */
+  first_comment?: string;
   created_at: string;
   updated_at?: string;
 };

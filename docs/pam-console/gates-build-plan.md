@@ -19,7 +19,17 @@ The rule for the whole build: **reuse before new**. Most gates are existing part
 | Slots per stream | Slots per **channel** (platform x stream), two a day |
 | Add to queue is a button | An **approved piece auto-queues** to its channel's next open slot |
 
-**The honest maths:** 2/day across LinkedIn, Instagram, TikTok, YouTube = 56 slots a week. One story kit ≈ 19 pieces. So ultimate state is roughly **3 stories a week in flight**. The ramp: 1 story/week ≈ 1 post/day/channel averaged. We fill the second daily slot by adding stories, never by padding kits.
+**The honest maths, corrected 19 August 2026 (D42).** The line below was arithmetically right and operationally false, so it is kept with its correction rather than quietly rewritten.
+
+~~2/day across LinkedIn, Instagram, TikTok, YouTube = 56 slots a week. One story kit ≈ 19 pieces. So ultimate state is roughly **3 stories a week in flight**.~~
+
+**Slots are not fungible across networks.** A LinkedIn post cannot fill an idle TikTok slot, so dividing aggregate capacity by a kit total is not a valid move. The honest figure is the **per-network floor**: on the v1 kit that was **2 stories a week**, set by Instagram at exactly 14 posts into 14 slots. On the typed kit (15 posts: LinkedIn 4, Instagram 5, TikTok 3, YouTube 3) it is 2.8, and **1 a week** if LinkedIn respects the only cadence evidence there is.
+
+That evidence, from output spec section 4: **4 to 5 LinkedIn posts a week** measures 2.60% ER and 28% more impressions per post, and only 4.45% of profiles manage it. Nothing measures above 5. The 2-a-day target is 14, which is not a stretch goal, it is off the end of the data. **Recommendation, pending Marrs: LinkedIn drops to 1 slot a day on weekdays.** Everything else keeps 2 a day, which is a shape decision from his own words rather than an evidenced one, and should not be described as evidenced.
+
+Two things nothing currently guards. Capacity is not enforced: `nextOpenSlots` walks 60 days forward and always finds something, so an oversubscribed channel silently slides posts into future weeks and compounds. And past that 60-day walk an entry is created with no `scheduled_at`, which the ship path filters out, so a sustained overrun manufactures posts that can never ship and reports no error.
+
+The ramp: at 1 story a week the typed kit gives LinkedIn 4 of 7 days and Instagram 5 of 7, while TikTok and YouTube get 3 of 7. We fill the second daily slot by adding stories, never by padding kits.
 
 **Posting times research:** two sources, in order. (1) Metricool exposes a best-time-to-publish endpoint per channel: I pull it during the Step 0 spike and propose a times table for you to approve. (2) The Learn loop later refines those times from our own numbers. No guessing.
 

@@ -5,6 +5,7 @@ import { getPiece } from '@/lib/marketing/piece-store';
 import { listEntries } from '@/lib/marketing/calendar-store';
 import { isMetricoolConfigured } from '@/lib/marketing/metricool-client';
 import { NETWORKS } from '@/lib/marketing/channel-schedule';
+import { outputForMaster } from '@/lib/marketing/kit';
 import { StoryGates, type WaveData } from './StoryGates';
 
 export const dynamic = 'force-dynamic';
@@ -100,15 +101,13 @@ export default async function StoryPage({
       wave.days = dayKeys.map(dayLabel);
       wave.networks = NETWORKS.filter((n) => entries.some((e) => e.channel === n));
 
-      // A readable chip per entry: the master's short name plus its order on the day.
-      const short: Record<string, string> = {
-        article: 'Article',
-        texts: 'Post',
-        shorts: 'Short',
-        long: 'Long',
-        carousel: 'Carousel',
-        images: 'Image',
-      };
+      /**
+       * A readable chip per entry, named from the CATALOGUE rather than from a second copy of
+       * its vocabulary. The old map here spelled the six v1 masters out again and defaulted
+       * everything else to "Post", so the moment the kit named a frame this screen would still
+       * have shown three chips reading "Post 1 Post 2 Post 3" against a Gate 3 that promised
+       * Contrarian, Hard moment and Rules. One vocabulary, one place.
+       */
       const masterOf = new Map<string, { master: string; kind: string }>();
       for (const p of pieces) masterOf.set(p.id, { master: p.master, kind: p.kind });
       const seq = new Map<string, number>();
@@ -119,10 +118,15 @@ export default async function StoryPage({
         const key = `${e.channel}:${m?.master ?? 'x'}`;
         const n = (seq.get(key) ?? 0) + 1;
         seq.set(key, n);
+        const output = m ? outputForMaster(m.master) : undefined;
+        const name = output ? output.postLabel : 'Post';
+        // Number only where there is genuinely more than one of the same thing on a channel:
+        // a series of three cuts. A single typed post is named, so a "1" after it says nothing.
+        const numbered = n > 1 || (output?.series ? true : false);
         wave.cells.push({
           day: dayLabel((e.scheduled_at ?? '').slice(0, 10)),
           network: e.channel,
-          label: `${short[m?.master ?? ''] ?? 'Post'}${n > 1 || (m && (m.master === 'shorts' || m.master === 'texts' || m.master === 'images')) ? ` ${n}` : ''}`,
+          label: numbered ? `${name} ${n}` : name,
           video: m?.kind === 'video',
           manual: e.publish_mode === 'manual',
         });
