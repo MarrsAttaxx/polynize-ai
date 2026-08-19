@@ -35,10 +35,13 @@ type SaveState = 'idle' | 'saving' | 'saved' | 'error';
 export function ScriptScreen({
   initial,
   conceptBody,
+  sourceLabel = 'The concept',
   scriptIsScaffold = false,
 }: {
   initial: MarketingPiece;
   conceptBody?: string;
+  /** What the source is called: 'The article' for a Gates piece, 'The concept' otherwise. */
+  sourceLabel?: string;
   /** True when `script` is still the placeholder createOutputs seeded, so nothing real exists. */
   scriptIsScaffold?: boolean;
 }) {
@@ -326,6 +329,19 @@ export function ScriptScreen({
           {/* THE STAGED BUILD (D39). Above the editor because it comes first: hooks, then the
               arc, then the script. Collapsed to one line once a script exists, so it stops
               competing with the thing he came to the screen to edit. */}
+          {conceptBody ? (
+            /**
+             * THE SOURCE, ON THE SCREEN. Marrs, in Gate 4: "I can't remember what the
+             * script is. I need a version of the script here I can look at." The article
+             * was already loaded for April's chat and simply never shown to the person
+             * writing against it. Open by default while the script is still empty, which
+             * is when it needs reading, and collapsible once there is work to look at.
+             */
+            <details className={s.source} open={!script.trim()}>
+              <summary className={s.sourceHead}>{sourceLabel}</summary>
+              <div className={s.sourceBody}>{conceptBody}</div>
+            </details>
+          ) : null}
           {initial.kind !== 'text' ? (
             <StagedBuild
               hooks={hooks}

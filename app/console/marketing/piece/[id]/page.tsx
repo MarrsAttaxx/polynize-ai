@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { getCurrentUser } from '@/lib/console-auth';
 import { getPiece, type MarketingPiece } from '@/lib/marketing/piece-store';
-import { getConcept } from '@/lib/marketing/concept-store';
+import { conceptBodyForPiece } from '@/lib/marketing/draft';
 import { kindOf } from '@/lib/marketing/output-plan';
 import { ScriptScreen } from './ScriptScreen';
 import { scaffoldScript } from '@/lib/marketing/concept-parse';
@@ -53,28 +53,34 @@ export default async function MarketingPiecePage({
     );
   }
 
-  // If this piece was developed from a concept, load the concept body so the chat
-  // (April) can draft/refine grounded in the full concept, not just what is on
-  // screen. Both screens use it. Only resolves S3-style concept refs; degrades to
-  // undefined.
-  let conceptBody: string | undefined;
-  if (piece.concept_ref) {
-    const m = piece.concept_ref.match(/core-concept-(.+)\.md$/);
-    if (m) {
-      try {
-        const concept = await getConcept(owner, m[1]);
-        conceptBody = concept?.body_md;
-      } catch (err) {
-        console.error('[marketing] concept read for chat context failed:', err);
-      }
-    }
-  }
+  /**
+   * The source text behind this piece, for April's chat AND for the operator to read.
+   *
+   * Resolved through conceptBodyForPiece so this page cannot disagree with what the
+   * draft routes use: a Gates piece resolves to its story's ARTICLE, a streams piece
+   * to its concept doc. Marrs hit the disagreement on the first walkthrough, in Gate
+   * 4: "I can't remember what the script is. I need a version of the script here I
+   * can look at", and every draft button answered "no concept to work from".
+   */
+  const conceptBody = (await conceptBodyForPiece(owner, piece).catch((err) => {
+    console.error('[marketing] source read for the piece screen failed:', err);
+    return '';
+  })) || undefined;
+
+  // What to call it on screen, since the two eras of piece have different sources.
+  const sourceLabel = piece.story_ref ? 'The article' : 'The concept';
 
   // Non-video pieces (text) open on the text output screen; video on the script
   // screen. Both carry the on-screen April chat.
   const kind = piece.kind ?? kindOf(piece.format);
   if (kind === 'text') {
-    return <TextOutputScreen initial={piece} conceptBody={conceptBody} />;
+    return (
+      <TextOutputScreen
+        initial={piece}
+        conceptBody={conceptBody}
+        sourceLabel={sourceLabel}
+      />
+    );
   }
   /**
    * IS THE SCRIPT REAL, OR STILL THE SEEDED PLACEHOLDER?
@@ -94,6 +100,7 @@ export default async function MarketingPiecePage({
     <ScriptScreen
       initial={piece}
       conceptBody={conceptBody}
+      sourceLabel={sourceLabel}
       scriptIsScaffold={scriptIsScaffold}
     />
   );

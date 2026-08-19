@@ -15,6 +15,7 @@
 
 import type { MarketingPiece } from './piece-store';
 import { getConcept } from './concept-store';
+import { getStory } from './story-store';
 import { getBrandVoiceForStream } from './brand-voice-store';
 import { icpLabel, formatById, defaultLengthFor, HOOK_CRAFT } from './output-plan';
 import { resolveTemplateRef } from './create-outputs';
@@ -60,11 +61,32 @@ export class DraftError extends Error {
   }
 }
 
-/** Resolve the concept body a piece is drafted from (its concept_ref is truth). */
+/**
+ * The source text a piece is drafted from.
+ *
+ * TWO SHAPES, because there are two eras of piece. A piece from the streams flow points at
+ * a concept doc via `concept_ref`. A piece from the Gates (D40) points at a Story via
+ * `story_ref`, and its source is that story's ARTICLE: the long form is approved at gate 2
+ * precisely so every piece is cut from it and nothing downstream invents past it.
+ *
+ * This was a real break on the first walkthrough. Gate 4's masters carry story_ref and no
+ * concept_ref, so every draft and hook call on them failed with "no concept to work from",
+ * which reads like a mis-planned piece rather than a missing lookup. The story branch goes
+ * FIRST: when a piece has both, the article is the nearer and more specific source.
+ */
 export async function conceptBodyForPiece(
   owner: string,
   piece: MarketingPiece
 ): Promise<string> {
+  if (typeof piece.story_ref === 'string' && piece.story_ref) {
+    try {
+      const story = await getStory(piece.story_ref);
+      const article = story?.article?.trim() ?? '';
+      if (article) return article;
+    } catch (err) {
+      console.error('[draft] story read failed:', err);
+    }
+  }
   if (typeof piece.concept_ref === 'string' && piece.concept_ref) {
     const m = piece.concept_ref.match(/core-concept-(.+)\.md$/);
     if (m) {

@@ -31,9 +31,12 @@ function channelLabel(id: string): string {
 export function TextOutputScreen({
   initial,
   conceptBody,
+  sourceLabel = 'The concept',
 }: {
   initial: MarketingPiece;
   conceptBody?: string;
+  /** What the source is called: 'The article' for a Gates piece, 'The concept' otherwise. */
+  sourceLabel?: string;
 }) {
   const router = useRouter();
   const [body, setBody] = useState(initial.body ?? '');
@@ -276,6 +279,14 @@ export function TextOutputScreen({
 
       <div className={c.workspace}>
         <div className={s.editorCol}>
+          {conceptBody ? (
+            /* The source, readable where the writing happens. Same reason as the script
+               screen: it was loaded for April and never shown to the person writing. */
+            <details className={s.source} open={!body.trim()}>
+              <summary className={s.sourceHead}>{sourceLabel}</summary>
+              <div className={s.sourceBody}>{conceptBody}</div>
+            </details>
+          ) : null}
           <div className={s.toolbar}>
             <button
               type="button"
