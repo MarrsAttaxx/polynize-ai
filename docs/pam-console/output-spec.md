@@ -4,7 +4,7 @@
 
 This is that list. It defines the END STATE of every post type, so Gate 3's kit becomes a real menu and each Gate 4 flow is built to produce exactly one of these.
 
-**Sourcing rule.** Every number here carries a source. Where platform docs and studies disagree, both are shown, because a single confident number would be a lie. Where nothing credible exists it says NO DATA rather than filling the gap. **Sandcastles was not reachable when this was written**, so there is no live hook or format performance data from our own watchlist in here.
+**Sourcing rule.** Every number here carries a source. Where platform docs and studies disagree, both are shown, because a single confident number would be a lie. Where nothing credible exists it says NO DATA rather than filling the gap. One of those gaps has since been closed by measuring TikTok's own template rather than trusting a blog (section 8b). **Sandcastles was not reachable when this was written**, so there is no live hook or format performance data from our own watchlist in here.
 
 ---
 
@@ -263,13 +263,28 @@ TikTok documents less than the other two, and its only real hard-spec source is 
 | Hook window | TikTok says **3 seconds** in one place and **6 seconds** in another, on the same help page. Over 63% of highest-CTR videos land the key message inside 3 seconds. Onscreen text in the first 7 seconds gave a 43% conversion lift in one vertical | Official creative best practices; ads blog |
 | Text pacing | **5 to 10 words per second** when using onscreen text | Official creative best practices |
 
-### The safe zone: TikTok publishes no numbers at all
+### The safe zone: TikTok publishes no numbers, so we measured their own template
 
-Four separate TikTok ad-spec pages were checked. **Every one describes the safe zone qualitatively and then offers only a downloadable ZIP template.** The single numeric safe-zone value TikTok publishes anywhere is for a profile photo (key element inside the centre 66 x 66 px of a 98 x 98 px image).
+TikTok describes the safe zone qualitatively on every ad-spec page and then offers only a downloadable ZIP. The single numeric safe-zone value it publishes in prose anywhere is for a profile photo (key element inside the centre 66 x 66 px of a 98 x 98 px image). Third-party bottom-inset claims for a 1080 x 1920 frame range from **250 px to 707 px**, and one of those sources admits its numbers are internal production guidelines rather than spec. None of that is used here.
 
-Third-party bottom-inset claims for a 1080 x 1920 frame range from **250 px to 707 px**. One of those sources explicitly admits its numbers are internal production guidelines rather than TikTok spec. That spread is too wide to use, so **none of it is treated as spec here.**
+**So the ZIP was fetched and measured.** `In-Feed-Standard Version LTR.zip` (84 KB) from TikTok's own CDN, linked off the [Auction In-Feed Ads spec page](https://ads.tiktok.com/help/article/tiktok-auction-in-feed-ads?lang=en). It contains one PNG, `In-Feed/Feed.png`, authored at 2880 x 5120 with the guides drawn on it and labelled in **720 x 1280** coordinates. Every label was read off the artwork and independently confirmed against a pixel scan of the alpha channel: the two agree exactly.
 
-**There is an authoritative route, and it needs a decision:** TikTok's own In-Feed Standard safe-zone ZIP template (84 KB) carries the real guides. Downloading it would settle the numbers. Say the word and it gets fetched.
+| Edge | TikTok's label (720 x 1280) | On our 1080 x 1920 render |
+|---|---|---|
+| Top | 160 | **240** |
+| Bottom | 440 | **660** |
+| Left | 80 | **120** |
+| Right | 80 | **120** |
+| Right-hand action rail | **120 wide**, occupying the bottom **720** of the frame, so it starts 560 down | **180 wide, starts 840 down** |
+
+Read that last row carefully, because it is the part no third-party guide gets right. TikTok's right-hand reserve is **not one number**. Above the rail the right inset is 120 px; from 840 px down it is **300 px**, because the like/comment/share/sound column sits there. So the frame has two safe regions, not one:
+
+- **Above the rail** (y 240 to 839): the full 840 px inner width is safe.
+- **Alongside the rail** (y 840 to 1259): only 660 px is safe.
+
+**The single always-safe rectangle is 660 x 1020 px at offset 120, 240.** That is 61% of the width and 53% of the height of the frame. It is the tightest of the three platforms and it is what redraws the cross-platform envelope in section 8c.
+
+Two honest caveats. This is the **In-Feed ad** template, so it reserves room for the ad CTA button and the sponsor row that an organic post does not have, which is why its 440 bottom band is deeper than it needs to be for us. And it is the LTR standard file: the Arabic RTL file mirrors the rail, and the with-anchor files reserve more. Both were left alone, since neither applies to what we post.
 
 ### Originality, and the watermark rule that actually bites
 
@@ -291,18 +306,26 @@ Google publishes its vertical safe area as a diagram, and the agent extracted th
 
 Meta's figures are 14% top, 35% bottom, 6% sides, so 269 / 672 / 65.
 
-**I claimed designing to Meta's numbers would cover both platforms. That is false.** Google's right inset is **192px against Meta's 65px**, because the like/comment/share rail sits further into the frame. The true cross-platform envelope is the worst case on every edge:
+**I claimed designing to Meta's numbers would cover both platforms. That is false.** Google's right inset is **192px against Meta's 65px**, because the like/comment/share rail sits further into the frame. And I then wrote that TikTok's missing numbers did not matter for the envelope. **That was wrong too, and by the largest margin of anything in this document.** TikTok's own template (section 8b, now measured) binds two edges harder than either of the others.
 
-| Edge | Meta (official) | Google (official) | TikTok | **Use this** |
+The true cross-platform envelope is the worst case on every edge:
+
+| Edge | Meta (official) | Google (official) | TikTok (own template) | **Use this** |
 |---|---|---|---|---|
-| Top | 269 | 288 | no published figure | **288** |
-| Bottom | 672 | 672 | no published figure | **672** |
-| Left | 65 | 48 | no published figure | **65** |
-| Right | 65 | **192** | no published figure | **192** |
+| Top | 269 | 288 | 240 | **288** (Google) |
+| Bottom | 672 | 672 | 660 | **672** (Meta + Google agree) |
+| Left | 65 | 48 | **120** | **120** (TikTok) |
+| Right | 65 | 192 | **300** | **300** (TikTok) |
 
-**TikTok publishes no safe-zone numbers at all** (section 8b), and the third-party figures for it span 250 to 707 px on the bottom alone. Fortunately it does not matter for the envelope: Google binds the right edge at 192, and Meta and Google independently agree on 672 at the bottom, so the numbers above hold on Meta's and Google's own documentation without needing TikTok's. If TikTok's template later shows something tighter than 288/672/65/192 on any edge, the envelope shrinks to match.
+TikTok binds **both** horizontal edges, and its 300 px right reserve is 108 px deeper than Google's. Its top and bottom are slightly more generous than the others, so it does not move those.
 
-**The renderer targets 823 x 960 px, offset 65 from the left and 288 from the top of a 1080 x 1920 frame.** Anything outside that can be covered by platform UI on at least one of the three.
+**The renderer targets 660 x 960 px, offset 120 from the left and 288 from the top of a 1080 x 1920 frame.** Anything outside that can be covered by platform UI on at least one of the three.
+
+![The vertical safe area, all three platforms](vertical-safe-area.svg)
+
+These numbers now live in code at `lib/marketing/safe-area.ts` rather than in this document alone, so the caption renderer, the carousel PDF, the text-on-image cards and the image playground read one set of values instead of each re-deriving them. Fifteen tests hold the numbers, including TikTok's figures reproducing its own 720 x 1280 labels exactly when scaled back down.
+
+That is **163 px narrower than the 823 px I published in the first pass**, which is the difference between a two-line caption fitting and wrapping to three. Worth knowing before the renderer got built, rather than after.
 
 Two caveats worth carrying: both Google and Meta describe these as **ad** guidance, which is more conservative than the organic player because CTA buttons sit lower, and Google notes the bottom margin grows on devices with a Dynamic Island. Neither publishes an organic per-element breakdown. So this is the safe envelope, not the only workable one.
 
@@ -335,7 +358,7 @@ Two caveats worth carrying: both Google and Meta describe these as **ad** guidan
 
 **Instagram carousels are capped at 10 slides for us,** because that is the API ceiling and Metricool is an API client. It also happens to be the best-performing count measured. All slides must be generated at the same dimensions, since the first slide's size crops the rest.
 
-**The caption and hook renderer targets 823 x 960 px, offset 65 from the left and 288 from the top** of a 1080 x 1920 frame. That is the worst case across Meta, Google and TikTok. Meta's numbers alone are NOT sufficient: Google's right-hand inset is 192px against Meta's 65px, because the Shorts icon rail reaches further in. See section 8c.
+**The caption and hook renderer targets 660 x 960 px, offset 120 from the left and 288 from the top** of a 1080 x 1920 frame. That is the worst case across Meta, Google and TikTok, all three now on their own published numbers. Neither Meta's figures nor Google's are sufficient alone: **TikTok binds both horizontal edges**, reserving 120 px on the left and 300 px on the right where its action rail sits. See section 8c.
 
 **Hashtags are off by default on Instagram,** against common practice, on the strength of a 24-million-post study showing a 31.70% view penalty.
 
