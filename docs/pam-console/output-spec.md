@@ -154,13 +154,137 @@ The "single images get 30% less reach than text-only in 2026" line currently cir
 
 ---
 
-## 5. Instagram, TikTok and YouTube Shorts
+## 5. Instagram carousel
 
-*Pending: the second research pass. This section will carry aspect ratios, durations, caption limits, carousel slide counts and the per-platform SAFE AREAS that hook text and captions must avoid.*
+| Property | Value | Source |
+|---|---|---|
+| Max slides **via a scheduler** | **10.** The API caps carousels at 10 items, and Metricool is an API client, so an 11-to-20 slide carousel can only be posted by hand | Official [Instagram content publishing](https://developers.facebook.com/docs/instagram-platform/content-publishing); [Metricool](https://metricool.com/instagram-carousels/) confirms its own scheduler supports 10 |
+| Max slides in-app | 20 (raised from 10 in Aug 2024) | [Social Media Today](https://www.socialmediatoday.com/news/instagram-expands-carousels-to-20-frames/723792/) |
+| Our target | **10 slides.** It is the scheduler ceiling AND the best-performing count measured | See below |
+| Best-performing count | 22M posts, ~3M carousels: **10 slides had the highest engagement, over 2% per post.** Engagement dips after slide 3 and climbs again from 8. Only 6% of carousels use all 10 | [YouGov](https://yougov.com/articles/31680-carousel-posts-using-all-10-slides-instagram-have-), [Socialinsider](https://www.socialinsider.io/blog/instagram-carousel/) |
+| Caveat on that | The study predates the 20-slide limit, so 10 was the cap rather than a tested optimum. Nothing tests 11 to 20 | NO DATA |
+| Dimensions | **1080 x 1350 (4:5)** | [Hootsuite](https://blog.hootsuite.com/social-media-image-sizes-guide/) |
+| Critical rendering rule | **Every slide is cropped to the FIRST slide's dimensions.** Include any video and the whole carousel switches to portrait | [Buffer](https://buffer.com/resources/instagram-image-size/) |
+| Carousel vs single image | Carousels beat single images on every metric, **9x more saves**. Single-image reach fell 21.96% year on year | [Metricool 2026 study](https://metricool.com/press-release-instagram-study-2026/), 24.4M posts |
+
+## 6. Instagram single image and captions
+
+| Property | Value | Source |
+|---|---|---|
+| Our render | **1080 x 1350 (4:5).** Valid under every source including the stricter API range, and the recommended format | Official [help](https://www.facebook.com/help/instagram/1631821640426723), [Buffer](https://buffer.com/resources/instagram-image-size/) |
+| Is 4:5 or 1:1 favoured | **4:5, clearly.** No source checked favours 1:1 | Buffer |
+| Ratio conflict worth knowing | The live help page says 1.91:1 to **3:4** (height up to 1440), the cached version and the Graph API say 1.91:1 to **4:5** (height to 1350). 1080 x 1350 is safe under both; 1080 x 1440 would be rejected or cropped by the API | Official, self-contradictory |
+| Above 1080 wide | Downscaled to 1080. Unsupported ratios are cropped | Official help |
+| Text on image | **Not penalised.** Meta retired the 20%-text rule and its checker. What is penalised is unoriginal content, not text density | [SEJ](https://www.searchenginejournal.com/facebook-removes-the-20-text-limit-on-ad-images/381844/), [Instagram originality guidelines](https://creators.instagram.com/original-content-guidelines) |
+| Caption limit | 2,200 characters, 30 hashtags, 20 @ tags | Official [Graph API](https://developers.facebook.com/docs/instagram-platform/instagram-graph-api/reference/ig-user/media/) |
+| Caption truncation | **~125 characters**, then "...more". Instagram publishes no official figure, but Meta's own ads guide recommends 125 characters of primary text, which matches | Third-party consensus + official ads guide |
+| **Hashtags** | **Posts with hashtags saw 31.70% fewer views and 33.89% fewer interactions than platform average** | [Metricool 2026 study](https://metricool.com/press-release-instagram-study-2026/) |
+
+**The 4:5 coincidence is a real efficiency.** 1080 x 1350 is simultaneously LinkedIn's tallest legal ratio and Instagram's recommended format. **One image render serves both platforms**, so the image playground only needs one primary size.
+
+**Hashtags are off by default.** That is a direct reversal of common practice and it comes from a 24-million-post study.
+
+## 7. Vertical video: Reels, and the safe area that governs every caption
+
+| Property | Value | Source |
+|---|---|---|
+| Aspect ratio | 9:16 (accepted range 1.91:1 to 9:16) | Official [help](https://www.facebook.com/help/instagram/1038071743007909) |
+| Minimum quality | **30 FPS and 720px** minimum resolution | Official help |
+| Our render | 1080 x 1920 | API recommends 9:16, max 1920 horizontal px |
+| The duration number that matters | **Reels over 3 minutes are not recommended to new audiences** | Official help |
+| Duration conflict | In-app recording allows 20 minutes, the API and ads guide say 15 minutes, Metricool says 3. Only the 3-minute recommendation ceiling is consistent in effect | Official, self-contradictory |
+| Optimal duration | NO DATA found. The nearest hard figure: **average watch time per Reel is 8.5 seconds**, more than double year on year | Metricool 2026 study |
+| Cover | Recommended **420 x 654** (1:1.55). Sources conflict on whether it can be changed after posting | Official help; [Buffer](https://buffer.com/resources/instagram-image-size/) disagrees |
+| Grid crop | Reels show at 1080 x 1920 in feed, **1080 x 1440 in the grid** | Hootsuite |
+
+### THE SAFE AREA, and it is tighter than anyone assumes
+
+Meta's own published figures: keep **at least 14% of the top, 35% of the bottom and 6% of each side** free of text, logos and key creative. ([Meta ads guide, Instagram Reels](https://www.facebook.com/business/ads-guide/update/video/instagram-reels))
+
+On a 1080 x 1920 frame that is:
+
+| Edge | Keep clear |
+|---|---|
+| Top | **269 px** |
+| Bottom | **672 px** |
+| Each side | **65 px** |
+| **Usable band** | **950 x 979 px, vertically centred** |
+
+Meta reports that Reels ads built 9:16, with audio, and key creative inside the safe zone had **34.5% lower cost per result** than image ads on Reels.
+
+**This conflicts with our current caption practice, and the conflict is worth resolving before the next shoot.** Our house caption style is a lower-third around 50px from the bottom in Space Grotesk Medium. **A lower-third sits inside the bottom 672px that Meta says to keep clear.** Third-party guidance is looser (bottom 420px rather than 672px), so the truth is somewhere between, but our current position is inside the danger zone on either reading. Two honest options: lift captions to the vertical centre band, or accept that the bottom third is partially obscured by UI on Reels while remaining fine on a 16:9 YouTube cut. This is a decision, not a bug, and it needs Marrs's eye on a real phone.
+
+## 8. YouTube Shorts
+
+Verified against Google's own documentation, and it **corrects two things the third-party specs guides still get wrong.**
+
+| Property | Value | Source |
+|---|---|---|
+| What makes it a Short | Square or vertical, **up to 3 minutes.** Use 16:9 to opt OUT of Shorts classification | Official [answer/15424877](https://support.google.com/youtube/answer/15424877) |
+| Max duration | **3 minutes.** The 60-second figure everyone still quotes is obsolete | Official [answer/12779649](https://support.google.com/youtube/answer/12779649) |
+| Resolution | Max **1080p** per YouTube Help. Conflict: Sprout lists up to 8K, and YouTube's own thumbnail spec is 2160 x 3840, so the 1080p line may be scoped to the in-app camera. Unresolved officially | Official [answer/10059070](https://support.google.com/youtube/answer/10059070) |
+| Title | **100 characters** | Official [Data API](https://developers.google.com/youtube/v3/docs/videos) |
+| Description | **5,000 BYTES, not characters.** Emoji and CJK eat 3 to 4 bytes each, so a 5,000-character description can fail | Official Data API |
+| Hashtags | Over **60** and every hashtag is ignored. Three surface above the title | Official [answer/6390658](https://support.google.com/youtube/answer/6390658) |
+| Music limit | Most songs usable for 90 seconds inside a 3-minute Short; some capped at 60 or 30 | Official answer/15424877 |
+| Copyright trap | **Any Short over one minute with an active copyright claim is blocked globally** and cannot be monetised | Official answer/15424877, [answer/12504220](https://support.google.com/youtube/answer/12504220) |
+| Custom thumbnail | **YES, since 24 July 2026.** YPP creators can upload one: 2160 x 3840, 9:16, JPG or PNG, under 50 MB, desktop Studio only, verified account. No A/B testing for Shorts | Official [YouTube blog, 24 July 2026](https://blog.youtube/news-and-events/youtube-studio-custom-thumbnail-updates/), [answer/72431](https://support.google.com/youtube/answer/72431) |
+
+**Correction to what I wrote an hour ago.** I had "cannot upload a custom thumbnail for Shorts", sourced to a specs guide dated 4 August 2026. That guide is **stale**: the capability shipped 24 July 2026 and both Hootsuite and Buffer still say it does not exist. Any pipeline built off third-party specs guides silently skips a thumbnail step that is now available, which matters because our house rule is that the first frame IS the thumbnail.
+
+### Shorts duration: the data is a mess, and the honest read
+
+| Source | Says | Sample |
+|---|---|---|
+| [Metricool 2026](https://metricool.com/press-release-youtube-study-2026/) | Average view duration **collapsed ~67% to about 16 seconds** per Short, from ~48s a year earlier. Shorts views +127% YoY, and the Shorts feed is now **61% of all YouTube views** | 799,718 videos / 71,177 accounts |
+| Inflow | 50 to 60 seconds wins on views | 5,400 Shorts, but dated **April 2023**, a 60-second-max era |
+| OpusClip | 15 to 30 seconds wins on retention | **No sample size, no source cited** |
+
+Inflow and OpusClip are directly opposed and neither is trustworthy for 2026. Metricool's 16 seconds is the largest and most current figure but it measures **actual watch time, not optimal length**, and conflating the two would be a mistake. **YouTube publishes no duration benchmark at all.** So: no target length from data. What we do know is that attention is collapsing and the feed now carries most of YouTube's views.
+
+## 8b. TikTok: still unverified
+
+Not filled in from memory. Verified: 1080 x 1920, 9:16 ([Hootsuite](https://blog.hootsuite.com/social-media-image-sizes-guide/)). Third-party safe area, unconfirmed against TikTok's own docs: 108px top, 320px bottom, 60px left, **120px right**. **NOT VERIFIED:** max duration, optimal duration, caption limit, cover support, and TikTok's own safe-area figures.
+
+One solid format finding: **TikTok video takes 3.39% median engagement against 1.92% for TikTok photo carousels**, so video wins on TikTok while carousels win on Instagram ([Buffer](https://buffer.com/resources/data-best-content-format-social-media/), 45M+ posts). Instagram carousels get 4.7x the views of TikTok carousels, while Instagram Reels get 30% fewer views than TikTok videos (Metricool). The two platforms want different things from the same story.
+
+## 8c. THE SAFE AREA THAT ACTUALLY GOVERNS OUR RENDERER
+
+This is the single most build-critical number in the document, and my first pass got it wrong.
+
+Google publishes its vertical safe area as a diagram, and the agent extracted the values from the SVG itself rather than trusting a blog: **top 288, bottom 672, left 48, right 192** on a 1080 x 1920 frame, giving 840 x 960. ([Google Ads Help answer/9128498](https://support.google.com/google-ads/answer/9128498)) Independently corroborated with the identical four numbers by [somake.ai](https://www.somake.ai/blog/youtube-shorts-aspect-ratio).
+
+Meta's figures are 14% top, 35% bottom, 6% sides, so 269 / 672 / 65.
+
+**I claimed designing to Meta's numbers would cover both platforms. That is false.** Google's right inset is **192px against Meta's 65px**, because the like/comment/share rail sits further into the frame. The true cross-platform envelope is the worst case on every edge:
+
+| Edge | Meta | Google | TikTok (3rd party) | **Use this** |
+|---|---|---|---|---|
+| Top | 269 | 288 | 108 | **288** |
+| Bottom | 672 | 672 | 320 | **672** |
+| Left | 65 | 48 | 60 | **65** |
+| Right | 65 | **192** | 120 | **192** |
+
+**The renderer targets 823 x 960 px, offset 65 from the left and 288 from the top of a 1080 x 1920 frame.** Anything outside that can be covered by platform UI on at least one of the three.
+
+Two caveats worth carrying: both Google and Meta describe these as **ad** guidance, which is more conservative than the organic player because CTA buttons sit lower, and Google notes the bottom margin grows on devices with a Dynamic Island. Neither publishes an organic per-element breakdown. So this is the safe envelope, not the only workable one.
+
+**And it still conflicts with our caption practice.** Our lower-third at roughly 50px from the bottom is deep inside the 672px both companies say to keep clear. That decision is unchanged and still needs Marrs's eye on a real phone.
+
+## 9. Cross-posting one video to three platforms
+
+| Rule | Detail | Source |
+|---|---|---|
+| **Watermarks are the real risk** | Eligible content must have "no visible watermarks". Accounts posting 10+ reposts in 30 days lose recommendation eligibility | Official [Instagram](https://creators.instagram.com/blog/recommendations-and-originality) |
+| What counts as unoriginal | Content "copied without material edits". Borders, watermarks, speed changes and crediting the original do **not** count as material edits. Eligibility recovers on a 30-day rolling basis | Official [originality guidelines](https://creators.instagram.com/original-content-guidelines) |
+| Editing elsewhere is fine | Mosseri: creating or editing a Reel in another app does not reduce reach. **Your own logo is fine.** Instagram tries not to recommend Reels carrying other apps' logos | [Social Media Today](https://www.socialmediatoday.com/news/instagram-clarifies-including-your-own-logo-on-a-reel-is-ok/730852/) |
+| Quantified reach loss from identical cross-posts | NO DATA. Figures like "40 to 60% more reach when you adapt per platform" appear only in SEO content with no dataset behind them and are not reported here | |
+
+**The fully sourced operating rule:** export one clean master with no platform watermark, publish that same file natively to each platform, and vary the caption and cover per platform. Our pipeline already does this, because the edit happens in Final Cut and Descript rather than in a platform app.
 
 ---
 
-## 6. What this means for the build
+## 10. What this means for the build
 
 **Gate 3's kit stops being counts and becomes typed outputs.** Each tick names a real end state from this document: a LinkedIn text post of a chosen TYPE with a 4:5 image, a document carousel of 7 to 12 self-contained slides, the Pulse article, the cutdown text post, and so on.
 
@@ -170,4 +294,20 @@ The "single images get 30% less reach than text-only in 2026" line currently cir
 
 **The link always goes in the first comment.** Our Metricool client already supports `firstCommentText`, so this is a wiring detail, not a build.
 
+**One image size does most of the work.** 1080 x 1350 (4:5) is LinkedIn's tallest legal ratio and Instagram's recommended format at the same time, so the playground renders one primary size for both.
+
+**Instagram carousels are capped at 10 slides for us,** because that is the API ceiling and Metricool is an API client. It also happens to be the best-performing count measured. All slides must be generated at the same dimensions, since the first slide's size crops the rest.
+
+**The caption and hook renderer targets 823 x 960 px, offset 65 from the left and 288 from the top** of a 1080 x 1920 frame. That is the worst case across Meta, Google and TikTok. Meta's numbers alone are NOT sufficient: Google's right-hand inset is 192px against Meta's 65px, because the Shorts icon rail reaches further in. See section 8c.
+
+**Hashtags are off by default on Instagram,** against common practice, on the strength of a 24-million-post study showing a 31.70% view penalty.
+
 **Blocked, needs the spike:** whether Metricool can schedule a LinkedIn document post at all, and how we produce the PDF.
+
+**Needs Marrs on a phone:** the caption position conflict in section 7. Our lower-third sits inside the region Meta says to keep clear.
+
+**Shorts now take a custom thumbnail** (since 24 July 2026, YPP only, desktop Studio only, 2160 x 3840). Our house rule already makes the first frame the thumbnail, so the pipeline should export that frame at 2160 x 3840 and upload it rather than letting YouTube pick.
+
+**Watch the one-minute copyright line on Shorts:** over 60 seconds with any active claim and the Short is blocked globally, so licensed music in a long Short is a hard fail rather than a warning.
+
+**Still unverified:** TikTok's own duration, caption, cover and safe-area figures. Those need either a second research pass or a look at each platform's own creator docs.
