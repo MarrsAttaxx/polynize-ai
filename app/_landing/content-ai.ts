@@ -133,7 +133,7 @@ export const storyContent: MappingContent = {
   whatItIs: {
     h2: 'This is your map.',
     paras: [
-      'We take your team through scenarios built from the work they actually do. They respond in their own words, in real situations, and the platform reads what capability they are genuinely demonstrating.',
+      'We take your team through scenarios you provide from work they actually do. They respond in their own words, in real situations, and the platform reads what capability they are genuinely demonstrating.',
       // The section has to close on what the map TELLS you, not on how it is made. It is
       // also what makes the heat map below it legible: one hot column rather than a
       // scatter, so the reader knows to look for the place to start.

@@ -167,9 +167,9 @@ export function JobMappingFlow() {
     <div className={s.flow}>
       <header className={s.hero}>
         <h1 className={s.h1}>
-          What does AI actually do
+          How can AI
           <br />
-          <span className={s.mint}>to your job?</span>
+          <span className={s.mint}>Amplify your Job?</span>
         </h1>
         <p className={s.sub}>
           Paste your job description. We will break the role into the capabilities it really

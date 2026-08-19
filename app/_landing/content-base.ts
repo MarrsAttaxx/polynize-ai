@@ -146,7 +146,7 @@ export const mappingContent: MappingContent = {
   whatItIs: {
     h2: 'Three hours. Your real work. Your real team.',
     paras: [
-      'We take your team through scenarios built from the work they actually do. They respond in their own words, in real situations, and the platform analyses what capability they are genuinely demonstrating.',
+      'We take your team through scenarios you provide from work they actually do. They respond in their own words, in real situations, and the platform analyses what capability they are genuinely demonstrating.',
       'Documents and process maps are a snapshot. They are what people say about the work. This is what people do in the work, which is why the map is accurate.',
     ],
     cards: [
@@ -283,7 +283,7 @@ export const mappingContent: MappingContent = {
    * on the same screen contradict each other, and the mark was the louder of the two.
    */
   proof: {
-    h2: 'Used by one of the big four consultancies to train 38,000 practitioners, and a world leading tech brand to train a $200M ARR sales team.',
+    h2: 'Used by a global consulting firm to train 38,000 practitioners, and a world leading tech brand to train a $200M ARR sales team.',
     paras: ['We can’t tell you who yet, but soon. 🤫'],
     stat: '',
   },
