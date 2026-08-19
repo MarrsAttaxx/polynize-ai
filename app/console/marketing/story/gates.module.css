@@ -127,6 +127,9 @@
   font-family: var(--font-jetbrains-mono), monospace;
   font-size: 13px;
   font-weight: 600;
+  /* The caps are presentation, not content: the label itself comes from streamLabel,
+     so renaming a stream never means editing this screen. */
+  text-transform: uppercase;
   letter-spacing: 0.04em;
   padding: 18px 10px;
   border-radius: 14px;

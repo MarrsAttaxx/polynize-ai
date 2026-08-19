@@ -30,7 +30,7 @@ export type StoryGate = 1 | 2 | 3 | 4 | 5 | 'shipped';
 export type Story = {
   id: string; // uuid
   /**
-   * marrs = Marrs Attacks (opinion), polynize = educational. Lane ids equal existing
+   * marrs = opinion in his own voice, polynize = educational. Lane ids equal existing
    * stream ids on purpose so brand voice and Metricool mappings resolve with no
    * translation.
    */

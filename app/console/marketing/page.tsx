@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { getCurrentUser } from '@/lib/console-auth';
 import { listStoryCards, GATE_LABELS, type StoryCard } from '@/lib/marketing/story-store';
+import { streamLabel } from '@/lib/marketing/streams';
 import b from './board.module.css';
 
 export const dynamic = 'force-dynamic';
@@ -82,7 +83,7 @@ export default async function BoardPage() {
                     className={b.card}
                   >
                     <span className={`${b.laneTag} ${c.lane === 'marrs' ? b.ma : b.pz}`}>
-                      {c.lane === 'marrs' ? 'Marrs Attacks' : 'Polynize'}
+                      {streamLabel(c.lane)}
                     </span>
                     <span className={b.headline}>{c.headline}</span>
                   </Link>

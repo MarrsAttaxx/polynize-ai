@@ -725,7 +725,7 @@ All three stages read the same materials through one `gather()`. Agreement about
 
 **The shape.** One Story moves through five gates, one screen per gate, one mint decision bar per screen, back goes back, and you advance only by deciding:
 
-1. **Idea.** The inbox plus a fresh-idea box. Two decisions: which idea, which lane. The lane (Marrs Attacks = opinion, Polynize = educational) is the fork that sets channels, voice and CTA, and lane ids deliberately equal stream ids so brand voice and Metricool mappings resolve with no translation.
+1. **Idea.** The inbox plus a fresh-idea box. Two decisions: which idea, which lane. The lane (Marrs = opinion in his own voice, Polynize = educational; labelled from streamLabel, renamed from "Marrs Attacks" on 19 August) is the fork that sets channels, voice and CTA, and lane ids deliberately equal stream ids so brand voice and Metricool mappings resolve with no translation.
 2. **Article.** The long form, 300 to 450 words, drafted by April the moment the gate is first seen and refined by direct edit or one instruction at a time in a docked chat. **The interview is dead** (decision 1). The article is the source of truth for everything downstream and publishes as-is.
 3. **Kit.** Per-platform tick list (LinkedIn, Instagram, TikTok, YouTube: decision 3), counts in "pieces of content", never "placements". Confirming creates MASTER pieces: one per master asset (article, texts, shorts, long, carousel, images), not one per post.
 4. **Create.** The masters, video first because it is the long pole. V1 links to the existing editors; the one-card-at-a-time flow is the next build.

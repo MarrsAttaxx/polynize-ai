@@ -31,7 +31,7 @@ Evolve, don't greenfield. Existing stores keep their data.
 
 | Concept | Today | Becomes |
 |---|---|---|
-| Story | `concept-store` doc | + `lane` (marrs-attacks / polynize), + `article` (the long form), + `gate` (1 to 5 / shipped), + `idea_ref` |
+| Story | `concept-store` doc | + `lane` (marrs / polynize), + `article` (the long form), + `gate` (1 to 5 / shipped), + `idea_ref` |
 | Piece | `piece-store` (exists, close) | + `story_ref`, + `channel` (one platform each), + `master_ref` (which asset it carries), + `queued_slot`, + `metricool_id` |
 | Kit | new, small | The per-lane default tick list per platform. Confirming Gate 3 creates the Pieces |
 

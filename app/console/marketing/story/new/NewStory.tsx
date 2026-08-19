@@ -9,13 +9,14 @@
  * picking from the list clears the box: one idea is the input, never a blend.
  *
  * The lane decision is the fork that sets channels, voice and CTA downstream, so it
- * happens here, before a single word is drafted. Marrs Attacks is opinion in his own
- * voice; Polynize is educational. He knows what they are, so the buttons say only the
- * names.
+ * happens here, before a single word is drafted. Marrs is opinion in his own voice;
+ * Polynize is educational. He knows what they are, so the buttons say only the names,
+ * taken from streamLabel so the board and this screen cannot disagree.
  */
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { streamLabel } from '@/lib/marketing/streams';
 import g from '../gates.module.css';
 
 export type IdeaRow = { id: string; lane: string; text: string; when: string };
@@ -99,7 +100,7 @@ export function NewStory({ ideas }: { ideas: IdeaRow[] }) {
           onClick={() => setLane('marrs')}
           disabled={busy}
         >
-          MARRS ATTACKS
+          {streamLabel('marrs')}
         </button>
         <button
           type="button"
@@ -107,7 +108,7 @@ export function NewStory({ ideas }: { ideas: IdeaRow[] }) {
           onClick={() => setLane('polynize')}
           disabled={busy}
         >
-          POLYNIZE
+          {streamLabel('polynize')}
         </button>
       </div>
 
