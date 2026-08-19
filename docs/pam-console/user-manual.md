@@ -35,7 +35,20 @@ PAM (Polynize Agent Management) is the marketing engine: it takes an idea, shape
 - **Gate 2 · Article**: April drafts the long form (300 to 450 words) on first view; edit it directly or give her one instruction at a time in the docked chat. The article is the source of truth for every piece cut from it, and it publishes as-is. The interview step is retired.
 - **Gate 3 · Kit**: per-platform ticks (LinkedIn, Instagram, TikTok, YouTube). Confirming creates one **master piece** per asset (article, texts, shorts, long, carousel, images).
 - **Gate 4 · Create**: the masters, video first. Each opens its existing editor (the one-card flow is the next build).
-- **Gate 5 · Ship**: the week laid out from each channel's ideal slots (two a day, morning and early afternoon, per `channel-schedule`), queued as **drafts** first. One button flips the whole wave live through Metricool.
+- **Gate 5 · Ship**: the week laid out from each channel's ideal slots (two a day, morning and early afternoon, per `channel-schedule`), queued as **drafts** first. One button ships the wave: scheduled posts go live through Metricool, hand-posts are emailed to you (see §3c).
+
+### 3c. Two ways a post can ship 🧪 (D41)
+
+Not everything goes through Metricool. Each channel in a lane has a **publish mode**:
+
+- **Scheduled (auto)** the console pushes it to Metricool at its slot. This is everything by default.
+- **Hand-post (manual)** the console prepares the post and **emails it to you to publish yourself**. The default for **Marrs + LinkedIn only**, because posting natively from the phone reaches further than posting through a scheduler.
+
+At Gate 5 the hand-posts are marked ✋ in the week grid and the button says exactly what it will do, for example **"Ship · schedule 16, send me 3"**. If a whole wave is hand-posted, Metricool does not need to be connected at all.
+
+**The email** arrives once per wave, not once per post, and is built to be used on a phone: the post copy sits in one grey block so a long-press selects the whole thing, the **first comment** (where the link goes) is separate, and media are plain links you can open and save to the camera roll. Nothing in that email is scheduled. Nothing goes out until you post it.
+
+*How it works:* the mode is stamped onto each calendar entry when the wave is **planned**, so changing a lane's setting later never rewrites how an already-planned wave goes out. Entries planned before this existed are treated as scheduled, which is how they were already behaving.
 
 The old stream dashboard is intact at **`/console/marketing/streams`** (brand voice, series, media library and concepts all still live there); parts of it will be repurposed into the gates.
 
@@ -197,9 +210,10 @@ Organisational Architect · High-Stakes Operator · Revenue Accelerator · Talen
 - State survives a reload at every step.
 
 ### Deeper references
-- `decisions.md` — the load-bearing decision log (D1–D27).
+- `decisions.md` — the load-bearing decision log (D1 to D41).
 - `production-model.md` — the concept→piece→publish model in detail.
 - `testing-checklist.md` — what to verify in the running console.
+- `output-spec.md` — what a finished post must look like per platform (sizes, safe areas, post types).
 - `concept-extraction.md`, `brand-voice-builder-prompt.md`, `april-skills/` — the intelligence behind April.
 
 ---
