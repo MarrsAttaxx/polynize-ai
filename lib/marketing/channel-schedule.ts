@@ -30,7 +30,31 @@ export const NETWORKS: readonly Network[] = ['linkedin', 'instagram', 'tiktok', 
 /** 'HH:mm' local times per network. */
 export type ChannelSlots = Record<Network, string[]>;
 
-export type LaneChannelSchedule = { timezone: string; channels: ChannelSlots };
+/**
+ * HOW a lane publishes to a channel, which is not the same question as when.
+ *
+ * Marrs, after watching his own numbers: "posting content via platforms like Metricool
+ * severely restricts reach... for my personal LinkedIn posts, we have to have a way to
+ * alert me with the content. I'll do that on my own via my phone, which just supercharges
+ * reach in my experience."
+ *
+ * So the console stops assuming every post goes out through the scheduler.
+ *   'auto'   the wave is scheduled through Metricool, hands off.
+ *   'manual' the console prepares the post and SENDS IT TO HIM, and he posts it himself.
+ *
+ * There is no published evidence either way on the reach penalty (LinkedIn does not
+ * comment, and no study compares native against scheduler posting on a real sample). His
+ * own observation is therefore the best evidence available, which is exactly the sort of
+ * claim a setting should encode rather than an argument should settle.
+ */
+export type PublishMode = 'auto' | 'manual';
+export type ChannelModes = Record<Network, PublishMode>;
+
+export type LaneChannelSchedule = {
+  timezone: string;
+  channels: ChannelSlots;
+  modes: ChannelModes;
+};
 
 /**
  * PLACEHOLDERS pending the Metricool best-times spike (gates-build-plan Step 0).
@@ -46,6 +70,21 @@ export const DEFAULT_CHANNEL_SLOTS: ChannelSlots = {
   youtube: ['10:00', '15:00'],
 };
 
+/**
+ * WHERE MANUAL IS THE DEFAULT, and why it is per lane rather than global.
+ *
+ * Marrs: "I don't actually mind it for the Polynize stream because those ones I usually
+ * share with a comment on my own personal page. I don't mind for Polynize, but for my
+ * personal LinkedIn posts..." So his own LinkedIn is hand-posted and everything else,
+ * including the Polynize page, goes through Metricool.
+ *
+ * LinkedIn is also the only channel where the question arises at all: it is where he has
+ * seen the difference, and where the document carousel cannot be scheduled by us anyway.
+ */
+const MANUAL_BY_DEFAULT: Record<string, Network[]> = {
+  marrs: ['linkedin'],
+};
+
 const SAFE_LANE = /^[a-z0-9_-]{1,40}$/;
 
 function keyFor(lane: string): string {
@@ -55,10 +94,15 @@ function keyFor(lane: string): string {
 
 const HHMM = /^([01]\d|2[0-3]):[0-5]\d$/;
 
-export function defaultChannelSchedule(): LaneChannelSchedule {
+export function defaultChannelSchedule(lane?: string): LaneChannelSchedule {
   const channels = {} as ChannelSlots;
-  for (const n of NETWORKS) channels[n] = [...DEFAULT_CHANNEL_SLOTS[n]];
-  return { timezone: DEFAULT_TIMEZONE, channels };
+  const modes = {} as ChannelModes;
+  const manual = new Set(lane ? (MANUAL_BY_DEFAULT[lane] ?? []) : []);
+  for (const n of NETWORKS) {
+    channels[n] = [...DEFAULT_CHANNEL_SLOTS[n]];
+    modes[n] = manual.has(n) ? 'manual' : 'auto';
+  }
+  return { timezone: DEFAULT_TIMEZONE, channels, modes };
 }
 
 /**
@@ -81,16 +125,29 @@ function normalizeSlots(raw: unknown, network: Network): string[] {
 }
 
 /** Tolerant parse of whatever is on disk: bad slots dropped, missing networks defaulted. */
-export function normalizeChannelSchedule(x: unknown): LaneChannelSchedule {
+export function normalizeChannelSchedule(x: unknown, lane?: string): LaneChannelSchedule {
   const o = (x && typeof x === 'object' ? x : {}) as Record<string, unknown>;
   const timezone =
     typeof o.timezone === 'string' && o.timezone.trim() ? o.timezone.trim() : DEFAULT_TIMEZONE;
   const rawChannels = (
     o.channels && typeof o.channels === 'object' ? o.channels : {}
   ) as Record<string, unknown>;
+  const rawModes = (o.modes && typeof o.modes === 'object' ? o.modes : {}) as Record<
+    string,
+    unknown
+  >;
+  // The lane matters here: a file written before modes existed has none, and defaulting
+  // those to 'auto' would quietly start pushing his personal LinkedIn through Metricool,
+  // which is the exact behaviour this setting exists to prevent. So a missing mode falls
+  // back to the LANE's default, not to a global one.
+  const fallback = defaultChannelSchedule(lane).modes;
   const channels = {} as ChannelSlots;
-  for (const n of NETWORKS) channels[n] = normalizeSlots(rawChannels[n], n);
-  return { timezone, channels };
+  const modes = {} as ChannelModes;
+  for (const n of NETWORKS) {
+    channels[n] = normalizeSlots(rawChannels[n], n);
+    modes[n] = rawModes[n] === 'manual' ? 'manual' : rawModes[n] === 'auto' ? 'auto' : fallback[n];
+  }
+  return { timezone, channels, modes };
 }
 
 /**
@@ -101,20 +158,22 @@ export async function getChannelSchedule(lane: string): Promise<LaneChannelSched
   const key = keyFor(lane);
   try {
     if (isBucketConfigured()) {
-      return normalizeChannelSchedule(JSON.parse((await getObjectText(key)) || 'null'));
+      return normalizeChannelSchedule(JSON.parse((await getObjectText(key)) || 'null'), lane);
     }
     const s = (await getSheetState(key)) as { schedule?: unknown } | null;
-    return normalizeChannelSchedule(s?.schedule);
+    return normalizeChannelSchedule(s?.schedule, lane);
   } catch (err) {
     console.error(`[channel-schedule] read failed for ${lane}:`, err);
-    return defaultChannelSchedule();
+    return defaultChannelSchedule(lane);
   }
 }
 
 export async function saveChannelSchedule(lane: string, s: LaneChannelSchedule): Promise<void> {
   const key = keyFor(lane);
   // Normalize on the way in, so garbage can never be persisted and read back as truth.
-  const clean = normalizeChannelSchedule(s);
+  // The lane is passed so an explicitly saved mode survives and a missing one still lands
+  // on the lane's default rather than on a global assumption.
+  const clean = normalizeChannelSchedule(s, lane);
   if (isBucketConfigured()) {
     await putObjectText(key, JSON.stringify(clean, null, 2));
   } else {

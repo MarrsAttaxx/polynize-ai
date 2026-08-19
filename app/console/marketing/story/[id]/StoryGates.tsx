@@ -25,7 +25,14 @@ import { kitForLane, tickCount, type KitItem } from '@/lib/marketing/kit';
 import g from '../gates.module.css';
 
 type PieceRow = { id: string; label: string; master: string; kind: string; href: string };
-type WaveCell = { day: string; network: string; label: string; video: boolean };
+type WaveCell = {
+  day: string;
+  network: string;
+  label: string;
+  video: boolean;
+  /** True when this one is his to post by hand rather than Metricool's to schedule. */
+  manual: boolean;
+};
 export type WaveData = {
   planned: boolean;
   cells: WaveCell[];
@@ -34,6 +41,11 @@ export type WaveData = {
   count: number;
   /** Entries actually scheduled or published, as opposed to still sitting as drafts. */
   live: number;
+  /** Split of the wave: what Metricool schedules vs what he posts himself (D41). */
+  auto: number;
+  manual: number;
+  /** Manual entries already sent to him. */
+  handed: number;
   metricoolReady: boolean;
 };
 
@@ -313,11 +325,16 @@ export function StoryGates({
         body: JSON.stringify({ action: 'ship' }),
       });
       const b = (await res.json().catch(() => null)) as
-        | { shipped?: number; failed?: number; error?: string }
+        | { shipped?: number; failed?: number; handed?: number; error?: string }
         | null;
       if (!res.ok) {
         setErr(b?.error ?? 'The ship failed.');
         return;
+      }
+      if (b?.handed) {
+        setErr(
+          `${b.handed} sent to your email to post by hand${b.shipped ? `, ${b.shipped} scheduled` : ''}. They stay as drafts on the calendar until you post them.`
+        );
       }
       if (b?.failed) {
         // A partial ship is NOT shipped. The first version flipped the gate anyway,
@@ -563,8 +580,13 @@ export function StoryGates({
                             {wave.cells
                               .filter((c) => c.day === d && c.network === n)
                               .map((c, i) => (
-                                <span key={i} className={`${g.chip} ${c.video ? g.chipV : ''}`}>
+                                <span
+                                  key={i}
+                                  className={`${g.chip} ${c.video ? g.chipV : ''} ${c.manual ? g.chipHand : ''}`}
+                                  title={c.manual ? 'yours to post by hand' : undefined}
+                                >
                                   {c.label}
+                                  {c.manual ? ' ✋' : ''}
                                 </span>
                               ))}
                           </td>
@@ -575,15 +597,23 @@ export function StoryGates({
                 </table>
               </div>
             )}
-            {!wave.metricoolReady ? (
+            {wave.manual > 0 ? (
               <p className={g.honesty}>
-                Metricool is not connected on this environment. The wave is queued as calendar
-                drafts; the ship button needs the live console.
+                {wave.manual} of these are yours to post by hand (marked ✋), because
+                scheduled posting costs reach on your own LinkedIn. Shipping emails them to
+                you and schedules the rest.
+              </p>
+            ) : null}
+            {!wave.metricoolReady && wave.auto > 0 ? (
+              <p className={g.honesty}>
+                Metricool is not connected on this environment, so the {wave.auto} scheduled
+                {wave.auto === 1 ? ' post' : ' posts'} cannot go out from here.
               </p>
             ) : null}
           </div>
           <p className={g.hint}>
-            queued as drafts on the calendar. The button flips the whole wave live.
+            queued as drafts on the calendar. Shipping schedules what Metricool handles and
+            emails you the rest.
           </p>
           {err ? <p className={g.err}>{err}</p> : null}
           <div className={g.bar}>
@@ -591,9 +621,22 @@ export function StoryGates({
               type="button"
               className={g.go}
               onClick={ship}
-              disabled={shipping || wave.count === 0 || !wave.metricoolReady}
+              disabled={
+                shipping ||
+                wave.count === 0 ||
+                // A wave that is entirely hand-posted needs no Metricool at all, so an
+                // unconfigured environment must not block it. That is the Marrs LinkedIn
+                // case exactly.
+                (!wave.metricoolReady && wave.auto > 0)
+              }
             >
-              {shipping ? 'Shipping…' : `Ship the wave · ${wave.count} pieces`}
+              {shipping
+                ? 'Shipping…'
+                : wave.manual > 0 && wave.auto > 0
+                  ? `Ship · schedule ${wave.auto}, send me ${wave.manual}`
+                  : wave.manual > 0
+                    ? `Send me ${wave.manual} to post`
+                    : `Ship the wave · ${wave.auto} pieces`}
             </button>
           </div>
         </>

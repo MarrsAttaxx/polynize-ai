@@ -70,6 +70,9 @@ export default async function StoryPage({
     networks: [],
     count: 0,
     live: 0,
+    auto: 0,
+    manual: 0,
+    handed: 0,
     metricoolReady: isMetricoolConfigured(),
   };
   if (story.gate === 5 || story.gate === 'shipped') {
@@ -83,6 +86,11 @@ export default async function StoryPage({
       wave.live = entries.filter(
         (e) => e.status === 'scheduled' || e.status === 'published'
       ).length;
+      // The wave now has two halves (D41): what Metricool schedules, and what he posts by
+      // hand. The button cannot claim to ship the whole thing, so the gate counts both.
+      wave.manual = entries.filter((e) => e.publish_mode === 'manual').length;
+      wave.auto = entries.length - wave.manual;
+      wave.handed = entries.filter((e) => e.publish_mode === 'manual' && e.handed_at).length;
 
       const dayKeys = [...new Set(entries.map((e) => (e.scheduled_at ?? '').slice(0, 10)))].sort();
       const dayLabel = (d: string) => {
@@ -116,6 +124,7 @@ export default async function StoryPage({
           network: e.channel,
           label: `${short[m?.master ?? ''] ?? 'Post'}${n > 1 || (m && (m.master === 'shorts' || m.master === 'texts' || m.master === 'images')) ? ` ${n}` : ''}`,
           video: m?.kind === 'video',
+          manual: e.publish_mode === 'manual',
         });
       }
     } catch (err) {

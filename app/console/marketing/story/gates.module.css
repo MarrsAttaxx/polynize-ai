@@ -410,6 +410,12 @@
 .chipV {
   color: var(--mint, #69fccb);
 }
+/* A hand-post: his to publish, not Metricool's to schedule. Amber because it is neither
+   done nor broken, it is waiting on a person. */
+.chipHand {
+  color: var(--amber, #f0b86b);
+  border: 1px solid rgba(240, 184, 107, 0.4);
+}
 .honesty {
   font-family: var(--font-jetbrains-mono), monospace;
   font-size: 11px;

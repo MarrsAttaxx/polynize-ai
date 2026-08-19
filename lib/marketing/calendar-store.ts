@@ -45,6 +45,21 @@ export type CalendarEntry = {
    *  public URLs and sent to Metricool at publish time. Optional; existing entries
    *  stay valid (isValidEntry unchanged). Maps into 0009's variant jsonb. */
   media?: string[];
+  /**
+   * HOW this entry reaches the platform, stamped when the wave is planned (D41).
+   *
+   * 'auto' goes through Metricool at `scheduled_at`. 'manual' is prepared by the console
+   * and sent to the operator to post himself, because he measures better reach posting
+   * natively from his phone on his own LinkedIn.
+   *
+   * Stamped at PLAN time rather than read at ship time on purpose: changing the lane's
+   * setting later must not silently rewrite how an already-planned wave will go out.
+   * Absent on entries planned before this existed, which are treated as 'auto', matching
+   * how they were already behaving.
+   */
+  publish_mode?: 'auto' | 'manual';
+  /** When the operator was sent a manual post to publish by hand. */
+  handed_at?: string;
   created_at: string;
   updated_at?: string;
 };

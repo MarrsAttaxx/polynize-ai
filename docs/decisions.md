@@ -737,3 +737,26 @@ All three stages read the same materials through one `gather()`. Agreement about
 
 **Deliberately not in v1:** the one-card Create flow, per-channel caption generation (drafts carry the master's own text until then, hand-tuned on the calendar screens that already exist), prezie frame export, the Learn loop (Metricool analytics pull: built during the four-story hold, since it needs published data to pull).
 
+---
+
+## D41: Not everything ships through the scheduler. Marrs's own LinkedIn is hand-posted
+
+**Adopted 19 August 2026**, from Marrs's own measurement rather than from any published evidence: *"posting content via platforms like Metricool severely restricts reach... for my personal LinkedIn posts, we have to have a way to alert me with the content. I'll do that on my own via my phone, which just supercharges reach in my experience."* And the boundary he drew: *"I don't actually mind it for the Polynize stream because those ones I usually share with a comment on my own personal page."*
+
+**The decision.** A lane's schedule now carries a **publish mode per channel**, alongside its time slots:
+
+- **`auto`** the wave schedules through Metricool, hands off. Everything except the one case below.
+- **`manual`** the console prepares the post and **emails it to him to publish himself**. Default for **marrs + linkedin only**.
+
+Gate 5's button stops claiming to do one thing. It reads "schedule 16, send me 3", the hand-posts are marked in the week grid, and a wave that is entirely hand-posted no longer requires Metricool to be connected at all.
+
+**Why the mode is stamped at PLAN time, not read at ship time.** Changing a lane's setting later must not silently rewrite how an already-planned wave goes out. The stamp lives on the calendar entry (`publish_mode`), and an entry planned before this existed has no stamp and is treated as `auto`, which is how it was already behaving.
+
+**Why the migration is lane-aware.** `normalizeChannelSchedule` takes the lane, so a config file written before modes existed falls back to that lane's default rather than to a global `auto`. Without it, the first read of any existing file would have quietly started pushing his personal LinkedIn through Metricool, which is the exact behaviour the setting exists to prevent. Nine tests cover this, including the legacy-file case in both directions.
+
+**The hand-post brief is a deliverable, not a notification.** One email per wave, not per post. The copy sits in a single selectable block so a long-press on a phone selects the whole post and nothing else; the first comment is separate because the link belongs there rather than in the body; media are plain links he can open and save to the camera roll. Best effort by contract, like the CRM ping: it never throws, because a prepared-but-unannounced post is recoverable from the calendar while an exception would abort the rest of an otherwise fine wave.
+
+**The evidence position, stated honestly.** There is no public study comparing native posting against scheduler posting on LinkedIn, and LinkedIn does not comment on it. His own observation is therefore the best evidence available. That makes it exactly the sort of claim a **setting** should encode rather than an argument should settle, and it is why the mode is configurable per channel instead of hardcoded.
+
+**Follows from this, and still to build:** the LinkedIn document carousel is a hand-post by nature, since we cannot schedule a document through Metricool anyway (see `output-spec.md` section 0), so the PDF has to reach his phone. Marrs: *"we'll find a way to create the PDFs in the console and then present them to me to post organically myself via the mobile app."*
+

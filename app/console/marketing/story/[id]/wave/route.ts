@@ -33,6 +33,8 @@ import {
   type Network,
 } from '@/lib/marketing/channel-schedule';
 import { publishEntry } from '@/lib/marketing/publish';
+import { sendHandPostBrief, handPostFromEntry } from '@/lib/marketing/hand-post';
+import { storyHeadline } from '@/lib/marketing/story-store';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -128,11 +130,45 @@ export async function POST(
 
   if (action === 'ship') {
     const drafts = mine.filter((e) => e.status === 'draft' && e.scheduled_at);
+
+    /**
+     * TWO KINDS OF SHIP (D41). Entries stamped 'manual' never touch Metricool: they are
+     * prepared, emailed to the operator, and left as drafts on the calendar until he
+     * posts them and marks them himself. Everything else schedules as before.
+     *
+     * Entries planned before publish_mode existed have no stamp and are treated as auto,
+     * which is exactly how they were already behaving.
+     */
+    const handList = drafts.filter((e) => e.publish_mode === 'manual');
+    const autoList = drafts.filter((e) => e.publish_mode !== 'manual');
+
+    let handed = 0;
+    if (handList.length > 0) {
+      const brief = await sendHandPostBrief(
+        story.lane,
+        storyHeadline(story.idea, 70),
+        handList.map(handPostFromEntry)
+      );
+      handed = handList.length;
+      // Stamp them so a second ship does not re-send the same brief, and so the gate can
+      // show that they went out. The email itself is best effort and never throws, so a
+      // failed send is logged and the stamp still records that the attempt happened.
+      const at = new Date().toISOString();
+      for (const e of handList) {
+        try {
+          await saveEntry(owner, { ...e, handed_at: at });
+        } catch (err) {
+          console.error('[story.wave] hand-post stamp failed:', err);
+        }
+      }
+      if (brief.skipped) console.error(`[story.wave] hand-post brief: ${brief.skipped}`);
+    }
+
     let shipped = 0;
     let failed = 0;
     let skipped = 0;
     let firstError: string | null = null;
-    for (const entry of drafts) {
+    for (const entry of autoList) {
       // Fresh read per entry: the request-start snapshot goes stale over a
       // minutes-long run, and publishing from it is how a retry double-posted.
       // An entry someone else already flipped is skipped, not re-published.
@@ -157,11 +193,11 @@ export async function POST(
     await unlock();
     if (shipped === 0 && failed > 0) {
       return NextResponse.json(
-        { error: firstError ?? 'nothing could be scheduled', shipped, failed, skipped },
+        { error: firstError ?? 'nothing could be scheduled', shipped, failed, skipped, handed },
         { status: 502 }
       );
     }
-    return NextResponse.json({ shipped, failed, skipped });
+    return NextResponse.json({ shipped, failed, skipped, handed });
   }
 
   // PLAN. Expand kit placements into missing draft entries at next open slots.
@@ -214,6 +250,9 @@ export async function POST(
             scheduled_at: slot?.dateTime,
             status: 'draft',
             media: piece.media ?? [],
+            // Stamped now, not read at ship time: changing the lane's setting later must
+            // not silently rewrite how an already-planned wave goes out.
+            publish_mode: schedule.modes[placement.network as Network] ?? 'auto',
             created_at: new Date().toISOString(),
           };
           await saveEntry(owner, entry);
