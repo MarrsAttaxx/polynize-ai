@@ -57,7 +57,7 @@ export default async function MarketingPiecePage({
    * The source text behind this piece, for April's chat AND for the operator to read.
    *
    * Resolved through conceptBodyForPiece so this page cannot disagree with what the
-   * draft routes use: a Gates piece resolves to its story's ARTICLE, a streams piece
+   * draft routes use: a Gates piece resolves to its narrative's ARTICLE, a streams piece
    * to its concept doc. Marrs hit the disagreement on the first walkthrough, in Gate
    * 4: "I can't remember what the script is. I need a version of the script here I
    * can look at", and every draft button answered "no concept to work from".
@@ -68,7 +68,7 @@ export default async function MarketingPiecePage({
   })) || undefined;
 
   // What to call it on screen, since the two eras of piece have different sources.
-  const sourceLabel = piece.story_ref ? 'The article' : 'The concept';
+  const sourceLabel = piece.narrative_ref ? 'The article' : 'The concept';
 
   // Non-video pieces (text) open on the text output screen; video on the script
   // screen. Both carry the on-screen April chat.

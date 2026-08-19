@@ -1,5 +1,5 @@
 /**
- * POST /console/marketing/story/[id]/chat: one instruction to April (D40).
+ * POST /console/marketing/narrative/[id]/chat: one instruction to April (D40).
  *
  * She applies exactly the instruction to the article and the revised article is
  * saved before the response returns, so a reload after a chat edit never loses
@@ -10,7 +10,7 @@
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/console-auth';
-import { getStory, saveStory } from '@/lib/marketing/story-store';
+import { getNarrative, saveNarrative } from '@/lib/marketing/narrative-store';
 import { reviseArticle } from '@/lib/marketing/article-draft';
 
 export const dynamic = 'force-dynamic';
@@ -34,25 +34,25 @@ export async function POST(
     return NextResponse.json({ error: 'say what to change' }, { status: 400 });
   }
 
-  let story;
+  let narrative;
   try {
-    story = await getStory(id);
+    narrative = await getNarrative(id);
   } catch (err) {
-    console.error('[story.chat] read failed:', err);
-    return NextResponse.json({ error: 'could not read the story' }, { status: 502 });
+    console.error('[narrative.chat] read failed:', err);
+    return NextResponse.json({ error: 'could not read the narrative' }, { status: 502 });
   }
-  if (!story) return NextResponse.json({ error: 'story not found' }, { status: 404 });
-  if (!story.article.trim()) {
+  if (!narrative) return NextResponse.json({ error: 'narrative not found' }, { status: 404 });
+  if (!narrative.article.trim()) {
     return NextResponse.json({ error: 'no article to edit yet' }, { status: 400 });
   }
 
   try {
-    const article = await reviseArticle(story.lane, story.article, instruction);
-    story.article = article;
-    await saveStory(story);
+    const article = await reviseArticle(narrative.lane, narrative.article, instruction);
+    narrative.article = article;
+    await saveNarrative(narrative);
     return NextResponse.json({ article });
   } catch (err) {
-    console.error('[story.chat] revise failed:', err);
+    console.error('[narrative.chat] revise failed:', err);
     return NextResponse.json(
       { error: 'April is unavailable right now. Try again in a moment.' },
       { status: 502 }

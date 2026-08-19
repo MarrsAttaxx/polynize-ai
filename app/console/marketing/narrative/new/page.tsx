@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation';
 import { getCurrentUser } from '@/lib/console-auth';
 import { listIdeas } from '@/lib/marketing/idea-store';
-import { NewStory, type IdeaRow } from './NewStory';
+import { NewNarrative, type IdeaRow } from './NewNarrative';
 
 export const dynamic = 'force-dynamic';
 
@@ -12,7 +12,7 @@ export const dynamic = 'force-dynamic';
  * this screen is a chooser and a spent idea is not a choice. They stay in the
  * inbox screens untouched.
  */
-export default async function NewStoryPage() {
+export default async function NewNarrativePage() {
   const user = await getCurrentUser();
   if (!user) return null;
   if (user.scope.type === 'client') {
@@ -46,5 +46,5 @@ export default async function NewStoryPage() {
   // The chooser shows a screenful, not the whole archive: the inbox remains the archive.
   const recent = rows.slice(0, 8).map(({ at: _at, ...r }) => r);
 
-  return <NewStory ideas={recent} />;
+  return <NewNarrative ideas={recent} />;
 }

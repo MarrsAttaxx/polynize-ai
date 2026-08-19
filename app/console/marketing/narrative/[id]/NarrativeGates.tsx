@@ -2,12 +2,12 @@
 
 /**
  * GATES 2 TO 5 (D40). One gate on screen at a time, one mint decision bar, back goes
- * back. The server page loads the story and everything the current gate needs; this
+ * back. The server page loads the narrative and everything the current gate needs; this
  * component owns the interactions and the gate transitions.
  *
  * Design decisions carried from the approved mockup, verbatim:
  * - Gate 2 is the article full screen with April docked beside it. The old interview
- *   is dead: the article is drafted the moment the story arrives here, and every
+ *   is dead: the article is drafted the moment the narrative arrives here, and every
  *   refinement is either a direct edit or one instruction to April.
  * - Gate 3 is the kit, per platform, defaults on. The count is pieces of content,
  *   never "placements": that word meant nothing to the operator.
@@ -20,7 +20,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import type { Story } from '@/lib/marketing/story-store';
+import type { Narrative } from '@/lib/marketing/narrative-store';
 import {
   kitRows,
   tickCount,
@@ -63,25 +63,25 @@ const NET_LABEL: Record<string, string> = {
   youtube: 'YT',
 };
 
-export function StoryGates({
+export function NarrativeGates({
   initial,
   pieces,
   wave,
 }: {
-  initial: Story;
+  initial: Narrative;
   pieces: PieceRow[];
   wave: WaveData;
 }) {
   const router = useRouter();
-  const [story, setStory] = useState(initial);
+  const [narrative, setNarrative] = useState(initial);
   const [busy, setBusy] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
-  // A story can legitimately sit at gate 1 (create's second write failed after the
+  // A narrative can legitimately sit at gate 1 (create's second write failed after the
   // first committed, or a garbled gate normalized back to 1). This screen has no
   // gate-1 branch, so treat it as gate 2: rendering the article gate IS the recovery.
-  const gate = story.gate === 1 ? 2 : story.gate;
+  const gate = narrative.gate === 1 ? 2 : narrative.gate;
 
-  const base = `/console/marketing/story/${story.id}`;
+  const base = `/console/marketing/narrative/${narrative.id}`;
 
   /** One write path for gate moves and field saves; the server owns validation. */
   const put = useCallback(
@@ -95,7 +95,7 @@ export function StoryGates({
         const b = (await res.json().catch(() => null)) as { error?: string } | null;
         throw new Error(b?.error ?? 'save failed');
       }
-      return (await res.json()) as { story: Story };
+      return (await res.json()) as { narrative: Narrative };
     },
     [base]
   );
@@ -117,14 +117,14 @@ export function StoryGates({
     }
   }, [put]);
 
-  const moveGate = async (to: Story['gate'], refresh = false) => {
+  const moveGate = async (to: Narrative['gate'], refresh = false) => {
     if (busy) return;
     setBusy('gate');
     setErr(null);
     try {
       await flushArticle();
-      const { story: next } = await put({ gate: to });
-      setStory(next);
+      const { narrative: next } = await put({ gate: to });
+      setNarrative(next);
       if (refresh) router.refresh();
     } catch (e) {
       setErr(e instanceof Error ? e.message : 'save failed');
@@ -159,7 +159,7 @@ export function StoryGates({
         if (res.ok && b?.article) {
           setArticle(b.article);
           latestArticle.current = b.article;
-          setStory((s) => ({ ...s, article: b.article as string }));
+          setNarrative((s) => ({ ...s, article: b.article as string }));
         } else {
           setErr(b?.error ?? 'The draft came back empty.');
           setDraftErr(true);
@@ -202,7 +202,7 @@ export function StoryGates({
       if (res.ok && b?.article) {
         setArticle(b.article);
         latestArticle.current = b.article;
-        setStory((s) => ({ ...s, article: b.article as string }));
+        setNarrative((s) => ({ ...s, article: b.article as string }));
       } else {
         setErr(b?.error ?? 'The draft came back empty.');
         setDraftErr(true);
@@ -237,7 +237,7 @@ export function StoryGates({
       if (res.ok && b?.article) {
         setArticle(b.article);
         latestArticle.current = b.article;
-        setStory((s) => ({ ...s, article: b.article as string }));
+        setNarrative((s) => ({ ...s, article: b.article as string }));
         setChat((c) => [...c, { who: 'april', text: 'Done. The article is updated.' }]);
       } else {
         setChat((c) => [
@@ -254,9 +254,9 @@ export function StoryGates({
 
   /* ---------------- Gate 3: the kit ---------------- */
 
-  const rows: KitRow[] = kitRows(story.lane);
+  const rows: KitRow[] = kitRows(narrative.lane);
   /**
-   * A saved kit is RESOLVED before it becomes tick state, so a story saved under the v1
+   * A saved kit is RESOLVED before it becomes tick state, so a narrative saved under the v1
    * catalogue opens with its retired ids already expanded into the typed ones. Without that,
    * every box would render unticked, the count would read 0, and the confirm button would be
    * disabled with nothing on screen saying why.
@@ -264,8 +264,8 @@ export function StoryGates({
    * A kit that resolves to nothing falls back to the lane's defaults for the same reason.
    */
   const [ticks, setTicks] = useState<string[]>(() => {
-    const saved = resolveTicks(initial.kit ?? [], story.lane);
-    return saved.length > 0 ? saved : defaultTicks(story.lane);
+    const saved = resolveTicks(initial.kit ?? [], narrative.lane);
+    return saved.length > 0 ? saved : defaultTicks(narrative.lane);
   });
   /** A row owns one id or a whole series, and a series is one decision. */
   const toggleRow = (row: KitRow) =>
@@ -273,7 +273,7 @@ export function StoryGates({
       const on = row.ids.some((id) => t.includes(id));
       return on ? t.filter((x) => !row.ids.includes(x)) : [...t, ...row.ids];
     });
-  const count = tickCount(ticks, story.lane);
+  const count = tickCount(ticks, narrative.lane);
 
   const buildKit = async () => {
     if (busy) return;
@@ -291,8 +291,8 @@ export function StoryGates({
         return;
       }
       router.refresh();
-      const { story: next } = await put({ gate: 4 });
-      setStory(next);
+      const { narrative: next } = await put({ gate: 4 });
+      setNarrative(next);
     } catch {
       setErr('Network error. Try again.');
     } finally {
@@ -363,8 +363,8 @@ export function StoryGates({
         router.refresh();
         return;
       }
-      const { story: next } = await put({ gate: 'shipped' });
-      setStory(next);
+      const { narrative: next } = await put({ gate: 'shipped' });
+      setNarrative(next);
       router.refresh();
     } catch {
       setErr('Network error. Try again.');
@@ -395,7 +395,7 @@ export function StoryGates({
             aria-label="Back"
             onClick={() => {
               if (gate === 2) router.push('/console/marketing');
-              else moveGate((gates[gateIx - 1] ?? 2) as Story['gate'], true);
+              else moveGate((gates[gateIx - 1] ?? 2) as Narrative['gate'], true);
             }}
           >
             ‹
@@ -540,7 +540,7 @@ export function StoryGates({
         <>
           {pieces.length === 0 ? (
             <p className={g.meta}>
-              {(story.piece_ids?.length ?? 0) > 0
+              {(narrative.piece_ids?.length ?? 0) > 0
                 ? 'Loading the masters…'
                 : 'No masters yet. Go back a gate and confirm the kit.'}
             </p>

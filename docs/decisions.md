@@ -719,11 +719,11 @@ All three stages read the same materials through one `gather()`. Agreement about
 
 ---
 
-## D40: The Gates. the console's marketing flow is a linear pipeline of five gates over one Story
+## D40: The Gates. the console's marketing flow is a linear pipeline of five gates over one Narrative
 
 **Adopted 18 August 2026, the same day D39 shipped, and superseding most of it.** Marrs reset the console's direction ("in the attempt to make it the everything platform for my content, it is now the nothing platform") and the redesign was workshopped through a clickable mockup to a build plan he answered five decisions on, verbatim: "1 yes 2 draft-first 3 yes 4 yes 5 yes".
 
-**The shape.** One Story moves through five gates, one screen per gate, one mint decision bar per screen, back goes back, and you advance only by deciding:
+**The shape.** One Narrative moves through five gates, one screen per gate, one mint decision bar per screen, back goes back, and you advance only by deciding:
 
 1. **Idea.** The inbox plus a fresh-idea box. Two decisions: which idea, which lane. The lane (Marrs = opinion in his own voice, Polynize = educational; labelled from streamLabel, renamed from "Marrs Attacks" on 19 August) is the fork that sets channels, voice and CTA, and lane ids deliberately equal stream ids so brand voice and Metricool mappings resolve with no translation.
 2. **Article.** The long form, 300 to 450 words, drafted by April the moment the gate is first seen and refined by direct edit or one instruction at a time in a docked chat. **The interview is dead** (decision 1). The article is the source of truth for everything downstream and publishes as-is.
@@ -731,11 +731,11 @@ All three stages read the same materials through one `gather()`. Agreement about
 4. **Create.** The masters, video first because it is the long pole. V1 links to the existing editors; the one-card-at-a-time flow is the next build.
 5. **Ship.** The kit expands into per-channel calendar entries as DRAFTS at each channel's next open slot (decision 2: draft-first), and one button flips the whole wave live through the existing publishEntry path.
 
-**The cadence layer.** Ultimate state, Marrs's words: "at least two posts a day per channel per platform". Slots are per channel (channel-schedule.ts), two a day, morning and early afternoon, staggered across networks. The times shipped as placeholders pending the Metricool best-times spike. The channel's queue is one queue across all stories, so two stories in the same week interleave rather than collide.
+**The cadence layer.** Ultimate state, Marrs's words: "at least two posts a day per channel per platform". Slots are per channel (channel-schedule.ts), two a day, morning and early afternoon, staggered across networks. The times shipped as placeholders pending the Metricool best-times spike. The channel's queue is one queue across all narratives, so two narratives in the same week interleave rather than collide.
 
-**What this supersedes and what it keeps.** The board replaces the stream-cards dashboard as the marketing home (decision 4); the old dashboard moved intact to /console/marketing/streams because Marrs was explicit that the prior design is set aside, not deleted: "we're going to have to repurpose some things from there. The image things, there are some interfaces we're going to have to repurpose." Concepts migrate to Stories only when picked up, never in bulk (decision 5). D39's staged build survives inside Gate 4's script editor. The template picker as a user-facing choice is gone from this flow; recipes survive as kit internals.
+**What this supersedes and what it keeps.** The board replaces the stream-cards dashboard as the marketing home (decision 4); the old dashboard moved intact to /console/marketing/streams because Marrs was explicit that the prior design is set aside, not deleted: "we're going to have to repurpose some things from there. The image things, there are some interfaces we're going to have to repurpose." Concepts migrate to Narratives only when picked up, never in bulk (decision 5). D39's staged build survives inside Gate 4's script editor. The template picker as a user-facing choice is gone from this flow; recipes survive as kit internals.
 
-**Deliberately not in v1:** the one-card Create flow, per-channel caption generation (drafts carry the master's own text until then, hand-tuned on the calendar screens that already exist), prezie frame export, the Learn loop (Metricool analytics pull: built during the four-story hold, since it needs published data to pull).
+**Deliberately not in v1:** the one-card Create flow, per-channel caption generation (drafts carry the master's own text until then, hand-tuned on the calendar screens that already exist), prezie frame export, the Learn loop (Metricool analytics pull: built during the four-narrative hold, since it needs published data to pull).
 
 ---
 
@@ -778,9 +778,9 @@ Gate 5's button stops claiming to do one thing. It reads "schedule 16, send me 3
 
 ### The four rules the file now enforces, each one a thing that was wrong
 
-**1. One output, one piece, for anything with its own words.** This is the load-bearing decision and the one three independent reviews converged on. `piece.master` is used as a unique key per story in both the build route and the wave route, so two outputs sharing a master collapse to one piece, last write wins, and the loser keeps its draft while being invisible and never planned. v1 had exactly that shape: four LinkedIn text posts on one piece with one body, so the wave copied the same text onto four calendar entries. **Naming the frames without splitting the pieces would have shipped three identical posts under three different labels**, which is worse than v1's vagueness because it looks like it worked.
+**1. One output, one piece, for anything with its own words.** This is the load-bearing decision and the one three independent reviews converged on. `piece.master` is used as a unique key per narrative in both the build route and the wave route, so two outputs sharing a master collapse to one piece, last write wins, and the loser keeps its draft while being invisible and never planned. v1 had exactly that shape: four LinkedIn text posts on one piece with one body, so the wave copied the same text onto four calendar entries. **Naming the frames without splitting the pieces would have shipped three identical posts under three different labels**, which is worse than v1's vagueness because it looks like it worked.
 
-So `MasterAsset` gained `texts_hard`, `texts_list` and `texts_field`. The six v1 values are frozen and `texts` now means the **contrarian** frame specifically, which is why an in-flight story's existing text piece is adopted (and retitled) rather than orphaned. Every text placement count is therefore 1, which makes Gate 5's existing `missing = count - have` guard exact rather than approximate, and means **no new persisted field was needed on the piece or the entry**.
+So `MasterAsset` gained `texts_hard`, `texts_list` and `texts_field`. The six v1 values are frozen and `texts` now means the **contrarian** frame specifically, which is why an in-flight narrative's existing text piece is adopted (and retitled) rather than orphaned. Every text placement count is therefore 1, which makes Gate 5's existing `missing = count - have` guard exact rather than approximate, and means **no new persisted field was needed on the piece or the entry**.
 
 **2. Every post carries an image**, per Marrs. `visual` is required on every artifact with no optional escape, so an output that forgets one does not compile.
 
@@ -790,7 +790,7 @@ So `MasterAsset` gained `texts_hard`, `texts_list` and `texts_field`. The six v1
 
 ### Numbers this corrected on the way
 
-**The format registry contradicted the spec, and the registry was the one writing the post.** `linkedin_text.defaultLength` said "150 to 250 words. A quick post is 50 to 100 words" against the spec's sourced 1,300 to 2,500 characters, and that quick-post floor sat **under the ~400 character floor every study agrees on**. `pdf_carousel` said 6 to 10 pages against 7 to 12; `image_carousel` said 5 to 8 slides when the API caps a carousel at 10. All three now match the spec and carry their strength, and for a piece cut from a Story the kit's own spec is preferred, because two length authorities in one prompt means the model follows whichever it read last.
+**The format registry contradicted the spec, and the registry was the one writing the post.** `linkedin_text.defaultLength` said "150 to 250 words. A quick post is 50 to 100 words" against the spec's sourced 1,300 to 2,500 characters, and that quick-post floor sat **under the ~400 character floor every study agrees on**. `pdf_carousel` said 6 to 10 pages against 7 to 12; `image_carousel` said 5 to 8 slides when the API caps a carousel at 10. All three now match the spec and carry their strength, and for a piece cut from a Narrative the kit's own spec is preferred, because two length authorities in one prompt means the model follows whichever it read last.
 
 **The blanket 4,000 character trim was above every platform's cap.** LinkedIn is 3,000 and Instagram and TikTok are 2,200, so `capCopy` now trims in the platform's own unit. Those units are three different things: characters, UTF-16 code units (TikTok's "runes") and bytes (YouTube's description, where an emoji costs three or four).
 
@@ -808,15 +808,60 @@ Three text posts, three different frames, never the same one twice. The count is
 
 Four frames are in the vocabulary and deliberately **off** the screen (win, challenge, recap, explainer). A row he has to decide about every week to serve the rare week he has the material is exactly the overload he named. Explainer is not a default on either lane, because the article and the carousel are already explainers.
 
-**Two risks recorded rather than solved.** The hard moment needs a real cost actually paid, and a 400-word article about an idea usually contains none, so its `doNotAssert` forbids inventing one and it must degrade to the field report. And contrarian fires on both lanes every week, so a story with no actual position must say so rather than manufacture a disagreement.
+**Two risks recorded rather than solved.** The hard moment needs a real cost actually paid, and a 400-word article about an idea usually contains none, so its `doNotAssert` forbids inventing one and it must degrade to the field report. And contrarian fires on both lanes every week, so a narrative with no actual position must say so rather than manufacture a disagreement.
 
 ### Flagged, NOT changed: the cadence arithmetic is wrong and it is Marrs's call
 
-The build plan says 56 weekly slots divided by a 19-post kit is "roughly 3 stories a week". **Slots are not fungible across networks**: a LinkedIn post cannot fill an idle TikTok slot. The honest figure is the per-network floor, which for v1 was **2** (set by Instagram at exactly 14 of 14), and for the typed kit is 1 if LinkedIn respects its own evidence. Section 4 of the output spec measures **4 to 5 LinkedIn posts a week** as the sweet spot; the target of 2 a day is 14. Nothing enforces capacity either: `nextOpenSlots` walks 60 days forward and always finds something, so an oversubscribed channel silently slides posts into future weeks, and past the 60-day walk an entry is created with no `scheduled_at` and is dropped from every wave forever.
+The build plan says 56 weekly slots divided by a 19-post kit is "roughly 3 narratives a week". **Slots are not fungible across networks**: a LinkedIn post cannot fill an idle TikTok slot. The honest figure is the per-network floor, which for v1 was **2** (set by Instagram at exactly 14 of 14), and for the typed kit is 1 if LinkedIn respects its own evidence. Section 4 of the output spec measures **4 to 5 LinkedIn posts a week** as the sweet spot; the target of 2 a day is 14. Nothing enforces capacity either: `nextOpenSlots` walks 60 days forward and always finds something, so an oversubscribed channel silently slides posts into future weeks, and past the 60-day walk an entry is created with no `scheduled_at` and is dropped from every wave forever.
 
 Marrs set the 2-a-day target explicitly, so this is flagged rather than changed. The recommendation is LinkedIn at 1 slot a day on weekdays.
 
 ### The known migration edge, stated plainly
 
-A story that already **planned a wave** under v1 keeps its v1 entries and gains the new typed ones on top, because the wave never deletes a draft the operator did not ask to delete. The plan response returns `extra` so Gate 5 can say so rather than the operator finding out on the grid. A story at Gate 3 or Gate 4 migrates cleanly: its ticks resolve, its pieces are adopted and retitled, and only the two new text masters are created.
+A narrative that already **planned a wave** under v1 keeps its v1 entries and gains the new typed ones on top, because the wave never deletes a draft the operator did not ask to delete. The plan response returns `extra` so Gate 5 can say so rather than the operator finding out on the grid. A narrative at Gate 3 or Gate 4 migrates cleanly: its ticks resolve, its pieces are adopted and retitled, and only the two new text masters are created.
+
+---
+
+## D43: A Story is now a Narrative
+
+**Adopted 19 August 2026.** Marrs, reading his own board: *"I'm not sure what you mean by three stories a week. Are you saying three we were calling stories? I thought you were referring to Instagram stories... Maybe stories is a weird word."*
+
+He was right, and the collision is the worst kind: **the word already means something specific on three of the four platforms we publish to.** "Three stories a week" reads as three Instagram Stories, which would be nothing, when it meant three whole weeks of content in flight. A unit name that inverts its own scale to a reader is not a naming quibble.
+
+**His choice: Narrative.** *"That implies story and movement through time."* Which is exactly what the five gates are.
+
+**What it is, stated once so it stops needing restating.** A Narrative is one idea, committed to a lane, walked through Idea, Article, Kit, Create, Ship, and coming out as a week of posts across all four platforms. Currently 15 by default. An **Idea** is a note in the inbox; a Narrative is that note in the pipeline.
+
+**Done all the way, on purpose, because it was cheap exactly once.** The word was only on screen in two places, so screens-only would have been faster. But the code and the conversation would then have drifted permanently, and the storage path would have been the expensive part later. Today there are a handful of these saved. `Story` to `Narrative` throughout: the type, the store file, the routes, the components, and `pam/stories/` to `pam/narratives/`.
+
+**Nothing saved is lost, and here is exactly how.** Reads fall back to the old path (`pam/stories/{id}.json`, and its index), writes only ever go to the new one, so a narrative saved before the rename opens and heals permanently the first time it is saved. Deletes clear **both** paths, because clearing only the new one would let the old file resurrect the narrative on the next read. On pieces, `story_ref` is adopted into `narrative_ref` at read time: without that adoption, a saved piece silently loses its source article and Gate 4 reports "No concept to work from", which is the bug that cost a walkthrough once already. And `/console/marketing/story/...` redirects to the new path, because an open tab pointed at a narrative mid-gate should not 404.
+
+**Two things the rename broke on the way, both caught before shipping, both worth recording because the failure mode is generic.** A blanket search and replace is not safe on a word this common.
+
+1. **It leaked into April's prompts.** "Every fact, name, figure, claim, and story in your draft must come from the concept" became "and narrative", and `Proof or story`, which is a **literal section heading in the concept doc**, became `Proof or narrative` and stopped matching anything. Both reverted. The rule going in: rename identifiers, never prompt prose.
+2. **"history" contains "story".** Five places in the decision log became "hinarrative", and one "pastel storybook" became "pastel narrativebook". Fixed. A rename script that matches inside words will find words you were not thinking about.
+
+It also reached well outside the marketing module on the first pass, into the landing page's story-scroll components (`StoryPath`, `StoryMotion`, `StoryLanding`) and the agents prompts, where "story" means a story. All of that was reverted and the rename was rerun scoped to the unit.
+
+**One vocabulary collision accepted rather than solved.** The output spec calls the top family of LinkedIn post types "narrative posts", first-person-with-stakes. So "narrative" now has two senses in the docs. The spec says which is which in its header, and the code uses **frame** for the post-type sense (`contrarian`, `hard_moment`, `listicle`, `field_report`), which keeps them apart where it matters.
+
+---
+
+## D44: LinkedIn stays at two posts a day, and the slots get a type
+
+**Adopted 19 August 2026, reaffirming a decision after I argued against it.**
+
+D42 flagged that the output spec's only cadence evidence measures **4 to 5 LinkedIn posts a week** as the sweet spot, against the console's target of 2 a day, which is 14. Marrs read the argument and rejected it:
+
+> *"I'm going to keep the LinkedIn to two posts a day: video, then text and images. That's fine, that's what morning and afternoon covered. I've seen plenty of people do that. Four to five, I don't really care about that being a sweet spot. I'm going with the Gary V school of thinking, which is that he posts like 350 pieces of content a day across all platforms, so I'm taking a bit of a maximalist view."*
+
+**That is the decision. 2 a day on LinkedIn stands.** The evidence is recorded in the build plan and the spec and does not need relitigating: it measures one thing (median ER per post at a given weekly volume) and he is optimising a different one (total reach and surface area). Both can be true. The honest position is that we do not have his own numbers yet, which is what the Learn loop is for, and until we do this is a strategy choice rather than a factual dispute.
+
+**But his sentence carried a build requirement I had not noticed.** The two slots are not interchangeable to him: **morning is video, afternoon is text and images.** The slot table cannot express that. `ChannelSlots` is `Record<Network, string[]>`, just times, and `nextOpenSlots` fills them in order, so whichever output the plan reaches first takes 08:30. A narrative would routinely put a text post in the morning slot and a video in the afternoon, which is not what he asked for and he would have found out by looking at the week.
+
+**So slots get a kind**, and the wave matches an output to a slot that will take it. That is the next build.
+
+**Capacity, with the typed kit at 2 a day.** LinkedIn is 4 posts per narrative into 14 slots, so 3 narratives a week fits with room. Instagram is 5 into 14, so 2 fit comfortably and a third overflows by one. So roughly **2 to 3 narratives a week** is what the current shape actually carries, and Instagram binds it, not LinkedIn.
+
+**Still true and still unfixed:** nothing enforces capacity. `nextOpenSlots` walks 60 days forward and always finds something, so an oversubscribed channel silently slides posts into future weeks. Past that walk it creates an entry with no `scheduled_at`, which the ship path filters out, so a sustained overrun manufactures posts that can never ship and reports no error. With a maximalist posting strategy this stops being theoretical, so it should be built alongside the typed slots.
 

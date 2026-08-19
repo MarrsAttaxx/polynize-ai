@@ -4,6 +4,8 @@
 
 This is that list. It defines the END STATE of every post type, so Gate 3's kit becomes a real menu and each Gate 4 flow is built to produce exactly one of these.
 
+**One word, two senses, so read carefully.** A **Narrative** (capitalised) is the unit of work: one idea walked through the five gates, coming out as a week of posts (D43). A **narrative post** or a **narrative frame** (lowercase) is a KIND of LinkedIn post, the first-person-with-stakes family at the top of the type table in section 1. The code uses "frame" for the second sense to keep them apart.
+
 **Sourcing rule.** Every number here carries a source. Where platform docs and studies disagree, both are shown, because a single confident number would be a lie. Where nothing credible exists it says NO DATA rather than filling the gap. One of those gaps has since been closed by measuring TikTok's own template rather than trusting a blog (section 8b). **Sandcastles was not reachable when this was written**, so there is no live hook or format performance data from our own watchlist in here.
 
 ---
@@ -296,7 +298,7 @@ Note the precise scope: the policy names **someone else's** watermark. It does n
 
 ### Format finding
 
-**TikTok video takes 3.39% median engagement against 1.92% for TikTok photo carousels**, so video wins on TikTok while carousels win on Instagram ([Buffer](https://buffer.com/resources/data-best-content-format-social-media/), 45M+ posts). Instagram carousels get 4.7x the views of TikTok carousels, while Instagram Reels get 30% fewer views than TikTok videos (Metricool). The two platforms want different things from the same story.
+**TikTok video takes 3.39% median engagement against 1.92% for TikTok photo carousels**, so video wins on TikTok while carousels win on Instagram ([Buffer](https://buffer.com/resources/data-best-content-format-social-media/), 45M+ posts). Instagram carousels get 4.7x the views of TikTok carousels, while Instagram Reels get 30% fewer views than TikTok videos (Metricool). The two platforms want different things from the same narrative.
 
 ## 8c. THE SAFE AREA THAT ACTUALLY GOVERNS OUR RENDERER
 

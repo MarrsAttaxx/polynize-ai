@@ -14,7 +14,7 @@
  * Server-side only; billed to April's key. Same call shape as lib/marketing/draft.ts.
  */
 
-import type { StoryLane } from './story-store';
+import type { NarrativeLane } from './narrative-store';
 import { getBrandVoiceForStream } from './brand-voice-store';
 import { complete } from '@/lib/llm';
 import { stripEmDashes } from '@/lib/em-dash';
@@ -34,7 +34,7 @@ const scriptModel = () => process.env.SCRIPT_MODEL || undefined;
  * brand-voice doc: this block is the frame, the doc refines it, and when no doc exists
  * this block is the whole instruction.
  */
-const LANE_VOICE: Record<StoryLane, string> = {
+const LANE_VOICE: Record<NarrativeLane, string> = {
   marrs:
     "This is the MARRS lane: first person, opinionated, personality forward. The operator's own perspective on AI and the industry, in his own voice. Take a position and hold it start to end; hedging reads as though someone else wrote it.",
   polynize:
@@ -52,10 +52,10 @@ function voiceBlock(brandVoice?: string): string {
     : '';
 }
 
-function articleSystemPrompt(lane: StoryLane, brandVoice?: string): string {
+function articleSystemPrompt(lane: NarrativeLane, brandVoice?: string): string {
   return `You are April, Polynize's copy chief and voice specialist. Write ONE article, 300 to 450 words, from the idea in the user's message.
 
-WHAT THE ARTICLE IS. It is the long form the whole story kit is cut from, and it publishes as written, so it must stand alone. It is a story told plainly: ONE argument carried start to end (the through-line), moving through clear beats a reader can feel turning, landing on a final line worth remembering. It is not a listicle, it is not a summary of the idea, and it is not a collection of observations: it is the idea turned into a narrative.
+WHAT THE ARTICLE IS. It is the long form every other piece is cut from, and it publishes as written, so it must stand alone. It is a story told plainly: ONE argument carried start to end (the through-line), moving through clear beats a reader can feel turning, landing on a final line worth remembering. It is not a listicle, it is not a summary of the idea, and it is not a collection of observations: it is the idea told as a story.
 
 SHAPE. Markdown. The first line is a bold title (**like this**), then the article. 300 to 450 words: the range is a discipline, not a target to pad to. If the argument is done at 320 words, stop.
 
@@ -71,7 +71,7 @@ Hard constraints:
 This model reasons before it answers, so plan silently: find the through-line, order the beats, settle the voice, then write. Before you output, reread once as the editor: one argument start to end, every fact traces to the idea with anything invented deleted, the voice holds, and it lands on a final line worth remembering. Return only the article.`;
 }
 
-function reviseSystemPrompt(lane: StoryLane, brandVoice?: string): string {
+function reviseSystemPrompt(lane: NarrativeLane, brandVoice?: string): string {
   return `You are April, Polynize's copy chief, working as an editor. The user's message carries the current article and ONE instruction. Apply that instruction to the article and return the complete revised article.
 
 Change NOTHING the instruction does not require. Every line the instruction leaves alone stays word for word: this is a targeted edit, not a rewrite, and an unasked-for improvement is a failure here, because the operator has already read and part-approved what is on the page.
@@ -105,7 +105,7 @@ export function cleanArticle(raw: string): string {
  * is the entire fact budget: nothing else conditions what the article may claim.
  * Throws a plain Error('empty') on blank output so the route can map it.
  */
-export async function draftArticle(lane: StoryLane, idea: string): Promise<string> {
+export async function draftArticle(lane: NarrativeLane, idea: string): Promise<string> {
   // Lane ids equal stream ids by design, so the lane fetches its stream's voice doc.
   const brandVoice = await getBrandVoiceForStream(lane);
 
@@ -141,7 +141,7 @@ export async function draftArticle(lane: StoryLane, idea: string): Promise<strin
  * what. Throws a plain Error('empty') on blank output so the route can map it.
  */
 export async function reviseArticle(
-  lane: StoryLane,
+  lane: NarrativeLane,
   article: string,
   instruction: string
 ): Promise<string> {

@@ -137,11 +137,11 @@ export type MarketingPiece = {
   /** April's read of the usable material, one line per item. Array, matching HookProposal. */
   concept_read?: string[];
   /**
-   * The Story this piece was built from (the Gates, D40). A master piece carries one
+   * The Narrative this piece was built from (the Gates, D40). A master piece carries one
    * master asset (the article, the shorts, the carousel...) and Gate 5 expands it into
    * per-channel calendar entries. Optional: pieces from before the Gates stay valid.
    */
-  story_ref?: string;
+  narrative_ref?: string;
   /** Which master asset a Gates master piece carries: article, texts, shorts, long, carousel, images. */
   master?: string;
 };
@@ -156,6 +156,24 @@ function keyFor(owner: string, pieceId: string): string {
  * must be a non-empty string. Malformed rows are treated as absent, so a bad
  * or partial row can never crash a consumer (`.format.replace`, `.script.split`).
  */
+/**
+ * THE RENAME'S ONE PERSISTED FIELD (D43). A piece saved before the Story was renamed the
+ * Narrative carries `story_ref`, and every reader now asks for `narrative_ref`. Without this
+ * adoption those pieces silently lose their source: `conceptBodyForPiece` finds no article and
+ * Gate 4 reports "No concept to work from", which is exactly the bug that cost a walkthrough
+ * once already.
+ *
+ * Read-time only, and it never deletes the old key: the piece heals permanently the next time
+ * anything saves it, and until then both fields agree.
+ */
+function adoptLegacyRefs(p: MarketingPiece): MarketingPiece {
+  const legacy = (p as MarketingPiece & { story_ref?: unknown }).story_ref;
+  if (!p.narrative_ref && typeof legacy === 'string' && legacy) {
+    return { ...p, narrative_ref: legacy };
+  }
+  return p;
+}
+
 export function isValidPiece(x: unknown): x is MarketingPiece {
   if (!x || typeof x !== 'object' || Array.isArray(x)) return false;
   const p = x as Record<string, unknown>;
@@ -192,7 +210,8 @@ export async function listSavedPieces(owner: string): Promise<MarketingPiece[]> 
       return typeof id === 'string' && id.startsWith(prefix);
     })
     .map((r) => (r as { state: unknown }).state)
-    .filter(isValidPiece);
+    .filter(isValidPiece)
+    .map(adoptLegacyRefs);
 }
 
 /** Load a saved piece for this owner, or null if none saved or the row is malformed. */
@@ -201,7 +220,7 @@ export async function getPiece(
   pieceId: string
 ): Promise<MarketingPiece | null> {
   const s = await getSheetState(keyFor(owner, pieceId));
-  return isValidPiece(s) ? s : null;
+  return isValidPiece(s) ? adoptLegacyRefs(s) : null;
 }
 
 /** Upsert a piece for this owner. Owner + id are the storage key. */

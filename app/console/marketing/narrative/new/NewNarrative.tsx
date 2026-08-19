@@ -21,7 +21,7 @@ import g from '../gates.module.css';
 
 export type IdeaRow = { id: string; lane: string; text: string; when: string };
 
-export function NewStory({ ideas }: { ideas: IdeaRow[] }) {
+export function NewNarrative({ ideas }: { ideas: IdeaRow[] }) {
   const router = useRouter();
   const [picked, setPicked] = useState<string | null>(null);
   const [typed, setTyped] = useState('');
@@ -37,7 +37,7 @@ export function NewStory({ ideas }: { ideas: IdeaRow[] }) {
     setBusy(true);
     setErr(null);
     try {
-      const res = await fetch('/console/marketing/story/create', {
+      const res = await fetch('/console/marketing/narrative/create', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({
@@ -48,11 +48,11 @@ export function NewStory({ ideas }: { ideas: IdeaRow[] }) {
       });
       const b = (await res.json().catch(() => null)) as { id?: string; error?: string } | null;
       if (!res.ok || !b?.id) {
-        setErr(b?.error ?? 'Could not create the story.');
+        setErr(b?.error ?? 'Could not create the narrative.');
         setBusy(false);
         return;
       }
-      router.push(`/console/marketing/story/${b.id}`);
+      router.push(`/console/marketing/narrative/${b.id}`);
     } catch {
       setErr('Network error. Try again.');
       setBusy(false);

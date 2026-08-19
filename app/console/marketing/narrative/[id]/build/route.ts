@@ -1,5 +1,5 @@
 /**
- * POST /console/marketing/story/[id]/build: Gate 3's confirm (D40).
+ * POST /console/marketing/narrative/[id]/build: Gate 3's confirm (D40).
  *
  * The ticks become MASTER pieces: one piece per master asset, not one per
  * scheduled post. The expansion into per-channel posts happens at Gate 5,
@@ -17,7 +17,7 @@ import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { randomUUID } from 'node:crypto';
 import { getCurrentUser } from '@/lib/console-auth';
-import { getStory, saveStory, storyHeadline } from '@/lib/marketing/story-store';
+import { getNarrative, saveNarrative, narrativeHeadline } from '@/lib/marketing/narrative-store';
 import { plansForTicks, type MasterAsset } from '@/lib/marketing/kit';
 import { listSavedPieces, savePiece, type MarketingPiece } from '@/lib/marketing/piece-store';
 
@@ -67,48 +67,48 @@ export async function POST(
     return NextResponse.json({ error: 'tick at least one piece' }, { status: 400 });
   }
 
-  let story;
+  let narrative;
   try {
-    story = await getStory(id);
+    narrative = await getNarrative(id);
   } catch (err) {
-    console.error('[story.build] read failed:', err);
-    return NextResponse.json({ error: 'could not read the story' }, { status: 502 });
+    console.error('[narrative.build] read failed:', err);
+    return NextResponse.json({ error: 'could not read the narrative' }, { status: 502 });
   }
-  if (!story) return NextResponse.json({ error: 'story not found' }, { status: 404 });
+  if (!narrative) return NextResponse.json({ error: 'narrative not found' }, { status: 404 });
 
-  const plans = plansForTicks(ticks, story.lane);
+  const plans = plansForTicks(ticks, narrative.lane);
   if (plans.length === 0) {
     return NextResponse.json({ error: 'nothing recognisable was ticked' }, { status: 400 });
   }
 
   /**
-   * Which masters already exist for this story. Keyed on story_ref, the durable link,
-   * NOT on story.piece_ids: confirmed in review that piece_ids gets truncated to the
+   * Which masters already exist for this narrative. Keyed on narrative_ref, the durable link,
+   * NOT on narrative.piece_ids: confirmed in review that piece_ids gets truncated to the
    * currently ticked masters, so an untick-then-retick minted a duplicate empty master
-   * and orphaned the one carrying the script and the media. story_ref also survives
+   * and orphaned the one carrying the script and the media. narrative_ref also survives
    * the other confirmed failure: a mid-loop crash before piece_ids was ever written,
    * whose retry used to recreate every master.
    */
   const existing = new Map<string, MarketingPiece>();
   try {
     for (const p of await listSavedPieces(owner)) {
-      if (p.story_ref === story.id && p.master) existing.set(p.master, p);
+      if (p.narrative_ref === narrative.id && p.master) existing.set(p.master, p);
     }
   } catch (err) {
     // A failed scan must fail the confirm: proceeding would recreate masters that
     // exist, which is precisely the duplication this map prevents.
-    console.error('[story.build] piece scan failed:', err);
+    console.error('[narrative.build] piece scan failed:', err);
     return NextResponse.json({ error: 'could not read the pieces. Try again.' }, { status: 502 });
   }
 
-  const headline = storyHeadline(story.idea, 60);
+  const headline = narrativeHeadline(narrative.idea, 60);
   const pieceIds: string[] = [];
   try {
     for (const plan of plans) {
       const found = existing.get(plan.master);
       if (found) {
         /**
-         * ADOPTION, and the retitle that has to come with it. A v1 story's text piece was
+         * ADOPTION, and the retitle that has to come with it. A v1 narrative's text piece was
          * called "<headline>: 4 text posts" and carries master 'texts', which now means the
          * contrarian frame. Keeping the old title would leave a card whose name disagrees
          * with its content, and wave/route.ts stamps that title onto every calendar entry it
@@ -122,7 +122,7 @@ export async function POST(
             await savePiece(owner, { ...found, title: wanted });
           } catch (err) {
             // A failed retitle is cosmetic. The piece still works, so do not fail the confirm.
-            console.error('[story.build] retitle failed:', err);
+            console.error('[narrative.build] retitle failed:', err);
           }
         }
         pieceIds.push(found.piece_id);
@@ -131,32 +131,32 @@ export async function POST(
       const piece: MarketingPiece = {
         piece_id: randomUUID(),
         owner,
-        stream: story.lane,
+        stream: narrative.lane,
         format: FORMAT_FOR[plan.master],
         title: `${headline}: ${plan.label}`,
         script: '',
         kind: plan.kind,
         status: 'draft',
-        story_ref: story.id,
+        narrative_ref: narrative.id,
         master: plan.master,
         platforms: plan.placements.map((p) => p.network),
         provenance: 'ai_generated',
       };
       // The article master arrives with its body already written: the article IS
       // the deliverable, approved at gate 2. Everything else starts empty.
-      if (plan.master === 'article') piece.body = story.article;
+      if (plan.master === 'article') piece.body = narrative.article;
       await savePiece(owner, piece);
       pieceIds.push(piece.piece_id);
     }
 
-    story.kit = ticks;
-    story.piece_ids = pieceIds;
-    story.gate = 4;
-    await saveStory(story);
+    narrative.kit = ticks;
+    narrative.piece_ids = pieceIds;
+    narrative.gate = 4;
+    await saveNarrative(narrative);
   } catch (err) {
-    console.error('[story.build] piece creation failed:', err);
+    console.error('[narrative.build] piece creation failed:', err);
     return NextResponse.json({ error: 'could not create the pieces' }, { status: 500 });
   }
 
-  return NextResponse.json({ story, pieces: pieceIds.length });
+  return NextResponse.json({ narrative, pieces: pieceIds.length });
 }

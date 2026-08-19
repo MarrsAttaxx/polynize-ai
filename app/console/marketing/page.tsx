@@ -1,16 +1,16 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { getCurrentUser } from '@/lib/console-auth';
-import { listStoryCards, GATE_LABELS, type StoryCard } from '@/lib/marketing/story-store';
+import { listNarrativeCards, GATE_LABELS, type NarrativeCard } from '@/lib/marketing/narrative-store';
 import { streamLabel } from '@/lib/marketing/streams';
 import b from './board.module.css';
 
 export const dynamic = 'force-dynamic';
 
 /**
- * THE BOARD (D40): every Story sitting at its gate. This replaced the stream-cards
+ * THE BOARD (D40): every Narrative sitting at its gate. This replaced the stream-cards
  * dashboard as the marketing home on Marrs's decision ("the board replaces the
- * marketing home"), because the unit of work is now a Story moving through gates,
+ * marketing home"), because the unit of work is now a Narrative moving through gates,
  * not a stream holding loose pieces. The old dashboard is not deleted: it lives at
  * /console/marketing/streams, because brand voice, series, media and the concept
  * library still live inside streams and parts of that design will be repurposed.
@@ -26,15 +26,15 @@ export default async function BoardPage() {
     redirect(`/console/${user.scope.slug}/blueprint`);
   }
 
-  let cards: StoryCard[] = [];
+  let cards: NarrativeCard[] = [];
   try {
-    cards = await listStoryCards();
+    cards = await listNarrativeCards();
   } catch (err) {
-    console.error('[board] story list failed:', err);
+    console.error('[board] narrative list failed:', err);
   }
 
   const order: (1 | 2 | 3 | 4 | 5 | 'shipped')[] = [1, 2, 3, 4, 5, 'shipped'];
-  const byGate = new Map<string, StoryCard[]>();
+  const byGate = new Map<string, NarrativeCard[]>();
   for (const g of order) byGate.set(String(g), []);
   for (const c of cards) byGate.get(String(c.gate))?.push(c);
 
@@ -52,16 +52,16 @@ export default async function BoardPage() {
           <Link href="/console/marketing/streams" className={b.ghost}>
             Streams and setup
           </Link>
-          <Link href="/console/marketing/story/new" className={b.new}>
-            New story →
+          <Link href="/console/marketing/narrative/new" className={b.new}>
+            New narrative →
           </Link>
         </div>
       </header>
 
       {cards.length === 0 ? (
         <div className={b.empty}>
-          <p>No stories yet. A story starts as an idea and leaves as a week of content.</p>
-          <Link href="/console/marketing/story/new" className={b.new}>
+          <p>No narratives yet. A narrative starts as an idea and leaves as a week of content.</p>
+          <Link href="/console/marketing/narrative/new" className={b.new}>
             Start the first one →
           </Link>
         </div>
@@ -79,7 +79,7 @@ export default async function BoardPage() {
                 {list.map((c) => (
                   <Link
                     key={c.id}
-                    href={`/console/marketing/story/${c.id}`}
+                    href={`/console/marketing/narrative/${c.id}`}
                     className={b.card}
                   >
                     <span className={`${b.laneTag} ${c.lane === 'marrs' ? b.ma : b.pz}`}>

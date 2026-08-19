@@ -1,16 +1,16 @@
 /**
- * POST /console/marketing/story/[id]/wave: Gate 5 (D40).
+ * POST /console/marketing/narrative/[id]/wave: Gate 5 (D40).
  *
  * Two actions, matching the draft-first decision:
  *  - plan: expand the kit into per-channel calendar entries as DRAFTS, each at
  *    its channel's next open 2-a-day slot. Idempotent: existing entries for a
  *    (master, channel) pair are counted before any are created, so reloading
  *    the gate never doubles the wave.
- *  - ship: every draft entry of this story goes through publishEntry, the same
+ *  - ship: every draft entry of this narrative goes through publishEntry, the same
  *    path the calendar's own Schedule uses, flipping the wave live in Metricool.
  *
  * Slot assignment treats the WHOLE channel as one queue: entries from other
- * stories occupy slots too, so two stories shipped in the same week interleave
+ * narratives occupy slots too, so two narratives shipped in the same week interleave
  * instead of colliding.
  */
 
@@ -18,7 +18,7 @@ import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { randomUUID } from 'node:crypto';
 import { getCurrentUser } from '@/lib/console-auth';
-import { getStory, saveStory } from '@/lib/marketing/story-store';
+import { getNarrative, saveNarrative } from '@/lib/marketing/narrative-store';
 import { plansForTicks, capCopy, bodyCapFor, type KitOutput } from '@/lib/marketing/kit';
 import { getPiece, type MarketingPiece } from '@/lib/marketing/piece-store';
 import {
@@ -34,7 +34,7 @@ import {
 } from '@/lib/marketing/channel-schedule';
 import { publishEntry } from '@/lib/marketing/publish';
 import { sendHandPostBrief, handPostFromEntry } from '@/lib/marketing/hand-post';
-import { storyHeadline } from '@/lib/marketing/story-store';
+import { narrativeHeadline } from '@/lib/marketing/narrative-store';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -54,15 +54,15 @@ export async function POST(
   const body = (await req.json().catch(() => null)) as { action?: unknown } | null;
   const action = body?.action === 'ship' ? 'ship' : 'plan';
 
-  let story;
+  let narrative;
   try {
-    story = await getStory(id);
+    narrative = await getNarrative(id);
   } catch (err) {
-    console.error('[story.wave] read failed:', err);
-    return NextResponse.json({ error: 'could not read the story' }, { status: 502 });
+    console.error('[narrative.wave] read failed:', err);
+    return NextResponse.json({ error: 'could not read the narrative' }, { status: 502 });
   }
-  if (!story) return NextResponse.json({ error: 'story not found' }, { status: 404 });
-  const pieceIds = story.piece_ids ?? [];
+  if (!narrative) return NextResponse.json({ error: 'narrative not found' }, { status: 404 });
+  const pieceIds = narrative.piece_ids ?? [];
   if (pieceIds.length === 0) {
     return NextResponse.json({ error: 'no pieces: confirm the kit first' }, { status: 400 });
   }
@@ -71,36 +71,36 @@ export async function POST(
    * THE WAVE LOCK. Confirmed in review: a ship can run for minutes, the browser's
    * fetch can drop while the server keeps going, and the retry click used to start a
    * second full run that double-published the same drafts to the live channels. One
-   * run at a time per story, and a stale lock (a crashed run) expires after two
+   * run at a time per narrative, and a stale lock (a crashed run) expires after two
    * minutes rather than wedging the gate forever.
    */
   const LOCK_MS = 2 * 60 * 1000;
-  if (story.wave_lock_at && Date.now() - Date.parse(story.wave_lock_at) < LOCK_MS) {
+  if (narrative.wave_lock_at && Date.now() - Date.parse(narrative.wave_lock_at) < LOCK_MS) {
     return NextResponse.json(
       { error: 'a wave run is already in progress. Give it a minute, then reload.' },
       { status: 409 }
     );
   }
-  story.wave_lock_at = new Date().toISOString();
+  narrative.wave_lock_at = new Date().toISOString();
   try {
-    await saveStory(story);
+    await saveNarrative(narrative);
   } catch (err) {
-    console.error('[story.wave] lock write failed:', err);
+    console.error('[narrative.wave] lock write failed:', err);
     return NextResponse.json({ error: 'could not start the run. Try again.' }, { status: 502 });
   }
   const unlock = async () => {
     try {
-      const fresh = await getStory(id);
+      const fresh = await getNarrative(id);
       if (fresh) {
         delete fresh.wave_lock_at;
-        await saveStory(fresh);
+        await saveNarrative(fresh);
       }
     } catch (err) {
-      console.error('[story.wave] unlock failed (the lock self-expires):', err);
+      console.error('[narrative.wave] unlock failed (the lock self-expires):', err);
     }
   };
 
-  // The story's master pieces, by master name. A read failure fails the RUN: silently
+  // The narrative's master pieces, by master name. A read failure fails the RUN: silently
   // skipping a master planned a partial wave that reported success, and the planned
   // guard then made the gap permanent. Loud and retryable beats quiet and wrong.
   const masters = new Map<string, MarketingPiece>();
@@ -109,7 +109,7 @@ export async function POST(
       const p = await getPiece(owner, pid);
       if (p?.master) masters.set(p.master, p);
     } catch (err) {
-      console.error('[story.wave] piece read failed:', err);
+      console.error('[narrative.wave] piece read failed:', err);
       await unlock();
       return NextResponse.json(
         { error: 'could not read the pieces. Reload and try again.' },
@@ -122,7 +122,7 @@ export async function POST(
   try {
     all = await listEntries(owner);
   } catch (err) {
-    console.error('[story.wave] entries read failed:', err);
+    console.error('[narrative.wave] entries read failed:', err);
     await unlock();
     return NextResponse.json({ error: 'could not read the calendar' }, { status: 502 });
   }
@@ -145,8 +145,8 @@ export async function POST(
     let handed = 0;
     if (handList.length > 0) {
       const brief = await sendHandPostBrief(
-        story.lane,
-        storyHeadline(story.idea, 70),
+        narrative.lane,
+        narrativeHeadline(narrative.idea, 70),
         handList.map(handPostFromEntry)
       );
       handed = handList.length;
@@ -158,10 +158,10 @@ export async function POST(
         try {
           await saveEntry(owner, { ...e, handed_at: at });
         } catch (err) {
-          console.error('[story.wave] hand-post stamp failed:', err);
+          console.error('[narrative.wave] hand-post stamp failed:', err);
         }
       }
-      if (brief.skipped) console.error(`[story.wave] hand-post brief: ${brief.skipped}`);
+      if (brief.skipped) console.error(`[narrative.wave] hand-post brief: ${brief.skipped}`);
     }
 
     let shipped = 0;
@@ -187,7 +187,7 @@ export async function POST(
       else {
         failed += 1;
         if (!firstError) firstError = r.error;
-        console.error(`[story.wave] ship failed for ${entry.entry_id}: ${r.error}`);
+        console.error(`[narrative.wave] ship failed for ${entry.entry_id}: ${r.error}`);
       }
     }
     await unlock();
@@ -201,14 +201,14 @@ export async function POST(
   }
 
   // PLAN. Expand the kit's OUTPUTS into missing draft entries at next open slots.
-  const plans = plansForTicks(story.kit ?? [], story.lane);
-  const schedule = await getChannelSchedule(story.lane);
+  const plans = plansForTicks(narrative.kit ?? [], narrative.lane);
+  const schedule = await getChannelSchedule(narrative.lane);
 
-  // Slots already occupied per channel, across ALL stories on this stream:
-  // the queue is the channel's, not the story's.
+  // Slots already occupied per channel, across ALL narratives on this stream:
+  // the queue is the channel's, not the narrative's.
   const takenByNetwork = new Map<string, string[]>();
   for (const e of all) {
-    if (e.stream !== story.lane || !e.scheduled_at) continue;
+    if (e.stream !== narrative.lane || !e.scheduled_at) continue;
     const list = takenByNetwork.get(e.channel) ?? [];
     list.push(e.scheduled_at);
     takenByNetwork.set(e.channel, list);
@@ -216,7 +216,7 @@ export async function POST(
 
   let created = 0;
   /**
-   * Entries a story already has that the CURRENT kit no longer asks for. It happens on a story
+   * Entries a narrative already has that the CURRENT kit no longer asks for. It happens on a narrative
    * planned under the v1 catalogue: v1 put four interchangeable LinkedIn text posts on one
    * piece, and the typed kit asks for one per frame. Nothing is deleted here, because deleting
    * a draft the operator did not ask to delete is a worse failure than leaving one behind, but
@@ -259,7 +259,7 @@ export async function POST(
           const entry: CalendarEntry = {
             entry_id: randomUUID(),
             owner,
-            stream: story.lane,
+            stream: narrative.lane,
             piece_id: piece.piece_id,
             title: piece.title,
             channel: network,
@@ -298,7 +298,7 @@ export async function POST(
       }
     }
   } catch (err) {
-    console.error('[story.wave] plan failed midway:', err);
+    console.error('[narrative.wave] plan failed midway:', err);
     await unlock();
     return NextResponse.json(
       { error: 'the wave was only partly laid out. Reload to continue it.', created },

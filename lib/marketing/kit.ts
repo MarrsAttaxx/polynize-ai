@@ -1,9 +1,9 @@
 import type { Network } from './channel-schedule';
-import type { StoryLane } from './story-store';
+import type { NarrativeLane } from './narrative-store';
 import { safeRect, type SafeRect } from './safe-area';
 
 /**
- * THE KIT (v2): what one Story produces, as TYPED OUTPUTS rather than counts.
+ * THE KIT (v2): what one Narrative produces, as TYPED OUTPUTS rather than counts.
  *
  * v1 said "4 posts, one per beat". It could not say what post 2 WAS, so every post came out
  * of one piece carrying one body, and four calendar entries shipped the same text. Marrs asked
@@ -29,7 +29,7 @@ import { safeRect, type SafeRect } from './safe-area';
  *    naming three frames drafts three of the same post and the labels are decoration. This was
  *    the condition every reviewer put on the design, and it is not optional.
  *
- * PURE AND CLIENT-SAFE. StoryGates.tsx is a client component, so a VALUE import of a store
+ * PURE AND CLIENT-SAFE. NarrativeGates.tsx is a client component, so a VALUE import of a store
  * would drag server-only code into the browser bundle. The two store imports here are
  * type-only and erase at compile; ./safe-area is a value import and has no imports of its own.
  */
@@ -69,15 +69,15 @@ export type PostType =
 
 /**
  * THE AUTHORING UNIT, persisted on `piece.master` and the key both the build route and the
- * wave route index a story's pieces by.
+ * wave route index a narrative's pieces by.
  *
  * The six v1 values are FROZEN: they are already on saved pieces and nothing may rename or
  * remove one. Three members are ADDED for the extra LinkedIn text frames, and 'texts' now
- * means the CONTRARIAN frame specifically, which is why a v1 story's existing text piece is
+ * means the CONTRARIAN frame specifically, which is why a v1 narrative's existing text piece is
  * adopted rather than orphaned when its kit is re-confirmed.
  *
  * A text frame gets its own member rather than sharing one because `master` is used as a
- * unique key per story (build/route.ts, wave/route.ts). Two outputs on one master collapse to
+ * unique key per narrative (build/route.ts, wave/route.ts). Two outputs on one master collapse to
  * one piece, last write wins, and the loser keeps its draft while being invisible and never
  * planned onto the calendar.
  */
@@ -186,7 +186,7 @@ export type WrapperSpec = {
 /* ------------------------------------------------------------------ the catalogue entry */
 
 export type KitOutput = {
-  /** PERSISTED on Story.kit. Never renamed, never removed; retired ids go in V1_ALIASES. */
+  /** PERSISTED on Narrative.kit. Never renamed, never removed; retired ids go in V1_ALIASES. */
   id: string;
   network: Network;
   postType: PostType;
@@ -204,9 +204,9 @@ export type KitOutput = {
   /** What ONE post is called, on the Gate 4 card and the Gate 5 week chip. */
   postLabel: string;
   /** Lanes whose Gate 3 shows this row. Empty means vocabulary only, deliberately off screen. */
-  shown: StoryLane[];
+  shown: NarrativeLane[];
   /** Ticked when the gate opens. Always a subset of `shown`. */
-  on: StoryLane[];
+  on: NarrativeLane[];
   artifact: ArtifactSpec;
   wrapper: WrapperSpec;
   /** One line for April: what this frame is for. Never rendered on the Gate 3 screen. */
@@ -508,8 +508,8 @@ const YT_LONG_WRAP: WrapperSpec = {
   hashtags: { v: 'up_to_3', src: 'official', note: 'Three surface above the title.' },
 };
 
-const BOTH: StoryLane[] = ['marrs', 'polynize'];
-const NEITHER: StoryLane[] = [];
+const BOTH: NarrativeLane[] = ['marrs', 'polynize'];
+const NEITHER: NarrativeLane[] = [];
 
 /* ------------------------------------------------------------------ THE CATALOGUE
  *
@@ -520,7 +520,7 @@ const NEITHER: StoryLane[] = [];
  * WHY THREE TEXT POSTS AND NOT FOUR (Marrs: "maybe four is too much"). Supply: the Gate 2
  * article is 300 to 450 words, roughly ONE text post's worth of material at the 1,300 to 2,500
  * character band, so four posts is not a cut, it is a thousand words of invention. Capacity:
- * at four, a story's LinkedIn output is 6 posts, which at three stories a week is 18 against
+ * at four, a narrative's LinkedIn output is 6 posts, which at three narratives a week is 18 against
  * 14 slots.
  *
  * WHY DIFFERENT FRAMES AND NEVER THE SAME ONE TWICE. The types differ in WHICH engagement they
@@ -528,7 +528,7 @@ const NEITHER: StoryLane[] = [];
  * moment is the reverse. Those are different mechanisms, and the ranking behind them is
  * classifier-assigned on somebody else's audience, so you diversify precisely because the
  * numbers are not trustworthy enough to concentrate. It is also the only shape that can ever
- * learn: three frames on one idea, with the idea held constant, is a within-story comparison.
+ * learn: three frames on one idea, with the idea held constant, is a within-narrative comparison.
  *
  * WHY FOUR FRAMES ARE OFF THE SCREEN (win, challenge, recap, explainer). A row he has to decide
  * about every single week, to serve the rare week he has the material, is exactly the overload
@@ -567,7 +567,7 @@ const CATALOGUE: KitOutput[] = [
     id: 'li_text_contrarian',
     network: 'linkedin',
     postType: 'contrarian',
-    // 'texts' is the v1 value, kept so an in-flight story's existing text piece is ADOPTED as
+    // 'texts' is the v1 value, kept so an in-flight narrative's existing text piece is ADOPTED as
     // this frame rather than orphaned. Which is also why the contrarian frame is the one that
     // gets it: it is the article's cutdown, the closest thing to what v1's piece already held.
     master: 'texts',
@@ -936,9 +936,9 @@ const CATALOGUE: KitOutput[] = [
 /**
  * RETIRED TICK IDS. Frozen, append-only, never edited.
  *
- * Story.kit is persisted, and piecesForTicks deliberately ignores ids it does not recognise, so
- * dropping an id does not error: it silently deletes those posts from every story already saved.
- * A story whose ticks all fail to resolve sits at Gate 5 with an empty week and a dead button.
+ * Narrative.kit is persisted, and piecesForTicks deliberately ignores ids it does not recognise, so
+ * dropping an id does not error: it silently deletes those posts from every narrative already saved.
+ * A narrative whose ticks all fail to resolve sits at Gate 5 with an empty week and a dead button.
  *
  * `li_posts` is lane-dependent, which is why every resolver takes the lane.
  */
@@ -950,7 +950,7 @@ const V1_ALIASES: Readonly<Record<string, readonly string[]>> = Object.freeze({
 });
 
 /** `li_posts` was v1's untyped "4 posts". It becomes the lane's three frames. */
-function aliasFor(id: string, lane: StoryLane): readonly string[] | undefined {
+function aliasFor(id: string, lane: NarrativeLane): readonly string[] | undefined {
   if (id === 'li_posts') {
     return lane === 'marrs'
       ? ['li_text_contrarian', 'li_text_hard_moment', 'li_text_listicle']
@@ -1026,7 +1026,7 @@ export function outputsOnMaster(m: string): KitOutput[] {
  * Persisted ticks to live output ids: expand retired aliases, drop unknowns, dedupe, and return
  * in CATALOGUE order so downstream order follows the screen regardless of how ids arrived.
  */
-export function resolveTicks(ticks: string[], lane: StoryLane): string[] {
+export function resolveTicks(ticks: string[], lane: NarrativeLane): string[] {
   const want = new Set<string>();
   for (const t of ticks) {
     const alias = aliasFor(t, lane);
@@ -1039,17 +1039,17 @@ export function resolveTicks(ticks: string[], lane: StoryLane): string[] {
   return CATALOGUE.filter((o) => want.has(o.id)).map((o) => o.id);
 }
 
-export function defaultTicks(lane: StoryLane): string[] {
+export function defaultTicks(lane: NarrativeLane): string[] {
   return CATALOGUE.filter((o) => o.on.includes(lane)).map((o) => o.id);
 }
 
 /** Posts the ticks produce. EXACTLY the number of calendar entries Gate 5 will create. */
-export function tickCount(ticks: string[], lane: StoryLane): number {
+export function tickCount(ticks: string[], lane: NarrativeLane): number {
   return resolveTicks(ticks, lane).length;
 }
 
 /** Gate 5's unit. One of these is one calendar entry. */
-export function outputsForTicks(ticks: string[], lane: StoryLane): KitOutput[] {
+export function outputsForTicks(ticks: string[], lane: NarrativeLane): KitOutput[] {
   const ids = new Set(resolveTicks(ticks, lane));
   return CATALOGUE.filter((o) => ids.has(o.id));
 }
@@ -1076,7 +1076,7 @@ export type KitRow = {
  * decision. That is the only reason the catalogue can hold twenty two outputs and the screen
  * still fit on a phone.
  */
-export function kitRows(lane: StoryLane): KitRow[] {
+export function kitRows(lane: NarrativeLane): KitRow[] {
   const rows: KitRow[] = [];
   const seenSeries = new Set<string>();
   for (const net of KIT_NETWORK_ORDER) {
@@ -1135,7 +1135,7 @@ export type MasterPlan = {
  * placement count is 1, which is what makes Gate 5's `missing = count - have` guard exact
  * rather than merely approximate.
  */
-export function plansForTicks(ticks: string[], lane: StoryLane): MasterPlan[] {
+export function plansForTicks(ticks: string[], lane: NarrativeLane): MasterPlan[] {
   const outputs = outputsForTicks(ticks, lane);
   const byMaster = new Map<MasterAsset, MasterPlan>();
   for (const o of outputs) {
@@ -1420,8 +1420,8 @@ export function catalogueProblems(): string[] {
     }
   }
 
-  // Every retired id must still resolve, or a saved story loses those posts silently.
-  for (const lane of ['marrs', 'polynize'] as StoryLane[]) {
+  // Every retired id must still resolve, or a saved narrative loses those posts silently.
+  for (const lane of ['marrs', 'polynize'] as NarrativeLane[]) {
     for (const id of [...Object.keys(V1_ALIASES), 'li_posts']) {
       const targets = aliasFor(id, lane) ?? [];
       if (targets.length === 0) out.push(`alias ${id} resolves to nothing on ${lane}`);

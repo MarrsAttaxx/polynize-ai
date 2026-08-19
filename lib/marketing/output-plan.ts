@@ -172,7 +172,7 @@ Output the brief ONLY: no preamble, no closing commentary, no markdown code fenc
  * pdf_carousel said 6 to 10 pages against 7 to 12, and image_carousel said 5 to 8 slides when
  * the API caps a carousel at 10. They now match the spec and carry their source strength.
  *
- * For a piece cut from a Story, this default is NOT used at all: lib/marketing/kit.ts supplies
+ * For a piece cut from a Narrative, this default is NOT used at all: lib/marketing/kit.ts supplies
  * the typed output's own spec and draft.ts prefers it, because a frame-specific band beats a
  * format-wide one. These strings are the fallback for the older custom Output-plan path, which
  * has no typed output behind it. Two length authorities for one post is how a model ends up

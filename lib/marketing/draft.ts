@@ -15,7 +15,7 @@
 
 import type { MarketingPiece } from './piece-store';
 import { getConcept } from './concept-store';
-import { getStory } from './story-store';
+import { getNarrative } from './narrative-store';
 import { getBrandVoiceForStream } from './brand-voice-store';
 import { icpLabel, formatById, defaultLengthFor, HOOK_CRAFT } from './output-plan';
 import { promptFragment } from './kit';
@@ -66,26 +66,26 @@ export class DraftError extends Error {
  * The source text a piece is drafted from.
  *
  * TWO SHAPES, because there are two eras of piece. A piece from the streams flow points at
- * a concept doc via `concept_ref`. A piece from the Gates (D40) points at a Story via
- * `story_ref`, and its source is that story's ARTICLE: the long form is approved at gate 2
+ * a concept doc via `concept_ref`. A piece from the Gates (D40) points at a Narrative via
+ * `narrative_ref`, and its source is that narrative's ARTICLE: the long form is approved at gate 2
  * precisely so every piece is cut from it and nothing downstream invents past it.
  *
- * This was a real break on the first walkthrough. Gate 4's masters carry story_ref and no
+ * This was a real break on the first walkthrough. Gate 4's masters carry narrative_ref and no
  * concept_ref, so every draft and hook call on them failed with "no concept to work from",
- * which reads like a mis-planned piece rather than a missing lookup. The story branch goes
+ * which reads like a mis-planned piece rather than a missing lookup. The narrative branch goes
  * FIRST: when a piece has both, the article is the nearer and more specific source.
  */
 export async function conceptBodyForPiece(
   owner: string,
   piece: MarketingPiece
 ): Promise<string> {
-  if (typeof piece.story_ref === 'string' && piece.story_ref) {
+  if (typeof piece.narrative_ref === 'string' && piece.narrative_ref) {
     try {
-      const story = await getStory(piece.story_ref);
-      const article = story?.article?.trim() ?? '';
+      const narrative = await getNarrative(piece.narrative_ref);
+      const article = narrative?.article?.trim() ?? '';
       if (article) return article;
     } catch (err) {
-      console.error('[draft] story read failed:', err);
+      console.error('[draft] narrative read failed:', err);
     }
   }
   if (typeof piece.concept_ref === 'string' && piece.concept_ref) {
@@ -143,7 +143,7 @@ type PromptOpts = {
   /**
    * THE END STATE, from the kit catalogue: what this finished post actually has to be, with
    * its length band, its image, its link rule, and the things we do not know and must not
-   * claim. Present on any piece cut from a Story (D42), absent on the older custom
+   * claim. Present on any piece cut from a Narrative (D42), absent on the older custom
    * Output-plan path, which has no typed output behind it.
    */
   outputSpec?: string;
@@ -384,7 +384,7 @@ async function gather(
   }).catch(() => ({ items: [], exactFormat: true }) as Awaited<ReturnType<typeof pickExemplars>>);
 
   /**
-   * The typed output behind this piece, if it came from a Story's kit. This is the whole reason
+   * The typed output behind this piece, if it came from a Narrative's kit. This is the whole reason
    * the kit catalogue exists: without it every LinkedIn frame writes format 'linkedin_text' and
    * arrives here as one identical instruction, so a contrarian post and a numbered list come
    * back as the same post and the frames on the Gate 3 screen are decoration.

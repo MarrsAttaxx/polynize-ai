@@ -48,7 +48,7 @@ function escapeHtml(v: string): string {
  */
 export async function sendHandPostBrief(
   lane: string,
-  storyTitle: string,
+  narrativeTitle: string,
   posts: HandPost[]
 ): Promise<{ sent: number; skipped: string | null }> {
   try {
@@ -63,7 +63,7 @@ export async function sendHandPostBrief(
     }
 
     const n = posts.length;
-    const subject = `Post these yourself: ${storyTitle} (${n} ${n === 1 ? 'post' : 'posts'})`;
+    const subject = `Post these yourself: ${narrativeTitle} (${n} ${n === 1 ? 'post' : 'posts'})`;
 
     const textBlocks = posts.map((p, i) => {
       const lines = [
@@ -77,7 +77,7 @@ export async function sendHandPostBrief(
     });
 
     const text = [
-      `${n} ${n === 1 ? 'post' : 'posts'} from "${storyTitle}" are ready for you to publish by hand.`,
+      `${n} ${n === 1 ? 'post' : 'posts'} from "${narrativeTitle}" are ready for you to publish by hand.`,
       '',
       ...textBlocks.map((b) => `${b}\n\n${'-'.repeat(40)}`),
       '',
@@ -85,7 +85,7 @@ export async function sendHandPostBrief(
     ].join('\n');
 
     const html = `<div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:15px;line-height:1.6;color:#1f2a26;max-width:620px">
-<p style="font-size:17px;margin:0 0 6px"><strong>${escapeHtml(storyTitle)}</strong></p>
+<p style="font-size:17px;margin:0 0 6px"><strong>${escapeHtml(narrativeTitle)}</strong></p>
 <p style="margin:0 0 22px;color:#6f7a72">${n} ${n === 1 ? 'post' : 'posts'} ready for you to publish by hand. Nothing here is scheduled.</p>
 ${posts
   .map(
