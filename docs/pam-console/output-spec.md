@@ -242,11 +242,46 @@ Verified against Google's own documentation, and it **corrects two things the th
 
 Inflow and OpusClip are directly opposed and neither is trustworthy for 2026. Metricool's 16 seconds is the largest and most current figure but it measures **actual watch time, not optimal length**, and conflating the two would be a mistake. **YouTube publishes no duration benchmark at all.** So: no target length from data. What we do know is that attention is collapsing and the feed now carries most of YouTube's views.
 
-## 8b. TikTok: still unverified
+## 8b. TikTok
 
-Not filled in from memory. Verified: 1080 x 1920, 9:16 ([Hootsuite](https://blog.hootsuite.com/social-media-image-sizes-guide/)). Third-party safe area, unconfirmed against TikTok's own docs: 108px top, 320px bottom, 60px left, **120px right**. **NOT VERIFIED:** max duration, optimal duration, caption limit, cover support, and TikTok's own safe-area figures.
+TikTok documents less than the other two, and its only real hard-spec source is its **Content Posting API** developer guide rather than any creator help page.
 
-One solid format finding: **TikTok video takes 3.39% median engagement against 1.92% for TikTok photo carousels**, so video wins on TikTok while carousels win on Instagram ([Buffer](https://buffer.com/resources/data-best-content-format-social-media/), 45M+ posts). Instagram carousels get 4.7x the views of TikTok carousels, while Instagram Reels get 30% fewer views than TikTok videos (Metricool). The two platforms want different things from the same story.
+| Property | Value | Source |
+|---|---|---|
+| Aspect ratio | **TikTok publishes NO aspect-ratio requirement** for organic video. Its creative guidance says vertical 9:16, shoot at least 720p | Official [media transfer guide](https://developers.tiktok.com/doc/content-posting-api-media-transfer-guide); [creative best practices](https://ads.tiktok.com/help/article/creative-best-practices?lang=en) |
+| Resolution range | 360 px min, 4096 px max on both axes | Official media transfer guide |
+| Our render | 1080 x 1920. **Third-party recommendation** (Hootsuite, Sprout), not a TikTok figure. Other dimensions get black bars | [Hootsuite](https://blog.hootsuite.com/social-media-image-sizes-guide/) |
+| Frame rate | 23 to 60 FPS | Official media transfer guide |
+| Max file size | 4 GB via API | Official media transfer guide |
+| Max duration | **10 minutes documented.** All creators get 3 minutes, some get 5 or 10, and the API exposes a per-creator `max_video_post_duration_sec` a client must check | Official media transfer guide, [creator info reference](https://developers.tiktok.com/doc/content-posting-api-reference-query-creator-info) |
+| Duration conflict | Metricool and most SEO blogs say 60 minutes. **No TikTok source supports 60 or 30 minutes.** 10 is the documented ceiling | Official docs vs [Metricool](https://metricool.com/tiktok-video-length/) |
+| Caption limit | **2,200 UTF-16 runes** | Official [direct post reference](https://developers.tiktok.com/doc/content-posting-api-reference-direct-post) |
+| Caption conflict | The widespread 4,000 figure has **no TikTok source**, and Hootsuite contradicts itself across two of its own pages (2,200 in one tool, 4,000 in another) | |
+| Caption truncation | **NO DATA** from TikTok. Third-party claims span 55 to 150 characters | |
+| Cover | **Frame selection only.** Pick and drag a frame before posting. Custom image upload is not documented, and no size or format spec is published anywhere | Official [editing and posting](https://support.tiktok.com/en/using-tiktok/creating-videos/editing-posting-and-deleting) |
+| Optimal duration | **21 to 34 seconds got a 280% conversion lift** over shorter or longer. 9:16 gave a 91% lift, 720p or better a 312% lift | Official [TikTok ads blog](https://ads.tiktok.com/business/en-US/blog/creative-that-drives-conversions), Dec 2021. **Ad data, and five years old**, but it is the most recent TikTok has published |
+| Hook window | TikTok says **3 seconds** in one place and **6 seconds** in another, on the same help page. Over 63% of highest-CTR videos land the key message inside 3 seconds. Onscreen text in the first 7 seconds gave a 43% conversion lift in one vertical | Official creative best practices; ads blog |
+| Text pacing | **5 to 10 words per second** when using onscreen text | Official creative best practices |
+
+### The safe zone: TikTok publishes no numbers at all
+
+Four separate TikTok ad-spec pages were checked. **Every one describes the safe zone qualitatively and then offers only a downloadable ZIP template.** The single numeric safe-zone value TikTok publishes anywhere is for a profile photo (key element inside the centre 66 x 66 px of a 98 x 98 px image).
+
+Third-party bottom-inset claims for a 1080 x 1920 frame range from **250 px to 707 px**. One of those sources explicitly admits its numbers are internal production guidelines rather than TikTok spec. That spread is too wide to use, so **none of it is treated as spec here.**
+
+**There is an authoritative route, and it needs a decision:** TikTok's own In-Feed Standard safe-zone ZIP template (84 KB) carries the real guides. Downloading it would settle the numbers. Say the word and it gets fetched.
+
+### Originality, and the watermark rule that actually bites
+
+TikTok's originality policy, last updated 24 December 2025, names four kinds of unoriginal content, and one of them is directly ours to avoid: **content carrying someone else's visible watermark or superimposed logo "in most cases does not count as original."** ([TikTok Creator Academy](https://www.tiktok.com/creator-academy/article/tiktok-originality-policy))
+
+Consequences: removal from the For You feed, ineligibility for recommendation, and ineligibility for the Creator Rewards Program, which uses originality as a key metric. Creators can check status with TikTok's Account Check tool.
+
+Note the precise scope: the policy names **someone else's** watermark. It does not say TikTok's own watermark on your own re-uploaded video is a violation. But since Instagram's rule is stricter and covers any visible watermark, our operating rule stands: **export a clean master and publish that file natively to each platform.**
+
+### Format finding
+
+**TikTok video takes 3.39% median engagement against 1.92% for TikTok photo carousels**, so video wins on TikTok while carousels win on Instagram ([Buffer](https://buffer.com/resources/data-best-content-format-social-media/), 45M+ posts). Instagram carousels get 4.7x the views of TikTok carousels, while Instagram Reels get 30% fewer views than TikTok videos (Metricool). The two platforms want different things from the same story.
 
 ## 8c. THE SAFE AREA THAT ACTUALLY GOVERNS OUR RENDERER
 
@@ -258,12 +293,14 @@ Meta's figures are 14% top, 35% bottom, 6% sides, so 269 / 672 / 65.
 
 **I claimed designing to Meta's numbers would cover both platforms. That is false.** Google's right inset is **192px against Meta's 65px**, because the like/comment/share rail sits further into the frame. The true cross-platform envelope is the worst case on every edge:
 
-| Edge | Meta | Google | TikTok (3rd party) | **Use this** |
+| Edge | Meta (official) | Google (official) | TikTok | **Use this** |
 |---|---|---|---|---|
-| Top | 269 | 288 | 108 | **288** |
-| Bottom | 672 | 672 | 320 | **672** |
-| Left | 65 | 48 | 60 | **65** |
-| Right | 65 | **192** | 120 | **192** |
+| Top | 269 | 288 | no published figure | **288** |
+| Bottom | 672 | 672 | no published figure | **672** |
+| Left | 65 | 48 | no published figure | **65** |
+| Right | 65 | **192** | no published figure | **192** |
+
+**TikTok publishes no safe-zone numbers at all** (section 8b), and the third-party figures for it span 250 to 707 px on the bottom alone. Fortunately it does not matter for the envelope: Google binds the right edge at 192, and Meta and Google independently agree on 672 at the bottom, so the numbers above hold on Meta's and Google's own documentation without needing TikTok's. If TikTok's template later shows something tighter than 288/672/65/192 on any edge, the envelope shrinks to match.
 
 **The renderer targets 823 x 960 px, offset 65 from the left and 288 from the top of a 1080 x 1920 frame.** Anything outside that can be covered by platform UI on at least one of the three.
 
@@ -310,4 +347,4 @@ Two caveats worth carrying: both Google and Meta describe these as **ad** guidan
 
 **Watch the one-minute copyright line on Shorts:** over 60 seconds with any active claim and the Short is blocked globally, so licensed music in a long Short is a hard fail rather than a warning.
 
-**Still unverified:** TikTok's own duration, caption, cover and safe-area figures. Those need either a second research pass or a look at each platform's own creator docs.
+**Still unverified:** TikTok publishes no safe-zone numbers at all. Its own ZIP template is the authoritative route and needs one decision to fetch. Those need either a second research pass or a look at each platform's own creator docs.
