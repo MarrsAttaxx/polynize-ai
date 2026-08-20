@@ -61,8 +61,9 @@ app/console/_components/SignInForm.tsx  the form and the "check your inbox" stat
 
 1. User submits an email to a Server Action.
 2. Email checked against an allowlist held in env vars. **If it is not on the
-   list the action still returns `{ ok: true }` and sends nothing** ,  deliberate
-   non-disclosure, so the UI can never be used to enumerate who has access.
+   list the action still returns `{ ok: true }` and sends nothing.** That is
+   deliberate non-disclosure, so the UI can never be used to enumerate who has
+   access.
    Copy this behaviour.
 3. Allowed email gets a **JWT, HS256, signed with `POLYNIZE_AUTH_SECRET`**, with
    `{ email, type: 'magic-link' }` and a **15 minute** expiry.
@@ -126,7 +127,7 @@ there, for a mockup.
 | `POLYNIZE_AUTH_SECRET` | a fresh random string, yours alone |
 | `RESEND_API_KEY` | see section 4 |
 | `RESEND_FROM` | `console@polynize.ai`, or ask Marrs for a distinct address |
-| `RESEND_ENABLED` | `true` ,  see the warning in section 1 |
+| `RESEND_ENABLED` | `true`, and read the warning in section 1 |
 | `NEXT_PUBLIC_BASE_URL` | `https://graph.polynize.ai` |
 | your allowlist var | comma-separated emails |
 
