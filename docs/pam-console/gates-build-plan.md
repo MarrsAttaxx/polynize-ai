@@ -18,6 +18,7 @@ The rule for the whole build: **reuse before new**. Most gates are existing part
 |---|---|
 | Slots per stream | Slots per **channel** (platform x stream), two a day |
 | Add to queue is a button | An **approved piece auto-queues** to its channel's next open slot |
+| Slots are just times, filled in order | Slots carry a **type** (D46): LinkedIn morning is video, afternoon is text and images. A preference, not a filter, so a slot never goes empty when something else is waiting |
 
 **The honest maths, corrected 19 August 2026 (D42).** The line below was arithmetically right and operationally false, so it is kept with its correction rather than quietly rewritten.
 

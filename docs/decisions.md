@@ -863,6 +863,8 @@ D42 flagged that the output spec's only cadence evidence measures **4 to 5 Linke
 
 **Capacity, with the typed kit at 2 a day.** LinkedIn is 4 posts per narrative into 14 slots, so 3 narratives a week fits with room. Instagram is 5 into 14, so 2 fit comfortably and a third overflows by one. So roughly **2 to 3 narratives a week** is what the current shape actually carries, and Instagram binds it, not LinkedIn.
 
+> **Updated 19 August 2026 by D46.** LinkedIn gained a fifth post per narrative (the video, added because this decision's own slot structure had nothing to put in the morning slot), so LinkedIn is now 5 into 14 and matches Instagram exactly. Both floor at 2.8, so the carry is unchanged at **2 to 3 narratives a week** and the two now bind together. Typed slots do **not** reduce it, because the preference is a preference and not a filter: see D46.
+
 **Still true and still unfixed:** nothing enforces capacity. `nextOpenSlots` walks 60 days forward and always finds something, so an oversubscribed channel silently slides posts into future weeks. Past that walk it creates an entry with no `scheduled_at`, which the ship path filters out, so a sustained overrun manufactures posts that can never ship and reports no error. With a maximalist posting strategy this stops being theoretical, so it should be built alongside the typed slots.
 
 ---
@@ -914,4 +916,61 @@ Marrs: *"Don't worry about the core concept or get rid of that screen."* The nar
 ### One thing to check with him
 
 He wrote **"Kristen"** and **"Julien"**; the console has **Kristin** and **Julian**, and has since they were added. Kept as they are rather than silently changed, because it is a person's own name on their own board and dictation is the likelier explanation. Worth a yes or no.
+
+---
+
+## D46: The slots get a type, and a preference is not a filter
+
+**Adopted 19 August 2026**, building what D44 named. Marrs: *"I'm going to keep the LinkedIn to two posts a day: video, text and images. That's fine, that's what morning and afternoon covered."*
+
+He thought it already worked. It did not: the slot table was a list of times filled in order, so whichever post the wave reached first took 08:30. A narrative would routinely put a text post in the morning and the video in the afternoon.
+
+**Now:** LinkedIn's morning slot is the **video** slot and its afternoon slot is the **text and images** slot. The other three networks state no preference, because he said nothing about them.
+
+### The finding that nearly made this inert
+
+**The kit produced no video on LinkedIn at all.** Every LinkedIn output was a text master or the blocked document. So a video-preferring morning slot had nothing it could ever draw from, and the visible result would not have been an error: it would have been a LinkedIn week at half cadence, 7 usable slots instead of 14, with the morning permanently empty. He would have found out by looking at the grid.
+
+Worse, the format registry disagreed with the kit and the registry was the misleading one: `output-plan.ts` already lists `linkedin` among `split_screen_short`'s channels, so anyone checking whether LinkedIn video existed by reading that file concluded yes.
+
+**So the kit gained `li_short`**, one cut on LinkedIn on the existing shorts master, and this is recorded as **a bet, not a gap being filled.** The only LinkedIn video figure in the output spec is negative: median reach down 36% year on year, the steepest fall of any format in the document, and the spec has no LinkedIn video section at all. Adding it is a maximalist bet against the only evidence there is, which is exactly consistent with D44, and it should be judged on his own numbers when the Learn loop can produce them. One cut, not three, because three near-identical videos on the channel whose video reach is falling is volume with no argument behind it.
+
+### Preference, not filter, and the argument is arithmetic
+
+A hard filter would honour his shape exactly and go quiet when nothing matched. Under it, a narrative's 4 LinkedIn stills would queue one per day into the afternoon while every morning sat empty: **the only version of this build that reduces total surface area**, on the channel where he asked for more of it. He is a self-described maximalist. So a slot declares what it is **for**, takes that first, and takes something else rather than going empty.
+
+The invariant that makes it safe is arithmetic rather than argument: **the slots consumed are exactly the ones the untyped fill consumed.** `nextOpenSlots` is not touched, so "never a past time", "never a duplicate" and the 60-day guard are inherited rather than re-earned, and the matcher only decides which post sits in which of those slots. Preference reorders. It never delays and it never drops. A test asserts it per network at five demand sizes.
+
+**The cost, stated because he will see it:** on a quiet week two of his LinkedIn mornings will carry a text post. That is the failure that keeps posting, chosen over the failure that goes quiet.
+
+**So the fallback is visible.** The Gate 5 grid had no time-of-day dimension at all before this, which would have made the whole feature invisible on the only screen he looks at. Every chip now carries its time, a fallback placement is marked `*` in coral with a dashed edge, and a line under the grid says how many and why. A Rules post at 08:30 with no explanation reads as a feature that did not work.
+
+### Five things the adversarial pass caught, all of which would have shipped
+
+1. **A slot preference keyed to `'08:30'` would have evaporated.** The default times are documented as placeholders pending the Metricool best-times spike, so the preference is derived from **time of day** (before or after noon) rather than from a literal time.
+2. **Keying by position instead of by time** would have moved the video preference onto any earlier slot added later, because `normalizeSlots` sorts. Keyed by the time string.
+3. **Turning `ChannelSlots` into objects** would have broken the tolerant parse in both directions: `normalizeSlots` filters on `typeof s === 'string'`, so a new-shape file read by old code drops every slot and falls back to the placeholder times **silently**. `prefers` is a sibling key instead, exactly as `modes` was in D41. Worst case it is ignored.
+4. **`'text and images'` is not `masterKind: 'image'`.** Every LinkedIn still post is a **text** master carrying a mandatory image (D42 rule 2). A slot typed `image` would have matched nothing on LinkedIn and killed the afternoon as well as the morning. The vocabulary is two values, video and still, which is how he said it.
+5. **Matching per master rather than per network** puts a video in an afternoon. The video master asks first, sees a three-slot window on Instagram, and is forced into a still slot while the carousel later takes a morning. Demand is now gathered for a whole network before anything is placed.
+
+### Two latent bugs fixed on the way, both of which could double-post
+
+**`have` now means timed OR already live.** Counting every row let a dateless draft block its own replacement forever, because ship filters on `scheduled_at`. Counting only timed rows fixes that and opens something worse: the calendar's PUT route clears `scheduled_at` without touching `status`, so a **scheduled** entry holding a live Metricool id can exist with no date, and treating it as absent creates a second draft that ship then publishes to a real channel. A non-draft row counts as present whatever its date, and only drafts are repaired.
+
+**Orphan drafts are repaired in place, sorted by `created_at`.** `listEntries` has no ORDER BY, so without the sort which orphan gets which slot differed between two runs over identical state, which is a schedule that changes on replan.
+
+Also: an entry is **never saved without a time** any more. It used to be, which manufactured a post that could never ship and never errored; it is now reported on screen and retried next run. The wave lock went from 2 minutes to 6, because `maxDuration` is 300 seconds and a run that outlived its own lock could be joined by a second run computing `have` from a pre-write snapshot.
+
+### Weekends: all seven days, and that is an answer rather than a shrug
+
+He asked. **There is no day-of-week evidence to build on.** Section 4 of the output spec is the only cadence section and not one of its rows is a day; nothing else in the docs or the code carries day-of-week data; the only intended source is the Metricool best-times endpoint, still an unrun spike. A weekday-only default would be a guess wearing the clothes of a rule, and an expensive one: cutting to weekdays drops LinkedIn from 14 slots a week to 10.
+
+The one narrow version that was considered and rejected: default **manual** channels to weekdays, since a Saturday slot on his own LinkedIn is an email asking him to work on a Saturday. It buys nothing, because the hand-post brief is **one email per wave sent at ship time**, not a notification per slot. So a Saturday slot generates no Saturday interruption, and the rule would cost his own lane two slots a week for no benefit.
+
+### Flagged, not built
+
+- **The wave lock is per narrative, not per lane.** Open two narratives on one lane and both read the calendar before either writes, so both can take the same slot. Typed slots neither cause nor worsen it. The precedent for the fix is in the same file: the ship branch already re-reads each entry fresh for exactly this reason.
+- **Two timezone sources, and they are different stores.** The wave picks a time using `getChannelSchedule(lane).timezone`; `publishEntry` sends it paired with `getPostingSchedule()[stream].timezone`. Both default to Sydney so it is invisible today. Typed slots make it categorical rather than cosmetic: the post the grid labels the morning video would go out in the afternoon.
+- **A calendar entry still has no output identity.** The master `texts_list` serves both the listicle and the explainer, so unticking one and ticking the other leaves `missing` at 0 and the wrong draft stands in. The slot is always right, because the kind comes from the master; the copy can still be wrong.
+- **Nothing enforces capacity.** Improved but not solved: the console no longer manufactures unshippable posts at the 60-day cliff, it reports them. It still does not warn that a lane is oversubscribed.
 

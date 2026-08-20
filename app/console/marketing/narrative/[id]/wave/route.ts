@@ -19,7 +19,13 @@ import { NextResponse } from 'next/server';
 import { randomUUID } from 'node:crypto';
 import { getCurrentUser } from '@/lib/console-auth';
 import { getNarrative, saveNarrative } from '@/lib/marketing/narrative-store';
-import { plansForTicks, capCopy, bodyCapFor, type KitOutput } from '@/lib/marketing/kit';
+import {
+  plansForTicks,
+  capCopy,
+  capForOutput,
+  slotKindFor,
+  type KitOutput,
+} from '@/lib/marketing/kit';
 import { getPiece, type MarketingPiece } from '@/lib/marketing/piece-store';
 import {
   getEntry,
@@ -29,8 +35,9 @@ import {
 } from '@/lib/marketing/calendar-store';
 import {
   getChannelSchedule,
-  nextOpenSlots,
+  matchOpenSlots,
   type Network,
+  type SlotDemand,
 } from '@/lib/marketing/channel-schedule';
 import { publishEntry } from '@/lib/marketing/publish';
 import { sendHandPostBrief, handPostFromEntry } from '@/lib/marketing/hand-post';
@@ -216,46 +223,126 @@ export async function POST(
 
   let created = 0;
   /**
-   * Entries a narrative already has that the CURRENT kit no longer asks for. It happens on a narrative
-   * planned under the v1 catalogue: v1 put four interchangeable LinkedIn text posts on one
-   * piece, and the typed kit asks for one per frame. Nothing is deleted here, because deleting
-   * a draft the operator did not ask to delete is a worse failure than leaving one behind, but
-   * the count is returned so Gate 5 can say so instead of the operator finding out on the grid.
+   * Entries a narrative already has that the CURRENT kit no longer asks for. It happens on a
+   * narrative planned under the v1 catalogue: v1 put four interchangeable LinkedIn text posts on
+   * one piece, and the typed kit asks for one per frame. Nothing is deleted here, because deleting
+   * a draft the operator did not ask to delete is a worse failure than leaving one behind, but the
+   * count is returned so Gate 5 can say so instead of the operator finding out on the grid.
    */
   let extra = 0;
+  /** Dateless drafts given a time rather than duplicated. */
+  let repaired = 0;
+  /** Posts placed in a slot that prefers the other kind, because nothing of that kind was waiting. */
+  let fallback = 0;
+  /** Posts the 60-day walk could not place. Reported, never saved without a time. */
+  const unplaced: string[] = [];
+
+  /**
+   * DEMAND IS GATHERED PER NETWORK BEFORE ANYTHING IS PLACED (D46), and this restructure is the
+   * whole reason the preference lands.
+   *
+   * Asked per MASTER, as it was before, the video master goes first and sees a window of three on
+   * Instagram (09:00, 13:30, 09:00 next day). It is forced to put a cut in an afternoon slot that
+   * prefers stills, and the carousel later takes a morning. Asked as ONE question per network,
+   * Instagram's demand of 3 video and 2 still meets a window of 3 mornings and 2 afternoons and
+   * matches all five, consuming exactly the same five times it consumed before.
+   *
+   * A future edit that moves the matching back inside the per-master loop leaves this compiling and
+   * silently undoes the guarantee, which is why the tests assert the placement rather than the shape.
+   */
+  type Job = {
+    output: KitOutput;
+    piece: MarketingPiece;
+    /** A dateless draft to give a time to, instead of creating a new entry beside it. */
+    repair?: CalendarEntry;
+  };
+  const demandByNetwork = new Map<Network, SlotDemand<Job>[]>();
+
   try {
     for (const plan of plans) {
       const piece = masters.get(plan.master);
       if (!piece) continue;
-      // Group the plan's outputs by network, so each entry created corresponds to a real
-      // finished post rather than to an index in a count.
       const byNetwork = new Map<Network, KitOutput[]>();
       for (const o of plan.outputs) {
         const list = byNetwork.get(o.network) ?? [];
         list.push(o);
         byNetwork.set(o.network, list);
       }
-      const cap = bodyCapFor(plan.master);
 
       for (const [network, outputs] of byNetwork) {
-        const have = mine.filter(
+        const existing = mine.filter(
           (e) => e.piece_id === piece.piece_id && e.channel === network
-        ).length;
+        );
+        /**
+         * PRESENT means timed OR already live, not merely present in the list.
+         *
+         * Counting every row let a dateless draft block its own replacement forever: ship filters
+         * on scheduled_at, so that entry could never go out and never be replaced. Counting only
+         * TIMED rows fixes that and opens something worse, because the calendar's PUT route clears
+         * scheduled_at without touching status: a 'scheduled' entry holding a live Metricool id can
+         * exist with no date, and treating it as absent would create a SECOND draft that ship then
+         * publishes to a real channel. So a non-draft row counts as present whatever its date, and
+         * only DRAFTS are ever repaired.
+         */
+        const have = existing.filter((e) => e.scheduled_at || e.status !== 'draft').length;
+        /**
+         * Sorted by created_at because listEntries has no ORDER BY: without it, which orphan gets
+         * which slot differs between two runs over identical state, which is a schedule that
+         * changes on replan.
+         */
+        const orphans = existing
+          .filter((e) => !e.scheduled_at && e.status === 'draft')
+          .sort((a, b) => (a.created_at ?? '').localeCompare(b.created_at ?? ''));
+
         const missing = outputs.length - have;
         if (missing <= 0) {
           if (missing < 0) extra += -missing;
           continue;
         }
-
-        const taken = takenByNetwork.get(network) ?? [];
-        const slots = nextOpenSlots(schedule, network, missing, taken);
-        // Fill the TAIL: the first `have` outputs are the ones already on the calendar, so a
-        // retry after a mid-plan crash creates what is missing rather than repeating the front.
+        // Fill the TAIL: the first `have` outputs are already on the calendar, so a retry after a
+        // mid-plan crash creates what is missing rather than repeating the front.
         const todo = outputs.slice(have);
-        for (let i = 0; i < todo.length; i++) {
-          const output = todo[i];
-          const slot = slots[i];
+        const list = demandByNetwork.get(network) ?? [];
+        todo.forEach((output, i) => {
+          list.push({
+            kind: slotKindFor(output.master),
+            // Repairs ride in the same demand so they compete for the same window rather than
+            // getting a second one.
+            item: { output, piece, repair: orphans[i] },
+          });
+        });
+        demandByNetwork.set(network, list);
+      }
+    }
+
+    for (const [network, demand] of demandByNetwork) {
+      const taken = takenByNetwork.get(network) ?? [];
+      const placements = matchOpenSlots(schedule, network, demand, taken);
+      for (const p of placements) {
+        const { output, piece, repair } = p.item;
+        if (!p.slot) {
+          // Saving an entry with no time manufactured a post that could never ship and never
+          // errored. Reported instead, and the next plan run retries it.
+          unplaced.push(`${output.postLabel} on ${network}`);
+          continue;
+        }
+        if (!p.preferred) fallback += 1;
+        const slot = p.slot;
+
+        if (repair) {
+          // Only the date. The copy and the media may have been hand-tuned since, and a repair is
+          // meant to rescue an entry rather than reset it.
+          await saveEntry(owner, {
+            ...repair,
+            scheduled_at: slot.dateTime,
+            updated_at: new Date().toISOString(),
+          });
+          repaired += 1;
+        } else {
           const raw = piece.body ?? piece.script ?? piece.title ?? '';
+          // Per OUTPUT, not per master: one master now serves four networks with different caps,
+          // so trimming by master would cut every LinkedIn caption to Instagram's 2,200.
+          const cap = capForOutput(output);
           const entry: CalendarEntry = {
             entry_id: randomUUID(),
             owner,
@@ -263,38 +350,32 @@ export async function POST(
             piece_id: piece.piece_id,
             title: piece.title,
             channel: network,
-            // The caption card at Gate 4 will own per-channel copy in the next build. Until
-            // then the master's own text rides along so a draft is never empty, and it is
-            // trimmed to THIS network's own cap in THIS network's own unit. The old blanket
-            // 4,000 character slice was above LinkedIn's 3,000 and above Instagram's and
-            // TikTok's 2,200, so it trimmed nothing that mattered and hid nothing that did.
+            // The caption card at Gate 4 will own per-channel copy in the next build. Until then
+            // the master's own text rides along so a draft is never empty, trimmed to THIS
+            // network's own cap in THIS network's own unit.
             post_copy: cap ? capCopy(raw, cap) : raw.slice(0, 4000),
-            scheduled_at: slot?.dateTime,
+            scheduled_at: slot.dateTime,
             status: 'draft',
             media: piece.media ?? [],
             /**
              * Stamped now, not read at ship time: changing the lane's setting later must not
              * silently rewrite how an already-planned wave goes out.
              *
-             * An output can also demand manual on its own account (D41 tail): a LinkedIn
-             * document cannot be scheduled through Metricool at all, so it is a hand-post by
-             * NATURE rather than by channel setting. Without this the polynize lane, whose
-             * LinkedIn is 'auto', would push it through as flat media and post a picture
-             * instead of a swipeable document.
+             * An output can also demand manual on its own account (D41 tail): a LinkedIn document
+             * cannot be scheduled through Metricool at all, so it is a hand-post by NATURE rather
+             * than by channel setting. Without this the polynize lane, whose LinkedIn is 'auto',
+             * would push it through as flat media and post a picture instead of a document.
              */
-            publish_mode: output.handPost
-              ? 'manual'
-              : (schedule.modes[network] ?? 'auto'),
+            publish_mode: output.handPost ? 'manual' : (schedule.modes[network] ?? 'auto'),
             created_at: new Date().toISOString(),
           };
           await saveEntry(owner, entry);
           created += 1;
-          if (slot) {
-            const list = takenByNetwork.get(network) ?? [];
-            list.push(slot.dateTime);
-            takenByNetwork.set(network, list);
-          }
         }
+
+        const list = takenByNetwork.get(network) ?? [];
+        list.push(slot.dateTime);
+        takenByNetwork.set(network, list);
       }
     }
   } catch (err) {
@@ -307,5 +388,5 @@ export async function POST(
   }
 
   await unlock();
-  return NextResponse.json({ created, extra });
+  return NextResponse.json({ created, repaired, extra, fallback, unplaced });
 }

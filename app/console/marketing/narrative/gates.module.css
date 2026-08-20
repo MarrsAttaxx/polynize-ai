@@ -480,3 +480,10 @@
   outline: 2px solid var(--mint, #69fccb);
   outline-offset: 2px;
 }
+
+/* A post sitting in a slot that prefers the other kind (D46). Coral because it is not broken and
+   it is not right either: the slot did its job and had nothing of its own kind to put there. */
+.chipOff {
+  color: var(--coral, #ff7a6b);
+  border: 1px dashed rgba(255, 122, 107, 0.45);
+}

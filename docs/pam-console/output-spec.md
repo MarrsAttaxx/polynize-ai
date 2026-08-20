@@ -364,6 +364,8 @@ One thing this document was wrong about, worth recording. It said keeping zero n
 
 **The caption and hook renderer targets 660 x 960 px, offset 120 from the left and 288 from the top** of a 1080 x 1920 frame. That is the worst case across Meta, Google and TikTok, all three now on their own published numbers. Neither Meta's figures nor Google's are sufficient alone: **TikTok binds both horizontal edges**, reserving 120 px on the left and 300 px on the right where its action rail sits. See section 8c.
 
+**LinkedIn now carries one video post per narrative (D46), and it is a bet against this document.** The only LinkedIn video figure here is a 36% year on year fall in median reach, section 4, and there is no LinkedIn video section at all. It exists because the operator's slot structure names video as one of LinkedIn's two daily posts and the kit produced none, so the morning slot had nothing to draw from. Recorded as a maximalist bet, not as a gap being filled, and it is one cut rather than three.
+
 **Hashtags are off by default on Instagram,** against common practice, on the strength of a 24-million-post study showing a 31.70% view penalty.
 
 **Blocked, needs the spike:** whether Metricool can schedule a LinkedIn document post at all, and how we produce the PDF.

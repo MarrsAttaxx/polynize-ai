@@ -4,8 +4,12 @@ import { getNarrative } from '@/lib/marketing/narrative-store';
 import { getPiece } from '@/lib/marketing/piece-store';
 import { listEntries } from '@/lib/marketing/calendar-store';
 import { isMetricoolConfigured } from '@/lib/marketing/metricool-client';
-import { NETWORKS } from '@/lib/marketing/channel-schedule';
-import { outputForMaster } from '@/lib/marketing/kit';
+import {
+  NETWORKS,
+  getChannelSchedule,
+  slotPrefersAt,
+} from '@/lib/marketing/channel-schedule';
+import { outputForMasterOnNetwork, slotKindFor } from '@/lib/marketing/kit';
 import { NarrativeGates, type WaveData } from './NarrativeGates';
 
 export const dynamic = 'force-dynamic';
@@ -74,6 +78,7 @@ export default async function NarrativePage({
     auto: 0,
     manual: 0,
     handed: 0,
+    fallback: 0,
     metricoolReady: isMetricoolConfigured(),
   };
   if (narrative.gate === 5 || narrative.gate === 'shipped') {
@@ -92,6 +97,20 @@ export default async function NarrativePage({
       wave.manual = entries.filter((e) => e.publish_mode === 'manual').length;
       wave.auto = entries.length - wave.manual;
       wave.handed = entries.filter((e) => e.publish_mode === 'manual' && e.handed_at).length;
+
+      /**
+       * The lane's slot table, so the grid can say WHICH slot each post landed in (D46).
+       *
+       * Without this the typed slots are invisible: the grid has days as columns and networks as
+       * rows and no time-of-day dimension at all, so a video-preferring morning slot carrying a
+       * text post looks exactly like a working one. Read live rather than stamped, because the
+       * useful reading of a label is whether the table you are looking at now agrees with the
+       * calendar you are looking at now.
+       */
+      const schedule = await getChannelSchedule(narrative.lane).catch((err) => {
+        console.error('[narrative] slot table read failed:', err);
+        return null;
+      });
 
       const dayKeys = [...new Set(entries.map((e) => (e.scheduled_at ?? '').slice(0, 10)))].sort();
       const dayLabel = (d: string) => {
@@ -118,19 +137,37 @@ export default async function NarrativePage({
         const key = `${e.channel}:${m?.master ?? 'x'}`;
         const n = (seq.get(key) ?? 0) + 1;
         seq.set(key, n);
-        const output = m ? outputForMaster(m.master) : undefined;
+        /**
+         * Named from the output ON THIS CHANNEL, not from the master.
+         *
+         * outputForMaster returns the FIRST catalogue entry on a master, so once the shorts master
+         * served LinkedIn as well, the LinkedIn video would have been labelled "Reel 1" on the
+         * LinkedIn row. Position in the catalogue array cannot fix that, because the label is keyed
+         * by master.
+         */
+        const output = m ? outputForMasterOnNetwork(m.master, e.channel) : undefined;
         const name = output ? output.postLabel : 'Post';
-        // Number only where there is genuinely more than one of the same thing on a channel:
-        // a series of three cuts. A single typed post is named, so a "1" after it says nothing.
+        // Number only where there is genuinely more than one of the same thing on a channel: a
+        // series of three cuts. A single typed post is named, so a "1" after it says nothing.
         const numbered = n > 1 || (output?.series ? true : false);
+        const at = (e.scheduled_at ?? '').slice(11, 16);
+        const prefers =
+          schedule && e.scheduled_at ? slotPrefersAt(schedule, e.channel, e.scheduled_at) : 'any';
+        const kind = output ? slotKindFor(output.master) : undefined;
         wave.cells.push({
           day: dayLabel((e.scheduled_at ?? '').slice(0, 10)),
           network: e.channel,
           label: numbered ? `${name} ${n}` : name,
           video: m?.kind === 'video',
           manual: e.publish_mode === 'manual',
+          at,
+          prefers,
+          // A still post in the video slot, or the reverse. Shown rather than hidden, because a
+          // Rules post at 08:30 with no explanation reads as a feature that did not work.
+          fallback: prefers !== 'any' && kind !== undefined && prefers !== kind,
         });
       }
+      wave.fallback = wave.cells.filter((c) => c.fallback).length;
     } catch (err) {
       console.error('[narrative] wave read failed:', err);
     }

@@ -37,7 +37,7 @@ PAM (Polynize Agent Management) is the marketing engine: it takes an idea, shape
 - **Gate 2 · Article**: April drafts the long form (300 to 450 words) on first view; edit it directly or give her one instruction at a time in the docked chat. The article is the source of truth for every piece cut from it, and it publishes as-is. The interview step is retired.
 - **Gate 3 · Kit**: per-platform ticks, and each one now names the actual post rather than a count (D42). LinkedIn gives you the **Article**, a **Contrarian post**, a **Hard moment** (or a **Field report** on the Polynize lane), **Numbered rules**, and the **Document carousel** (off, no PDF builder yet). Instagram gives **Reels x3**, the **Carousel** and one **Image**. TikTok and YouTube carry the same three cuts. Defaults total **15 posts**, and the button says so. Confirming creates one piece per thing that has to be written, so three named LinkedIn posts are three pieces with three drafts, not one draft shown three times.
 - **Gate 4 · Create**: one card per thing to make, video first because it is the long pole. Seven cards on the default kit. April is told what each one has to BE: the contrarian post gets "state the belief, then break it" and a 1,300 to 2,500 character band; the numbered rules post gets a different instruction; the video script is told there is no target duration and where on-screen text is allowed to sit.
-- **Gate 5 · Ship**: the week laid out from each channel's ideal slots (two a day, morning and early afternoon, per `channel-schedule`), queued as **drafts** first. One button ships the wave: scheduled posts go live through Metricool, hand-posts are emailed to you (see §3c).
+- **Gate 5 · Ship**: the week laid out from each channel's slots, two a day, queued as **drafts** first. One button ships the wave: scheduled posts go live through Metricool, hand-posts are emailed to you (see §3c). Every chip on the grid carries its time, so you can see what lands when (see §3d).
 
 ### 3b2. What the kit knows about each post 🧪 (D42)
 
@@ -51,6 +51,23 @@ Every tick carries the finished post's real spec, and the spec reaches April rat
 - **What we do not know is passed on as an instruction.** April is told not to claim a target video duration (no platform publishes one), not to treat the character band as best practice, and not to repeat the "single images get 30% less reach" line, which has no dataset behind it.
 
 *Where the numbers live:* `docs/pam-console/output-spec.md` is the research, `lib/marketing/kit.ts` is the version the code reads, and `lib/marketing/safe-area.ts` holds the vertical safe area. Change one, change the others.
+
+### 3d. The slots have a type 🧪 (D46)
+
+On **LinkedIn**, the two daily slots are not interchangeable:
+
+- **Morning (08:30) is the video slot.**
+- **Afternoon (12:30) is text and images.**
+
+Instagram, TikTok and YouTube take whatever comes, because nothing has been decided about them.
+
+**It is a preference, not a rule, and that is deliberate.** If there is no video waiting, the morning slot takes a text post rather than sitting empty. The alternative was a hard filter, which would have honoured the shape exactly and gone quiet: on a quiet week that is one post a day on LinkedIn instead of two, which is the opposite of what you asked for.
+
+**When that happens the grid says so.** A post sitting in the wrong kind of slot is marked with a `*` in coral, and a line under the week explains it. If you see `08:30 Rules*` on LinkedIn, it means the video slot was free and there was no video for it.
+
+**LinkedIn now gets a video post.** It did not before: every LinkedIn item in the kit was text or an image, so the video slot could never have been filled. One cut goes to LinkedIn, the same file as the reels and the TikToks with a LinkedIn caption. Worth knowing: the only LinkedIn video number in the research is a 36% year on year fall in reach. This is a bet on surface area, not something the data asked for, and your own numbers will settle it.
+
+**Weekends stay on.** No source anywhere publishes a best-day figure, and cutting to weekdays would drop LinkedIn from 14 slots a week to 10. If you want weekends off, it is a setting, not a rebuild.
 
 ### 3c. Two ways a post can ship 🧪 (D41)
 

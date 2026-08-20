@@ -1,4 +1,4 @@
-import type { Network } from './channel-schedule';
+import type { Network, SlotKind, SlotPrefers } from './channel-schedule';
 import type { NarrativeLane } from './narrative-store';
 import { streamKind, STREAM_IDS, type StreamKind } from './streams';
 import { safeRect, type SafeRect } from './safe-area';
@@ -240,6 +240,16 @@ export type KitOutput = {
   handPost?: { reason: string };
   /** What the writer and the renderer must know. Never a Gate 3 row. */
   caveats?: string[];
+  /**
+   * Where this row sits inside its network on the Gate 3 screen, lowest first.
+   *
+   * SEPARATE FROM ARRAY POSITION on purpose, because array position already carries a different
+   * meaning: outputForMaster returns the FIRST entry on a master, so the LinkedIn video has to sit
+   * at the end of the shorts family or its 3,000 character cap would govern Instagram's captions.
+   * Its place on the SCREEN is second, right after the article. One array cannot order two things,
+   * so the screen gets its own number. Absent means "after the numbered ones, in array order".
+   */
+  row?: number;
 };
 
 /* ------------------------------------------------------------------ shared specs */
@@ -412,8 +422,8 @@ const VERTICAL_VIDEO: ArtifactSpec = {
 };
 
 const VIDEO_UNKNOWNS: string[] = [
-  'A target duration. None of the three platforms publishes one. The figures that circulate are watch time, not optimal length, or five-year-old ad conversion data.',
-  'That the safe area is generous. It is the worst case across three platforms and it is tighter than anyone assumes.',
+  'A target duration. Not one of these platforms publishes one. The figures that circulate are watch time, not optimal length, or five-year-old ad conversion data.',
+  'That the safe area is generous. It is the worst case across every platform this goes to and it is tighter than anyone assumes.',
 ];
 
 const IG_REEL_WRAP: WrapperSpec = {
@@ -476,6 +486,26 @@ const YT_SHORT_WRAP: WrapperSpec = {
     src: 'official',
     note: 'answer/6390658: three surface above the title, and over 60 hashtags means EVERY hashtag is ignored.',
   },
+};
+
+/**
+ * LINKEDIN VIDEO (D46). The same clean vertical export, captioned for LinkedIn.
+ *
+ * Everything here except the caption cap is OURS, because the output spec has no LinkedIn video
+ * section at all: its LinkedIn sections are the text post, the document carousel and the article.
+ * The only LinkedIn video datum anywhere in it is negative.
+ */
+const LI_VIDEO_WRAP: WrapperSpec = {
+  captionMax: {
+    v: { n: 3000, unit: 'char' },
+    src: 'official',
+    note: 'The same feed-post cap (a528176).',
+  },
+  captionFold: { v: 140, src: 'practitioner', note: 'Third-party consensus, no official figure.' },
+  // No cover. LinkedIn documents no custom video thumbnail upload for organic posts and the spec
+  // states none, so claiming a size would be inventing one.
+  cover: { how: 'none' },
+  link: 'first_comment',
 };
 
 const YT_WIDE: ArtifactSpec = {
@@ -553,6 +583,7 @@ const CATALOGUE: KitOutput[] = [
   {
     // v1 id, unchanged: same end state, so reusing the id beats aliasing it.
     id: 'li_article',
+    row: 1,
     network: 'linkedin',
     postType: 'pulse_article',
     master: 'article',
@@ -575,6 +606,7 @@ const CATALOGUE: KitOutput[] = [
   },
   {
     id: 'li_text_contrarian',
+    row: 3,
     network: 'linkedin',
     postType: 'contrarian',
     // 'texts' is the v1 value, kept so an in-flight narrative's existing text piece is ADOPTED as
@@ -598,6 +630,7 @@ const CATALOGUE: KitOutput[] = [
   },
   {
     id: 'li_text_hard_moment',
+    row: 4,
     network: 'linkedin',
     postType: 'hard_moment',
     master: 'texts_hard',
@@ -621,6 +654,7 @@ const CATALOGUE: KitOutput[] = [
   },
   {
     id: 'li_text_listicle',
+    row: 5,
     network: 'linkedin',
     postType: 'listicle',
     master: 'texts_list',
@@ -640,6 +674,7 @@ const CATALOGUE: KitOutput[] = [
   },
   {
     id: 'li_text_field_report',
+    row: 4,
     network: 'linkedin',
     postType: 'field_report',
     master: 'texts_field',
@@ -663,6 +698,7 @@ const CATALOGUE: KitOutput[] = [
   {
     // v1 id, unchanged: still exactly one LinkedIn document post.
     id: 'li_car',
+    row: 9,
     network: 'linkedin',
     postType: 'document',
     master: 'carousel',
@@ -922,6 +958,50 @@ const CATALOGUE: KitOutput[] = [
     job: 'The third cut as a Short.',
     doNotAssert: VIDEO_UNKNOWNS,
   },
+  /**
+   * LINKEDIN'S VIDEO POST, and it is deliberately LAST in the shorts family.
+   *
+   * WHY IT EXISTS. His slot structure names video as one of LinkedIn's two daily posts (D44), and
+   * the kit produced NO video on LinkedIn at all: every other LinkedIn output is a text master or
+   * the blocked document. So a video-preferring morning slot had nothing to draw from, and the
+   * feature that motivated this build would have been inert on the one channel it was for.
+   *
+   * WHY IT IS A BET RATHER THAN A GAP. The only LinkedIn video figure in the output spec is
+   * negative: median reach down 36% year on year, corroborated twice. The spec has no LinkedIn
+   * video section, and its cross-posting section names Instagram, TikTok and YouTube only. Adding
+   * this is a maximalist bet against the only evidence we have, which is consistent with D44 and
+   * is recorded as a bet rather than dressed up as filling a hole.
+   *
+   * WHY LAST IN THE ARRAY. outputForMaster() returns the FIRST catalogue entry on a master, and
+   * bodyCapFor and checkBody read it. Putting this first on 'shorts' would make LinkedIn's 3,000
+   * character cap govern Instagram and TikTok captions capped at 2,200.
+   *
+   * NOT a series: one cut on LinkedIn, not three. Three near-identical videos on the channel whose
+   * video reach is falling is volume without an argument for it.
+   */
+  {
+    id: 'li_short',
+    row: 2,
+    network: 'linkedin',
+    postType: 'vertical_video',
+    master: 'shorts',
+    label: 'Video',
+    sub: 'one cut, linkedin caption',
+    postLabel: 'Video',
+    shown: BOTH,
+    on: BOTH,
+    artifact: VERTICAL_VIDEO,
+    wrapper: LI_VIDEO_WRAP,
+    job: 'The strongest cut, captioned for LinkedIn, so the morning slot carries video.',
+    doNotAssert: [
+      ...VIDEO_UNKNOWNS,
+      'Anything about how LinkedIn video performs or should be built. The output spec has no LinkedIn video section, and its one LinkedIn video figure is a 36% year on year fall in median reach.',
+    ],
+    caveats: [
+      'LinkedIn video median reach fell 36% year on year, the steepest decline of any format in the spec (AuthoredUp, corroborated by Socialinsider). This output exists because the operator wants the surface area, not because the data asks for it.',
+      'Same file as the reels, TikToks and Shorts. One clean unwatermarked export, published natively, captioned per platform.',
+    ],
+  },
   {
     // v1 id, unchanged, and still off by default.
     id: 'yt_l',
@@ -1025,9 +1105,44 @@ export function outputForMaster(m: string): KitOutput | undefined {
   return CATALOGUE.find((o) => o.master === m);
 }
 
-/** Every finished post a master has to serve, which for the video script is nine across three. */
+/** Every finished post a master has to serve, which for the video script is ten across four. */
 export function outputsOnMaster(m: string): KitOutput[] {
   return CATALOGUE.filter((o) => o.master === m);
+}
+
+/**
+ * The output a master serves ON ONE NETWORK, which is what a calendar entry actually is.
+ *
+ * outputForMaster is keyed by master alone and returns the FIRST entry, so a master serving
+ * several networks gets one name for all of them: the LinkedIn video would be labelled "Reel" on
+ * the week grid, because ig_reel_1 is first on 'shorts'. Position in the array cannot fix that,
+ * because the label is keyed by master. This is the lookup the grid needs.
+ */
+export function outputForMasterOnNetwork(m: string, channel: string): KitOutput | undefined {
+  return CATALOGUE.find((o) => o.master === m && o.network === channel) ?? outputForMaster(m);
+}
+
+/**
+ * Which kind of slot a master's post belongs in.
+ *
+ * TWO VALUES, not the three masterKind carries: his split is video against text-and-images, and
+ * every LinkedIn still post is a TEXT master with a mandatory image, so folding 'text' and 'image'
+ * into one bucket is what makes the afternoon slot matchable at all.
+ */
+export function slotKindFor(m: string): SlotKind {
+  return masterKind(m as MasterAsset) === 'video' ? 'video' : 'still';
+}
+
+/**
+ * The body cap for ONE OUTPUT rather than for its master. A master serving several networks has
+ * several caps, and bodyCapFor(master) returns whichever network happens to sort first: with the
+ * LinkedIn video on 'shorts', trimming by master would cut every LinkedIn caption to Instagram's
+ * 2,200 instead of LinkedIn's 3,000.
+ */
+export function capForOutput(o: KitOutput): { n: number; unit: CountUnit } | undefined {
+  const a = o.artifact;
+  if (a.kind === 'text' || a.kind === 'longform_text') return a.cap.v;
+  return o.wrapper.captionMax?.v;
 }
 
 /* ------------------------------------------------------------------ resolving ticks */
@@ -1092,8 +1207,14 @@ export function kitRows(lane: NarrativeLane): KitRow[] {
   const rows: KitRow[] = [];
   const seenSeries = new Set<string>();
   for (const net of KIT_NETWORK_ORDER) {
-    for (const o of CATALOGUE) {
-      if (o.network !== net || !o.shown.includes(kind)) continue;
+    // Screen order, which is not array order: see KitOutput.row. Stable within equal numbers, so
+    // an unnumbered output keeps its array position relative to its unnumbered neighbours.
+    const inNetwork = CATALOGUE.map((o, ix) => ({ o, ix }))
+      .filter((x) => x.o.network === net)
+      .sort((a, mm) => (a.o.row ?? 99) - (mm.o.row ?? 99) || a.ix - mm.ix)
+      .map((x) => x.o);
+    for (const o of inNetwork) {
+      if (!o.shown.includes(kind)) continue;
       if (o.series) {
         if (seenSeries.has(o.series)) continue;
         seenSeries.add(o.series);
@@ -1166,6 +1287,23 @@ export function plansForTicks(ticks: string[], lane: NarrativeLane): MasterPlan[
     const existing = plan.placements.find((p) => p.network === o.network);
     if (existing) existing.count += 1;
     else plan.placements.push({ network: o.network, count: 1 });
+  }
+  /**
+   * Placements follow the SCREEN order, not the array order.
+   *
+   * They used to be the same thing. They stopped being the same thing when the LinkedIn video was
+   * put at the END of the shorts family, which it has to be because outputForMaster returns the
+   * first entry on a master and its 3,000 character cap would otherwise govern Instagram's
+   * captions. Sorting explicitly means array position can never again decide what an operator
+   * reads, on this screen or in April's prompt.
+   */
+  const netRank = (n: Network) => {
+    const i = KIT_NETWORK_ORDER.indexOf(n);
+    return i === -1 ? 99 : i;
+  };
+  for (const plan of byMaster.values()) {
+    plan.placements.sort((a, b) => netRank(a.network) - netRank(b.network));
+    plan.outputs.sort((a, b) => netRank(a.network) - netRank(b.network));
   }
   return [...byMaster.values()].sort(
     (a, b) => (MASTER_META[a.master]?.rank ?? 99) - (MASTER_META[b.master]?.rank ?? 99)
@@ -1268,8 +1406,12 @@ function units(n: number, unit: CountUnit): string {
  * the wrong limit.
  */
 function wrapperLines(outputs: KitOutput[]): string[] {
+  // Screen order, for the same reason plansForTicks sorts: array position is spoken for.
   const byNetwork = new Map<Network, KitOutput>();
-  for (const o of outputs) if (!byNetwork.has(o.network)) byNetwork.set(o.network, o);
+  for (const net of KIT_NETWORK_ORDER) {
+    const first = outputs.find((o) => o.network === net);
+    if (first) byNetwork.set(net, first);
+  }
   const many = byNetwork.size > 1;
   const lines: string[] = [];
   if (many) {
@@ -1326,7 +1468,9 @@ export function promptFragment(master: string): string | undefined {
   const a = o.artifact;
   const lines: string[] = [];
 
-  const nets = [...new Set(siblings.map((x) => x.network))];
+  // Screen order here as well, so the header, the wrapper lines and the Gate 3 rows all read the
+  // networks in one order rather than three.
+  const nets = KIT_NETWORK_ORDER.filter((n) => siblings.some((x) => x.network === n));
   lines.push(
     nets.length > 1
       ? `THE FINISHED POSTS: ${siblings.length} of them, on ${nets.join(', ')}. ${o.job}`
@@ -1402,6 +1546,51 @@ export function promptFragment(master: string): string | undefined {
  * Called by a test, NEVER at import time: a throw here would blank the Gate 3 screen in the
  * browser over a data typo, which is a worse failure than the typo.
  */
+/**
+ * DOES EVERY KIND THIS LANE PRODUCES HAVE A SLOT THAT IS FOR IT?
+ *
+ * This is the check that would have caught the whole bug class before it shipped. LinkedIn's
+ * morning slot was going to prefer video while the catalogue produced no LinkedIn video at all, and
+ * nothing anywhere would have said so: the week would simply have been half as full as he asked
+ * for, and he would have found out by looking at it.
+ *
+ * WARNINGS, not failures. Under a preference model a slot with no supply is legal, it just means
+ * the fallback carries that slot, and a preference nothing matches is a hint worth printing rather
+ * than a broken build. Returns lines, so the caller decides what to do with them.
+ *
+ * Takes the preference lookup as an argument rather than importing it, because this file is
+ * client-safe and channel-schedule.ts is not.
+ */
+export function slotSupplyProblems(
+  lane: NarrativeLane,
+  prefersByNetwork: (n: Network) => SlotPrefers[]
+): string[] {
+  const out: string[] = [];
+  const outputs = outputsForTicks(defaultTicks(lane), lane);
+  for (const network of KIT_NETWORK_ORDER) {
+    const mine = outputs.filter((o) => o.network === network);
+    if (mine.length === 0) continue;
+    const supplied = new Set(mine.map((o) => slotKindFor(o.master)));
+    const wanted = prefersByNetwork(network);
+    for (const kind of new Set(wanted)) {
+      if (kind === 'any') continue;
+      if (!supplied.has(kind)) {
+        out.push(
+          `${lane}: a ${network} slot prefers ${kind} and the kit produces no ${kind} post on ${network}. That slot will be carried by the fallback.`
+        );
+      }
+    }
+    for (const kind of supplied) {
+      if (!wanted.includes(kind) && !wanted.includes('any')) {
+        out.push(
+          `${lane}: the kit produces a ${kind} post on ${network} and no ${network} slot prefers ${kind}.`
+        );
+      }
+    }
+  }
+  return out;
+}
+
 export function catalogueProblems(): string[] {
   const out: string[] = [];
   const seen = new Set<string>();

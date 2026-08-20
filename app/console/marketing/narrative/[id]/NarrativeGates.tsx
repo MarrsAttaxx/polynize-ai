@@ -39,6 +39,12 @@ type WaveCell = {
   video: boolean;
   /** True when this one is his to post by hand rather than Metricool's to schedule. */
   manual: boolean;
+  /** 'HH:mm'. The grid had no time-of-day dimension at all before typed slots (D46). */
+  at: string;
+  /** What the slot it landed in is for. */
+  prefers: 'video' | 'still' | 'any';
+  /** A still post in the video slot, or the reverse. Shown, never hidden. */
+  fallback: boolean;
 };
 export type WaveData = {
   planned: boolean;
@@ -53,6 +59,8 @@ export type WaveData = {
   manual: number;
   /** Manual entries already sent to him. */
   handed: number;
+  /** Posts sitting in a slot that prefers the other kind (D46). */
+  fallback: number;
   metricoolReady: boolean;
 };
 
@@ -321,9 +329,23 @@ export function NarrativeGates({
           headers: { 'content-type': 'application/json' },
           body: JSON.stringify({ action: 'plan' }),
         });
-        if (res.ok) router.refresh();
-        else {
-          const b = (await res.json().catch(() => null)) as { error?: string } | null;
+        const b = (await res.json().catch(() => null)) as {
+          error?: string;
+          unplaced?: string[];
+        } | null;
+        if (res.ok) {
+          /**
+           * A post the 60-day walk could not place. It is no longer saved without a time, which
+           * used to manufacture a post that could never ship and never errored, so the only place
+           * it can be reported is here. The next plan run retries it.
+           */
+          if (b?.unplaced?.length) {
+            setErr(
+              `No open slot for ${b.unplaced.join(', ')}. That channel is booked out: free a slot or add one, then reload.`
+            );
+          }
+          router.refresh();
+        } else {
           setErr(b?.error ?? 'Could not lay out the week.');
         }
       } catch {
@@ -600,13 +622,25 @@ export function NarrativeGates({
                           <td key={d}>
                             {wave.cells
                               .filter((c) => c.day === d && c.network === n)
+                              .sort((a, b) => a.at.localeCompare(b.at))
                               .map((c, i) => (
                                 <span
                                   key={i}
-                                  className={`${g.chip} ${c.video ? g.chipV : ''} ${c.manual ? g.chipHand : ''}`}
-                                  title={c.manual ? 'yours to post by hand' : undefined}
+                                  className={`${g.chip} ${c.video ? g.chipV : ''} ${c.manual ? g.chipHand : ''} ${c.fallback ? g.chipOff : ''}`}
+                                  title={
+                                    [
+                                      c.prefers === 'any'
+                                        ? null
+                                        : `${c.at} is the ${c.prefers === 'video' ? 'video' : 'text and images'} slot`,
+                                      c.fallback ? 'nothing of that kind was waiting' : null,
+                                      c.manual ? 'yours to post by hand' : null,
+                                    ]
+                                      .filter(Boolean)
+                                      .join('. ') || undefined
+                                  }
                                 >
-                                  {c.label}
+                                  <b>{c.at}</b> {c.label}
+                                  {c.fallback ? '*' : ''}
                                   {c.manual ? ' ✋' : ''}
                                 </span>
                               ))}
@@ -618,6 +652,13 @@ export function NarrativeGates({
                 </table>
               </div>
             )}
+            {wave.fallback > 0 ? (
+              <p className={g.honesty}>
+                {wave.fallback} {wave.fallback === 1 ? 'post is' : 'posts are'} in the wrong kind of
+                slot (marked *), because there was nothing of that kind waiting. LinkedIn mornings
+                are the video slot and afternoons are text and images.
+              </p>
+            ) : null}
             {wave.manual > 0 ? (
               <p className={g.honesty}>
                 {wave.manual} of these are yours to post by hand (marked ✋), because
