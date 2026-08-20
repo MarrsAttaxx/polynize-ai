@@ -191,6 +191,7 @@ export function BlueprintDoc({
   }
 
   const hasGaps = data.capabilities.some((c) => c.gap_question);
+  useSectionInView(setTab);
 
   return (
     <div className={s.doc}>
@@ -202,35 +203,123 @@ export function BlueprintDoc({
           </h1>
           {data.session && <div className={s.session}>{data.session}</div>}
         </div>
-        <ShareButton blueprintId={blueprintId} saveState={saveState} />
+        <div className={s.docActions}>
+          <DownloadButton client={data.client} />
+          <ShareButton blueprintId={blueprintId} saveState={saveState} />
+        </div>
       </div>
 
-      <div className={s.tabs}>
+      {/* ONE CONTINUOUS DOCUMENT, NOT SIX TABS (Marrs, 18 Aug 2026).
+          Every section is now on the page at once and the bar below scrolls to them rather
+          than swapping them. Two reasons this is the better shape: a blueprint is a document
+          a client reads end to end and shares, and tabs hid five sixths of it behind clicks
+          nobody makes; and it is what makes Download work at all, because printing can only
+          ever capture what is in the DOM. `tab` is still state, but it now means "where the
+          reader is" rather than "what is rendered", and it is driven by the scroll observer
+          below. */}
+      <nav className={s.tabs} aria-label="Blueprint sections">
         {TABS.map((t) => (
-          <button
+          <a
             key={t.key}
-            type="button"
+            href={`#bp-${t.key}`}
             className={`${s.tab} ${tab === t.key ? s.active : ''}`}
-            onClick={() => setTab(t.key)}
+            onClick={(e) => {
+              e.preventDefault();
+              setTab(t.key);
+              document.getElementById(`bp-${t.key}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }}
           >
             <span className={s.tabIcon}><TabIcon k={t.key} /></span>
             {t.label}
             {t.key === 'map' && hasGaps && <span className={s.tabDot} aria-hidden="true" />}
-          </button>
+          </a>
         ))}
-      </div>
+      </nav>
 
       <div className={s.docPad}>
-        {tab === 'overview' && <OverviewTab data={data} />}
-        {tab === 'map' && <MapTab data={data} revealed={revealed} />}
-        {tab === 'benchmarks' && <BenchmarksTab data={data} />}
-        {tab === 'transformation' && <TransformationTab data={data} />}
-        {tab === 'team' && <TeamTab data={data} />}
-        {tab === 'build' && <BuildTab data={data} onRestart={onRestart} />}
+        {TABS.map((t) => (
+          <section key={t.key} id={`bp-${t.key}`} className={s.docSection} data-bp-section={t.key}>
+            <h2 className={s.docSectionTitle}>{t.label}</h2>
+            {t.key === 'overview' && <OverviewTab data={data} />}
+            {t.key === 'map' && <MapTab data={data} revealed={revealed} />}
+            {t.key === 'benchmarks' && <BenchmarksTab data={data} />}
+            {t.key === 'transformation' && <TransformationTab data={data} />}
+            {t.key === 'team' && <TeamTab data={data} />}
+            {t.key === 'build' && <BuildTab data={data} onRestart={onRestart} />}
+          </section>
+        ))}
       </div>
 
       <ChatDock data={data} onApply={applyEdit} />
     </div>
+  );
+}
+
+/**
+ * Marks the section the reader is currently in, so the nav bar stays a position indicator
+ * rather than becoming decoration once the tabs stopped switching anything.
+ *
+ * rootMargin pulls the detection line down to just under the sticky nav, otherwise a
+ * section counts as "current" while it is still hidden behind it.
+ */
+function useSectionInView(onChange: (k: TabKey) => void) {
+  useEffect(() => {
+    const nodes = Array.from(document.querySelectorAll<HTMLElement>('[data-bp-section]'));
+    if (!nodes.length) return;
+    const io = new IntersectionObserver(
+      (entries) => {
+        const visible = entries
+          .filter((e) => e.isIntersecting)
+          .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)[0];
+        const key = visible?.target.getAttribute('data-bp-section');
+        if (key) onChange(key as TabKey);
+      },
+      { rootMargin: '-96px 0px -70% 0px', threshold: 0 }
+    );
+    nodes.forEach((n) => io.observe(n));
+    return () => io.disconnect();
+  }, [onChange]);
+}
+
+/* ---------- Download ---------- */
+
+/**
+ * PRINT TO PDF, DELIBERATELY, rather than generating one in JavaScript.
+ *
+ * The alternatives are worse for this document. html2canvas plus jsPDF rasterises the page,
+ * so the text stops being selectable and searchable and the type goes soft, which for a
+ * document somebody forwards to their CFO is the wrong trade. A headless Chromium route on
+ * the server gives perfect fidelity but drags in a ~50MB binary and a cold start, for a
+ * button that will be pressed occasionally.
+ *
+ * The browser's own print pipeline renders real vector text from the same DOM the reader is
+ * looking at, at zero bundle cost, and every desktop browser offers Save as PDF in that
+ * dialog. What makes it a well formatted PDF rather than a screenshot of a dark website is
+ * the @media print block in blueprint.module.css: it inverts to ink on paper, drops the
+ * chat dock and the nav, and controls where pages are allowed to break.
+ *
+ * The filename is the one thing print cannot set; browsers derive it from document.title,
+ * so the title is swapped for the duration of the dialog and restored after.
+ */
+function DownloadButton({ client }: { client: string }) {
+  function download() {
+    const previous = document.title;
+    const safe = client.replace(/[^\w\s-]/g, '').trim() || 'Capability';
+    document.title = `${safe} Blueprint - Polynize`;
+    const restore = () => {
+      document.title = previous;
+      window.removeEventListener('afterprint', restore);
+    };
+    window.addEventListener('afterprint', restore);
+    window.print();
+    // Safari does not always fire afterprint, so restore on a timer as well.
+    window.setTimeout(restore, 6000);
+  }
+
+  return (
+    <button type="button" className={s.downloadBtn} onClick={download}>
+      Download PDF
+    </button>
   );
 }
 

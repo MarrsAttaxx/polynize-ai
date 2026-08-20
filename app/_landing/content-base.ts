@@ -282,9 +282,23 @@ export const mappingContent: MappingContent = {
    * The GitHub mark came off with this rewrite. A logo and "we can't tell you who yet"
    * on the same screen contradict each other, and the mark was the louder of the two.
    */
+  /**
+   * ONE CLIENT, ONE NUMBER (Marrs, 18 Aug 2026).
+   *
+   * This used to lead with "a global consulting firm to train 38,000 practitioners" and
+   * close with "we can't tell you who yet, but soon". Both came off: two unnamed clients in
+   * one sentence dilute each other, and a coy note about secrecy spends the reader's trust
+   * rather than building it. What is left is one claim and one figure behind it.
+   *
+   * The data point is the .io number, 100,000, and it is the only number this section is
+   * allowed to carry. See the note on /job-mapping's proof: a 100 million figure existed
+   * elsewhere in the repo and has been corrected to match.
+   */
   proof: {
-    h2: 'Used by a global consulting firm to train 38,000 practitioners, and a world leading tech brand to train a $200M ARR sales team.',
-    paras: ['We can’t tell you who yet, but soon. 🤫'],
+    h2: 'Used by a world leading tech brand to train a $200M ARR sales team.',
+    paras: [
+      'Our platform is proven to map capability with speed, accuracy and scale, generating over 100,000 capability data points across enterprises.',
+    ],
     stat: '',
   },
 

@@ -243,6 +243,23 @@
   padding: 44px 32px 96px;
 }
 .docTopbar { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+.docActions { display: flex; align-items: flex-start; gap: 8px; flex: none; }
+/* Quieter than Share on purpose. Share is what a client does with a blueprint; downloading
+   it is the fallback for people who want it in a folder. */
+.downloadBtn {
+  appearance: none;
+  cursor: pointer;
+  background: transparent;
+  border: 1px solid var(--border-soft);
+  color: var(--text-2);
+  font-weight: 600;
+  font-size: 13px;
+  border-radius: 10px;
+  padding: 9px 16px;
+  margin-top: 6px;
+  white-space: nowrap;
+}
+.downloadBtn:hover { color: var(--text); border-color: var(--border); }
 .shareWrap { position: relative; flex: none; padding-top: 6px; }
 .shareBtn {
   appearance: none;
@@ -810,6 +827,28 @@
 /* keep the last section clear of the docked chat */
 .docPad { padding-bottom: 120px; }
 
+/* ---------- Sections, now that the six tabs are one document ----------
+   scroll-margin-top keeps a heading clear of the sticky nav when the nav scrolls to it;
+   without it the title lands underneath the bar and the reader thinks the link is broken. */
+.docSection {
+  scroll-margin-top: 84px;
+  padding-top: 12px;
+}
+.docSection + .docSection {
+  margin-top: 56px;
+  border-top: 1px solid var(--border-soft);
+  padding-top: 48px;
+}
+.docSectionTitle {
+  font-family: var(--font-space-grotesk), 'Space Grotesk', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--mint);
+  margin: 0 0 22px;
+}
+
 /* ---------- TRANSFORMATION PLAN (sequenced moves + rail) ---------- */
 .actHead,
 .actRow {
@@ -1013,4 +1052,147 @@
 }
 @media (max-width: 680px) {
   .introCard { padding: 28px 22px 24px; }
+}
+
+
+/* =====================================================================
+   PRINT: the Download PDF button is window.print(), so this block IS the
+   PDF. See DownloadButton in BlueprintDoc.tsx for why it is done this way
+   rather than with a JS PDF library.
+
+   Two jobs here. Turn a dark screen document into ink on paper, because a
+   1000px black page costs a cartridge and reads worse; and control where
+   pages are allowed to break, because the default is to guillotine a
+   capability row in half.
+   ===================================================================== */
+@media print {
+  /* Ink on paper. Overriding the tokens rather than every rule means the whole
+     document follows, including anything added later.
+     Scoped to .doc rather than :root: a CSS module only accepts pure selectors,
+     so a bare :root here is a build error, and .doc is the blueprint's root
+     anyway so every token below inherits from it. */
+  .doc {
+    --bg: #ffffff;
+    --bg-deep: #ffffff;
+    --surface: #ffffff;
+    --surface-2: #f7f7f5;
+    --text: #101014;
+    --text-2: #3a3a42;
+    --text-3: #6b6b76;
+    --border: rgba(0, 0, 0, 0.22);
+    --border-soft: rgba(0, 0, 0, 0.12);
+    /* The lane colours darken so they are legible AS TEXT on white. The mint
+       that reads well on near-black is almost invisible on paper. Fills keep
+       using the bright values via their own rules, so the heat map still
+       looks like the heat map. */
+    --mint: #0f7d61;
+    --coral: #c2452f;
+    --amber: #9a6b12;
+  }
+
+  .doc {
+    max-width: none;
+    margin: 0;
+    padding: 0;
+    background: #ffffff;
+    color: #101014;
+  }
+
+  /* Interactive chrome has no meaning on paper. */
+  .tabs,
+  .chatDock,
+  .shareWrap,
+  .downloadBtn,
+  .docActions {
+    display: none !important;
+  }
+
+  /* Every section prints, and each one starts a fresh page so the PDF has the
+     structure the nav implies. The first must not, or the PDF opens on a blank
+     sheet. */
+  .docSection {
+    break-before: page;
+    padding-top: 0;
+    margin-top: 0;
+    border-top: 0;
+  }
+  .docSection:first-of-type {
+    break-before: avoid;
+  }
+  .docSection + .docSection {
+    margin-top: 0;
+    padding-top: 0;
+    border-top: 0;
+  }
+  .docSectionTitle {
+    color: #101014;
+    margin-bottom: 14px;
+  }
+
+  /* Never split a row, a card or a capability across two pages. This is the
+     difference between a document and a printout. */
+  .capWrap,
+  .row,
+  .card,
+  .benchRow,
+  .planRow,
+  .teamListRow,
+  .cmapRow,
+  .phaseNote {
+    break-inside: avoid;
+  }
+  .doc h1,
+  .doc h2,
+  .doc h3,
+  .docSectionTitle {
+    break-after: avoid;
+  }
+
+  /* Expanded detail is collapsed on screen behind a click; on paper there is no
+     click, so anything hidden is simply lost. Show it. */
+  .capBody,
+  .rowBody {
+    display: block !important;
+  }
+
+  /* Backgrounds and fills have to be asked for explicitly or browsers drop them,
+     which would take the heat map with them. Scoped, for the same pure-selector
+     reason as above. */
+  .doc,
+  .doc * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* THE HEAT MAP IS THE POINT OF THE DOCUMENT, so it has to survive the trip to paper.
+     The cell fills come from --alloc-bg on the global .alloc-* classes (globals.css) at
+     0.12 alpha, which was mixed to sit on a near-black surface. The same 12% over white is
+     almost nothing, and the map that carries the whole argument prints as a faint grid.
+     Stronger alphas and the darker print hues here, so the three lanes stay distinguishable
+     in ink and in greyscale. */
+  .doc :global(.alloc-human) {
+    --alloc-bg: rgba(194, 69, 47, 0.28);
+    --alloc-bd: rgba(194, 69, 47, 0.7);
+  }
+  .doc :global(.alloc-hybrid) {
+    --alloc-bg: rgba(154, 107, 18, 0.28);
+    --alloc-bd: rgba(154, 107, 18, 0.7);
+  }
+  .doc :global(.alloc-agent) {
+    --alloc-bg: rgba(15, 125, 97, 0.28);
+    --alloc-bd: rgba(15, 125, 97, 0.7);
+  }
+
+  .doc a { text-decoration: none; color: inherit; }
+  /* The URL matters on a page somebody printed and put in a folder. */
+  .wm::after {
+    content: ' · polynize.ai';
+    color: #6b6b76;
+    font-weight: 400;
+  }
+
+  @page {
+    size: A4;
+    margin: 16mm 14mm;
+  }
 }

@@ -156,18 +156,26 @@ function Row({ cap }: { cap: JobCapability }) {
             {cap.mechanism && <span className={s.rowMech}>{cap.mechanism}</span>}
           </span>
         </span>
+        {/* Colour only, no number. The percentage used to sit inside the lit cell to show
+            how much of the role a capability is, but the columns are headed HUMAN / HYBRID
+            / AGENTIC, so a figure inside a mint block reads as "15% agentic", a confidence
+            score for the lane, rather than "15% of the job" (Marrs, 18 Aug 2026). The
+            header makes that misreading close to unavoidable. The share is still shown, in
+            the two places where it carries a label: the three-number summary at the top and
+            the expanded row below. */}
         {LANES.map((lane) => (
           <span
             key={lane}
             className={`${s.cell} ${cap.allocation === lane ? `${s.cellOn} ${LANE_CLASS[lane]}` : ''}`}
-          >
-            {cap.allocation === lane && cap.time_share > 0 ? `${Math.round(cap.time_share)}%` : ''}
-          </span>
+          />
         ))}
       </button>
 
       {open && (
         <div className={s.rowBody}>
+          {cap.time_share > 0 && (
+            <p className={s.rowShare}>About {Math.round(cap.time_share)}% of the role</p>
+          )}
           {cap.detail && <p>{cap.detail}</p>}
           {cap.tasks.length > 0 && (
             <ul className={s.taskList}>

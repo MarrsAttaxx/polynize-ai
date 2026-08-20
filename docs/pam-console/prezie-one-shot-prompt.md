@@ -197,7 +197,7 @@ This is the key to unlocking real AI capability in your organisation, it gives y
 cetainty you need to understand where to focus your finacial and human captial.
 
 CTA
-So, if you want to capablity map one of your business bottlenecks agaist 100 million data poinst we've
+So, if you want to capablity map one of your business bottlenecks agaist 100,000 data poinst we've
 collected over the past 3 years, comment 'map' below and I'll send you the link.
 
 CLOSE
