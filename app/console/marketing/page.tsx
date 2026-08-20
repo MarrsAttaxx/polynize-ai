@@ -1,98 +1,123 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { getCurrentUser } from '@/lib/console-auth';
-import { listNarrativeCards, GATE_LABELS, type NarrativeCard } from '@/lib/marketing/narrative-store';
-import { streamLabel } from '@/lib/marketing/streams';
-import b from './board.module.css';
+import { narrativeCountsByLane, GATE_LABELS } from '@/lib/marketing/narrative-store';
+import { listSavedPieces, type MarketingPiece } from '@/lib/marketing/piece-store';
+import { STREAMS, STREAM_AVATARS } from '@/lib/marketing/streams';
+import s from '../_components/client-card.module.css';
+import l from '../_components/launcher.module.css';
 
 export const dynamic = 'force-dynamic';
 
 /**
- * THE BOARD (D40): every Narrative sitting at its gate. This replaced the stream-cards
- * dashboard as the marketing home on Marrs's decision ("the board replaces the
- * marketing home"), because the unit of work is now a Narrative moving through gates,
- * not a stream holding loose pieces. The old dashboard is not deleted: it lives at
- * /console/marketing/streams, because brand voice, series, media and the concept
- * library still live inside streams and parts of that design will be repurposed.
+ * THE FRONT PAGE: pick a stream or a creator (D45).
  *
- * One list per gate, in gate order, so the eye reads it as a production line:
- * what is waiting to be developed, what is being written, what is being made,
- * what is ready to ship. Shipped is the scoreboard at the end, not a graveyard.
+ * Marrs: "I've decided that I want this to be for everyone in the team, so we need that first
+ * page to come back where it has Polynize, Marrs, Shourov, Kristin and Julian as the opening.
+ * When you click on anyone's individual stream, you have the narratives as the board."
+ *
+ * This reverses part of D40, which made the flat board the marketing home on the reasoning that
+ * the unit of work is a narrative rather than a stream. That reasoning was right and incomplete:
+ * a narrative belongs to exactly one person or brand, and with five of them a single flat board
+ * mixes five people's work into one list where nobody can find their own. So the board did not
+ * go away, it moved down a level. Whose work, then which narrative.
+ *
+ * The card counts are NARRATIVES now, not concepts and pieces. What matters on this screen is
+ * how much work each person has moving and how much has landed.
  */
-export default async function BoardPage() {
+export default async function MarketingHome() {
   const user = await getCurrentUser();
   if (!user) return null;
   if (user.scope.type === 'client') {
     redirect(`/console/${user.scope.slug}/blueprint`);
   }
 
-  let cards: NarrativeCard[] = [];
-  try {
-    cards = await listNarrativeCards();
-  } catch (err) {
-    console.error('[board] narrative list failed:', err);
-  }
+  // Both at once: awaited in turn they stack two full store reads into the time to first byte,
+  // which is a visible wait every time you come back here. Each degrades on its own.
+  const [counts, pieces] = await Promise.all([
+    narrativeCountsByLane().catch((err) => {
+      console.error('[marketing] narrative counts failed:', err);
+      return new Map<string, { live: number; shipped: number }>();
+    }),
+    listSavedPieces(user.email).catch((err) => {
+      console.error('[marketing] piece list failed:', err);
+      return [] as MarketingPiece[];
+    }),
+  ]);
 
-  const order: (1 | 2 | 3 | 4 | 5 | 'shipped')[] = [1, 2, 3, 4, 5, 'shipped'];
-  const byGate = new Map<string, NarrativeCard[]>();
-  for (const g of order) byGate.set(String(g), []);
-  for (const c of cards) byGate.get(String(c.gate))?.push(c);
+  // How many takes are waiting, so the Studio button says whether a session is worth setting up
+  // rather than only that a studio exists.
+  const byId = new Map<string, MarketingPiece>();
+  for (const p of pieces) byId.set(p.piece_id, p);
+  const queued = [...byId.values()].filter((p) => p.shoot_ready && !p.recorded_at).length;
 
   return (
-    <main className={b.root}>
-      <header className={b.head}>
-        <div>
-          <p className={b.kicker}>Marketing engine</p>
-          <h1 className={b.title}>The board</h1>
+    <>
+      <div className={s.bgPattern} aria-hidden />
+      <div className={s.dashboard}>
+        <div className={s.header}>
+          <div className={s.eyebrow}>marketing engine</div>
+          <h1 className={s.title}>Whose content</h1>
         </div>
-        <div className={b.headActions}>
-          <Link href="/console/marketing/calendar" className={b.ghost}>
-            Calendar
-          </Link>
-          <Link href="/console/marketing/streams" className={b.ghost}>
-            Streams and setup
-          </Link>
-          <Link href="/console/marketing/narrative/new" className={b.new}>
-            New narrative →
-          </Link>
-        </div>
-      </header>
 
-      {cards.length === 0 ? (
-        <div className={b.empty}>
-          <p>No narratives yet. A narrative starts as an idea and leaves as a week of content.</p>
-          <Link href="/console/marketing/narrative/new" className={b.new}>
-            Start the first one →
-          </Link>
+        <div className={s.marketingCtaRow}>
+          <div className={s.ctaGroup}>
+            <Link href="/console/marketing/calendar" className={s.startConceptCta}>
+              Calendar
+            </Link>
+            {/* The Studio and the Calendar sit here because they are about the whole engine
+                rather than one stream. */}
+            <Link href="/console/studio" className={s.startConceptCta}>
+              Studio{queued > 0 ? ` · ${queued}` : ''}
+            </Link>
+          </div>
         </div>
-      ) : (
-        order.map((g) => {
-          const list = byGate.get(String(g)) ?? [];
-          if (list.length === 0) return null;
-          return (
-            <section key={String(g)} className={b.lane}>
-              <h2 className={b.laneName}>
-                {g === 'shipped' ? 'Shipped' : `Gate ${g} · ${GATE_LABELS[String(g)]}`}
-                <span className={b.count}>{list.length}</span>
-              </h2>
-              <div className={b.cards}>
-                {list.map((c) => (
-                  <Link
-                    key={c.id}
-                    href={`/console/marketing/narrative/${c.id}`}
-                    className={b.card}
-                  >
-                    <span className={`${b.laneTag} ${c.lane === 'marrs' ? b.ma : b.pz}`}>
-                      {streamLabel(c.lane)}
-                    </span>
-                    <span className={b.headline}>{c.headline}</span>
-                  </Link>
-                ))}
-              </div>
-            </section>
-          );
-        })
-      )}
-    </main>
+
+        <div className={l.cards}>
+          {STREAMS.map((st) => {
+            const c = counts.get(st.id) ?? { live: 0, shipped: 0 };
+            const avatar = STREAM_AVATARS[st.id];
+            return (
+              <Link
+                key={st.id}
+                href={`/console/marketing/stream/${st.id}`}
+                className={`${l.card} ${s.hasAvatar}`}
+              >
+                <span className={s.streamAvatar} aria-hidden>
+                  {avatar ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={avatar} alt="" className={s.streamAvatarImg} />
+                  ) : (
+                    /* The mint mark, half the circle's diameter, so the brand card reads as a
+                       mark and not as a logo that has been shrunk. */
+                    <span className={s.streamAvatarMark} />
+                  )}
+                </span>
+                <span className={l.cardTitle}>{st.label}</span>
+                <span className={l.cardDesc}>
+                  {c.live === 0 && c.shipped === 0
+                    ? 'Nothing yet'
+                    : [
+                        c.live > 0 ? `${c.live} in flight` : null,
+                        c.shipped > 0 ? `${c.shipped} shipped` : null,
+                      ]
+                        .filter(Boolean)
+                        .join(' · ')}
+                </span>
+                <span className={l.cardArrow} aria-hidden>
+                  →
+                </span>
+              </Link>
+            );
+          })}
+        </div>
+
+        {/* The gate vocabulary, once, on the way in. It is the same five words on every board
+            below and it is the only thing on this screen that is not a name. */}
+        <p className={s.dashSectionEmpty} style={{ marginTop: 28 }}>
+          Every narrative walks the same five gates: {[1, 2, 3, 4, 5].map((g) => GATE_LABELS[String(g)]).join(', ')}.
+        </p>
+      </div>
+    </>
   );
 }

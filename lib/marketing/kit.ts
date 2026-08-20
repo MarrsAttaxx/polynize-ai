@@ -1,5 +1,6 @@
 import type { Network } from './channel-schedule';
 import type { NarrativeLane } from './narrative-store';
+import { streamKind, STREAM_IDS, type StreamKind } from './streams';
 import { safeRect, type SafeRect } from './safe-area';
 
 /**
@@ -203,10 +204,17 @@ export type KitOutput = {
   sub: string;
   /** What ONE post is called, on the Gate 4 card and the Gate 5 week chip. */
   postLabel: string;
-  /** Lanes whose Gate 3 shows this row. Empty means vocabulary only, deliberately off screen. */
-  shown: NarrativeLane[];
+  /**
+   * Which KIND of lane shows this row, not which named lane (D45). A first-person post with
+   * real stakes belongs to a person and not to a brand, and a field report across client work
+   * is the brand's version of the same job. Keying on the kind means adding a teammate adds a
+   * board and no branches.
+   *
+   * Empty means vocabulary only, deliberately off screen.
+   */
+  shown: StreamKind[];
   /** Ticked when the gate opens. Always a subset of `shown`. */
-  on: NarrativeLane[];
+  on: StreamKind[];
   artifact: ArtifactSpec;
   wrapper: WrapperSpec;
   /** One line for April: what this frame is for. Never rendered on the Gate 3 screen. */
@@ -508,8 +516,10 @@ const YT_LONG_WRAP: WrapperSpec = {
   hashtags: { v: 'up_to_3', src: 'official', note: 'Three surface above the title.' },
 };
 
-const BOTH: NarrativeLane[] = ['marrs', 'polynize'];
-const NEITHER: NarrativeLane[] = [];
+const BOTH: StreamKind[] = ['person', 'company'];
+const PERSON: StreamKind[] = ['person'];
+const COMPANY: StreamKind[] = ['company'];
+const NEITHER: StreamKind[] = [];
 
 /* ------------------------------------------------------------------ THE CATALOGUE
  *
@@ -594,8 +604,8 @@ const CATALOGUE: KitOutput[] = [
     label: 'Hard moment',
     sub: 'what holding it cost',
     postLabel: 'Hard moment',
-    shown: ['marrs'],
-    on: ['marrs'],
+    shown: PERSON,
+    on: PERSON,
     artifact: LI_TEXT,
     wrapper: LI_TEXT_WRAP,
     job: 'The price paid for holding that position, in first person, with the stakes named.',
@@ -636,8 +646,8 @@ const CATALOGUE: KitOutput[] = [
     label: 'Field report',
     sub: 'what we see across client work',
     postLabel: 'Field report',
-    shown: ['polynize'],
-    on: ['polynize'],
+    shown: COMPANY,
+    on: COMPANY,
     artifact: LI_TEXT,
     wrapper: LI_TEXT_WRAP,
     job: 'What the pattern looks like across client work, with no named client and nothing needing sign off.',
@@ -949,10 +959,10 @@ const V1_ALIASES: Readonly<Record<string, readonly string[]>> = Object.freeze({
   yt_s: ['yt_short_1', 'yt_short_2', 'yt_short_3'],
 });
 
-/** `li_posts` was v1's untyped "4 posts". It becomes the lane's three frames. */
+/** `li_posts` was v1's untyped "4 posts". It becomes the lane's three frames, by kind. */
 function aliasFor(id: string, lane: NarrativeLane): readonly string[] | undefined {
   if (id === 'li_posts') {
-    return lane === 'marrs'
+    return streamKind(lane) === 'person'
       ? ['li_text_contrarian', 'li_text_hard_moment', 'li_text_listicle']
       : ['li_text_contrarian', 'li_text_listicle', 'li_text_field_report'];
   }
@@ -1040,7 +1050,8 @@ export function resolveTicks(ticks: string[], lane: NarrativeLane): string[] {
 }
 
 export function defaultTicks(lane: NarrativeLane): string[] {
-  return CATALOGUE.filter((o) => o.on.includes(lane)).map((o) => o.id);
+  const kind = streamKind(lane);
+  return CATALOGUE.filter((o) => o.on.includes(kind)).map((o) => o.id);
 }
 
 /** Posts the ticks produce. EXACTLY the number of calendar entries Gate 5 will create. */
@@ -1077,16 +1088,17 @@ export type KitRow = {
  * still fit on a phone.
  */
 export function kitRows(lane: NarrativeLane): KitRow[] {
+  const kind = streamKind(lane);
   const rows: KitRow[] = [];
   const seenSeries = new Set<string>();
   for (const net of KIT_NETWORK_ORDER) {
     for (const o of CATALOGUE) {
-      if (o.network !== net || !o.shown.includes(lane)) continue;
+      if (o.network !== net || !o.shown.includes(kind)) continue;
       if (o.series) {
         if (seenSeries.has(o.series)) continue;
         seenSeries.add(o.series);
         const members = CATALOGUE.filter(
-          (x) => x.series === o.series && x.shown.includes(lane)
+          (x) => x.series === o.series && x.shown.includes(kind)
         );
         rows.push({
           key: o.series,
@@ -1095,7 +1107,7 @@ export function kitRows(lane: NarrativeLane): KitRow[] {
           label: o.label,
           sub: o.sub,
           pill: members.length > 1 ? `x${members.length}` : undefined,
-          on: o.on.includes(lane),
+          on: o.on.includes(kind),
           blocked: o.blocked,
         });
       } else {
@@ -1105,7 +1117,7 @@ export function kitRows(lane: NarrativeLane): KitRow[] {
           ids: [o.id],
           label: o.label,
           sub: o.sub,
-          on: o.on.includes(lane),
+          on: o.on.includes(kind),
           blocked: o.blocked,
         });
       }
@@ -1404,8 +1416,8 @@ export function catalogueProblems(): string[] {
         : o.artifact.visual;
     if (!v || v.images < 1) out.push(`${o.id} has no image`);
 
-    for (const lane of o.on) {
-      if (!o.shown.includes(lane)) out.push(`${o.id} defaults on for ${lane} but is not shown there`);
+    for (const kind of o.on) {
+      if (!o.shown.includes(kind)) out.push(`${o.id} defaults on for ${kind} but is not shown there`);
     }
     // A catalogue that offers what it cannot deliver is lying to the operator.
     if (o.blocked && o.on.length > 0) out.push(`${o.id} is blocked but defaults on`);
@@ -1421,7 +1433,9 @@ export function catalogueProblems(): string[] {
   }
 
   // Every retired id must still resolve, or a saved narrative loses those posts silently.
-  for (const lane of ['marrs', 'polynize'] as NarrativeLane[]) {
+  // Every stream, not just the original two: a teammate added to STREAMS must not be the
+  // one lane whose defaults resolve to nothing.
+  for (const lane of STREAM_IDS) {
     for (const id of [...Object.keys(V1_ALIASES), 'li_posts']) {
       const targets = aliasFor(id, lane) ?? [];
       if (targets.length === 0) out.push(`alias ${id} resolves to nothing on ${lane}`);

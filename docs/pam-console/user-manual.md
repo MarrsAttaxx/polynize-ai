@@ -27,11 +27,13 @@ PAM (Polynize Agent Management) is the marketing engine: it takes an idea, shape
 
 ---
 
-## 3. The marketing home: the board 🧪 (D40, replaces the stream dashboard)
+## 3. The marketing home: whose content 🧪 (D45)
 
-`/console/marketing` is now **the board**: every Narrative sitting at its gate, in gate order, with **New narrative** as the primary action. A Narrative is one idea exploited into a week of content, and it moves through five gates: **Idea → Article → Kit → Create → Ship**. One gate on screen at a time, one decision per screen, back goes back.
+`/console/marketing` is **the picker**: one card per stream and creator, Polynize, Marrs, Shourov, Kristin and Julian, each showing how many narratives are in flight and how many have shipped. Click a name and you get **that person's board**: their narratives sitting at their gates, in gate order, with **New narrative** as the primary action. A Narrative is one idea exploited into a week of content, and it moves through five gates: **Idea → Article → Kit → Create → Ship**. One gate on screen at a time, one decision per screen, back goes back.
 
-- **Gate 1 · Idea**: type a fresh idea or pick from the inbox, then pick the lane (**Marrs** = opinion in his own voice, **Polynize** = educational). The lane sets channels, voice and CTA downstream.
+**A narrative belongs to exactly one stream.** That is what decides its channels, its voice, its CTA, and which post frames its kit offers: a **person** gets the Hard moment frame, the **Polynize** brand gets the Field report instead. Adding a teammate adds a board and changes nothing else.
+
+- **Gate 1 · Idea**: type a fresh idea or pick from that stream's inbox. There is nothing else to decide: you got here from someone's board, so whose narrative it is was already answered by the click.
 - **Gate 2 · Article**: April drafts the long form (300 to 450 words) on first view; edit it directly or give her one instruction at a time in the docked chat. The article is the source of truth for every piece cut from it, and it publishes as-is. The interview step is retired.
 - **Gate 3 · Kit**: per-platform ticks, and each one now names the actual post rather than a count (D42). LinkedIn gives you the **Article**, a **Contrarian post**, a **Hard moment** (or a **Field report** on the Polynize lane), **Numbered rules**, and the **Document carousel** (off, no PDF builder yet). Instagram gives **Reels x3**, the **Carousel** and one **Image**. TikTok and YouTube carry the same three cuts. Defaults total **15 posts**, and the button says so. Confirming creates one piece per thing that has to be written, so three named LinkedIn posts are three pieces with three drafts, not one draft shown three times.
 - **Gate 4 · Create**: one card per thing to make, video first because it is the long pole. Seven cards on the default kit. April is told what each one has to BE: the contrarian post gets "state the belief, then break it" and a 1,300 to 2,500 character band; the numbered rules post gets a different instruction; the video script is told there is no target duration and where on-screen text is allowed to sit.
@@ -63,11 +65,9 @@ At Gate 5 the hand-posts are marked ✋ in the week grid and the button says exa
 
 *How it works:* the mode is stamped onto each calendar entry when the wave is **planned**, so changing a lane's setting later never rewrites how an already-planned wave goes out. Entries planned before this existed are treated as scheduled, which is how they were already behaving.
 
-The old stream dashboard is intact at **`/console/marketing/streams`** (brand voice, series, media library and concepts all still live there); parts of it will be repurposed into the gates.
+Below each board sits that stream's **setup** (brand voice, content templates, media library) and, further down, the older sections: core concepts, in-development pieces and podcasts. Concepts are no longer the way in, since the narrative's article replaced them as the source of truth at Gate 2, so they are demoted rather than removed.
 
-## 3b. The old dashboard ✅ (now at /streams)
-
-Shows a card per **stream**, each with the brand's avatar. Click a stream to open its home. There's also a **Calendar** button for the publishing calendar.
+`/console/marketing/streams` redirects to the front page, because the front page is that screen again.
 
 ---
 

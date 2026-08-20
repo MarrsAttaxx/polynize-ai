@@ -865,3 +865,53 @@ D42 flagged that the output spec's only cadence evidence measures **4 to 5 Linke
 
 **Still true and still unfixed:** nothing enforces capacity. `nextOpenSlots` walks 60 days forward and always finds something, so an oversubscribed channel silently slides posts into future weeks. Past that walk it creates an entry with no `scheduled_at`, which the ship path filters out, so a sustained overrun manufactures posts that can never ship and reports no error. With a maximalist posting strategy this stops being theoretical, so it should be built alongside the typed slots.
 
+---
+
+## D45: The front page is whose content, and every stream has its own board
+
+**Adopted 19 August 2026.** Marrs: *"I've decided that I want this to be for everyone in the team, so we need that first page to come back where it has Polynize, Marrs, Shourov, Kristin and Julian as the opening. When you click on anyone's individual stream, you have the narratives as the board. I think that's better."*
+
+**This reverses part of D40**, which made the flat board the marketing home on the reasoning that the unit of work is a narrative rather than a stream. That reasoning was right and incomplete: a narrative belongs to exactly one person or brand, and with five of them a single flat board mixes five people's work into one list where nobody can find their own. The board did not go away. It moved down a level. **Whose work, then which narrative.**
+
+**The shape now:**
+
+| Screen | What it is |
+|---|---|
+| `/console/marketing` | Five cards: Polynize, Marrs, Shourov, Kristin, Julian. Counts are **narratives** now, in flight and shipped, not concepts and pieces |
+| `/console/marketing/stream/{id}` | That person's board, narratives at their gates, **New narrative** as the primary action. Below it the setup that shapes them |
+| `/console/marketing/streams` | Redirects to the front page, since that page IS this screen again |
+
+### The lane is now literally the stream
+
+`NarrativeLane` was `'marrs' | 'polynize'`. It is now `StreamId`, all five. It was already declared that lane ids equal stream ids on purpose so brand voice and Metricool mappings resolve with no translation; this makes that identity literal instead of a coincidence two files have to keep agreeing on. **A narrative saved with either old value is unaffected**, because both are still stream ids.
+
+### The kit keys on the KIND of lane, not on named lanes
+
+This is the part that would have rotted first. The kit had `shown: ['marrs']` on the hard-moment frame and `shown: ['polynize']` on the field report. With five lanes that is either four copies of the same list or a branch per teammate.
+
+So streams gained a **kind**: Polynize is `company`, the four people are `person`. The frames key on that:
+
+- **Hard moment** (a real cost paid, first person) is available to a **person** and not to a brand.
+- **Field report** (the pattern across client work, nobody's sign off needed) is the **company's** version of the same job.
+- Everything else is both.
+
+Adding a teammate now adds a board and **no branches**. The kit's own invariant check runs over every stream rather than the original two, so a lane whose defaults resolve to nothing is a test failure.
+
+The same rule covers the article's lane register: a stream with no hand-written register falls back to its kind. Writing a paragraph per teammate would be inventing four people's voices for them, and their real voice belongs in their own brand-voice doc, which that block only frames.
+
+**And the measured reason the kinds must stay apart:** a personal profile takes 63% higher engagement than a company page at similar impressions (Metricool 2026). Not a reason to stop posting as the brand, a reason never to judge the two by one number.
+
+### Gate 1 lost a decision
+
+Arriving from a stream means the lane is already answered, so **the lane picker is gone** and the ideas inbox is scoped to that stream: an idea caught for one person is not a candidate for another's narrative. The picker still appears when there is no stream in the url, so the screen cannot become unreachable.
+
+### Core concepts: demoted, not deleted
+
+Marrs: *"Don't worry about the core concept or get rid of that screen."* The narrative's own article replaced the concept as the source of truth at Gate 2 (D40), so concepts are no longer the way in, and the section now sits below the board and the setup instead of leading the page.
+
+**Not deleted, and deliberately so.** There are real imported concepts behind that section, and removing a screen with data behind it on an inference from a sentence that reads two ways is the kind of thing that cannot be undone by clicking. It is one line to remove when he confirms.
+
+### One thing to check with him
+
+He wrote **"Kristen"** and **"Julien"**; the console has **Kristin** and **Julian**, and has since they were added. Kept as they are rather than silently changed, because it is a person's own name on their own board and dictation is the likelier explanation. Worth a yes or no.
+

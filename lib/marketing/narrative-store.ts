@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { getSheetState, saveSheetState, deleteSheetState } from '@/lib/content/shoot-sheet-store';
+import { isStreamId, type StreamId } from './streams';
 import {
   isBucketConfigured,
   getObjectText,
@@ -24,7 +25,16 @@ import {
  * marketing config: real bucket when configured, shoot-sheet rows as the interim shim.
  */
 
-export type NarrativeLane = 'marrs' | 'polynize';
+/**
+ * THE LANE IS THE STREAM (D45). It was 'marrs' | 'polynize' when the board was one flat list;
+ * Marrs then put every stream and creator back on the front page, each with its own board, so
+ * the lane widened to all five. It was already declared that lane ids equal stream ids on
+ * purpose, so brand voice and Metricool mappings resolve with no translation: this makes that
+ * identity literal rather than a coincidence two files have to keep agreeing on.
+ *
+ * A narrative saved with 'marrs' or 'polynize' is unaffected, because both are still stream ids.
+ */
+export type NarrativeLane = StreamId;
 export type NarrativeGate = 1 | 2 | 3 | 4 | 5 | 'shipped';
 
 export type Narrative = {
@@ -102,10 +112,8 @@ function keyFor(id: string): string {
 const MAX_IDEA_CHARS = 4000;
 const MAX_ARTICLE_CHARS = 40000;
 
-const LANES: NarrativeLane[] = ['marrs', 'polynize'];
-
 export function isNarrativeLane(x: unknown): x is NarrativeLane {
-  return typeof x === 'string' && (LANES as string[]).includes(x);
+  return isStreamId(x);
 }
 
 function isNarrativeGate(x: unknown): x is NarrativeGate {
@@ -345,10 +353,29 @@ export async function saveNarrative(narrative: Narrative): Promise<Narrative> {
 }
 
 /** Every narrative's board row, newest updated first. [] on any failure: see readIndex. */
-export async function listNarrativeCards(): Promise<NarrativeCard[]> {
-  return (await readIndex()).sort((a, b) =>
+export async function listNarrativeCards(lane?: NarrativeLane): Promise<NarrativeCard[]> {
+  const all = (await readIndex()).sort((a, b) =>
     String(b.updated_at).localeCompare(String(a.updated_at))
   );
+  return lane ? all.filter((c) => c.lane === lane) : all;
+}
+
+/**
+ * How many narratives each stream has in flight and how many have shipped, for the front page
+ * (D45). One index read for every card: the alternative was a read per stream, which is five
+ * round trips to render five numbers.
+ */
+export async function narrativeCountsByLane(): Promise<
+  Map<string, { live: number; shipped: number }>
+> {
+  const out = new Map<string, { live: number; shipped: number }>();
+  for (const c of await readIndex()) {
+    const row = out.get(c.lane) ?? { live: 0, shipped: 0 };
+    if (c.gate === 'shipped') row.shipped += 1;
+    else row.live += 1;
+    out.set(c.lane, row);
+  }
+  return out;
 }
 
 /**

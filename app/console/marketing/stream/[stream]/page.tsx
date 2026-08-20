@@ -13,15 +13,27 @@ import { listEpisodes } from '@/lib/marketing/podcast-store';
 import { formatById } from '@/lib/marketing/output-plan';
 import { groupKeyOf } from '@/lib/marketing/dev-group';
 import { BackLink } from '@/app/console/marketing/_components/BackLink';
+import { listNarrativeCards, GATE_LABELS, type NarrativeCard } from '@/lib/marketing/narrative-store';
 import s from '../../../_components/client-card.module.css';
 import l from '../../../_components/launcher.module.css';
+import b from '../../board.module.css';
 
 export const dynamic = 'force-dynamic';
 
 /**
- * A stream's workflow: its concepts + in-development pieces, nested under the owner
- * (the dashboard cards link here). Team-scope only. Start-a-concept here pre-picks
- * this stream.
+ * A STREAM'S BOARD (D45): this person's or brand's narratives at their gates, and below it the
+ * setup that shapes them plus the older per-stream sections.
+ *
+ * Marrs: "when you click on anyone's individual stream, you have the narratives as the board...
+ * that makes more sense." So the board leads. It used to be the marketing home and it mixed five
+ * people's work into one list; here it is scoped to one of them, which is the level at which the
+ * question "what am I working on" actually has an answer.
+ *
+ * Core concepts and In development are kept and demoted rather than removed. Marrs: "don't worry
+ * about the core concept." The narrative's own article replaced the concept as the source of
+ * truth at Gate 2 (D40), so concepts are no longer the way in, but there are real imported
+ * concepts behind that section and deleting a screen with data behind it is not something to do
+ * on an inference. Say the word and it goes.
  */
 export default async function StreamPage({
   params,
@@ -59,6 +71,13 @@ export default async function StreamPage({
     return [] as Idea[];
   });
 
+  const narrativesPromise: Promise<NarrativeCard[]> = listNarrativeCards(
+    stream as NarrativeCard['lane']
+  ).catch((err) => {
+    console.error('[marketing.stream] narrative list failed:', err);
+    return [] as NarrativeCard[];
+  });
+
   const [conceptsRes, piecesRes, brandVoiceRes, templatesRes, mediaRes, episodesRes] = await Promise.all([
     listConcepts(user.email).catch((err) => {
       console.error('[marketing.stream] concept list failed:', err);
@@ -86,8 +105,17 @@ export default async function StreamPage({
     }),
   ]);
 
-  // Started before the block above so it overlaps with it rather than adding a round trip.
+  // Both started before the block above so they overlap with it rather than adding round trips.
   const ideas = await ideasPromise;
+  const narratives = await narrativesPromise;
+
+  // One list per gate, in gate order, so the eye reads it as a production line: what is waiting
+  // to be developed, what is being written, what is being made, what is ready to ship. Shipped
+  // is the scoreboard at the end, not a graveyard.
+  const gateOrder: (1 | 2 | 3 | 4 | 5 | 'shipped')[] = [1, 2, 3, 4, 5, 'shipped'];
+  const byGate = new Map<string, NarrativeCard[]>();
+  for (const g of gateOrder) byGate.set(String(g), []);
+  for (const c of narratives) byGate.get(String(c.gate))?.push(c);
 
   const concepts: ConceptDoc[] = conceptsRes.filter(
     (c) => (c.stream || DEFAULT_STREAM) === stream
@@ -138,8 +166,53 @@ export default async function StreamPage({
           <h1 className={s.title}>{streamLabel(stream)}</h1>
         </div>
 
+        {/* THE BOARD, first, because it is the work. Everything below it is setup or archive. */}
+        <section className={`${s.dashSection} ${s.panel}`}>
+          <div className={s.dashSectionHead}>
+            <h2 className={s.dashSectionTitle}>Narratives</h2>
+            <span className={s.dashSectionCount}>{narratives.length}</span>
+          </div>
+          <div className={s.sectionCtas}>
+            <Link
+              href={`/console/marketing/narrative/new?stream=${stream}`}
+              className={s.startConceptCta}
+            >
+              + New narrative
+            </Link>
+          </div>
+          {narratives.length === 0 ? (
+            <p className={s.dashSectionEmpty}>
+              Nothing in flight. A narrative starts as an idea and leaves as a week of content.
+            </p>
+          ) : (
+            gateOrder.map((g) => {
+              const list = byGate.get(String(g)) ?? [];
+              if (list.length === 0) return null;
+              return (
+                <section key={String(g)} className={b.lane}>
+                  <h3 className={b.laneName}>
+                    {g === 'shipped' ? 'Shipped' : `Gate ${g} · ${GATE_LABELS[String(g)]}`}
+                    <span className={b.count}>{list.length}</span>
+                  </h3>
+                  <div className={b.cards}>
+                    {list.map((c) => (
+                      <Link
+                        key={c.id}
+                        href={`/console/marketing/narrative/${c.id}`}
+                        className={b.card}
+                      >
+                        <span className={b.headline}>{c.headline}</span>
+                      </Link>
+                    ))}
+                  </div>
+                </section>
+              );
+            })
+          )}
+        </section>
+
         {/* Stream setup — the assets to get right first (they shape everything
-            downstream), so they read at the top. */}
+            downstream), so they read above the older sections. */}
         <section className={s.setupPanel}>
           <span className={s.setupTitle}>Stream setup</span>
           <div className={s.assetCards}>

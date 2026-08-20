@@ -15,6 +15,7 @@
  */
 
 import type { NarrativeLane } from './narrative-store';
+import { streamKind, type StreamKind } from './streams';
 import { getBrandVoiceForStream } from './brand-voice-store';
 import { complete } from '@/lib/llm';
 import { stripEmDashes } from '@/lib/em-dash';
@@ -34,12 +35,32 @@ const scriptModel = () => process.env.SCRIPT_MODEL || undefined;
  * brand-voice doc: this block is the frame, the doc refines it, and when no doc exists
  * this block is the whole instruction.
  */
-const LANE_VOICE: Record<NarrativeLane, string> = {
+const LANE_VOICE: Partial<Record<NarrativeLane, string>> = {
   marrs:
     "This is the MARRS lane: first person, opinionated, personality forward. The operator's own perspective on AI and the industry, in his own voice. Take a position and hold it start to end; hedging reads as though someone else wrote it.",
   polynize:
     'This is the POLYNIZE lane: educational, concrete, show-the-work. It is about capability mapping and organisational design. Teach by walking through the actual thing, step by visible step, rather than asserting conclusions about it.',
 };
+
+/**
+ * A lane with no hand-written register above falls back to its KIND (D45), because writing a
+ * paragraph per teammate would be inventing four people's voices for them. A person's real
+ * voice belongs in their own brand-voice doc, which this block only frames; a fabricated
+ * register here would fight that doc rather than support it.
+ *
+ * Partial<Record> rather than a full one on purpose: adding a teammate to STREAMS must not be
+ * a compile error in a prompt file, and a missing entry is a correct fallback rather than a gap.
+ */
+const KIND_VOICE: Record<StreamKind, string> = {
+  person:
+    'This is a PERSONAL lane: first person, one named human writing in their own voice. A position taken and held, with their own experience behind it. If their brand-voice doc below says something more specific, that wins.',
+  company:
+    'This is a BRAND lane: educational, concrete, show-the-work, written for the company rather than by a person. Teach by walking through the actual thing rather than asserting conclusions about it, and never claim first-person experience the brand cannot have.',
+};
+
+function laneVoice(lane: NarrativeLane): string {
+  return laneVoice(lane) ?? KIND_VOICE[streamKind(lane)];
+}
 
 /**
  * HOW TO USE THE VOICE DOC, not just "here is a voice doc". Same reasoning as draft.ts:
@@ -59,7 +80,7 @@ WHAT THE ARTICLE IS. It is the long form every other piece is cut from, and it p
 
 SHAPE. Markdown. The first line is a bold title (**like this**), then the article. 300 to 450 words: the range is a discipline, not a target to pad to. If the argument is done at 320 words, stop.
 
-${LANE_VOICE[lane]}${voiceBlock(brandVoice)}
+${laneVoice(lane)}${voiceBlock(brandVoice)}
 
 GROUNDING, the hard rule: the idea is your ONLY source of facts. Do not invent numbers, clients, named outcomes, or statistics. If the idea implies proof it does not supply, write around the gap with conviction rather than fabricating it: argue from the mechanism, the stakes, or the pattern instead of a number you do not have. A specific-sounding invented fact is the worst failure this piece can produce, worse than a vaguer line, because it publishes under the operator's name.
 
@@ -78,7 +99,7 @@ Change NOTHING the instruction does not require. Every line the instruction leav
 
 Keep the article's discipline while you edit: 300 to 450 words, markdown, first line a bold title, one argument start to end, a final line worth remembering.
 
-${LANE_VOICE[lane]}${voiceBlock(brandVoice)}
+${laneVoice(lane)}${voiceBlock(brandVoice)}
 
 GROUNDING still binds: the instruction can rearrange facts or cut them, it can NEVER add new ones. Do not invent numbers, clients, named outcomes, or statistics, even if the instruction seems to want more proof; write around the gap with conviction instead. The idea behind this article was the only source of facts, and an edit does not widen it.
 

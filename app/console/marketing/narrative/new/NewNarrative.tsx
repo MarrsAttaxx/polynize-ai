@@ -1,17 +1,17 @@
 'use client';
 
 /**
- * GATE 1 · IDEA (D40). One screen, two decisions: which idea, which lane.
+ * GATE 1 · IDEA (D40, narrowed by D45). ONE decision now: which idea.
  *
- * The ideas come from the inbox (both lanes merged, newest first) and the box on top
- * takes a fresh one, because ideas arrive "in the flow of my week" and the gate must
- * accept them at the exact moment they exist. Typing in the box deselects the list;
- * picking from the list clears the box: one idea is the input, never a blend.
+ * The ideas come from the inbox (this stream's, newest first) and the box on top takes a fresh
+ * one, because ideas arrive "in the flow of my week" and the gate must accept them at the exact
+ * moment they exist. Typing in the box deselects the list; picking from the list clears the box:
+ * one idea is the input, never a blend.
  *
- * The lane decision is the fork that sets channels, voice and CTA downstream, so it
- * happens here, before a single word is drafted. Marrs is opinion in his own voice;
- * Polynize is educational. He knows what they are, so the buttons say only the names,
- * taken from streamLabel so the board and this screen cannot disagree.
+ * THE LANE PICKER IS GONE when you arrive from a stream, which is now the only way in: you got
+ * here from that person's board, so asking whose narrative it is would be asking a question the
+ * click already answered. It still appears when there is no stream in the url, so the screen
+ * cannot become unreachable if something links to it bare.
  */
 
 import { useState } from 'react';
@@ -21,13 +21,24 @@ import g from '../gates.module.css';
 
 export type IdeaRow = { id: string; lane: string; text: string; when: string };
 
-export function NewNarrative({ ideas }: { ideas: IdeaRow[] }) {
+export function NewNarrative({
+  ideas,
+  streams,
+  fixedLane,
+}: {
+  ideas: IdeaRow[];
+  /** Every stream, for the fallback picker. */
+  streams: { id: string; label: string }[];
+  /** The stream we came from. When set, there is nothing to pick. */
+  fixedLane?: string;
+}) {
   const router = useRouter();
   const [picked, setPicked] = useState<string | null>(null);
   const [typed, setTyped] = useState('');
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
-  const [lane, setLane] = useState<'marrs' | 'polynize' | null>(null);
+  const [chosenLane, setChosenLane] = useState<string | null>(null);
+  const lane = fixedLane ?? chosenLane;
 
   const chosenText = typed.trim() || ideas.find((i) => i.id === picked)?.text || '';
   const ready = chosenText !== '' && lane !== null;
@@ -62,7 +73,9 @@ export function NewNarrative({ ideas }: { ideas: IdeaRow[] }) {
   return (
     <div className={g.app}>
       <div className={g.top}>
-        <span className={g.where}>Gate 1 · Idea</span>
+        <span className={g.where}>
+          Gate 1 · Idea{fixedLane ? ` · ${streamLabel(fixedLane)}` : ''}
+        </span>
       </div>
 
       <textarea
@@ -93,24 +106,21 @@ export function NewNarrative({ ideas }: { ideas: IdeaRow[] }) {
         </button>
       ))}
 
-      <div className={g.lanes}>
-        <button
-          type="button"
-          className={`${g.lane} ${lane === 'marrs' ? g.laneOn : ''}`}
-          onClick={() => setLane('marrs')}
-          disabled={busy}
-        >
-          {streamLabel('marrs')}
-        </button>
-        <button
-          type="button"
-          className={`${g.lane} ${lane === 'polynize' ? g.laneOn : ''}`}
-          onClick={() => setLane('polynize')}
-          disabled={busy}
-        >
-          {streamLabel('polynize')}
-        </button>
-      </div>
+      {fixedLane ? null : (
+        <div className={g.lanes}>
+          {streams.map((st) => (
+            <button
+              key={st.id}
+              type="button"
+              className={`${g.lane} ${lane === st.id ? g.laneOn : ''}`}
+              onClick={() => setChosenLane(st.id)}
+              disabled={busy}
+            >
+              {st.label}
+            </button>
+          ))}
+        </div>
+      )}
 
       {err ? <p className={g.err}>{err}</p> : null}
 
@@ -121,7 +131,7 @@ export function NewNarrative({ ideas }: { ideas: IdeaRow[] }) {
             : !chosenText
               ? 'Pick an idea'
               : !lane
-                ? 'Pick a lane'
+                ? 'Pick whose it is'
                 : 'Develop →'}
         </button>
       </div>

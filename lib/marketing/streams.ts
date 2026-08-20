@@ -7,12 +7,30 @@
  * Order here is the display order on the dashboard.
  */
 export const STREAMS = [
-  { id: 'polynize', label: 'Polynize' },
-  { id: 'marrs', label: 'Marrs' },
-  { id: 'shourov', label: 'Shourov' },
-  { id: 'kristin', label: 'Kristin' },
-  { id: 'julian', label: 'Julian' },
+  { id: 'polynize', label: 'Polynize', kind: 'company' },
+  { id: 'marrs', label: 'Marrs', kind: 'person' },
+  { id: 'shourov', label: 'Shourov', kind: 'person' },
+  { id: 'kristin', label: 'Kristin', kind: 'person' },
+  { id: 'julian', label: 'Julian', kind: 'person' },
 ] as const;
+
+/**
+ * COMPANY OR PERSON, and it is load-bearing rather than decorative (D45).
+ *
+ * It decides which post frames a narrative gets by default. A first-person post with real
+ * stakes ("hard moment") is available to a person and not to a brand; a "field report" across
+ * client work is the brand's version of the same job and needs nobody's sign off. And the
+ * measured gap is not small: a personal profile takes 63% higher engagement than a company page
+ * at similar impressions (Metricool 2026), which is a structural reason the two kinds must
+ * never be judged by one number.
+ *
+ * The kit reads this rather than naming streams, so adding a person adds no branches.
+ */
+export type StreamKind = (typeof STREAMS)[number]['kind'];
+
+export function streamKind(id: string): StreamKind {
+  return STREAMS.find((s) => s.id === id)?.kind ?? 'person';
+}
 
 /**
  * Stream avatars shown on the dashboard cards (mint-ringed circles). Files live

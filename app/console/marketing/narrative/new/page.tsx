@@ -1,25 +1,35 @@
 import { redirect } from 'next/navigation';
 import { getCurrentUser } from '@/lib/console-auth';
 import { listIdeas } from '@/lib/marketing/idea-store';
+import { STREAMS, isStreamId } from '@/lib/marketing/streams';
 import { NewNarrative, type IdeaRow } from './NewNarrative';
 
 export const dynamic = 'force-dynamic';
 
 /**
- * Gate 1's server side: the ideas inbox, both lanes merged newest first.
+ * Gate 1's server side: the ideas inbox for the stream we came from (D45).
  *
- * Ideas already marked used are hidden rather than shown struck through, because
- * this screen is a chooser and a spent idea is not a choice. They stay in the
- * inbox screens untouched.
+ * `?stream=` scopes the inbox as well as fixing the lane, because an idea caught for one
+ * person is not a candidate for another's narrative. With no stream it falls back to every
+ * stream merged, newest first, which is what the screen did before it had an owner.
+ *
+ * Ideas already marked used are hidden rather than shown struck through, because this screen is
+ * a chooser and a spent idea is not a choice. They stay in the inbox screens untouched.
  */
-export default async function NewNarrativePage() {
+export default async function NewNarrativePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ stream?: string }>;
+}) {
   const user = await getCurrentUser();
   if (!user) return null;
   if (user.scope.type === 'client') {
     redirect(`/console/${user.scope.slug}/blueprint`);
   }
 
-  const lanes = ['marrs', 'polynize'] as const;
+  const { stream } = await searchParams;
+  const fixedLane = isStreamId(stream) ? stream : undefined;
+  const lanes = fixedLane ? [fixedLane] : STREAMS.map((st) => st.id);
   const lists = await Promise.all(
     lanes.map((l) =>
       listIdeas(l).catch(() => [] as Awaited<ReturnType<typeof listIdeas>>)
@@ -46,5 +56,11 @@ export default async function NewNarrativePage() {
   // The chooser shows a screenful, not the whole archive: the inbox remains the archive.
   const recent = rows.slice(0, 8).map(({ at: _at, ...r }) => r);
 
-  return <NewNarrative ideas={recent} />;
+  return (
+    <NewNarrative
+      ideas={recent}
+      streams={STREAMS.map((st) => ({ id: st.id, label: st.label }))}
+      fixedLane={fixedLane}
+    />
+  );
 }
