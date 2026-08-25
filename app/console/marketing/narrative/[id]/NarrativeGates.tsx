@@ -31,7 +31,16 @@ import {
 } from '@/lib/marketing/kit';
 import g from '../gates.module.css';
 
-type PieceRow = { id: string; label: string; master: string; kind: string; href: string };
+type PieceRow = {
+  id: string;
+  label: string;
+  master: string;
+  kind: string;
+  href: string;
+  /** Whether this card could ship (D47). Advisory: it never blocks the gate. */
+  state: 'empty' | 'drafted' | 'ready';
+  stateLabel: string;
+};
 type WaveCell = {
   day: string;
   network: string;
@@ -572,8 +581,10 @@ export function NarrativeGates({
                 <Link href={p.href} className={g.makeRow}>
                   <div className={g.makeBody}>
                     <h3>{p.label}</h3>
-                    <span className={`${g.badge} ${p.kind === 'video' ? g.badgeGold : g.badgeDim}`}>
-                      {p.kind === 'video' ? 'video · the long pole, start here' : p.kind}
+                    <span
+                      className={`${g.badge} ${p.state === 'ready' ? g.badgeReady : p.kind === 'video' ? g.badgeGold : g.badgeDim}`}
+                    >
+                      {p.state === 'ready' ? '✓ ready' : p.stateLabel}
                     </span>
                   </div>
                   <span className={g.open}>open →</span>
@@ -581,9 +592,15 @@ export function NarrativeGates({
               </div>
             ))
           )}
-          <p className={g.hint}>
-            each opens its editor. The one-card flow lands in the next build.
-          </p>
+          {pieces.some((p) => p.state !== 'ready') ? (
+            <p className={g.hint}>
+              {pieces.filter((p) => p.state === 'ready').length} of {pieces.length} ready. You can
+              lay out the week now and keep working: images attached later are picked up the next
+              time this narrative loads Gate 5.
+            </p>
+          ) : (
+            <p className={g.hint}>All {pieces.length} ready.</p>
+          )}
           {err ? <p className={g.err}>{err}</p> : null}
           <div className={g.bar}>
             <button

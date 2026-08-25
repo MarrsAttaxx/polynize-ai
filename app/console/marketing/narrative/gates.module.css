@@ -487,3 +487,9 @@
   color: var(--coral, #ff7a6b);
   border: 1px dashed rgba(255, 122, 107, 0.45);
 }
+
+/* A Gate 4 card that could ship: the words exist and the images are attached (D47). Mint,
+   because it is the only state on that screen that means "nothing left to do here". */
+.badgeReady {
+  color: var(--mint, #69fccb);
+}

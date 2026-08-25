@@ -1102,7 +1102,78 @@ export function masterCardLabel(m: MasterAsset): string {
  * exactly the part that differs between them, which is why outputsOnMaster exists.
  */
 export function outputForMaster(m: string): KitOutput | undefined {
-  return CATALOGUE.find((o) => o.master === m);
+  /**
+   * BLOCKED OUTPUTS ARE SKIPPED (D47), and that is not a nicety.
+   *
+   * The carousel master serves li_car (the LinkedIn PDF) and ig_car (the Instagram swipe), and
+   * li_car comes first in the array. li_car is blocked and planned nowhere, yet
+   * promptFragment('carousel') was briefing April to its artifact: "7 to 12 pages, under 60 words
+   * each", the spec for a document nobody is making, instead of the ten 1080 x 1350 slides that
+   * are actually planned. bodyCapFor read the wrong caption cap off the same entry.
+   *
+   * Keyed on `blocked` rather than on "defaults on somewhere", because blocked is the property
+   * that means CANNOT BE PRODUCED. An output that is merely off by default is still a real end
+   * state whose spec is correct, and briefing April from it would not be wrong.
+   *
+   * A master whose outputs are ALL blocked still returns its first, because a label beats nothing.
+   */
+  return (
+    CATALOGUE.find((o) => o.master === m && !o.blocked) ?? CATALOGUE.find((o) => o.master === m)
+  );
+}
+
+/**
+ * How many images this master's post needs. 10 for the carousel, 1 for the quote card, 1 for a
+ * text post's required visual, 1 for a video's cover frame. Read off the artifact rather than
+ * guessed, so a change to the spec moves the count with it.
+ */
+export function expectedImages(m: string): number {
+  const o = outputForMaster(m);
+  return o ? o.artifact.visual.images : 1;
+}
+
+export type CardState = 'empty' | 'drafted' | 'ready';
+
+/**
+ * WHETHER A GATE 4 CARD IS FINISHED (D47).
+ *
+ * Gate 4 used to show seven visually identical cards with a live "Lay out the week" button under
+ * them, so a card with no script and no media looked exactly like a finished one, and the most
+ * likely thing to do on the screen was also the thing that laid out a wave of empty posts.
+ *
+ * 'ready' means it could ship: the words exist AND the images are attached. 'drafted' means the
+ * words exist and the pictures do not, which is the normal state of a video piece before the
+ * shoot. This is advisory, never a block: media now refreshes on every replan, so attaching
+ * images after the wave is laid out works, and the operator does not need protecting from an
+ * order that is no longer destructive.
+ */
+export function cardState(
+  master: string,
+  piece: { body?: string; script?: string; media?: string[] }
+): CardState {
+  const media = piece.media?.length ?? 0;
+  const kind = masterKind(master as MasterAsset);
+  if (kind === 'image') {
+    if (media === 0) return 'empty';
+    return media >= expectedImages(master) ? 'ready' : 'drafted';
+  }
+  const words = (kind === 'video' ? piece.script : piece.body ?? piece.script) ?? '';
+  if (!words.trim()) return 'empty';
+  return media > 0 ? 'ready' : 'drafted';
+}
+
+/** What the card says about itself. Short: it sits under the label on a phone. */
+export function cardStateLabel(master: string, state: CardState): string {
+  const kind = masterKind(master as MasterAsset);
+  if (state === 'ready') return 'ready';
+  if (kind === 'image') {
+    const n = expectedImages(master);
+    return state === 'empty'
+      ? `no images yet, needs ${n}`
+      : `part done, needs ${n}`;
+  }
+  if (state === 'empty') return kind === 'video' ? 'no script yet' : 'not written yet';
+  return kind === 'video' ? 'script written, no video attached' : 'written, no image attached';
 }
 
 /** Every finished post a master has to serve, which for the video script is ten across four. */
@@ -1464,7 +1535,14 @@ function wrapperLines(outputs: KitOutput[]): string[] {
 export function promptFragment(master: string): string | undefined {
   const o = outputForMaster(master);
   if (!o) return undefined;
-  const siblings = outputsOnMaster(master);
+  /**
+   * BLOCKED SIBLINGS ARE LEFT OUT (D47). The carousel master serves the Instagram swipe and the
+   * LinkedIn document, and the document is blocked and planned nowhere, so listing it here told
+   * April she was writing for two platforms and briefed her to a caption cap for a post that is
+   * never made. Brief her on what is actually being produced.
+   */
+  const all = outputsOnMaster(master);
+  const siblings = all.some((o) => !o.blocked) ? all.filter((o) => !o.blocked) : all;
   const a = o.artifact;
   const lines: string[] = [];
 

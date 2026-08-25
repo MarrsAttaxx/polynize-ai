@@ -1,5 +1,6 @@
 import { sendEmail } from '@/lib/resend-client';
 import { streamEmails } from './streams';
+import { resolveMediaUrls } from './media-store';
 import { channelLabel } from './channels';
 import type { CalendarEntry } from './calendar-store';
 
@@ -51,6 +52,7 @@ export async function sendHandPostBrief(
   narrativeTitle: string,
   posts: HandPost[]
 ): Promise<{ sent: number; skipped: string | null }> {
+  /* eslint-disable-next-line prefer-const */
   try {
     if (posts.length === 0) return { sent: 0, skipped: 'nothing to hand over' };
 
@@ -61,6 +63,29 @@ export async function sendHandPostBrief(
       console.error(`[hand-post] no address for lane ${lane}; ${posts.length} posts unannounced`);
       return { sent: 0, skipped: 'no address on file for this lane' };
     }
+
+    /**
+     * MEDIA IDS ARE NOT LINKS (D47). CalendarEntry.media holds media_ids, and this email was
+     * rendering each one as an anchor, so every hand-post brief arrived on his phone as a list of
+     * dead uuids with nothing to save to the camera roll. It hit every marrs-lane LinkedIn post,
+     * which is every post on the one lane the hand-post path exists for.
+     *
+     * Resolved here rather than at the call site because this function already takes the lane, and
+     * resolution has to happen somewhere that knows it. Best effort like the rest of this file: a
+     * failed lookup costs the images, never the brief.
+     */
+    const resolved = await Promise.all(
+      posts.map(async (p) => {
+        if (p.media.length === 0) return p;
+        try {
+          return { ...p, media: await resolveMediaUrls(lane, p.media) };
+        } catch (err) {
+          console.error('[hand-post] media resolve failed:', err);
+          return { ...p, media: [] as string[] };
+        }
+      })
+    );
+    posts = resolved;
 
     const n = posts.length;
     const subject = `Post these yourself: ${narrativeTitle} (${n} ${n === 1 ? 'post' : 'posts'})`;

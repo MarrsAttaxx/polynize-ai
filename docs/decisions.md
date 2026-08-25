@@ -974,3 +974,61 @@ The one narrow version that was considered and rejected: default **manual** chan
 - **A calendar entry still has no output identity.** The master `texts_list` serves both the listicle and the explainer, so unticking one and ticking the other leaves `missing` at 0 and the wrong draft stands in. The slot is always right, because the kind comes from the master; the copy can still be wrong.
 - **Nothing enforces capacity.** Improved but not solved: the console no longer manufactures unshippable posts at the 60-day cliff, it reports them. It still does not warn that a lane is oversubscribed.
 
+---
+
+## D47: Gate 4 gets an image editor, and four traps in front of a walkthrough get closed
+
+**Adopted 25 August 2026.** Marrs: *"I wanna fix the gate four editors. That's the blocker for me not going through the entire process... I need the video editor working, the image editor working. Once the images are created, we can work out how to turn the images into a LinkedIn document carousel."*
+
+### The video editor was not the blocker
+
+Worth recording because he believed it was. `ScriptScreen` and everything it calls work for a Gates piece: the article loads through `narrative_ref`, the staged build runs, the split-screen shape comes back, the teleprompter reads it, Ready-to-record queues it. What he was actually hitting is that `piece/[id]/page.tsx` sent **every non-text kind** to `ScriptScreen`, so the carousel and the quote card opened the **video teleprompter** and offered to draft a spoken script for a post nobody says out loud. Fixing the image editor fixes the video complaint.
+
+What the video card still cannot do is **finish**, and that is a deliberate boundary rather than a defect: there is no cut, render or export in the console, and no upload. The mp4 has to reach Box by hand and be registered in the stream library before it can be attached. Nothing on screen says so, which is worth fixing next.
+
+### The image editor: one slide at a time
+
+A carousel is ten self-contained slides and a quote card is one, so they are the same screen with a different count, and **the count comes from the master rather than being asked for**.
+
+The run: April writes the whole plan from the article in one call (a shared visual **world**, the caption, and per slide a headline, a note and a **background** prompt). Then one slide fills the screen, he approves or remakes it, and the next arrives. A progress strip lets him jump back to slide three without losing his place, because the place is a number and not a scroll position.
+
+**The words are composited, not generated.** The background comes from Higgsfield and the type is put on in code with the existing deterministic Space Grotesk overlay. That is not a preference: the only live image model is Soul, described as photoreal images of people, and a model that writes its own words ruins a slide. It is also what makes ten separately generated images read as one set.
+
+**The crop is now exact.** `renderAndHostOverlay` gained a `frame` option, so every slide is composited onto exactly 1080 x 1350 with the source object-fit cover. Instagram crops every slide of a carousel to the **first** slide's dimensions, so a set generated at two sizes is a set with nine wrong crops. Soul offers no 4:5 size at all, so this is the only way the guarantee holds.
+
+**Done means `piece.media` holds the right ids in the right order.** So media is **derived** from the plan on every save (`mediaFromPlan`), never accumulated from clicks: slide order is post order by construction, capped at the API's ten, and only slides with a real file and a real library id count. Unticking and reticking cannot silently move a slide to the end the way a picker can.
+
+Reuse rather than reimplementation: generation is the media library's own Higgsfield call, the words are its overlay, registration is its `add` route, and its Generate and Add-text panels are mounted in a folded "by hand" drawer via a new `base` prop that leaves their existing behaviour untouched.
+
+### Four traps closed, three of which would have ruined the walkthrough quietly
+
+**1. Media was snapshotted at plan time and frozen forever.** This was the worst one. Press "Lay out the week" before the video or the carousel is attached and the entries were created with `media: []`, and nothing could ever fix them: an already-timed entry counts as present so the plan skipped it, the repair branch writes only the date, and the calendar's own PUT has no media field. The post shipped without its images and the only recovery was deleting every entry by hand. **Media now refreshes on every replan**, drafts only, media only, so attaching images later works. `post_copy` is deliberately left alone because it may have been hand-tuned.
+
+**2. The hand-post brief emailed uuids.** `CalendarEntry.media` holds media ids and the email rendered each as a link, so every hand-post brief arrived on his phone as a list of dead uuids with nothing to save. It hit **every marrs-lane LinkedIn post**, which is every post on the one lane the hand-post path exists for. Resolved to real urls now.
+
+**3. Every Gates prezie shared one bucket, and editing one overwrote another narrative's deck.** Prezies are filed by concept slug and a Gates piece has no concept, so all of them fell into `_unfiled`. Opening the Prezie stage on narrative B listed every unfiled prezie ever made and, with none of its own, opened narrative A's, where a hand edit then **saved back onto A's deck**. The studio queue keyed on the same bucket, so it showed a green "Prezie on the screen" pointing at an unrelated deck and suppressed the missing-prezie warning, which is the one thing meant to be checked before a room is set up. A narrative now gets its own bucket.
+
+**4. April was briefed to the wrong artifact for the carousel.** `outputForMaster` returned the first catalogue entry on a master, and the blocked LinkedIn PDF sorts before the Instagram swipe, so the prompt said "7 to 12 pages, under 60 words each" for a set of ten 1080 x 1350 slides, and read the caption cap off a post nobody is making. Blocked outputs are skipped now, and a blocked sibling is left out of the brief entirely.
+
+### Gate 4 now says what is done
+
+Seven visually identical cards sat under a live "Lay out the week" button, so a card with no script and no media looked exactly like a finished one and the most likely thing to do on the screen was also the thing that laid out a wave of empty posts. Each card now reads `✓ ready`, `script written, no video attached`, `no images yet, needs 10`, and the footer counts them.
+
+**Advisory, never a block.** Media refreshes on replan now, so the order is no longer destructive and he does not need protecting from it.
+
+### One bug that only running it could find
+
+The image screen is a client component and imported the slide module, which imported `draft.ts`, which imports `narrative-store`, which imports `node:crypto`. **`tsc` compiles that happily** and the piece page 500s with an `UnhandledSchemeError` from the bundler. The writing half now lives in `slide-propose.ts`, server only, and the client half imports nothing that reaches a store. Same class of hazard as the kit's client-safety rule, and the reason it is worth actually loading a screen rather than trusting a typecheck.
+
+### And a test runner, because the suites kept disappearing
+
+`npm run test:marketing`. 100 assertions over the slide plan, the order guarantee, the card state and all four regressions above. Written into the repo because every suite written outside it has been lost between sessions, which is the wrong property for the week the flow is walked end to end for the first time.
+
+### Still open, and named rather than left to be discovered
+
+- **No upload.** A media asset is a url reference, so a recorded file reaches the console only via Box by hand. Nothing on screen says so.
+- **The LinkedIn document carousel** is still blocked and deferred, as he asked. The slides exist now, so turning them into a PDF is the next question.
+- **Only one image model is live.** Soul, photoreal people. No diagram, no chart. Every slide background is a photograph, and the fix is a second model in the registry rather than a change to the screen.
+- **A calendar entry still has no output identity**, so the slot is always right and the copy can still be wrong.
+- **Two competing routes into the calendar**: the wave, and "Prepare posts" on the text screen, which creates dateless entries the wave then has to repair.
+

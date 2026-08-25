@@ -9,7 +9,12 @@ import {
   getChannelSchedule,
   slotPrefersAt,
 } from '@/lib/marketing/channel-schedule';
-import { outputForMasterOnNetwork, slotKindFor } from '@/lib/marketing/kit';
+import {
+  outputForMasterOnNetwork,
+  slotKindFor,
+  cardState,
+  cardStateLabel,
+} from '@/lib/marketing/kit';
 import { NarrativeGates, type WaveData } from './NarrativeGates';
 
 export const dynamic = 'force-dynamic';
@@ -44,18 +49,30 @@ export default async function NarrativePage({
   if (!narrative) notFound();
 
   // Gate 4: the master pieces, video first because it is the long pole.
-  const pieces: { id: string; label: string; master: string; kind: string; href: string }[] = [];
+  const pieces: {
+    id: string;
+    label: string;
+    master: string;
+    kind: string;
+    href: string;
+    /** Whether this card could ship, so Gate 4 stops showing seven identical rows (D47). */
+    state: 'empty' | 'drafted' | 'ready';
+    stateLabel: string;
+  }[] = [];
   if (narrative.gate === 4 || narrative.gate === 5 || narrative.gate === 'shipped') {
     for (const pid of narrative.piece_ids ?? []) {
       try {
         const p = await getPiece(owner, pid);
         if (!p) continue;
+        const st = cardState(p.master ?? '', p);
         pieces.push({
           id: p.piece_id,
           label: p.title,
           master: p.master ?? '',
           kind: p.kind ?? 'text',
           href: `/console/marketing/piece/${p.piece_id}`,
+          state: st,
+          stateLabel: cardStateLabel(p.master ?? '', st),
         });
       } catch (err) {
         console.error('[narrative] piece read failed:', err);

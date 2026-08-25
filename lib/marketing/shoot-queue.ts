@@ -19,7 +19,7 @@
  */
 
 import { listSavedPieces, type MarketingPiece } from './piece-store';
-import { listPreziesForConcept, conceptSlugFromRef, type Prezie } from './prezie-store';
+import { listPreziesForConcept, prezieFilingKey, type Prezie } from './prezie-store';
 import { formatById } from './output-plan';
 
 export type ShootRow = {
@@ -88,7 +88,9 @@ export function groupShootRows(
   if (ready.length === 0) return { groups: [], total: 0, with_prezie: 0 };
 
   const rows: ShootRow[] = ready.map((p) => {
-    const concept = conceptSlugFromRef(p.concept_ref);
+    // Same bucket the piece screen files into, or the queue's prezie link and its
+    // missing-prezie warning both point at another narrative's deck (D47).
+    const concept = prezieFilingKey(p);
     const all = preziesByConcept.get(concept) ?? [];
     // The one built for THIS piece wins; otherwise the concept's newest, since prezies are reused across
     // pieces on purpose (D31) and the newest is the one he has been working on.
@@ -167,7 +169,7 @@ export async function buildShootQueue(owner: string) {
   if (ready.length === 0) return { groups: [] as ShootGroup[], total: 0, with_prezie: 0 };
 
   // One read per CONCEPT, not per piece.
-  const concepts = [...new Set(ready.map((p) => conceptSlugFromRef(p.concept_ref)))];
+  const concepts = [...new Set(ready.map((p) => prezieFilingKey(p)))];
   const byConcept = new Map<string, Prezie[]>();
   await Promise.all(
     concepts.map(async (c) => {

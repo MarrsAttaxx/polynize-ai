@@ -232,6 +232,8 @@ export async function POST(
   let extra = 0;
   /** Dateless drafts given a time rather than duplicated. */
   let repaired = 0;
+  /** Existing drafts whose media was brought up to date with the piece. */
+  let refreshed = 0;
   /** Posts placed in a slot that prefers the other kind, because nothing of that kind was waiting. */
   let fallback = 0;
   /** Posts the 60-day walk could not place. Reported, never saved without a time. */
@@ -293,6 +295,39 @@ export async function POST(
         const orphans = existing
           .filter((e) => !e.scheduled_at && e.status === 'draft')
           .sort((a, b) => (a.created_at ?? '').localeCompare(b.created_at ?? ''));
+
+        /**
+         * MEDIA IS REFRESHED ON EVERY REPLAN (D47), and this is the fix for the single most
+         * dangerous trap in the whole flow.
+         *
+         * The plan used to copy piece.media onto an entry ONCE, at creation, and nothing could
+         * ever refresh it: an already-timed entry counts as present so the loop skipped it, the
+         * repair branch writes only the date, and the calendar's own PUT has no media field at
+         * all. So pressing "Lay out the week" before the video or the carousel was attached
+         * created entries with media: [], and no amount of replanning fixed them. The post shipped
+         * without its images and the only recovery was deleting every entry by hand.
+         *
+         * DRAFTS ONLY, and media only. A scheduled or published entry is already lodged with
+         * Metricool and rewriting it here would desync the two. post_copy is deliberately left
+         * alone: it may have been hand-tuned on the calendar, and the images are the part that
+         * arrives late.
+         */
+        const wantMedia = piece.media ?? [];
+        for (const e of existing) {
+          if (e.status !== 'draft') continue;
+          const now = e.media ?? [];
+          if (now.length === wantMedia.length && now.every((m, i) => m === wantMedia[i])) continue;
+          try {
+            await saveEntry(owner, {
+              ...e,
+              media: [...wantMedia],
+              updated_at: new Date().toISOString(),
+            });
+            refreshed += 1;
+          } catch (err) {
+            console.error('[narrative.wave] media refresh failed:', err);
+          }
+        }
 
         const missing = outputs.length - have;
         if (missing <= 0) {
@@ -388,5 +423,5 @@ export async function POST(
   }
 
   await unlock();
-  return NextResponse.json({ created, repaired, extra, fallback, unplaced });
+  return NextResponse.json({ created, repaired, refreshed, extra, fallback, unplaced });
 }

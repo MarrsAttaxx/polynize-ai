@@ -25,6 +25,16 @@ export type OverlayOpts = {
   size: OverlaySize;
   baseColor: string;
   highlightColor: string;
+  /**
+   * FORCE THE OUTPUT SIZE, cropping the source to fill it (object-fit cover).
+   *
+   * Without this the render preserves the source's aspect ratio and caps the long edge at
+   * 1080, so a 1536 x 2048 generation comes out 810 x 1080: under LinkedIn's 1080 wide and
+   * the wrong ratio for a 4:5 feed card. A carousel needs the stronger guarantee anyway,
+   * because Instagram crops every slide to the FIRST slide's dimensions, so all ten have to
+   * be identical by construction rather than by luck. Omitted, the old behaviour is unchanged.
+   */
+  frame?: { w: number; h: number };
 };
 
 const SIZE_FRAC: Record<OverlaySize, number> = { small: 0.065, medium: 0.09, large: 0.115 };
@@ -100,10 +110,16 @@ export async function renderAndHostOverlay(
     const buf = Buffer.from(await res.arrayBuffer());
     const dim = imageSizeFrom(buf);
     if (!dim.width || !dim.height) return { error: 'could not read the image dimensions' };
-    // Cap the long edge so the render stays fast + the PNG stays a sane size.
-    const scale = Math.min(1, 1080 / Math.max(dim.width, dim.height));
-    width = Math.round(dim.width * scale);
-    height = Math.round(dim.height * scale);
+    if (opts.frame) {
+      // An exact frame was asked for: the source fills it and is cropped, never letterboxed.
+      width = opts.frame.w;
+      height = opts.frame.h;
+    } else {
+      // Cap the long edge so the render stays fast + the PNG stays a sane size.
+      const scale = Math.min(1, 1080 / Math.max(dim.width, dim.height));
+      width = Math.round(dim.width * scale);
+      height = Math.round(dim.height * scale);
+    }
     const mime = dim.type === 'jpg' ? 'image/jpeg' : `image/${dim.type ?? 'png'}`;
     dataUri = `data:${mime};base64,${buf.toString('base64')}`;
   } catch (e) {

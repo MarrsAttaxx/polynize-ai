@@ -10,6 +10,7 @@
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
+    "test:marketing": "npx --yes tsx lib/marketing/__tests__/gate4.test.ts",
     "test:blueprint": "npx --yes tsx lib/blueprint/__tests__/schema-v2.fixture.ts && npx --yes tsx lib/blueprint/__tests__/derive-and-export.test.ts"
   },
   "dependencies": {

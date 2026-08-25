@@ -6,7 +6,7 @@ import { randomUUID } from 'node:crypto';
 import { getScene } from '@/lib/marketing/scene-store';
 import { getDeck } from '@/lib/marketing/deck-store';
 import { deckToScene } from '@/lib/marketing/deck-to-scene';
-import { listPreziesForConcept, savePrezie, conceptSlugFromRef } from '@/lib/marketing/prezie-store';
+import { listPreziesForConcept, savePrezie, prezieFilingKey } from '@/lib/marketing/prezie-store';
 import { PrezieScreen } from './PrezieScreen';
 import s from '../script.module.css';
 
@@ -57,7 +57,9 @@ export default async function PiecePreziePage({
     );
   }
 
-  const concept = conceptSlugFromRef(piece.concept_ref);
+  // A Gates piece has no concept_ref, so this files under its NARRATIVE rather than into the
+  // shared _unfiled bucket, where it would list and then overwrite another narrative's deck (D47).
+  const concept = prezieFilingKey(piece);
   const pieceId = piece.piece_id;
   let all = await listPreziesForConcept(concept);
 

@@ -29,12 +29,29 @@ type Options = { configured: boolean; soulStyles: SoulStyle[]; soulIds: SoulIdOp
 export function MediaGenerate({
   stream,
   images,
+  base: baseOverride,
+  onSaved,
 }: {
   stream: string;
   images: MediaAsset[];
+  /**
+   * WHERE THE ROUTES LIVE, when this panel is not mounted on the library page.
+   *
+   * Every fetch here was derived from window.location.pathname, which is right on the
+   * library and wrong everywhere else: mounted under a piece it would POST to
+   * /console/marketing/piece/{id}/generate, a route that does not exist. Pass the
+   * stream's media path and the panel works from anywhere. Unset, nothing changes.
+   */
+  base?: string;
+  /**
+   * What to do with a saved asset instead of refreshing the library grid. The piece
+   * screen uses it to attach the new image to the slide the operator is looking at.
+   */
+  onSaved?: (asset: MediaAsset) => void;
 }) {
   const router = useRouter();
-  const base = () => window.location.pathname.replace(/\/+$/, '');
+  const base = () =>
+    baseOverride ? baseOverride.replace(/\/+$/, '') : window.location.pathname.replace(/\/+$/, '');
 
   const [modelId, setModelId] = useState(IMAGE_MODELS[0]?.id ?? 'soul');
   const model = imageModelById(modelId);
@@ -134,13 +151,16 @@ export function MediaGenerate({
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ url, kind: 'image', label }),
       });
+      const b = (await res.json().catch(() => null)) as
+        | { error?: string; asset?: MediaAsset }
+        | null;
       if (!res.ok) {
-        const b = (await res.json().catch(() => null)) as { error?: string } | null;
         setError(b?.error ?? 'Could not save to library.');
         return;
       }
       setSaved((prev) => new Set(prev).add(url));
-      router.refresh(); // sync the library grid below
+      if (onSaved && b?.asset) onSaved(b.asset);
+      else router.refresh(); // sync the library grid below
     } catch {
       setError('Network error saving to library.');
     } finally {

@@ -50,6 +50,35 @@ export function conceptSlugFromRef(ref?: string): string {
   return slug && /^[A-Za-z0-9._-]+$/.test(slug) ? slug : UNFILED;
 }
 
+/**
+ * WHERE A PIECE'S PREZIES ARE FILED (D47).
+ *
+ * concept_ref was the only filing key, and a Gates piece has none: it points at a NARRATIVE.
+ * So every Gates piece fell into the shared `_unfiled` bucket, and the consequences were not
+ * cosmetic. Opening the Prezie stage on narrative B listed every unfiled prezie ever made, on
+ * every narrative and every lane, and with none of its own it opened the newest one, which
+ * belonged to narrative A. A hand edit then saved back onto A's deck. The studio queue keyed on
+ * the same bucket, so it showed a green "Prezie on the screen" pointing at an unrelated deck and
+ * suppressed the missing-prezie warning, which is the one thing meant to be checked before a room
+ * is set up.
+ *
+ * A narrative gets its own bucket, `n-{uuid}`. It stays inside the same single-segment character
+ * class the concept slug uses, because this string becomes a storage path segment
+ * (`pam/prezies/{concept}/{id}.json`) and a URL part, and a concept slug is a filename stem that
+ * could not be a uuid with an `n-` in front of it.
+ */
+export function prezieFilingKey(piece: {
+  concept_ref?: string;
+  narrative_ref?: string;
+}): string {
+  const byConcept = conceptSlugFromRef(piece.concept_ref);
+  if (byConcept !== UNFILED) return byConcept;
+  const n = (piece.narrative_ref ?? '').trim();
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(n)
+    ? `n-${n}`
+    : UNFILED;
+}
+
 export type Prezie = {
   /** uuid; also the storage key tail and the id in the performance URL. */
   prezie_id: string;

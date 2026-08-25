@@ -43,12 +43,19 @@ const SIZES: { id: Size; label: string }[] = [
 export function MediaTextOverlay({
   stream: _stream,
   images,
+  base: baseOverride,
+  onSaved,
 }: {
   stream: string;
   images: MediaAsset[];
+  /** The stream's media path, when this panel is mounted somewhere other than the library. */
+  base?: string;
+  /** Called with the saved asset instead of refreshing the library grid. */
+  onSaved?: (asset: MediaAsset) => void;
 }) {
   const router = useRouter();
-  const base = () => window.location.pathname.replace(/\/+$/, '');
+  const base = () =>
+    baseOverride ? baseOverride.replace(/\/+$/, '') : window.location.pathname.replace(/\/+$/, '');
 
   const [sourceUrl, setSourceUrl] = useState('');
   const [text, setText] = useState('');
@@ -113,13 +120,16 @@ export function MediaTextOverlay({
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ url: result, kind: 'image', label }),
       });
+      const b = (await res.json().catch(() => null)) as
+        | { error?: string; asset?: MediaAsset }
+        | null;
       if (!res.ok) {
-        const b = (await res.json().catch(() => null)) as { error?: string } | null;
         setError(b?.error ?? 'Could not save to library.');
         return;
       }
       setSaved(true);
-      router.refresh();
+      if (onSaved && b?.asset) onSaved(b.asset);
+      else router.refresh();
     } catch {
       setError('Network error saving to library.');
     } finally {

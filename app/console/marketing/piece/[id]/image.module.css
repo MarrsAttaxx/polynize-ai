@@ -1,0 +1,468 @@
+/* The slide run. Mobile first: one column, one slide, one action bar pinned to the
+   bottom of the screen, so ten approvals are ten taps in the same place at 375px. */
+
+.root {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding-bottom: 120px;
+  position: relative;
+  z-index: 1;
+}
+
+/* ------------------------------------------------------------------ header */
+
+.head {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.headLeft {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+.headRight {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.back {
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: var(--text-3);
+  text-decoration: none;
+}
+.titleWrap {
+  min-width: 0;
+}
+.eyebrow {
+  display: block;
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+.title {
+  margin: 4px 0 0;
+  font-size: 20px;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+.saveInd {
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--text-3);
+}
+.saving {
+  color: var(--amber);
+}
+.ok {
+  color: var(--mint);
+}
+.err {
+  color: var(--coral);
+}
+
+@media (min-width: 900px) {
+  .head {
+    flex-direction: row;
+    align-items: flex-start;
+    justify-content: space-between;
+  }
+}
+
+/* ------------------------------------------------------------------ start panel */
+
+.startPanel,
+.donePanel {
+  background: var(--tac-surface, #1b1b26);
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.1));
+  border-radius: 16px;
+  padding: 18px;
+  margin-bottom: 16px;
+}
+.startTitle {
+  margin: 0 0 8px;
+  font-size: 17px;
+  line-height: 1.3;
+}
+.startNote {
+  margin: 0 0 12px;
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--text-2);
+}
+.steer {
+  width: 100%;
+  min-height: 92px;
+  background: var(--bg, #0a0a0f);
+  color: inherit;
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.12));
+  border-radius: 12px;
+  padding: 12px;
+  font: inherit;
+  font-size: 14px;
+  line-height: 1.5;
+  resize: vertical;
+  margin-bottom: 12px;
+}
+
+.source {
+  background: var(--bg, #0a0a0f);
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.1));
+  border-radius: 12px;
+  padding: 10px 14px;
+  margin-bottom: 12px;
+}
+.sourceHead {
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  cursor: pointer;
+  list-style: none;
+}
+.sourceHead::-webkit-details-marker {
+  display: none;
+}
+.sourceHead::before {
+  content: '▸ ';
+  color: var(--mint);
+}
+.source[open] .sourceHead::before {
+  content: '▾ ';
+}
+.sourceBody {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border, rgba(255, 255, 255, 0.08));
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--text-2);
+  white-space: pre-wrap;
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+/* ------------------------------------------------------------------ progress strip */
+
+.strip {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 4px 0 10px;
+  scrollbar-width: thin;
+  -webkit-overflow-scrolling: touch;
+}
+.chip {
+  position: relative;
+  flex: 0 0 auto;
+  width: 44px;
+  height: 55px;
+  border-radius: 8px;
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.14));
+  background: var(--tac-surface, #1b1b26);
+  padding: 0;
+  cursor: pointer;
+  overflow: hidden;
+}
+.chipImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.75;
+}
+.chipNum {
+  position: absolute;
+  left: 4px;
+  top: 3px;
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--text-2);
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.8);
+}
+.chipTick {
+  position: absolute;
+  right: 3px;
+  bottom: 2px;
+  font-size: 12px;
+  color: var(--mint);
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.8);
+}
+.chipMade {
+  border-color: var(--amber);
+}
+.chipDone {
+  border-color: var(--mint);
+}
+.chipOn {
+  outline: 2px solid var(--mint);
+  outline-offset: 1px;
+}
+
+.count {
+  margin: 0 0 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: var(--text-3);
+}
+.resume {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  color: var(--mint);
+  cursor: pointer;
+}
+
+/* ------------------------------------------------------------------ the one slide */
+
+.stage {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+.frame {
+  width: 100%;
+  aspect-ratio: 1080 / 1350;
+  border-radius: 14px;
+  overflow: hidden;
+  background: var(--tac-surface, #1b1b26);
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.12));
+}
+.frameImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.framePlaceholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 24px;
+  text-align: center;
+  font-size: 14px;
+  color: var(--text-3);
+}
+.frameNum {
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 40px;
+  color: var(--border, rgba(255, 255, 255, 0.2));
+}
+.spinner {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid var(--border, rgba(255, 255, 255, 0.2));
+  border-top-color: var(--mint);
+  animation: spin 0.9s linear infinite;
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.sideCol {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.roleTag {
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--mint);
+  margin-bottom: 6px;
+}
+.note {
+  margin: 0 0 12px;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--text-2);
+}
+.field {
+  display: block;
+}
+.fieldLabel {
+  display: block;
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  margin-bottom: 6px;
+}
+.words,
+.prompt,
+.caption {
+  width: 100%;
+  background: var(--bg, #0a0a0f);
+  color: inherit;
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.12));
+  border-radius: 12px;
+  padding: 12px;
+  font: inherit;
+  font-size: 15px;
+  line-height: 1.45;
+  resize: vertical;
+}
+.prompt,
+.caption {
+  font-size: 13px;
+  margin-top: 10px;
+}
+.hint {
+  margin: 6px 0 12px;
+  font-size: 12px;
+  color: var(--text-3);
+}
+
+.tweak,
+.captionBlock,
+.hand {
+  background: var(--tac-surface, #1b1b26);
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.1));
+  border-radius: 12px;
+  padding: 10px 14px;
+  margin-bottom: 12px;
+}
+.tweakHead {
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  cursor: pointer;
+  list-style: none;
+}
+.tweakHead::-webkit-details-marker {
+  display: none;
+}
+.tweakHead::before {
+  content: '▸ ';
+  color: var(--mint);
+}
+.tweak[open] .tweakHead::before,
+.captionBlock[open] .tweakHead::before,
+.hand[open] .tweakHead::before {
+  content: '▾ ';
+}
+.tweakRow {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  margin-top: 10px;
+}
+.select {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--text-3);
+}
+.select select {
+  background: var(--bg, #0a0a0f);
+  color: inherit;
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.14));
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 13px;
+}
+
+@media (min-width: 900px) {
+  .stage {
+    flex-direction: row;
+    align-items: flex-start;
+  }
+  .frame {
+    flex: 0 0 380px;
+    width: 380px;
+  }
+  .sideCol {
+    flex: 1 1 auto;
+  }
+}
+
+/* ------------------------------------------------------------------ the action bar */
+
+.actions {
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+  padding: 12px 0;
+  margin-bottom: 12px;
+  background: linear-gradient(
+    to top,
+    var(--bg, #0a0a0f) 62%,
+    rgba(10, 10, 15, 0)
+  );
+}
+.primary {
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 14px;
+  color: var(--bg, #0a0a0f);
+  background: var(--mint);
+  border: none;
+  border-radius: 10px;
+  padding: 14px 20px;
+  cursor: pointer;
+  flex: 1 1 auto;
+  min-height: 48px;
+  transition: opacity var(--tac-transition);
+}
+.primary:hover:not(:disabled) {
+  opacity: 0.9;
+}
+.primary:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.ghost {
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 13px;
+  color: var(--text-2);
+  background: transparent;
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.16));
+  border-radius: 10px;
+  padding: 12px 16px;
+  min-height: 44px;
+  cursor: pointer;
+}
+.ghost:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.approvedTag {
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: var(--mint);
+}
+.error {
+  margin: 8px 0 0;
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: var(--coral);
+}

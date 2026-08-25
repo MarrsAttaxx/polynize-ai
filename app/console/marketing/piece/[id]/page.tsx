@@ -7,6 +7,7 @@ import { kindOf } from '@/lib/marketing/output-plan';
 import { ScriptScreen } from './ScriptScreen';
 import { scaffoldScript } from '@/lib/marketing/concept-parse';
 import { TextOutputScreen } from './TextOutputScreen';
+import { ImageScreen } from './ImageScreen';
 import s from './script.module.css';
 
 export const dynamic = 'force-dynamic';
@@ -70,12 +71,23 @@ export default async function MarketingPiecePage({
   // What to call it on screen, since the two eras of piece have different sources.
   const sourceLabel = piece.narrative_ref ? 'The article' : 'The concept';
 
-  // Non-video pieces (text) open on the text output screen; video on the script
-  // screen. Both carry the on-screen April chat.
+  // Three modules, three screens. Text opens on the post editor, IMAGE on the slide run,
+  // video on the script screen. Before the slide run existed, every non-text kind fell
+  // through to the script screen, so the carousel and the quote card opened the video
+  // teleprompter and offered to draft a spoken script for a piece nobody says out loud.
   const kind = piece.kind ?? kindOf(piece.format);
   if (kind === 'text') {
     return (
       <TextOutputScreen
+        initial={piece}
+        conceptBody={conceptBody}
+        sourceLabel={sourceLabel}
+      />
+    );
+  }
+  if (kind === 'image') {
+    return (
+      <ImageScreen
         initial={piece}
         conceptBody={conceptBody}
         sourceLabel={sourceLabel}

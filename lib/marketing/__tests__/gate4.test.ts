@@ -1,0 +1,259 @@
+/**
+ * GATE 4: the slide plan, the card state, and the regressions around them.
+ *
+ * Run with `npm run test:marketing`. It exists in the repo rather than in a scratch file
+ * because the console has no test runner and every suite written outside the repo has been
+ * lost between sessions, which is exactly the wrong property for the week the flow is being
+ * walked end to end for the first time.
+ */
+
+import {
+  parseSlidePlan,
+  serialiseSlidePlan,
+  mediaFromPlan,
+  slideCountFor,
+  nextUnapproved,
+  runPosition,
+  approvedCount,
+  MAX_SLIDES,
+  SLIDE_W,
+  SLIDE_H,
+  type SlidePlan,
+} from '../slide-plan';
+import { parseProposal } from '../slide-propose';
+import {
+  cardState,
+  cardStateLabel,
+  expectedImages,
+  outputForMaster,
+  outputForMasterOnNetwork,
+  promptFragment,
+  bodyCapFor,
+  defaultTicks,
+  tickCount,
+  kitRows,
+  catalogueProblems,
+} from '../kit';
+import { prezieFilingKey } from '../prezie-store';
+import { STREAM_IDS } from '../streams';
+
+let pass = 0;
+let fail = 0;
+const ok = (n: string, c: boolean, x = '') => {
+  if (c) pass++;
+  else {
+    fail++;
+    console.log(`FAIL ${n} ${x}`);
+  }
+};
+const eq = (n: string, got: unknown, want: unknown) => {
+  const a = JSON.stringify(got);
+  const b = JSON.stringify(want);
+  if (a === b) pass++;
+  else {
+    fail++;
+    console.log(`FAIL ${n}\n  got  ${a}\n  want ${b}`);
+  }
+};
+
+/* ------------------------------------------------------------ how many slides */
+
+eq('a carousel wants ten', slideCountFor({ master: 'carousel' }), MAX_SLIDES);
+eq('a card wants one', slideCountFor({ master: 'images' }), 1);
+eq('the format decides when the master is missing', slideCountFor({ format: 'single_image' }), 1);
+eq('and defaults to a set otherwise', slideCountFor({ format: 'pdf_carousel' }), MAX_SLIDES);
+eq('one slide size for the whole set', [SLIDE_W, SLIDE_H], [1080, 1350]);
+
+/* ------------------------------------------------------------ April's proposal */
+
+const proposal = JSON.stringify({
+  world: 'cold morning light on raw concrete, muted greens',
+  caption: 'a caption',
+  slides: Array.from({ length: 10 }, (_, i) => ({
+    role: 'body',
+    headline: `Slide ${i + 1} says *this*`,
+    note: 'stands on the article',
+    prompt: 'a photograph of something',
+  })),
+});
+{
+  const p = parseProposal(proposal, 10);
+  eq('ten slides parsed', p.slides.length, 10);
+  eq('numbered from one, in order', p.slides.map((s) => s.n), [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+  // Roles are forced by POSITION, not taken from the model: it returned 'body' for all ten.
+  eq('slide one is the cover', p.slides[0].role, 'cover');
+  eq('the last one closes', p.slides[9].role, 'close');
+  eq('the middle is body', p.slides[4].role, 'body');
+  // House placement, so the screen never asks.
+  eq('the cover shouts from the centre', [p.slides[0].position, p.slides[0].size], ['centre', 'large']);
+  eq('body slides sit low', [p.slides[4].position, p.slides[4].size], ['lower', 'medium']);
+  ok('the world survives', p.world.includes('concrete'));
+  ok('nothing is approved yet', p.slides.every((s) => !s.approved));
+  ok('and nothing has a picture yet', p.slides.every((s) => !s.url && !s.media_id));
+}
+{
+  // A one-card piece must not be given a cover-and-close structure.
+  const p = parseProposal(proposal, 1);
+  eq('a card is one slide', p.slides.length, 1);
+  eq('and it is the cover', p.slides[0].role, 'cover');
+}
+// Tolerant on shape, strict on emptiness.
+ok('a fenced response still parses', parseProposal('```json\n' + proposal + '\n```', 10).slides.length === 10);
+ok('prose around the object is stripped', parseProposal('Here you go:\n' + proposal, 10).slides.length === 10);
+for (const bad of ['', 'not json', '{}', '{"slides":[]}', '{"slides":[{"headline":"","prompt":""}]}']) {
+  let threw = false;
+  try {
+    parseProposal(bad, 10);
+  } catch {
+    threw = true;
+  }
+  ok(`a useless response fails loudly: ${JSON.stringify(bad).slice(0, 24)}`, threw);
+}
+// The em-dash ban reaches the slides, not just the prose.
+ok(
+  'em-dashes are stripped from a headline',
+  !parseProposal(
+    JSON.stringify({ world: 'w', caption: 'c', slides: [{ headline: 'a — b', prompt: 'p' }] }),
+    1
+  ).slides[0].headline.includes('—')
+);
+
+/* ------------------------------------------------------------ the stored plan */
+
+const madeSlide = (n: number, approved: boolean) => ({
+  n,
+  role: n === 1 ? 'cover' : 'body',
+  headline: `h${n}`,
+  note: '',
+  prompt: 'p',
+  position: 'centre',
+  size: 'medium',
+  baseColor: '#ffffff',
+  highlightColor: '#69fccb',
+  bg_url: `https://x/bg${n}.png`,
+  url: `https://x/s${n}.png`,
+  media_id: `m${n}`,
+  approved,
+});
+const stored: SlidePlan = parseSlidePlan(
+  JSON.stringify({
+    version: 1,
+    world: 'w',
+    caption: 'c',
+    slides: [madeSlide(1, true), madeSlide(2, true), madeSlide(3, false)],
+  })
+)!;
+ok('a stored plan round-trips', !!stored);
+eq('three slides', stored.slides.length, 3);
+eq('two approved', approvedCount(stored), 2);
+
+/* THE ORDER GUARANTEE, which is the whole definition of done. */
+eq('media is the approved slides in slide order', mediaFromPlan(stored), ['m1', 'm2']);
+{
+  // Out-of-order storage must still produce post order, because Metricool posts the array
+  // verbatim and slide order IS the content.
+  const shuffled = parseSlidePlan(
+    JSON.stringify({ slides: [madeSlide(3, true), madeSlide(1, true), madeSlide(2, true)] })
+  )!;
+  eq('order comes from n, never from array position', mediaFromPlan(shuffled), ['m1', 'm2', 'm3']);
+}
+eq('no plan means no media', mediaFromPlan(null), []);
+{
+  // A hand-edited plan must not be able to claim a slide is done with nothing behind it.
+  const lying = parseSlidePlan(
+    JSON.stringify({ slides: [{ n: 1, headline: 'h', approved: true }] })
+  )!;
+  ok('approved needs a file and an id', !lying.slides[0].approved);
+  eq('so it ships nothing', mediaFromPlan(lying), []);
+}
+{
+  // Never more than the API ceiling, whatever is on disk.
+  const twelve = parseSlidePlan(
+    JSON.stringify({ slides: Array.from({ length: 12 }, (_, i) => madeSlide(i + 1, true)) })
+  )!;
+  ok(`never more than ${MAX_SLIDES} slides`, twelve.slides.length <= MAX_SLIDES);
+  ok(`never more than ${MAX_SLIDES} images`, mediaFromPlan(twelve).length <= MAX_SLIDES);
+}
+// Garbage reads as "no plan yet" so the screen offers to write one.
+for (const bad of [undefined, null, '', 'not json', '[]', '{}', '{"slides":"nope"}', '{"slides":[]}']) {
+  eq(`unusable stored plan reads as none: ${JSON.stringify(bad)}`, parseSlidePlan(bad as string), null);
+}
+eq('serialise round-trips', parseSlidePlan(serialiseSlidePlan(stored))!.slides.length, 3);
+
+/* ------------------------------------------------------------ where the run is */
+
+eq('the run sits on the first unapproved slide', runPosition(stored), 3);
+eq('next after 1 is the first unapproved after it', nextUnapproved(stored, 1), 3);
+eq('it wraps rather than dead-ending', nextUnapproved(stored, 3), 3);
+{
+  const done = parseSlidePlan(
+    JSON.stringify({ slides: [madeSlide(1, true), madeSlide(2, true)] })
+  )!;
+  eq('a finished run has nothing next', nextUnapproved(done, 1), null);
+  eq('and rests on the last slide', runPosition(done), 2);
+}
+
+/* ------------------------------------------------------------ the Gate 4 card state */
+
+eq('an untouched carousel is empty', cardState('carousel', {}), 'empty');
+eq('one image of ten is part done', cardState('carousel', { media: ['a'] }), 'drafted');
+eq(
+  'ten is ready',
+  cardState('carousel', { media: Array.from({ length: 10 }, (_, i) => `m${i}`) }),
+  'ready'
+);
+eq('one image is a whole card', cardState('images', { media: ['a'] }), 'ready');
+eq('a scriptless video is empty', cardState('shorts', { script: '' }), 'empty');
+eq('a script with no film is drafted', cardState('shorts', { script: 'words' }), 'drafted');
+eq('script plus film is ready', cardState('shorts', { script: 'words', media: ['v'] }), 'ready');
+eq('an unwritten post is empty', cardState('texts', { body: '  ' }), 'empty');
+eq('written with no image is drafted', cardState('texts', { body: 'words' }), 'drafted');
+eq('written with an image is ready', cardState('texts', { body: 'words', media: ['i'] }), 'ready');
+eq('ten expected on a carousel', expectedImages('carousel'), 10);
+eq('one on a card', expectedImages('images'), 1);
+ok('the label says what is missing', cardStateLabel('carousel', 'empty').includes('10'));
+ok('and says ready when it is', cardStateLabel('texts', 'ready') === 'ready');
+for (const m of ['carousel', 'images', 'shorts', 'texts', 'article']) {
+  for (const st of ['empty', 'drafted', 'ready'] as const) {
+    ok(`${m}/${st} label has no em-dash`, !cardStateLabel(m, st).includes('—'));
+  }
+}
+
+/* ------------------------------------------------------------ regressions */
+
+// April was briefed to the LinkedIn PDF for a set of Instagram slides, because li_car sorts
+// before ig_car and li_car is blocked.
+eq('the carousel briefs the instagram swipe', outputForMaster('carousel')!.id, 'ig_car');
+{
+  const frag = promptFragment('carousel')!;
+  ok('the brief says ten slides', frag.includes('10 images at 1080 x 1350'));
+  ok('and never mentions pdf pages', !/\d+ to \d+ pages/.test(frag));
+  ok('and does not claim two platforms', !frag.includes('2 PLATFORMS'));
+}
+eq('and the caption cap is instagram', bodyCapFor('carousel'), { n: 2200, unit: 'char' });
+// A master serving several networks must be named per network, not by its first entry.
+eq('linkedin video is called Video', outputForMasterOnNetwork('shorts', 'linkedin')!.postLabel, 'Video');
+eq('instagram is still a Reel', outputForMasterOnNetwork('shorts', 'instagram')!.postLabel, 'Reel');
+// A Gates piece has no concept, and used to share one prezie bucket with every narrative.
+eq(
+  'a narrative gets its own prezie bucket',
+  prezieFilingKey({ narrative_ref: '11111111-2222-3333-4444-555555555555' }),
+  'n-11111111-2222-3333-4444-555555555555'
+);
+eq(
+  'a concept still wins when there is one',
+  prezieFilingKey({ concept_ref: 'pam/concept-bank/x/core-concept-force-multiplier.md' }),
+  'force-multiplier'
+);
+eq('and nothing identifiable stays unfiled', prezieFilingKey({}), '_unfiled');
+ok('a junk narrative ref cannot forge a bucket', prezieFilingKey({ narrative_ref: '../etc' }) === '_unfiled');
+
+// The catalogue still holds, on every lane.
+eq('the catalogue is clean', catalogueProblems(), []);
+for (const lane of STREAM_IDS) {
+  eq(`${lane}: 12 rows`, kitRows(lane).length, 12);
+  eq(`${lane}: 16 default posts`, tickCount(defaultTicks(lane), lane), 16);
+}
+
+console.log(`\n${pass} passed, ${fail} failed`);
+process.exit(fail ? 1 : 0);

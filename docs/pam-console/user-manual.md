@@ -36,7 +36,7 @@ PAM (Polynize Agent Management) is the marketing engine: it takes an idea, shape
 - **Gate 1 · Idea**: type a fresh idea or pick from that stream's inbox. There is nothing else to decide: you got here from someone's board, so whose narrative it is was already answered by the click.
 - **Gate 2 · Article**: April drafts the long form (300 to 450 words) on first view; edit it directly or give her one instruction at a time in the docked chat. The article is the source of truth for every piece cut from it, and it publishes as-is. The interview step is retired.
 - **Gate 3 · Kit**: per-platform ticks, and each one now names the actual post rather than a count (D42). LinkedIn gives you the **Article**, a **Contrarian post**, a **Hard moment** (or a **Field report** on the Polynize lane), **Numbered rules**, and the **Document carousel** (off, no PDF builder yet). Instagram gives **Reels x3**, the **Carousel** and one **Image**. TikTok and YouTube carry the same three cuts. Defaults total **15 posts**, and the button says so. Confirming creates one piece per thing that has to be written, so three named LinkedIn posts are three pieces with three drafts, not one draft shown three times.
-- **Gate 4 · Create**: one card per thing to make, video first because it is the long pole. Seven cards on the default kit. April is told what each one has to BE: the contrarian post gets "state the belief, then break it" and a 1,300 to 2,500 character band; the numbered rules post gets a different instruction; the video script is told there is no target duration and where on-screen text is allowed to sit.
+- **Gate 4 · Create**: one card per thing to make, video first because it is the long pole. Each card says whether it is finished: `✓ ready`, or what is missing (`no images yet, needs 10`). Text and video open their editors as before; **image cards open the slide run** (see §8c). Seven cards on the default kit. April is told what each one has to BE: the contrarian post gets "state the belief, then break it" and a 1,300 to 2,500 character band; the numbered rules post gets a different instruction; the video script is told there is no target duration and where on-screen text is allowed to sit.
 - **Gate 5 · Ship**: the week laid out from each channel's slots, two a day, queued as **drafts** first. One button ships the wave: scheduled posts go live through Metricool, hand-posts are emailed to you (see §3c). Every chip on the grid carries its time, so you can see what lands when (see §3d).
 
 ### 3b2. What the kit knows about each post 🧪 (D42)
@@ -163,6 +163,25 @@ From a concept's development hub, click **Create content**.
 - *Note:* the automated **video cut / treatment middle** (Descript-orchestrated Podcast Clips, etc.) is 🔜 **the next build**. Today the script screen + teleprompter are the video tools; the finished video is added to the piece via the media library.
 
 ---
+
+### 8c. The slide run (image cards) 🧪 (D47)
+
+The carousel and the quote card open here. Same screen, and it already knows how many slides it needs: ten for a carousel, one for a card.
+
+1. **Write the slides from the article.** One tap. April writes the whole set: a shared *look* for the deck, the caption, and per slide the words that go on it plus a description of the picture behind it.
+2. **Read down the slides and fix the words.** This is the part that matters and it costs nothing. The words are the carousel.
+3. **Make slide 1.** Look at it. If the look is wrong, edit the look line and remake it. Settle the world on one picture before spending ten.
+4. **Make the rest.** It works down the list and stops at each one for you. Walk away, come back to a set to review.
+5. **Approve each slide.** Approving is also advancing. A slide only counts once it has a real picture saved to the library.
+6. **Wrong picture?** Remake that one. **Wrong words?** Fix them and re-render, which is instant and free because it reuses the picture already made.
+
+**The words go on in code, not by the model.** Brand type, brand colours, wrap a phrase in `*asterisks*` to put it in mint. The picture behind is generated; the type is composited. That is what makes ten slides look like one set, and it is why the picture prompt never asks for text.
+
+**Every slide comes out at exactly 1080 x 1350.** Instagram crops every slide of a carousel to the first slide's size, so they have to be identical by construction.
+
+**Post order is slide order.** Nothing to keep in sync: the ids on the post are rebuilt from the slide numbers every time it saves.
+
+*Worth knowing:* the only image model connected today is photoreal, so every background is a photograph. No diagrams or charts yet. And a full carousel is ten generations, so it is a coffee break rather than an interaction.
 
 ## 9. Media library 🧪 (new — D27)
 
