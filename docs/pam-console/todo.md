@@ -6,7 +6,7 @@ Anything already built is in `decisions.md`, not here. This file is only what is
 
 ## The order, set by Marrs 25 August 2026
 
-**Build order:** hero image (**done**, D51) → narrative image pool (3c) → template picker (3).
+**Build order:** hero image (**done**, D51) → narrative image pool (**done**, D52) → template picker (**done**, D55). All three landed. Next up is the priority 1 gap: the hero offered as the image on a text post, and item 1, no file upload.
 
 **Flow priority, which is a different axis and outranks the build order when they disagree:**
 
@@ -31,7 +31,7 @@ That reordering matters more than it looks. It means the carousel work in progre
 
 ## Carousels (in progress, 25 August 2026)
 
-**3. Three stylistic templates. HALF BUILT: the model and the renderer landed, the PICKER did not.**
+**3. Three stylistic templates. DONE (D55).**
 
 What exists and is proven (`npm run proof:slides` writes one PNG per template at 1080 x 1350):
 
@@ -43,7 +43,11 @@ What exists and is proven (`npm run proof:slides` writes one PNG per template at
 
 `generationsFor()` exists so the picker can tell him the cost before he picks, which is the answer to "a full carousel is a coffee break".
 
-**What is still owed:** the picker itself. `ImageScreen.tsx` never mentions templates, so the plan's `template` field is never set from the UI and every set still renders `full`. Safe by construction (`LEGACY_TEMPLATE = 'full'`, and the render route defaults `template` to `full` and ignores the old per-slide size and colour fields), so nothing is broken, but the feature is unreachable until the picker lands.
+**The picker landed (D55).** Three options on the start panel, each drawing a 4:5 schematic of its own layout so the choice is visual, each saying what it costs. Split card is the default for a new set. Changing the look after the fact sits folded on the run screen: free in every direction except out of a statement plate, which has no picture briefs for a photo look to draw and so says *April writes the set again* before it asks.
+
+**What the picker also fixed, and it was bigger than the missing field.** The render call was sending the slide's own fields and none of the plan's: no `template`, no `accent`, no `kicker`, no `total`. `total` defaulted to 1, so every slide ever rendered came out with no `03 / 10` index and no standing label. The footer the compositor draws had never appeared in production.
+
+Two controls went with it, both of which had stopped meaning anything: the **Size** select (the fitter sizes type to the words it was given and cannot honour a fixed size and still fit) and **where the words sit** on any look but the full frame (the other two ARE the typesetting, and the compositor ignores `position` on both).
 
 Original ask, kept for the reasoning. Marrs: *"we have to have three templates to choose from. Each needs to be on-brand graphically, with minimal text and a small image. One of them can be sort of full-image generation, maybe... Someone can select the template, write a bit about what they want, and then it generates the images."*
 
