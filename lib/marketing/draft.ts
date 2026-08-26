@@ -23,6 +23,7 @@ import { resolveTemplateRef } from './create-outputs';
 import { complete } from '@/lib/llm';
 import { resolveModel } from '@/lib/llm/openrouter';
 import { stripEmDashes } from '@/lib/em-dash';
+import { stripMarkdownEmphasis, NO_MARKDOWN_INSTRUCTION } from '@/lib/plain-copy';
 import { HOOK_GUIDANCE } from './hook-guidance';
 import { exemplarBlock, pickExemplars } from './exemplars';
 
@@ -301,6 +302,7 @@ That is the default register, and a given brand voice overrides it on register a
 Hard constraints, never overridden by any recipe or voice:
 - Ground strictly in the concept. Do not invent facts, names, numbers, quotes, clients, or outcomes it does not contain. A sharp line the concept cannot support is a fabrication, and it fails.
 - Never use the em-dash character (U+2014). Use a comma, a period, or a colon instead.
+- ${NO_MARKDOWN_INSTRUCTION}
 - Output ONLY the finished ${opts.formatLabel} copy: no preamble, no "here is your post", no notes on your reasoning, no surrounding quotes, no markdown code fences.
 
 Shape the recipe's beats into the natural prose of a ${opts.formatLabel}: use them as your internal scaffold, but do not print beat labels unless the recipe explicitly says to show them. Open on the hook, and close on a clear point or a single call to action, landing on a final line worth remembering. If a reference script is included below the concept, you may draw on its angle, but the concept is the source of truth and your output is the ${opts.formatLabel}, not a script.
@@ -339,6 +341,7 @@ That is the default register, and a given brand voice overrides it on register a
 Hard constraints, never overridden by any recipe or voice:
 - Ground strictly in the concept. Do not invent facts, names, numbers, quotes, clients, or outcomes it does not contain. A sharp line the concept cannot support is a fabrication, and it fails.
 - Never use the em-dash character (U+2014). Use a comma, a period, or a colon instead.
+- ${NO_MARKDOWN_INSTRUCTION}
 - Output ONLY the script: the labels, and the spoken lines beneath them. Add a non-spoken ON-SCREEN TEXT line ONLY where the output shape below explicitly asks for one. No preamble, no "here is your script", no notes on your reasoning, no markdown code fences.
 
 ${
@@ -355,12 +358,24 @@ This model reasons before it answers, so plan silently: find the sharpest hook m
   } Return only the finished script.`;
 }
 
-/** Strip stray code fences / wrapping the model sometimes adds, then em-dashes. */
+/**
+ * Strip stray code fences / wrapping the model sometimes adds, then em-dashes, then markdown
+ * emphasis.
+ *
+ * Marrs: "in the written pieces, don't use any star symbols for bolding because that doesn't
+ * work here." Post copy goes into a box that shows every character literally, so `**bold**` is
+ * not formatting, it is four stray characters around a headline. The prompt says so and this
+ * catches the times a long prompt loses the rule anyway.
+ *
+ * Safe on the slide grammar because it never runs on it: a slide's `*asterisks*` mean the brand
+ * accent and are parsed by parseLine, and slide copy comes back through slide-propose's own
+ * cleanField rather than through here.
+ */
 function cleanOutput(raw: string): string {
   let body = raw.trim();
   const fence = body.match(/^```(?:\w+)?\s*([\s\S]*?)\s*```$/);
   if (fence) body = fence[1].trim();
-  return stripEmDashes(body);
+  return stripMarkdownEmphasis(stripEmDashes(body));
 }
 
 type Materials = {

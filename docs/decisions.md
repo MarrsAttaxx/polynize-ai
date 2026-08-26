@@ -1284,7 +1284,51 @@ Four candidates, two across, each at 4:3 and roughly 290px wide in the gate's 62
 
 Four generations per attempt instead of one. That is the right trade here and only here, because this is the ONE image the whole narrative is generated against, so the minutes spent settling it are paid back across every slide and post that follows. Nothing else in the console generates a batch.
 
+### Amended the same day, on the first real run: the white was generated
+
+Marrs, with four candidates on screen: *"they're all in really weird aspect ratios for some reason. There's this white space, which I don't like. But the images are coming out good."*
+
+Every file came back at the 4:3 that was asked for, so the canvas was never wrong and neither was the layout: each photograph was floated on a white field INSIDE a correct 4:3 frame, at a different size and shape each time, which is why the aspect looked random.
+
+**The prompt asked for it.** The tail said *"leave clear negative space with low detail and low contrast where a caption could sit"*, and his own prompt opened with *"a hyper realistic, historically accurate black and white photo"*. Those two together are a fair description of an archival PRINT: a photograph mounted on white card. So the model drew the mount, correctly.
+
+That instruction was inherited from the slide path, where type is composited over the image and quiet space is the entire point. **A hero carries no type** now that it is not cropped to the post frame, so the rule is inverted here rather than softened, and it names the failure mode explicitly, because "fill the frame" on its own does not rule out a picture of a picture: no border, no margin, no mount, no paper edge, no vignette, *this IS the photograph, not a print or a scan of one sitting on a page*.
+
+The lesson worth keeping: an image prompt inherited from a different composition is a prompt written for a different job. The no-words rule travelled correctly because Soul cannot spell anywhere. The negative-space rule did not.
+
 **Four is not a number that can be tuned either.** Soul's `BatchSize` is exactly `{SINGLE: 1, QUAD: 4}`, so a 2 or a 6 would be another 400 minutes into a wait. Asserted against the SDK enum alongside the size.
 
 13 new assertions, 256 total.
+
+---
+
+## D57: Post copy is plain text, and the asterisks are stripped as well as forbidden
+
+**Adopted 26 August 2026.** Marrs: *"in the written pieces, don't use any star symbols for bolding because that doesn't work here."* His article opened with `**The Future nobody Can See**`, asterisks and all.
+
+### The article was markdown on purpose, and nothing ever rendered it
+
+This was not April going off script. The article prompt said, in as many words: *"SHAPE. Markdown. The first line is a bold title (**like this**)"*. She was doing what she was told.
+
+Nothing in the pipeline renders it. The article sits in a textarea at Gate 2, it is fed to April as source material for every piece cut from it, and it publishes as written. `ReactMarkdown` exists in this codebase and is pointed at exactly one thing, concept docs, which are freeform markdown by design and are never posted. So the article's asterisks were only ever four characters wrapped around a headline on their way into a post box.
+
+He is right about the platforms too. LinkedIn, Instagram, TikTok and YouTube captions have no rich text: what goes in the box is what people read.
+
+**So the article is plain text now.** First line is the bare title, then a blank line, then the article. To give a line weight: put it on its own line, or use caps for a short label.
+
+### Both halves, like the em-dash rule
+
+The instruction stops most of it and a model under a long prompt still reaches for a heading now and then, so the strip is what makes it never reach a post. `stripMarkdownEmphasis` sits beside `stripEmDashes` and runs in the same four places: the draft writer, the script writer, the article writer, and **April's chat edits**. That last one matters: without it the asterisks come straight back the first time he asks her to change a line, and the rule would only hold until he talked to her.
+
+### Where it is deliberately NOT applied
+
+`NO_EM_DASH_INSTRUCTION` is appended to every system prompt in the app from `lib/llm/index.ts`. The markdown rule is not, and must not be, because that would tell the **concept writer** to stop writing markdown, and concept docs are markdown that gets rendered.
+
+The other exclusion is sharper: **a slide headline marks its accent phrase with `*single asterisks*`**, parsed by `parseLine` and set in the brand colour. Stripping that would silently kill every highlight in every carousel. Slide copy comes back through slide-propose's own `cleanField`, so it never touches this, and there is a test that spells out what would break if anyone wired it in.
+
+### The stripper is tested on what must NOT change
+
+The risk in a regex like this is never the marker it misses, it is the character it eats. Emphasis content must start and end with a non-space, and single underscores need word boundaries, which is what keeps all of these intact: `5 * 3 * 2`, `hero_url and hero_media_id`, a `* one / * two` bullet list, `ranked #1`, `#nofilter`, and the lone `(marked *)` this very console prints on a fallback slot.
+
+24 new assertions, 278 total.
 

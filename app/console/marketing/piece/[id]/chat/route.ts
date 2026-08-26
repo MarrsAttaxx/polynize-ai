@@ -17,6 +17,7 @@ import { z } from 'zod';
 import { getCurrentUser } from '@/lib/console-auth';
 import { complete, type ChatMessage } from '@/lib/llm';
 import { stripEmDashes } from '@/lib/em-dash';
+import { stripMarkdownEmphasis, NO_MARKDOWN_INSTRUCTION } from '@/lib/plain-copy';
 import { getPiece } from '@/lib/marketing/piece-store';
 import { resolveTemplateRef } from '@/lib/marketing/create-outputs';
 import { recipeBlock, recipePartsFromTemplate } from '@/lib/marketing/draft';
@@ -75,6 +76,7 @@ Polynize voice:
 - Short sentences. Say the sharp thing plainly.
 - No emoji. No hashtags unless asked.
 - Never use em-dashes. Use commas, periods, or colons instead.
+- ${NO_MARKDOWN_INSTRUCTION}
 
 Editing rules:
 - Return the FULL revised ${artifact} every time you make a change, not a fragment.
@@ -182,8 +184,15 @@ export async function POST(
     message = content ? 'Updated it.' : 'I could not act on that. Try rephrasing the command.';
   }
 
+  /**
+   * The REVISED COPY gets the same plain-text treatment the draft writer gets, or the asterisks
+   * come straight back on the first edit and the rule only holds until he talks to her.
+   *
+   * The chat message itself too: it is rendered as text in the panel, so `**like this**` reads as
+   * a mistake there as well.
+   */
   return NextResponse.json({
-    message: stripEmDashes(message),
-    content: content === null ? null : stripEmDashes(content),
+    message: stripMarkdownEmphasis(stripEmDashes(message)),
+    content: content === null ? null : stripMarkdownEmphasis(stripEmDashes(content)),
   });
 }

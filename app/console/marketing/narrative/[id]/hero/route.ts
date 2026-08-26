@@ -108,14 +108,35 @@ export async function POST(
   }
 
   /**
-   * The two house rules restated at the end, because a long prompt loses its opening
-   * instructions first: no words in the image, and leave room to read against. The hero carries
-   * no type itself, but every image generated FROM it will, so the negative space has to be
-   * established here or the whole set inherits a busy frame.
+   * FILL THE FRAME, and this rule is here because its absence produced the exact bug.
+   *
+   * Marrs: "they're all in really weird aspect ratios for some reason. There's this white space,
+   * which I don't like."
+   *
+   * The white was not a layout fault and not a wrong canvas size: every file came back at the
+   * 4:3 that was asked for. The white was GENERATED. The old tail asked the model to "leave clear
+   * negative space with low detail and low contrast where a caption could sit", and a prompt
+   * saying "a hyper realistic, historically accurate black and white photo" plus "leave clear
+   * negative space" is a fair description of an archival PRINT: a photograph mounted on white
+   * card. So the model drew the mount. Four candidates, four different photo shapes, each floated
+   * on white, which is why the aspect looked random when the canvas never changed.
+   *
+   * That instruction was inherited from the slide path, where type IS composited over the image
+   * and quiet space is the whole point. A hero carries no type: D56 stopped cropping it to the
+   * post frame, and its job is to be the scene and to be the style reference. So the rule is
+   * inverted here rather than softened, and it names the failure explicitly, because "fill the
+   * frame" alone does not rule out a picture of a picture.
+   *
+   * The no-words rule stays and stays last: a long prompt loses its opening instructions first,
+   * and Soul cannot spell.
    */
   const prompt =
-    `${body.prompt.trim()} No text, no words, no letters, no numbers, no logos and no signage anywhere in the image. ` +
-    'Leave clear negative space with low detail and low contrast where a caption could sit. Photographic, not a screenshot and not a slide layout.';
+    `${body.prompt.trim()} ` +
+    'Fill the entire frame edge to edge with the scene itself. No border, no white margin, no mount, ' +
+    'no paper edge, no frame around the picture, no vignette and no blank area anywhere: this IS the ' +
+    'photograph, not a print or a scan of a photograph sitting on a page. A real photographic scene, ' +
+    'not a screenshot, not a slide layout, not a poster. ' +
+    'No text, no words, no letters, no numbers, no logos and no signage anywhere in the image.';
 
   const res = await generateImages(model.endpoint, {
     prompt,

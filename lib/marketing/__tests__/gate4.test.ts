@@ -31,6 +31,9 @@ import {
 import { SoulSize, BatchSize } from '@higgsfield/client';
 import { SOUL_SIZES } from '../higgsfield-models';
 import { HERO_BATCH, HERO_SIZE, HERO_W, HERO_H, HERO_ASPECT } from '../hero';
+import { stripMarkdownEmphasis } from '../../plain-copy';
+import { parseLine } from '../text-overlay';
+import { cleanArticle } from '../article-draft';
 import { parseProposal } from '../slide-propose';
 import {
   cardState,
@@ -468,6 +471,66 @@ eq('four candidates', HERO_BATCH, 4);
 ok('more than one, or there is nothing to choose from', HERO_BATCH > 1);
 ok('the batch is one Soul accepts', Object.values(BatchSize).includes(HERO_BATCH as never));
 eq('and Soul offers no other multi option', Object.values(BatchSize).sort().join(','), '1,4');
+
+/* ------------------------------------------------------------------ D57: plain post copy */
+
+/**
+ * Marrs: "in the written pieces, don't use any star symbols for bolding because that doesn't
+ * work here."
+ *
+ * The risk in a stripper like this is not that it misses a marker, it is that it eats a
+ * character somebody meant. So the cases that must survive untouched are tested harder than
+ * the cases that must change.
+ */
+eq('a bold title loses its asterisks', stripMarkdownEmphasis('**The Future nobody Can See**'), 'The Future nobody Can See');
+eq('bold inside a line', stripMarkdownEmphasis('it was **already** broken'), 'it was already broken');
+eq('italics too', stripMarkdownEmphasis('it was *already* broken'), 'it was already broken');
+eq('bold italic', stripMarkdownEmphasis('***both***'), 'both');
+eq('underscore bold', stripMarkdownEmphasis('__loud__'), 'loud');
+eq('underscore italic', stripMarkdownEmphasis('_quiet_'), 'quiet');
+eq('a heading keeps its words', stripMarkdownEmphasis('## The point'), 'The point');
+eq('and every level of heading', stripMarkdownEmphasis('###### deep'), 'deep');
+eq(
+  'a heading mid document',
+  stripMarkdownEmphasis('one\n\n### two\n\nthree'),
+  'one\n\ntwo\n\nthree'
+);
+
+// THE THINGS THAT MUST NOT CHANGE.
+eq('plain copy is untouched', stripMarkdownEmphasis('Strip the process back first.'), 'Strip the process back first.');
+eq('arithmetic survives', stripMarkdownEmphasis('5 * 3 * 2'), '5 * 3 * 2');
+eq('a snake_case name survives', stripMarkdownEmphasis('read hero_url from the store'), 'read hero_url from the store');
+eq('two snake names in a line survive', stripMarkdownEmphasis('hero_url and hero_media_id'), 'hero_url and hero_media_id');
+eq(
+  'a bullet list is not emphasis',
+  stripMarkdownEmphasis('* one\n* two\n* three'),
+  '* one\n* two\n* three'
+);
+eq('a lone asterisk survives', stripMarkdownEmphasis('the fallback slot (marked *)'), 'the fallback slot (marked *)');
+eq('a hash that is not a heading survives', stripMarkdownEmphasis('ranked #1 in the list'), 'ranked #1 in the list');
+eq('a hashtag survives', stripMarkdownEmphasis('#nofilter'), '#nofilter');
+eq('empty in, empty out', stripMarkdownEmphasis(''), '');
+
+/**
+ * THE ONE THAT WOULD HAVE BEEN A REGRESSION. A slide headline marks its accent phrase with
+ * single asterisks, so this stripper must never be pointed at slide copy. It is not: slide text
+ * comes back through slide-propose's own cleanField. This asserts the grammar still parses, so
+ * if anyone ever does wire the stripper in there, this is the test that says why not.
+ */
+const segs = parseLine('Everyone is *bolting AI on* to a process');
+eq('the slide accent grammar still parses', segs.filter((x) => x.highlight).length, 1);
+eq('and it keeps the phrase', segs.find((x) => x.highlight)?.text, 'bolting AI on');
+ok(
+  'a stripped slide headline would lose the accent, which is why it is not stripped',
+  parseLine(stripMarkdownEmphasis('Everyone is *bolting AI on* to a process')).every((x) => !x.highlight)
+);
+
+// The article stops being markdown: the whole cleaner, end to end.
+eq(
+  'the article cleaner takes the fence, the dash and the asterisks',
+  cleanArticle('```\n**A title** and a line, with a dash\n```'),
+  'A title and a line, with a dash'
+);
 
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

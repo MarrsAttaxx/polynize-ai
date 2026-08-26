@@ -19,6 +19,7 @@ import { streamKind, type StreamKind } from './streams';
 import { getBrandVoiceForStream } from './brand-voice-store';
 import { complete } from '@/lib/llm';
 import { stripEmDashes } from '@/lib/em-dash';
+import { stripMarkdownEmphasis, NO_MARKDOWN_INSTRUCTION } from '@/lib/plain-copy';
 
 /**
  * Same per-task model override as draft.ts (SCRIPT_MODEL). The article is pure writing,
@@ -78,7 +79,7 @@ function articleSystemPrompt(lane: NarrativeLane, brandVoice?: string): string {
 
 WHAT THE ARTICLE IS. It is the long form every other piece is cut from, and it publishes as written, so it must stand alone. It is a story TOLD, not a document written: one argument carried start to end (the through-line), moving through clear beats a reader can feel turning, landing on a final line worth remembering. Write it the way you would say it to one person who is interested and short of time. Vary the sentence length, because three of the same length in a row is the sound of a machine, and prefer the natural phrase over the technically precise one wherever the two differ. It is not a listicle, it is not a summary of the idea, and it is not a collection of observations: it is the idea told as a story.
 
-SHAPE. Markdown. The first line is a bold title (**like this**), then the article. 300 to 450 words: the range is a discipline, not a target to pad to. If the argument is done at 320 words, stop.
+SHAPE. PLAIN TEXT. The first line is the title, on its own line, with nothing around it: no asterisks, no hashes, no quotes. Then a blank line, then the article. 300 to 450 words: the range is a discipline, not a target to pad to. If the argument is done at 320 words, stop.
 
 ${laneVoice(lane)}${voiceBlock(brandVoice)}
 
@@ -87,7 +88,8 @@ GROUNDING, the hard rule: the idea is your ONLY source of facts. Do not invent n
 Hard constraints:
 - Never use the em-dash character (U+2014). Use a comma, a period, or a colon.
 - No hashtags. No emoji.
-- Output ONLY the article markdown: no preamble, no "here is your article", no notes on your reasoning, no code fences.
+- ${NO_MARKDOWN_INSTRUCTION}
+- Output ONLY the article: no preamble, no "here is your article", no notes on your reasoning, no code fences.
 
 This model reasons before it answers, so plan silently: find the through-line, order the beats, settle the voice, then write. Before you output, reread once as the editor: one argument start to end, every fact traces to the idea with anything invented deleted, the voice holds, and it lands on a final line worth remembering. Return only the article.`;
 }
@@ -97,7 +99,7 @@ function reviseSystemPrompt(lane: NarrativeLane, brandVoice?: string): string {
 
 Change NOTHING the instruction does not require. Every line the instruction leaves alone stays word for word: this is a targeted edit, not a rewrite, and an unasked-for improvement is a failure here, because the operator has already read and part-approved what is on the page.
 
-Keep the article's discipline while you edit: 300 to 450 words, markdown, first line a bold title, one argument start to end, a final line worth remembering.
+Keep the article's discipline while you edit: 300 to 450 words, plain text, first line the bare title, one argument start to end, a final line worth remembering.
 
 ${laneVoice(lane)}${voiceBlock(brandVoice)}
 
@@ -106,19 +108,26 @@ GROUNDING still binds: the instruction can rearrange facts or cut them, it can N
 Hard constraints:
 - Never use the em-dash character (U+2014). Use a comma, a period, or a colon.
 - No hashtags. No emoji.
-- Output ONLY the complete revised article markdown: no preamble, no notes on what changed, no code fences.`;
+- ${NO_MARKDOWN_INSTRUCTION}
+- Output ONLY the complete revised article: no preamble, no notes on what changed, no code fences.`;
 }
 
 /**
- * Strip stray code fences the model sometimes wraps the article in, then em-dashes.
- * Same defensive shape as draft.ts's cleanOutput. Exported for its tests: it is the
- * only pure piece of this file, so it is the piece the tests can actually hold.
+ * Strip stray code fences the model sometimes wraps the article in, then em-dashes, then
+ * markdown emphasis. Same defensive shape as draft.ts's cleanOutput. Exported for its tests: it
+ * is the only pure piece of this file, so it is the piece the tests can actually hold.
+ *
+ * THE ARTICLE USED TO BE MARKDOWN, on purpose: "the first line is a bold title (**like this**)".
+ * Nothing ever rendered it. It sits in a textarea, it is fed to April as source material, and it
+ * publishes as written, so the asterisks were only ever four characters wrapped around a
+ * headline on their way to a post. Marrs: "don't use any star symbols for bolding because that
+ * doesn't work here."
  */
 export function cleanArticle(raw: string): string {
   let body = raw.trim();
   const fence = body.match(/^```(?:\w+)?\s*([\s\S]*?)\s*```$/);
   if (fence) body = fence[1].trim();
-  return stripEmDashes(body);
+  return stripMarkdownEmphasis(stripEmDashes(body));
 }
 
 /**
