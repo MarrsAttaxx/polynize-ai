@@ -44,15 +44,38 @@ import {
   SLIDE_H,
   type SlidePlan,
   type Slide,
+  type SlideTemplate,
 } from '@/lib/marketing/slide-plan';
+import {
+  DEFAULT_TEMPLATE,
+  templateSpec,
+  switchKind,
+} from '@/lib/marketing/slide-templates';
 import { BackLink } from '@/app/console/marketing/_components/BackLink';
 import { ExemplarToggle } from './ExemplarToggle';
+import { TemplatePicker } from './TemplatePicker';
 import { PieceDeleteButton } from './PieceDeleteButton';
 import { MediaGenerate } from '../../stream/[stream]/media/MediaGenerate';
 import { MediaTextOverlay } from '../../stream/[stream]/media/MediaTextOverlay';
 import s from './image.module.css';
 
 type SaveState = 'idle' | 'saving' | 'saved' | 'error';
+
+/** The accent a set starts on, matching parseSlidePlan's own fallback. Mint is agent. */
+const MINT = '#69fccb';
+
+/**
+ * A SLIDE THAT CAN BE DRAWN FOR FREE: it has words, it has no finished file, and it either
+ * already has its background or is in a template that needs none.
+ *
+ * One predicate, read by both the count on the screen and the loop that does the work, because
+ * the two disagreeing is how a button comes to promise "nothing is generated" and then spend
+ * ten generations.
+ */
+function drawsFree(sl: Slide, template: SlideTemplate): boolean {
+  if (!sl.headline.trim() || sl.url) return false;
+  return Boolean(sl.bg_url) || templateSpec(template).imageRole === 'none';
+}
 
 export function ImageScreen({
   initial,
@@ -84,6 +107,17 @@ export function ImageScreen({
   const [saveState, setSaveState] = useState<SaveState>('idle');
   const [writing, setWriting] = useState(false);
   const [steer, setSteer] = useState('');
+  /**
+   * THE LOOK, and the two plan-level fields that ride with it.
+   *
+   * Held here rather than on the plan because it is chosen BEFORE the plan exists: the template
+   * decides what April is asked for, so it cannot live on the thing she has not written yet.
+   * Once a plan exists the plan's own copy is the truth, and this is seeded from it.
+   */
+  const [template, setTemplate] = useState<SlideTemplate>(
+    () => parseSlidePlan(initial.slides)?.template ?? DEFAULT_TEMPLATE
+  );
+  const [kicker, setKicker] = useState(() => parseSlidePlan(initial.slides)?.kicker ?? '');
   const [rendering, setRendering] = useState<number | null>(null);
   const [approving, setApproving] = useState(false);
   const [runningRest, setRunningRest] = useState(false);
@@ -229,7 +263,7 @@ export function ImageScreen({
 
   /* --------------------------------------------------------------- the actions */
 
-  const writePlan = async () => {
+  const writePlan = async (as: SlideTemplate = template) => {
     if (writing) return;
     setWriting(true);
     setError(null);
@@ -238,7 +272,16 @@ export function ImageScreen({
       const res = await fetch(url, {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ steer: steer.trim() }),
+        /**
+         * THE LOOK GOES WITH THE REQUEST, because it decides what she is asked to write: how
+         * many words a headline can carry, whether there is a supporting line, and whether an
+         * image prompt is written at all. Sending it after the fact would be too late.
+         */
+        body: JSON.stringify({
+          steer: steer.trim(),
+          template: as,
+          kicker: kicker.trim(),
+        }),
       });
       const b = (await res.json().catch(() => null)) as
         | { plan?: SlidePlan; error?: string }
@@ -294,13 +337,23 @@ export function ImageScreen({
           headers: { 'content-type': 'application/json' },
           body: JSON.stringify({
             n,
+            /**
+             * THE WHOLE PLAN LEVEL LAYER, and it was the missing half of the render call. The
+             * compositor branches on the template, draws the accent, prints the kicker and sets
+             * the index from `total`; none of it was being sent, so every slide ever rendered
+             * came out as the schema's fallback: a full frame with no footer label and no
+             * "03 / 10" because total defaulted to one.
+             */
+            template: current.template,
+            accent: current.accent,
+            kicker: current.kicker,
+            total: current.slides.length,
+            role: slide.role,
             headline: slide.headline.trim(),
+            sub: slide.sub,
             prompt: slide.prompt,
             world: current.world,
             position: slide.position,
-            size: slide.size,
-            baseColor: slide.baseColor,
-            highlightColor: slide.highlightColor,
             bgUrl: keepBackground ? slide.bg_url : undefined,
             referenceUrl: keepBackground ? undefined : reference,
           }),
@@ -416,6 +469,76 @@ export function ImageScreen({
     }
   };
 
+  /**
+   * REDRAW THE SET IN THE LOOK IT IS NOW IN. Every slide that already has a background keeps it
+   * and only the words and the furniture are composed again, so this costs no generations and
+   * runs in seconds. It is the whole reason changing the look is cheap.
+   */
+  const redrawAll = async () => {
+    const current = latestPlan.current;
+    if (!current || runningRest) return;
+    stopRun.current = false;
+    setRunningRest(true);
+    setError(null);
+    try {
+      const todo = current.slides.filter((sl) => drawsFree(sl, current.template));
+      for (const sl of todo) {
+        if (stopRun.current) break;
+        setCursor(sl.n);
+        const ok = await makeSlide(sl.n, Boolean(sl.bg_url));
+        if (!ok) break;
+      }
+    } finally {
+      setRunningRest(false);
+    }
+  };
+
+  /**
+   * CHANGE THE LOOK OF A SET THAT IS ALREADY WRITTEN.
+   *
+   * Two outcomes, and switchKind decides which: either the words and pictures the set already
+   * has carry the new look, in which case nothing is regenerated and every made slide simply
+   * needs redrawing, or the new look needs material nobody wrote, in which case April writes it
+   * again and that costs the words. The expensive one asks first.
+   *
+   * A redrawn slide stops being approved. The old file stays in the library, but the piece stops
+   * pointing at it, which is the same rule a remade slide already follows: piece.media is
+   * derived from approved slides, so a set mid-switch ships what was actually blessed.
+   */
+  const switchLook = async (t: SlideTemplate) => {
+    const current = latestPlan.current;
+    if (!current || busy) return;
+    const kind = switchKind(t, current);
+    if (kind === 'same') return;
+
+    if (kind === 'rewrite') {
+      const name = templateSpec(t).name.toLowerCase();
+      const what = isCard ? 'the card' : `the ${current.slides.length} slides`;
+      if (
+        !window.confirm(
+          `A ${name} needs a picture on every slide, and this set was never written with them. April writes ${what} again and the words you have now go. Carry on?`
+        )
+      ) {
+        return;
+      }
+      setTemplate(t);
+      await writePlan(t);
+      return;
+    }
+
+    setTemplate(t);
+    commitPlan(
+      {
+        ...current,
+        template: t,
+        slides: current.slides.map((sl) =>
+          sl.url ? { ...sl, url: undefined, approved: false, media_id: undefined } : sl
+        ),
+      },
+      true
+    );
+  };
+
   /** Attach something made in the by-hand drawer to the slide on screen, and advance. */
   const attachFromLibrary = useCallback(
     (asset: MediaAsset) => {
@@ -448,6 +571,15 @@ export function ImageScreen({
 
   const slide = plan?.slides.find((sl) => sl.n === cursor) ?? null;
   const busy = writing || approving || runningRest || rendering !== null;
+  /**
+   * WHAT A LOOK CHANGE LEFT BEHIND: slides this set has already paid for that are waiting to be
+   * drawn again. Gated on the set having been made at least once, so a plate set nobody has
+   * drawn yet does not get told ten slides are waiting to be drawn "again" when the primary
+   * action on the screen is already the thing that draws them.
+   */
+  const madeBefore = plan ? plan.slides.some((sl) => sl.bg_url || sl.url) : false;
+  const needRedraw =
+    plan && madeBefore ? plan.slides.filter((sl) => drawsFree(sl, plan.template)).length : 0;
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -542,6 +674,26 @@ export function ImageScreen({
               <div className={s.sourceBody}>{conceptBody}</div>
             </details>
           ) : null}
+          {/* THE LOOK IS THE FIRST DECISION, above the steer, because it decides what she is
+              asked for and every other field on this panel is optional. */}
+          <TemplatePicker
+            value={template}
+            onChange={setTemplate}
+            count={wanted}
+            accent={MINT}
+            disabled={writing}
+          />
+          <label className={s.kicker}>
+            <span className={s.kickerLabel}>The standing label</span>
+            <input
+              type="text"
+              value={kicker}
+              onChange={(e) => setKicker(e.target.value.slice(0, 40))}
+              placeholder="Optional. Bottom left of every slide, like EMERGENT AI"
+              maxLength={40}
+              disabled={writing}
+            />
+          </label>
           <textarea
             className={s.steer}
             value={steer}
@@ -551,7 +703,12 @@ export function ImageScreen({
             disabled={writing}
           />
           {error ? <p className={s.error}>{error}</p> : null}
-          <button type="button" className={s.primary} onClick={writePlan} disabled={writing}>
+          <button
+            type="button"
+            className={s.primary}
+            onClick={() => void writePlan()}
+            disabled={writing}
+          >
             {writing ? 'Writing…' : isCard ? 'Write the card' : `Write the ${wanted} slides`}
           </button>
         </section>
@@ -594,6 +751,54 @@ export function ImageScreen({
               </button>
             ) : null}
           </p>
+
+          {/* THE LOOK, after the fact. Folded, because the run is one decision at a time and
+              this is not the decision he is on. Open it and the same three options are there,
+              each saying what changing to it costs from where the set is now. */}
+          <details className={s.tweak}>
+            <summary className={s.tweakHead}>
+              The look: {templateSpec(plan.template).name.toLowerCase()}
+            </summary>
+            <TemplatePicker
+              value={plan.template}
+              onChange={(t) => void switchLook(t)}
+              count={plan.slides.length}
+              accent={plan.accent}
+              disabled={busy}
+              costOf={(t) => switchKind(t, plan)}
+              label={null}
+            />
+            {needRedraw > 0 ? (
+              <div className={s.tweakRow}>
+                <span className={s.hint}>
+                  {needRedraw === 1
+                    ? 'One slide is waiting to be drawn again in this look.'
+                    : `${needRedraw} slides are waiting to be drawn again in this look.`}{' '}
+                  Nothing is generated again, so this is quick.
+                </span>
+                {runningRest ? (
+                  <button
+                    type="button"
+                    className={s.ghost}
+                    onClick={() => {
+                      stopRun.current = true;
+                    }}
+                  >
+                    Stop
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    className={s.ghost}
+                    onClick={() => void redrawAll()}
+                    disabled={busy}
+                  >
+                    {needRedraw === 1 ? 'Draw it again' : `Draw all ${needRedraw} again`}
+                  </button>
+                )}
+              </div>
+            ) : null}
+          </details>
 
           {allDone ? (
             <section className={s.donePanel}>
@@ -674,44 +879,36 @@ export function ImageScreen({
                     aria-label="The picture prompt"
                   />
                   <div className={s.tweakRow}>
-                    <label className={s.select}>
-                      <span>Words sit</span>
-                      <select
-                        value={slide.position}
-                        onChange={(e) =>
-                          patchSlide(slide.n, (sl) => ({
-                            ...sl,
-                            position: e.target.value as Slide['position'],
-                          }))
-                        }
-                        onBlur={flush}
-                        disabled={busy}
-                      >
-                        <option value="top">Top</option>
-                        <option value="upper">Upper</option>
-                        <option value="centre">Centre</option>
-                        <option value="lower">Lower</option>
-                        <option value="bottom">Bottom</option>
-                      </select>
-                    </label>
-                    <label className={s.select}>
-                      <span>Size</span>
-                      <select
-                        value={slide.size}
-                        onChange={(e) =>
-                          patchSlide(slide.n, (sl) => ({
-                            ...sl,
-                            size: e.target.value as Slide['size'],
-                          }))
-                        }
-                        onBlur={flush}
-                        disabled={busy}
-                      >
-                        <option value="small">Small</option>
-                        <option value="medium">Medium</option>
-                        <option value="large">Large</option>
-                      </select>
-                    </label>
+                    {/* WHERE THE WORDS SIT is a full frame question only: the other two
+                        templates ARE the typesetting, and the compositor ignores `position`
+                        on both. A control that does nothing is worse than no control.
+
+                        The Size select that used to sit beside this is gone for the same
+                        reason: the fitter sizes the type to the words it was given, which is
+                        what stops a fourteen word headline running off the slide, and it
+                        cannot honour a fixed size and still fit. */}
+                    {plan.template === 'full' ? (
+                      <label className={s.select}>
+                        <span>Words sit</span>
+                        <select
+                          value={slide.position}
+                          onChange={(e) =>
+                            patchSlide(slide.n, (sl) => ({
+                              ...sl,
+                              position: e.target.value as Slide['position'],
+                            }))
+                          }
+                          onBlur={flush}
+                          disabled={busy}
+                        >
+                          <option value="top">Top</option>
+                          <option value="upper">Upper</option>
+                          <option value="centre">Centre</option>
+                          <option value="lower">Lower</option>
+                          <option value="bottom">Bottom</option>
+                        </select>
+                      </label>
+                    ) : null}
                     {slide.bg_url ? (
                       <button
                         type="button"

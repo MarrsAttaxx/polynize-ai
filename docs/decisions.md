@@ -1189,3 +1189,52 @@ So the video card carries four logos and a `10`, the carousel and the image carr
 
 Locked with 103 new assertions: for every lane and every master, the Gate 4 name must be one of that master's Gate 3 rows, and every chip must be a known name or the singular of one.
 
+---
+
+## D55: Three looks, and the picker that makes them reachable
+
+**Adopted 26 August 2026.** Marrs: *"What I realised that's missing from here is some templates, some stylistic templates, so the user can choose out of three different styles... Each needs to be on-brand graphically, with minimal text and a small image. One of them can be sort of full-image generation."*
+
+### All three already existed and all three were unreachable
+
+The plan carried a `template`, the generation prompt branched on it, and the compositor had three separate compositions written for it. **No screen ever set it.** So every set ever made fell back to `LEGACY_TEMPLATE`, which is the full frame, and the other two were dead code that typechecked.
+
+It was worse than one missing field. The render call was sending the slide's own fields and **none of the plan's**: no `template`, no `accent`, no `kicker`, and no `total`. So `total` defaulted to 1 and every slide ever rendered came out with no `03 / 10` index and no standing label. The footer the compositor draws had never appeared in production.
+
+### The three
+
+Proved by rendering, not by reading, because Satori fails silently on CSS it does not support: an unsupported property does not throw, it stops drawing, so a template can typecheck and come out with no accent seam and no footer. `npm run proof:slides` writes one PNG per look and all three draw.
+
+| Look | Photo | Generations for ten slides |
+|---|---|---|
+| **Statement plate** | none | 0 |
+| **Split card** | in a window up top | 5 |
+| **Full frame** | edge to edge | 10 |
+
+**Split card is the default for a new set.** It is what he described as the requirement, minimal text with a small image; the full frame was the thing he allowed as one of the three, not the thing he asked for. `LEGACY_TEMPLATE` stays `full` and that is not a contradiction: it is what plans written before templates existed were actually drawn as, and reading one back as anything else would redraw finished work.
+
+### The picker draws the layout instead of describing it
+
+"Statement plate", "Split card" and "Full frame" mean nothing until you have seen one, and Marrs has said plainly that he cannot pick from prose: *"I can't imagine this, so just build me a simple clickable version."* So each option carries a 4:5 schematic of its own layout in brand colours at the real slide ratio.
+
+A schematic and not a rendered sample: a sample is one headline at one length, it weighs a megabyte in the repo, and it goes stale the moment the compositor changes. The diagram is drawn from the same facts the compositor uses, so it cannot promise a small photo and deliver a full bleed one.
+
+Each option also says what it costs, because ten generations is a coffee break and that is worth knowing before the choice rather than after.
+
+### Changing the look later is usually free, and says so when it is not
+
+The template decides what April was asked for, so switching is not symmetric, and the asymmetry is real rather than a limitation:
+
+- **Free (`reset`)**: the words and photographs the set already has carry the new look. Every made slide is redrawn from the background it already has, which spends no generations and takes seconds. The fitter resizes type that no longer fits, which is what it is for.
+- **Costly (`rewrite`)**: a statement plate has no picture briefs in it at all, so it cannot become a photo look without someone writing the scenes. The option itself says *April writes the set again* in amber, and it asks before it throws the words away.
+
+A full frame needs a brief on **every** slide, since it generates for every slide and a slide with no subject generates something arbitrary. A split needs only one anywhere, because a split slide with no prompt is a deliberate type-only slide and draws as a plate.
+
+One predicate decides both the count on the screen and the loop that does the work, so the button cannot promise "nothing is generated" and then spend ten generations.
+
+### Two controls removed for lying
+
+The **Size** select did nothing: the fitter sizes type to the words it was given, and it cannot honour a fixed size and still fit. **Where the words sit** is honoured by the full frame alone, so it now appears only on a full frame set. A control that does nothing is worse than no control.
+
+29 new assertions, 243 total: the specs and the ids are the same three, the cost maths, the full switch matrix in both directions, and the template surviving a save and reload.
+

@@ -68,6 +68,20 @@ export const TEMPLATE_SPECS: TemplateSpec[] = [
   },
 ];
 
+/**
+ * WHAT A NEW SET IS WRITTEN AS, which is not the same thing as LEGACY_TEMPLATE.
+ *
+ * LEGACY_TEMPLATE is `full` because plans written before templates existed WERE composed full
+ * bleed, and reading one back as anything else would redraw finished work. This is the default
+ * for a set nobody has chosen a look for yet, and it is `split` because that is the look Marrs
+ * described as the requirement: "on-brand graphically, with minimal text and a small image".
+ * Full frame was the thing he allowed as one of the three, not the thing he asked for.
+ *
+ * It is also the cheapest sensible default: half the generations of a full frame set, and it
+ * degrades to a statement plate on any slide with no photograph rather than failing.
+ */
+export const DEFAULT_TEMPLATE: SlideTemplate = 'split';
+
 export function templateSpec(id: SlideTemplate): TemplateSpec {
   return TEMPLATE_SPECS.find((t) => t.id === id) ?? TEMPLATE_SPECS[0];
 }
@@ -80,4 +94,38 @@ export function generationsFor(id: SlideTemplate, count: number): number {
   if (id === 'plate') return 0;
   if (id === 'full') return count;
   return Math.min(count, Math.ceil(count / 2));
+}
+
+/**
+ * WHAT CHANGING THE LOOK COSTS, once a set is already written.
+ *
+ * The template decides what April was asked for, so switching it is not always free. The three
+ * answers are honest about which one you are getting:
+ *
+ * - `same`: it is already that.
+ * - `reset`: the words and the photographs the set already has are enough. Every rendered slide
+ *   is redrawn from the background it already has, which costs nothing and takes a second. The
+ *   fitter resizes type that no longer fits, which is exactly what it is for.
+ * - `rewrite`: the new look needs material this set does not have, so April writes it again.
+ *
+ * The asymmetry is real and it is not a bug. A statement plate has no photo subjects in it at
+ * all, so a plate cannot become a full frame set without someone writing the scenes. A full
+ * frame set can always become a plate, because a plate ignores photographs.
+ *
+ * `full` needs a prompt on EVERY slide, since it generates for every slide and a slide with no
+ * subject generates something arbitrary. `split` needs only one somewhere, because a split
+ * slide with no prompt is a deliberate type-only slide in a photo set and draws as a plate.
+ */
+export type SwitchKind = 'same' | 'reset' | 'rewrite';
+
+export function switchKind(
+  to: SlideTemplate,
+  plan: { template: SlideTemplate; slides: { prompt: string }[] }
+): SwitchKind {
+  if (to === plan.template) return 'same';
+  const spec = templateSpec(to);
+  if (spec.imageRole === 'none') return 'reset';
+  const have = plan.slides.filter((sl) => sl.prompt.trim().length > 0).length;
+  const need = spec.mixed ? 1 : plan.slides.length;
+  return have >= need ? 'reset' : 'rewrite';
 }

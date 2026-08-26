@@ -181,12 +181,21 @@ From a concept's development hub, click **Create content**.
 
 The carousel and the quote card open here. Same screen, and it already knows how many slides it needs: ten for a carousel, one for a card.
 
-1. **Write the slides from the article.** One tap. April writes the whole set: a shared *look* for the deck, the caption, and per slide the words that go on it plus a description of the picture behind it.
-2. **Read down the slides and fix the words.** This is the part that matters and it costs nothing. The words are the carousel.
-3. **Make slide 1.** Look at it. If the look is wrong, edit the look line and remake it. Settle the world on one picture before spending ten.
-4. **Make the rest.** It works down the list and stops at each one for you. Walk away, come back to a set to review.
-5. **Approve each slide.** Approving is also advancing. A slide only counts once it has a real picture saved to the library.
-6. **Wrong picture?** Remake that one. **Wrong words?** Fix them and re-render, which is instant and free because it reuses the picture already made.
+1. **Pick the look.** Three of them, each drawn on the screen so you can see what you are choosing (D55).
+   - **Statement plate**: no photo at all. One claim set big on the brand field, with a supporting line. Nothing is generated, so a whole set is instant and free.
+   - **Split card**: a photo in a window up top, the words underneath. Half the slides carry one. This is the default.
+   - **Full frame**: one generated image edge to edge with the words over it. Ten slides is ten generations.
+   Each option says what it costs before you pick it. There is also an optional **standing label** for the bottom left of every slide, like `EMERGENT AI`.
+2. **Write the slides from the article.** One tap. April writes the whole set: a shared *look* for the deck, the caption, and per slide the words that go on it plus, on the looks that take one, a description of the picture behind it. What she is asked for depends on the look: a statement plate gets no picture briefs at all.
+3. **Read down the slides and fix the words.** This is the part that matters and it costs nothing. The words are the carousel.
+4. **Make slide 1.** Look at it. If the look is wrong, edit the look line and remake it. Settle the world on one picture before spending ten.
+5. **Make the rest.** It works down the list and stops at each one for you. Walk away, come back to a set to review.
+6. **Approve each slide.** Approving is also advancing. A slide only counts once it has a real picture saved to the library.
+7. **Wrong picture?** Remake that one. **Wrong words?** Fix them and re-render, which is instant and free because it reuses the picture already made.
+
+**Changing the look after it is written.** Open `THE LOOK` on the run screen. Most switches are free: the words and the pictures the set already has are redrawn in the new look, nothing is generated, and one button does all of them. The exception is going from a statement plate to one of the photo looks, because a plate has no picture briefs in it for anything to draw. That one says *April writes the set again* on the option before you click it, and asks before it throws the words away.
+
+**Type sizes itself.** There is no size control any more. The fitter sizes the type to the words it was given, which is what stops a fourteen word headline running off the slide. Where the words sit on the picture is a full frame question only: the other two looks are the typesetting.
 
 **The words go on in code, not by the model.** Brand type, brand colours, wrap a phrase in `*asterisks*` to put it in mint. The picture behind is generated; the type is composited. That is what makes ten slides look like one set, and it is why the picture prompt never asks for text.
 
@@ -194,7 +203,7 @@ The carousel and the quote card open here. Same screen, and it already knows how
 
 **Post order is slide order.** Nothing to keep in sync: the ids on the post are rebuilt from the slide numbers every time it saves.
 
-*Worth knowing:* the only image model connected today is photoreal, so every background is a photograph. No diagrams or charts yet. And a full carousel is ten generations, so it is a coffee break rather than an interaction.
+*Worth knowing:* the only image model connected today is photoreal, so every background is a photograph. No diagrams or charts yet. A full frame carousel is ten generations, so it is a coffee break rather than an interaction, which is exactly why the split card is the default and the statement plate exists.
 
 ## 9. Media library 🧪 (new — D27)
 

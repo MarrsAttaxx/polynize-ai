@@ -20,6 +20,14 @@ import {
   SLIDE_H,
   type SlidePlan,
 } from '../slide-plan';
+import { TEMPLATES, LEGACY_TEMPLATE } from '../slide-plan';
+import {
+  TEMPLATE_SPECS,
+  DEFAULT_TEMPLATE,
+  templateSpec,
+  generationsFor,
+  switchKind,
+} from '../slide-templates';
 import { parseProposal } from '../slide-propose';
 import {
   cardState,
@@ -356,6 +364,78 @@ for (const lane of STREAM_IDS) {
   eq(`${lane}: 12 rows`, kitRows(lane).length, 12);
   eq(`${lane}: 16 default posts`, tickCount(defaultTicks(lane), lane), 16);
 }
+
+/* ------------------------------------------------------------------ D55: the three looks */
+
+/**
+ * All three templates existed and only one was reachable, so these lock the two things a
+ * picker cannot be trusted to get right by eye: that the three specs and the three ids are the
+ * same three, and that changing the look asks first exactly when it is about to cost the words.
+ */
+eq('three looks, no more', TEMPLATE_SPECS.length, TEMPLATES.length);
+for (const t of TEMPLATES) {
+  eq(`${t}: has a spec`, templateSpec(t).id, t);
+  ok(`${t}: the spec has a name and a blurb`, Boolean(templateSpec(t).name && templateSpec(t).blurb));
+}
+ok('the default look is a real one', (TEMPLATES as string[]).includes(DEFAULT_TEMPLATE));
+ok('and it is not the legacy fallback', DEFAULT_TEMPLATE !== LEGACY_TEMPLATE);
+
+// The cost line on the picker. A plate spends nothing, a full frame spends one per slide, and a
+// split spends half, which is the whole reason it is the default.
+eq('a plate generates nothing', generationsFor('plate', 10), 0);
+eq('a full frame generates every slide', generationsFor('full', 10), 10);
+eq('a split generates half', generationsFor('split', 10), 5);
+eq('and a single card is one', generationsFor('full', 1), 1);
+
+const planOf = (template: 'plate' | 'split' | 'full', prompts: string[]): SlidePlan => ({
+  version: 1,
+  template,
+  accent: '#69fccb',
+  kicker: 'EMERGENT AI',
+  world: '',
+  caption: '',
+  slides: prompts.map((prompt, i) => ({
+    n: i + 1,
+    role: i === 0 ? ('cover' as const) : ('body' as const),
+    headline: `line ${i + 1}`,
+    note: '',
+    prompt,
+    position: 'lower' as const,
+    size: 'medium' as const,
+    baseColor: '#ffffff',
+    highlightColor: '#69fccb',
+  })),
+});
+
+const NONE = ['', '', '', ''];
+const HALF = ['a street at dusk', '', 'a hand on a switch', ''];
+const ALL = ['a', 'b', 'c', 'd'];
+
+eq('the look it is already in costs nothing', switchKind('plate', planOf('plate', NONE)), 'same');
+// A plate set has no photo subjects in it, so there is nothing for either photo look to draw.
+eq('plate to split rewrites', switchKind('split', planOf('plate', NONE)), 'rewrite');
+eq('plate to full rewrites', switchKind('full', planOf('plate', NONE)), 'rewrite');
+// A plate ignores photographs, so it can always be reached for free.
+eq('full to plate is free', switchKind('plate', planOf('full', ALL)), 'reset');
+eq('split to plate is free', switchKind('plate', planOf('split', HALF)), 'reset');
+// A full frame generates for every slide, so half a set of subjects is not enough.
+eq('split to full rewrites on a half set', switchKind('full', planOf('split', HALF)), 'rewrite');
+eq('split to full is free when every slide has one', switchKind('full', planOf('split', ALL)), 'reset');
+// A split slide with no prompt is a deliberate type-only slide, so one subject anywhere is enough.
+eq('full to split is free', switchKind('split', planOf('full', ALL)), 'reset');
+eq('and one subject is enough for a split', switchKind('split', planOf('plate', HALF)), 'reset');
+
+// The template survives a round trip, or a switch would be forgotten on the next reload.
+for (const t of TEMPLATES) {
+  const back = parseSlidePlan(serialiseSlidePlan(planOf(t, ALL)));
+  eq(`${t}: survives the round trip`, back?.template, t);
+  eq(`${t}: the kicker rides with it`, back?.kicker, 'EMERGENT AI');
+}
+eq(
+  'a plan written before templates existed reads as the full frame it was drawn as',
+  parseSlidePlan(JSON.stringify({ version: 1, slides: [{ n: 1, headline: 'x' }] }))?.template,
+  LEGACY_TEMPLATE
+);
 
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

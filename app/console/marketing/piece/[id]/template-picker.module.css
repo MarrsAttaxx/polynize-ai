@@ -1,0 +1,130 @@
+/**
+ * THE LOOK PICKER. Three options, side by side, each carrying a schematic of its own layout.
+ *
+ * Side by side and not a dropdown: the whole point is comparing the three, and a select box
+ * shows one at a time. Three fit across the panel at desktop width and stack at 375px, which
+ * is the only breakpoint that matters here.
+ */
+
+.wrap {
+  border: 0;
+  padding: 0;
+  margin: 0 0 14px;
+  min-width: 0;
+}
+
+.legend {
+  padding: 0;
+  margin-bottom: 8px;
+  font-family: var(--font-jetbrains-mono), monospace;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-3, #6f6a64);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.opt {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  text-align: left;
+  padding: 10px;
+  border-radius: 12px;
+  background: var(--bg, #0a0a0f);
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.12));
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease;
+}
+.opt:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--mint, #69fccb) 45%, transparent);
+}
+.opt:disabled {
+  cursor: default;
+  opacity: 0.55;
+}
+
+/* THE CHOSEN ONE. A mint border and a ring, the same way the current gate reads on the lanes:
+   filled is not enough on its own when three cards sit next to each other. */
+.optOn {
+  border-color: var(--mint, #69fccb);
+  background: color-mix(in srgb, var(--mint, #69fccb) 7%, var(--bg, #0a0a0f));
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--mint, #69fccb) 40%, transparent);
+}
+
+/* 4:5, the real slide ratio, so the amount of frame a photograph takes is honest.
+   Capped rather than full width: at 218px a 4:5 diagram is 272px tall and the picker starts
+   outweighing the writing it is meant to precede. */
+.thumb {
+  display: block;
+  width: 100%;
+  max-width: 156px;
+  height: auto;
+  border-radius: 5px;
+}
+
+.body {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 5px;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.name {
+  font-size: 13.5px;
+  font-weight: 600;
+  line-height: 1.25;
+  color: var(--text, #f4ece4);
+}
+
+.blurb {
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--text-2);
+}
+
+.cost {
+  font-family: var(--font-jetbrains-mono), monospace;
+  font-size: 10px;
+  line-height: 1.4;
+  letter-spacing: 0.02em;
+  color: var(--text-3, #6f6a64);
+}
+
+/* Only drawn on a switch that throws the words away, so it is allowed to be loud. */
+.warn {
+  font-family: var(--font-jetbrains-mono), monospace;
+  font-size: 10px;
+  letter-spacing: 0.02em;
+  color: var(--amber, #f0b86b);
+}
+
+@media (max-width: 560px) {
+  .grid {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+  /* Stacked, the diagram BESIDE the words rather than above them: three full-width 4:5
+     diagrams down a phone screen is most of the screen spent on furniture. */
+  .opt {
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  .thumb {
+    width: 54px;
+    flex: 0 0 54px;
+  }
+}

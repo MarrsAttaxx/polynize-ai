@@ -96,6 +96,31 @@
   line-height: 1.55;
   color: var(--text-2);
 }
+/* The standing label. One short line, so it is an input and not a textarea. */
+.kicker {
+  display: block;
+  margin-bottom: 12px;
+}
+.kickerLabel {
+  display: block;
+  margin-bottom: 5px;
+  font-family: var(--font-jetbrains-mono), monospace;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-3, #6f6a64);
+}
+.kicker input {
+  width: 100%;
+  background: var(--bg, #0a0a0f);
+  color: inherit;
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.12));
+  border-radius: 10px;
+  padding: 9px 12px;
+  font: inherit;
+  font-size: 14px;
+}
+
 .steer {
   width: 100%;
   min-height: 92px;
