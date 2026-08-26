@@ -16,7 +16,21 @@ Anything already built is in `decisions.md` (D1 to D49), not here. This file is 
 
 ## Carousels (in progress, 25 August 2026)
 
-**3. Three stylistic templates.** Marrs: *"we have to have three templates to choose from. Each needs to be on-brand graphically, with minimal text and a small image. One of them can be sort of full-image generation, maybe... Someone can select the template, write a bit about what they want, and then it generates the images."*
+**3. Three stylistic templates. HALF BUILT: the model and the renderer landed, the PICKER did not.**
+
+What exists and is proven (`npm run proof:slides` writes one PNG per template at 1080 x 1350):
+
+| Template | What it is | Generations for a 10 slide set |
+|---|---|---|
+| **Statement plate** | No photo. One claim set big on the brand field, ghosted slide number, accent rule, footer. | **0** |
+| **Split card** | A photo in a window up top with the accent seam under it, words beneath. Half the slides carry one. | **5** |
+| **Full frame** | One generated image edge to edge, words over it. The old behaviour. | **10** |
+
+`generationsFor()` exists so the picker can tell him the cost before he picks, which is the answer to "a full carousel is a coffee break".
+
+**What is still owed:** the picker itself. `ImageScreen.tsx` never mentions templates, so the plan's `template` field is never set from the UI and every set still renders `full`. Safe by construction (`LEGACY_TEMPLATE = 'full'`, and the render route defaults `template` to `full` and ignores the old per-slide size and colour fields), so nothing is broken, but the feature is unreachable until the picker lands.
+
+Original ask, kept for the reasoning. Marrs: *"we have to have three templates to choose from. Each needs to be on-brand graphically, with minimal text and a small image. One of them can be sort of full-image generation, maybe... Someone can select the template, write a bit about what they want, and then it generates the images."*
 
 Constraint that decides the shape: **the only live image model is Soul, photoreal people.** It cannot make a diagram, a chart, an abstract mark or legible type. So at most one template can lean on generation; the other two must render from brand type and colour with at most one small photo. `next/og` is already a proven dependency (`lib/marketing/text-overlay.tsx`), so deterministic composition is the path.
 

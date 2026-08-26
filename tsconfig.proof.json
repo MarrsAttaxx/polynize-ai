@@ -1,0 +1,5 @@
+{
+  "//": "The proof script renders JSX outside Next, which sets jsx=preserve. tsx then needs the automatic runtime or every template throws 'React is not defined'.",
+  "extends": "./tsconfig.json",
+  "compilerOptions": { "jsx": "react-jsx" }
+}

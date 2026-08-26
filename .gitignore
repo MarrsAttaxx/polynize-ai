@@ -44,3 +44,8 @@ next-env.d.ts
 
 # One-off HTML/asset exports for handoff. Artefacts, not source.
 exports/
+
+# Proof renders from npm run proof:slides. Regenerate them, do not commit them.
+slide-plate.png
+slide-split.png
+slide-full.png
