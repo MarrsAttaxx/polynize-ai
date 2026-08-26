@@ -615,7 +615,7 @@ const CATALOGUE: KitOutput[] = [
     master: 'texts',
     label: 'Contrarian post',
     sub: 'the belief, then the break',
-    postLabel: 'Contrarian',
+    postLabel: 'Contrarian post',
     shown: BOTH,
     on: BOTH,
     artifact: LI_TEXT,
@@ -660,7 +660,7 @@ const CATALOGUE: KitOutput[] = [
     master: 'texts_list',
     label: 'Numbered rules',
     sub: 'the reach play',
-    postLabel: 'Rules',
+    postLabel: 'Numbered rules',
     shown: BOTH,
     on: BOTH,
     artifact: LI_TEXT,
@@ -827,7 +827,8 @@ const CATALOGUE: KitOutput[] = [
     master: 'images',
     label: 'Image',
     sub: 'one 4:5 card',
-    postLabel: 'Card',
+    // 'Image', not 'Card': the Gate 3 row, the Gate 4 card and this chip are one word now (D54).
+    postLabel: 'Image',
     shown: BOTH,
     on: BOTH,
     artifact: IG_CARD,
@@ -1069,28 +1070,51 @@ export function labelFor(id: string): string {
   return BY_ID.get(id)?.postLabel ?? 'Post';
 }
 
+/**
+ * ONE NAME PER THING, ACROSS ALL THREE GATES (D54).
+ *
+ * Marrs: "the item labelled on Gate 3 has to be similar to the one on Gate 4. For example, the
+ * Instagram image on Gate 4 says 'card'. That doesn't make sense. There has to be some continuity
+ * between the two."
+ *
+ * There were three separate vocabularies and nobody had ever lined them up. The single-image
+ * master was the worst: Gate 3 said "Image", Gate 4 said "Quote card", Gate 5 said "Card". Three
+ * words for one thing.
+ *
+ * THE RULE NOW. `card` is the canonical name and it matches the Gate 3 row exactly. The detail
+ * about how the thing is made moved to `detail`, which the Gate 4 card prints as a second line
+ * rather than smuggling into the name. Gate 5's chip uses the output's own `postLabel`, and the
+ * ONE place a different word is allowed is where the platform has its own: a video is a Reel on
+ * Instagram, a Short on YouTube and a TikTok on TikTok, which is that platform's vocabulary and
+ * not an inconsistency. "Card" was not Instagram's word for anything.
+ */
 const MASTER_META: Record<
   MasterAsset,
-  { kind: 'text' | 'video' | 'image'; card: string; rank: number }
+  { kind: 'text' | 'video' | 'image'; card: string; detail?: string; rank: number }
 > = {
   // Gate 4 order: video first because it is the long pole, then image, then text.
-  shorts: { kind: 'video', card: 'Script, 3 hooks one body', rank: 0 },
-  long: { kind: 'video', card: 'Long-form script', rank: 1 },
-  carousel: { kind: 'image', card: 'Carousel, 10 slides', rank: 2 },
-  images: { kind: 'image', card: 'Quote card', rank: 3 },
-  article: { kind: 'text', card: 'The article', rank: 4 },
-  texts: { kind: 'text', card: 'Contrarian post', rank: 5 },
-  texts_hard: { kind: 'text', card: 'Hard moment post', rank: 6 },
-  texts_list: { kind: 'text', card: 'Numbered rules post', rank: 7 },
-  texts_field: { kind: 'text', card: 'Field report post', rank: 8 },
+  shorts: { kind: 'video', card: 'Video', detail: 'one script, 3 hooks and one body', rank: 0 },
+  long: { kind: 'video', card: 'Long form', detail: '16:9, deliberately not a Short', rank: 1 },
+  carousel: { kind: 'image', card: 'Carousel', detail: '10 slides at 1080 x 1350', rank: 2 },
+  images: { kind: 'image', card: 'Image', detail: 'one 4:5 card', rank: 3 },
+  article: { kind: 'text', card: 'Article', detail: 'the long form, on its own url', rank: 4 },
+  texts: { kind: 'text', card: 'Contrarian post', detail: 'the belief, then the break', rank: 5 },
+  texts_hard: { kind: 'text', card: 'Hard moment', detail: 'what holding it cost', rank: 6 },
+  texts_list: { kind: 'text', card: 'Numbered rules', detail: 'the reach play', rank: 7 },
+  texts_field: { kind: 'text', card: 'Field report', detail: 'what we see across client work', rank: 8 },
 };
+
+/** The line under a Gate 4 card's name: how the thing is made, not what it is called. */
+export function masterDetail(m: string): string {
+  return MASTER_META[m as MasterAsset]?.detail ?? '';
+}
 
 export function masterKind(m: MasterAsset): 'text' | 'video' | 'image' {
   return MASTER_META[m]?.kind ?? 'text';
 }
 
-export function masterCardLabel(m: MasterAsset): string {
-  return MASTER_META[m]?.card ?? 'Post';
+export function masterCardLabel(m: string): string {
+  return MASTER_META[m as MasterAsset]?.card ?? 'Post';
 }
 
 /**

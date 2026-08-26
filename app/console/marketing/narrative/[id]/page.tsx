@@ -15,8 +15,9 @@ import {
   cardState,
   cardStateLabel,
   plansForTicks,
+  masterCardLabel,
+  masterDetail,
 } from '@/lib/marketing/kit';
-import { channelLabel } from '@/lib/marketing/channels';
 import { NarrativeGates, type WaveData } from './NarrativeGates';
 
 export const dynamic = 'force-dynamic';
@@ -78,7 +79,12 @@ export default async function NarrativePage({
      * carousel and the quote card are Instagram. So the answer is that it DOES matter, and the
      * card should say it rather than leave him counting.
      */
-    where: string;
+    /** Which networks its posts land on, for the platform marks on the card (D54). */
+    networks: string[];
+    /** How many posts it becomes. Only worth printing when it is more than one. */
+    posts: number;
+    /** How the thing is made, as a second line: the name says WHAT it is. */
+    detail: string;
   }[] = [];
   if (narrative.gate === 4 || narrative.gate === 5 || narrative.gate === 'shipped') {
     for (const pid of narrative.piece_ids ?? []) {
@@ -88,20 +94,26 @@ export default async function NarrativePage({
         const st = cardState(p.master ?? '', p);
         const plan = plans.find((x) => x.master === p.master);
         const posts = plan ? plan.outputs.length : 0;
-        const where = plan
-          ? `${plan.placements.map((pl) => channelLabel(pl.network)).join(' · ')}${
-              posts > 1 ? ` · ${posts} posts` : ''
-            }`
-          : '';
         pieces.push({
           id: p.piece_id,
-          label: p.title,
+          /**
+           * THE CANONICAL NAME, not the stored title (D54).
+           *
+           * `piece.title` is "<headline>: <whatever the card was called when it was created>", so
+           * a piece made before the vocabulary was unified would keep showing "Quote card" until
+           * its kit was re-confirmed. Reading the name off the master means every card is right
+           * immediately and no migration is needed. The narrative's headline is already at the
+           * top of the screen, so repeating it on every card was noise anyway.
+           */
+          label: masterCardLabel(p.master ?? ''),
           master: p.master ?? '',
           kind: p.kind ?? 'text',
           href: `/console/marketing/piece/${p.piece_id}`,
           state: st,
           stateLabel: cardStateLabel(p.master ?? '', st),
-          where,
+          networks: plan ? plan.placements.map((pl) => pl.network) : [],
+          posts,
+          detail: masterDetail(p.master ?? ''),
         });
       } catch (err) {
         console.error('[narrative] piece read failed:', err);

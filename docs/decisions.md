@@ -1154,3 +1154,38 @@ Applied to the shared voice block in `draft.ts`, so it reaches every text post, 
 
 **Deliberately NOT applied to the slide writer.** A slide headline is a fragment under 14 words, so the sentence-variance rule has nothing to act on, and that prompt is the one that has been truncating: adding two hundred tokens of voice guidance to the call that already fails on payload would trade a real problem for a cosmetic one.
 
+---
+
+## D54: One name per thing, and the platform mark on the card
+
+**Adopted 25 August 2026.** Marrs: *"the item labelled on Gate 3 has to be similar to the one on Gate 4. For example, the Instagram image on Gate 4 says 'card'. That doesn't make sense. There has to be some continuity between the two."*
+
+### There were three vocabularies and nobody had lined them up
+
+| Master | Gate 3 row | Gate 4 card | Gate 5 chip |
+|---|---|---|---|
+| images | Image | **Quote card** | **Card** |
+| article | Article | The article | Article |
+| texts_list | Numbered rules | Numbered rules post | **Rules** |
+| shorts | Video / Reels / TikToks / Shorts | Script, 3 hooks one body | Video / Reel / TikTok / Short |
+
+The single image was the worst: three words for one thing. He was right that "card" is not Instagram's word for anything.
+
+**The rule now.** The master's canonical name matches its Gate 3 row exactly, and the detail about how the thing is made moved out of the name into its own line, so `Script, 3 hooks one body` became **Video** with *one script, 3 hooks and one body* underneath. The name says what it is; the line says how it is made.
+
+**The one exception, and it is not an inconsistency.** A video is a **Reel** on Instagram, a **Short** on YouTube and a **TikTok** on TikTok. That is each platform's own vocabulary, and a per-network chip should use it. The test allows a chip to be the singular of a Gate 3 row for exactly that reason, and allows nothing else.
+
+**The card reads its name off the master, not off `piece.title`.** A piece created before today has "Quote card" baked into its stored title, and it would have kept showing that until its kit was re-confirmed. Reading the name off the master makes every card right immediately with no migration. The narrative's headline is already at the top of the screen, so repeating it on every card was noise.
+
+### The platform marks
+
+Marrs: *"the sectioning and branding that is linked to Instagram should be carried across to Gate 4 as well, but not necessarily hierarchical... just make that a little more pronounced so the LinkedIn logo is sitting in there so I can see what's Instagram and what's LinkedIn. You can keep it in whatever order you see fit."*
+
+The text line D49 added ("LinkedIn · Instagram · TikTok · YouTube · 10 posts") became the actual glyphs, using **the same `PlatformIcon` component the calendar already uses**, so there is one glyph set across the console rather than Gate 3's text marks in one place and something else in another.
+
+**Not hierarchical, as he allowed.** The cards stay in production order, video first because it is the long pole, and the marks say where each one goes. Grouping by platform would have buried the ordering that actually matters, which is what to make first.
+
+So the video card carries four logos and a `10`, the carousel and the image carry Instagram, and the article and the three text frames carry LinkedIn. Which also makes the carousel's Instagram-only state visible at a glance, since the LinkedIn document is still blocked.
+
+Locked with 103 new assertions: for every lane and every master, the Gate 4 name must be one of that master's Gate 3 rows, and every chip must be a known name or the singular of one.
+

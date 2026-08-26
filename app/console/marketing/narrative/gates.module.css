@@ -630,3 +630,22 @@
   opacity: 0.45;
   cursor: default;
 }
+
+/* PLATFORM MARKS ON A GATE 4 CARD (D54). The same PlatformIcon the calendar uses, so there is one
+   glyph set across the console. Deliberately not hierarchical: the cards stay in production order
+   (video first, the long pole) and the marks say where each one goes. */
+.marks {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 0 auto;
+  color: var(--text-3, #6f6a64);
+}
+.marksN {
+  font-family: var(--font-jetbrains-mono), monospace;
+  font-size: 9.5px;
+  padding: 1px 5px;
+  border-radius: 999px;
+  background: var(--surface-2, #23232f);
+  color: var(--text-3, #6f6a64);
+}

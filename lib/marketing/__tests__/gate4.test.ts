@@ -33,6 +33,10 @@ import {
   tickCount,
   kitRows,
   catalogueProblems,
+  plansForTicks,
+  masterCardLabel,
+  masterDetail,
+  outputById,
 } from '../kit';
 import { prezieFilingKey } from '../prezie-store';
 import { STREAM_IDS } from '../streams';
@@ -275,6 +279,46 @@ for (const m of ['carousel', 'images', 'shorts', 'texts', 'article']) {
   for (const st of ['empty', 'drafted', 'ready'] as const) {
     ok(`${m}/${st} label has no em-dash`, !cardStateLabel(m, st).includes('—'));
   }
+}
+
+/* ---- ONE NAME PER THING, ACROSS ALL THREE GATES (D54) ---- */
+
+// Gate 3's row label, Gate 4's card name and Gate 5's chip were three separate vocabularies and
+// the single image was the worst: "Image", "Quote card", "Card".
+for (const lane of STREAM_IDS) {
+  const rows = kitRows(lane);
+  for (const plan of plansForTicks(defaultTicks(lane), lane)) {
+    const g3 = rows
+      .filter((r) => r.ids.some((id) => outputById(id)!.master === plan.master))
+      .map((r) => r.label);
+    const g4 = masterCardLabel(plan.master);
+    const chips = [...new Set(plan.outputs.map((o) => o.postLabel))];
+
+    // The Gate 4 name has to be one of the Gate 3 rows for that master.
+    ok(`${lane}/${plan.master}: gate 4 name is a gate 3 name`, g3.includes(g4), `${g4} not in ${g3}`);
+
+    /**
+     * And so does every chip, with ONE deliberate exception: a video is a Reel on Instagram, a
+     * Short on YouTube and a TikTok on TikTok. That is the platform's own word, not our
+     * inconsistency, so a chip may be the singular of a Gate 3 row. "Card" was not Instagram's
+     * word for anything, which is why it had to go.
+     */
+    const singularOf = (x: string) => (x.endsWith('s') ? x.slice(0, -1) : x);
+    for (const chip of chips) {
+      const known = g3.some((l) => l === chip || singularOf(l) === chip) || chip === g4;
+      ok(`${lane}/${plan.master}: chip "${chip}" is a known name`, known, `rows ${g3}`);
+    }
+  }
+}
+// The one that started it.
+eq('the single image is Image everywhere', masterCardLabel('images'), 'Image');
+eq('and its chip agrees', outputById('ig_card')!.postLabel, 'Image');
+eq('and so does its gate 3 row', outputById('ig_card')!.label, 'Image');
+// The detail line says HOW, so the name is free to say WHAT.
+for (const m of ['shorts', 'carousel', 'images', 'article', 'texts']) {
+  ok(`${m} has a detail line`, masterDetail(m).length > 0);
+  ok(`${m} detail is not its name`, masterDetail(m) !== masterCardLabel(m));
+  ok(`${m} detail has no em-dash`, !masterDetail(m).includes('—'));
 }
 
 /* ------------------------------------------------------------ regressions */

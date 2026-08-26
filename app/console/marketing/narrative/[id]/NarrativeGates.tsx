@@ -29,6 +29,8 @@ import {
   KIT_NETWORK_ORDER,
   type KitRow,
 } from '@/lib/marketing/kit';
+import { PlatformIcon } from '@/app/console/marketing/_components/PlatformIcon';
+import { channelLabel } from '@/lib/marketing/channels';
 import g from '../gates.module.css';
 
 type PieceRow = {
@@ -40,8 +42,12 @@ type PieceRow = {
   /** Whether this card could ship (D47). Advisory: it never blocks the gate. */
   state: 'empty' | 'drafted' | 'ready';
   stateLabel: string;
-  /** Which networks this card's posts land on (D49). */
-  where: string;
+  /** Which networks this card's posts land on (D49), as marks rather than words (D54). */
+  networks: string[];
+  /** How many posts it becomes. Only printed when it is more than one. */
+  posts: number;
+  /** How the thing is made. The name says what it IS; this says how. */
+  detail: string;
 };
 type WaveCell = {
   day: string;
@@ -743,8 +749,23 @@ export function NarrativeGates({
                     >
                       {p.state === 'ready' ? '✓ ready' : p.stateLabel}
                     </span>
-                    {p.where ? <span className={g.where2}>{p.where}</span> : null}
+                    {p.detail ? <span className={g.where2}>{p.detail}</span> : null}
                   </div>
+                  {/*
+                    THE PLATFORM MARKS (D54). Marrs: "the sectioning and branding that is linked
+                    to Instagram should be carried across to Gate 4 as well, but not necessarily
+                    hierarchical... just make that a little more pronounced so the LinkedIn logo
+                    is sitting in there so I can see what's Instagram and what's LinkedIn."
+                    Not hierarchical: the cards stay in production order (video first, the long
+                    pole) and the marks say where each one goes. Same PlatformIcon the calendar
+                    uses, so one glyph set across the console.
+                  */}
+                  <span className={g.marks}>
+                    {p.networks.map((nw) => (
+                      <PlatformIcon key={nw} channel={nw} size={15} title={channelLabel(nw)} />
+                    ))}
+                    {p.posts > 1 ? <span className={g.marksN}>{p.posts}</span> : null}
+                  </span>
                   <span className={g.open}>open →</span>
                 </Link>
               </div>
