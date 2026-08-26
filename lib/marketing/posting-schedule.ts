@@ -90,3 +90,18 @@ export function nextSlotAfter(after: Wall, slots: string[]): string {
   if (sameDay) return `${after.date}T${sameDay}`;
   return `${addDays(after.date, 1)}T${sorted[0]}`;
 }
+
+/**
+ * WHICH TIMEZONE A SCHEDULED POST GOES OUT IN (D61).
+ *
+ * One line, but it is the rule, so it lives where it can be tested rather than inline in the
+ * publish path where nothing can reach it. `scheduled_at` is local wall-clock, so a post's time
+ * and its zone are one fact: the zone stamped when the time was chosen always wins, and config is
+ * only consulted for entries planned before the stamp existed.
+ *
+ * A blank or whitespace-only stamp counts as absent: a stored empty string would otherwise be
+ * sent to Metricool as the zone.
+ */
+export function timezoneForEntry(entry: { timezone?: string }, fallback: string): string {
+  return entry.timezone?.trim() || fallback;
+}

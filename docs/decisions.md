@@ -1453,3 +1453,34 @@ Mirrored through `mirrorImageToHost`, the helper D56 added: byte for byte, in pa
 
 **Nothing repairs the entries already saved.** Anything registered before today is still a temporary url, and there is no scan or migration. A library image that has stopped loading has to be regenerated, and that is recorded in the todo so nobody goes looking for a bug in the picker.
 
+---
+
+## D61: A time and its timezone are one fact, so they travel together
+
+**Adopted 26 August 2026.** Todo item 11, fixed overnight with his approval.
+
+`scheduled_at` is **local wall-clock, never UTC**, because that is what Metricool takes: a `YYYY-MM-DDTHH:mm:ss` paired with a separate IANA zone. A wall-clock time without its zone is not a time.
+
+The console held two zones for one post:
+
+- The wave picked the slot from **the lane's channel schedule**, whose `nextOpenSlots` has always returned `{ dateTime, timezone }` pairs, described in its own comment as "ready for the create call".
+- `publishEntry` then read the zone off **the stream's posting schedule**, a different setting stored under a different key for a different feature (Add to queue).
+
+The wave kept `slot.dateTime` and threw `slot.timezone` away. Both settings default to `Australia/Sydney`, which is the only reason this never showed: change one and not the other and the post the grid labels the morning video goes out in the afternoon. Typed slots (D46) made that categorical rather than cosmetic, because a slot now means "the morning video slot" and not just a time.
+
+### The fix is a stamp, not a lookup
+
+`CalendarEntry.timezone` is set when the time is set, and publish sends that. Not "read the right config at ship time", because config read late is the whole class of bug: it also means changing a lane's zone silently reinterprets every wave already planned.
+
+**This is the same discipline `publish_mode` already had**, whose comment says it in as many words: *"Stamped now, not read at ship time: changing the lane's setting later must not silently rewrite how an already-planned wave goes out."* The timezone deserved identical treatment and was simply missed.
+
+Stamped in all three places a time is chosen: the wave on create, the wave on **repair** (the date moved, so the zone that chose it moves with it), and Add to queue, which stamps the posting schedule's zone because that is the one that produced its time.
+
+### The fallback is deliberate and conservative
+
+An entry planned before today has no stamp, and falls back to exactly the config it would have used. Their behaviour is unchanged rather than reinterpreted, which matters because some of them are already live in Metricool.
+
+The resolution rule is one line, so it lives in `posting-schedule.ts` as `timezoneForEntry` rather than inline in the publish path where no test can reach it. A blank stamp counts as absent, since a stored empty string would otherwise be sent to Metricool as the zone.
+
+10 new assertions, 308 total.
+

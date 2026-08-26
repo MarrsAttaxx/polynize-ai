@@ -173,7 +173,9 @@ Worth knowing going in: everything after the shoot is deliberately absent from t
 
 **10. The wave lock is per narrative, not per lane.** Two narratives on one stream planned minutes apart can take the same slot: both read the calendar before either writes. The precedent for the fix is in the same file, where the ship branch already re-reads each entry fresh.
 
-**11. Two timezone sources for one post.** The wave picks a time from `getChannelSchedule(lane).timezone`; `publishEntry` sends it paired with `getPostingSchedule()[stream].timezone`. Both default to Sydney so it is invisible today. Typed slots (D46) make it categorical rather than cosmetic: the post the grid labels the morning video would go out in the afternoon.
+**11. Two timezone sources for one post. FIXED (D61).** The entry now carries the zone its time was chosen in, and publish sends that rather than re-deriving it. Entries planned before the stamp fall back to the old config, so nothing already live is reinterpreted.
+
+~~**11. Two timezone sources for one post.**~~ The wave picks a time from `getChannelSchedule(lane).timezone`; `publishEntry` sends it paired with `getPostingSchedule()[stream].timezone`. Both default to Sydney so it is invisible today. Typed slots (D46) make it categorical rather than cosmetic: the post the grid labels the morning video would go out in the afternoon.
 
 ---
 

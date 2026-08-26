@@ -370,6 +370,9 @@ export async function POST(
           await saveEntry(owner, {
             ...repair,
             scheduled_at: slot.dateTime,
+            // The zone rides with the time it belongs to, including on a repair: the date moved,
+            // so the zone that chose it has to move with it (D61).
+            timezone: slot.timezone,
             updated_at: new Date().toISOString(),
           });
           repaired += 1;
@@ -390,6 +393,12 @@ export async function POST(
             // network's own cap in THIS network's own unit.
             post_copy: cap ? capCopy(raw, cap) : raw.slice(0, 4000),
             scheduled_at: slot.dateTime,
+            /**
+             * The pair, not just the time (D61). nextOpenSlots has always returned
+             * { dateTime, timezone } "ready for the create call" and only the dateTime was being
+             * kept, so the zone was re-derived from a different setting at ship time.
+             */
+            timezone: slot.timezone,
             status: 'draft',
             media: piece.media ?? [],
             /**

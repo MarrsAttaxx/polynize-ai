@@ -61,6 +61,13 @@ export async function POST(
   }
 
   entry.scheduled_at = nextSlotAfter(after, schedule.slots);
+  /**
+   * The zone that chose it, stamped with it (D61). This route picks from the STREAM's posting
+   * schedule rather than the lane's channel schedule, which is exactly why the zone has to be
+   * recorded here: publishEntry must send the one that produced this time, not the one some other
+   * screen would have used.
+   */
+  entry.timezone = schedule.timezone;
 
   const result = await publishEntry(owner, entry);
   if (!result.ok) {

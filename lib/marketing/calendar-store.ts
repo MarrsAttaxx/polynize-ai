@@ -36,6 +36,20 @@ export type CalendarEntry = {
   post_copy: string;
   /** Planned/scheduled time, ISO. Absent = an unscheduled draft. */
   scheduled_at?: string;
+  /**
+   * THE TIMEZONE THAT TIME WAS CHOSEN IN, stamped when the time is set (D61).
+   *
+   * `scheduled_at` is local wall-clock, never UTC, because that is what Metricool takes: a
+   * 'YYYY-MM-DDTHH:mm:ss' paired with a separate IANA zone. A wall-clock time without its zone is
+   * not a time, so the two have to travel together on the entry rather than being re-derived from
+   * config at ship time. Re-deriving is how "the morning video" goes out in the afternoon: the
+   * wave picked the slot from the LANE's schedule and publish read the zone off the STREAM's
+   * posting schedule, which is a different setting that happens to hold the same default.
+   *
+   * Same discipline as publish_mode, which is already stamped rather than read late for exactly
+   * this reason. Absent on entries planned before D61, which fall back to config.
+   */
+  timezone?: string;
   status: CalendarStatus;
   /** Metricool post id, set once actually scheduled there (0009: external_ref). */
   external_ref?: string;

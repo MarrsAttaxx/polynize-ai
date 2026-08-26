@@ -35,6 +35,8 @@ import { stripMarkdownEmphasis } from '../../plain-copy';
 import { parseLine } from '../text-overlay';
 import { cleanArticle } from '../article-draft';
 import { foldRule, foldCopy, copyLength } from '../post-preview';
+import { timezoneForEntry } from '../posting-schedule';
+import { nextOpenSlots } from '../channel-schedule';
 import { parseProposal } from '../slide-propose';
 import {
   cardState,
@@ -596,6 +598,52 @@ eq('so the whole thing shows', ig.tail, '');
 
 eq('copyLength counts characters', copyLength('12345'), 5);
 eq('and counts a newline as one', copyLength('a\nb'), 3);
+
+/* ------------------------------------------------------------------ D61: one timezone */
+
+/**
+ * `scheduled_at` is local wall-clock and Metricool takes it paired with a separate IANA zone, so
+ * the time and the zone are ONE fact. The zone stamped when the time was chosen wins; config is
+ * only for entries planned before the stamp existed.
+ */
+eq(
+  'the stamped zone wins over config',
+  timezoneForEntry({ timezone: 'America/New_York' }, 'Australia/Sydney'),
+  'America/New_York'
+);
+eq(
+  'an unstamped entry keeps its old behaviour',
+  timezoneForEntry({}, 'Australia/Sydney'),
+  'Australia/Sydney'
+);
+eq(
+  'a blank stamp counts as absent, not as a zone',
+  timezoneForEntry({ timezone: '   ' }, 'Australia/Sydney'),
+  'Australia/Sydney'
+);
+eq(
+  'and a stamp is trimmed rather than sent with spaces',
+  timezoneForEntry({ timezone: ' Europe/London ' }, 'Australia/Sydney'),
+  'Europe/London'
+);
+
+/**
+ * The other half: every slot the wave places comes WITH its zone. This has always been true and
+ * the wave was throwing the zone away, which is the bug D61 fixes, so it is worth holding.
+ */
+const slotSched = {
+  timezone: 'America/New_York',
+  channels: { linkedin: ['07:00', '13:00'] },
+  modes: {},
+  prefers: {},
+} as Parameters<typeof nextOpenSlots>[0];
+const slots = nextOpenSlots(slotSched, 'linkedin', 2, [], new Date('2026-09-01T00:00:00Z'));
+eq('two slots come back', slots.length, 2);
+ok(
+  'and every one carries the schedule timezone',
+  slots.every((sl) => sl.timezone === 'America/New_York')
+);
+ok('never as a bare string', slots.every((sl) => typeof sl.dateTime === 'string' && sl.dateTime.length >= 16));
 
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

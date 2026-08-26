@@ -14,7 +14,7 @@ import { getBrandMap, getPostingSchedule } from './metricool-config-store';
 import { isMetricoolConfigured, schedulePost } from './metricool-client';
 import { metricoolNetwork, channelLabel } from './channels';
 import { streamLabel } from './streams';
-import { defaultStreamSchedule } from './posting-schedule';
+import { defaultStreamSchedule, timezoneForEntry } from './posting-schedule';
 
 export type PublishResult =
   | { ok: true; entry: CalendarEntry; warning?: string }
@@ -50,6 +50,20 @@ export async function publishEntry(owner: string, entry: CalendarEntry): Promise
 
   const schedule = (await getPostingSchedule())[entry.stream] ?? defaultStreamSchedule();
 
+  /**
+   * THE ZONE THE TIME WAS CHOSEN IN (D61), not whatever config says now.
+   *
+   * `entry.scheduled_at` is local wall-clock and Metricool takes it paired with a separate IANA
+   * zone, so the pair has to agree or the post goes out at the right numbers in the wrong place.
+   * The wave stamps `entry.timezone` from the same lane schedule that picked the slot; the posting
+   * schedule read above is a DIFFERENT setting that happens to hold the same default today, which
+   * is the only reason this was invisible.
+   *
+   * The fallback is for entries planned before the stamp existed. It keeps their old behaviour
+   * exactly rather than reinterpreting them, which is the conservative half of the fix.
+   */
+  const timezone = timezoneForEntry(entry, schedule.timezone);
+
   // Resolve attached media ids to current public URLs (Metricool fetches by URL).
   // Degrade to a text-only post rather than failing if the lookup hiccups.
   let media: string[] = [];
@@ -66,7 +80,7 @@ export async function publishEntry(owner: string, entry: CalendarEntry): Promise
       text: entry.post_copy,
       networks: [network],
       dateTime: toDateTime(entry.scheduled_at),
-      timezone: schedule.timezone,
+      timezone,
       media,
       draft: false,
       // The link belongs in the first comment on LinkedIn, never in the body (D42). The client
