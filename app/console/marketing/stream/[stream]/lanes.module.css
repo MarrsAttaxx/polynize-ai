@@ -1,64 +1,72 @@
 /**
- * THE GATE LANES (D48). One row per narrative, on one shared five-column grid, so the
- * horizontal position of a title IS how far it has got.
+ * THE GATE LANES (D48, rebuilt D50). One row per narrative. The five gates divide the FULL
+ * WIDTH of the page equally, and the highlight says where that narrative is.
  *
- * Marrs: "If there's a concept that's a gate 3, there are three squares: two of them are
- * filled in, and the third one says Emergent AI. It's all in line, so we can see over time
- * which narratives are further down into the funnel."
+ * Marrs: "I want there to be across the width of the page, the total number of Gates divided
+ * equally, then the way we highlight shows where we are at."
  *
- * So a completed gate is a small filled square and the CURRENT gate is the title itself,
- * taking the rest of the row. Ideas at gate 1 start hard left with a full-width title and
- * finished work sits far right behind four squares, which makes the funnel readable in one
- * glance without a legend.
+ * The first version indented a fixed-width square per completed gate, which kept long titles
+ * readable but meant nothing lined up: a gate 3 title started two square-widths in rather than
+ * two fifths across, so a scale header would have lied and had to be dropped. Equal columns fix
+ * that at the root. The title now sits on its own line above the bar, which is what buys the bar
+ * the whole width, and the scale header is honest again because the columns are real.
+ *
+ * THREE STATES, and they are visually distinct rather than two shades of one thing: a gate behind
+ * you is filled and quiet, the gate you are AT is bright and carries the tick, and a gate ahead is
+ * an empty well. Position is readable without counting.
  */
 
 .wrap {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-}
-
-/* The scale, once, so every row and the header agree. A completed gate is a fixed-width
-   square; the title takes whatever is left. */
-.row {
-  display: grid;
-  grid-template-columns: repeat(var(--done, 0), 26px) 1fr;
-  align-items: stretch;
-  gap: 6px;
-  text-decoration: none;
-  min-height: 46px;
-}
-
-/* A gate this narrative has passed. Mint, solid, no text: it is a tally, not a label. */
-.done {
-  border-radius: 7px;
-  background: color-mix(in srgb, var(--mint, #69fccb) 22%, transparent);
-  border: 1px solid color-mix(in srgb, var(--mint, #69fccb) 45%, transparent);
-}
-
-/* WHERE IT IS NOW, and it carries the name. */
-.at {
-  display: flex;
-  align-items: center;
   gap: 10px;
-  min-width: 0;
-  padding: 9px 13px;
-  border-radius: 7px;
+}
+
+/* The scale, aligned to the same five columns the bars use, so it tells the truth. */
+.scale {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 4px;
+  padding: 0 1px 2px;
+}
+.scaleCell {
+  font-family: var(--font-jetbrains-mono), monospace;
+  font-size: 9px;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--text-3, #6f6a64);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.row {
+  display: block;
+  text-decoration: none;
+  padding: 11px 13px 12px;
+  border-radius: 10px;
   background: var(--tac-surface, #1b1b26);
   border: 1px solid var(--border, rgba(255, 255, 255, 0.1));
   transition: border-color 0.15s ease;
 }
-.row:hover .at {
+.row:hover {
   border-color: color-mix(in srgb, var(--mint, #69fccb) 50%, transparent);
+}
+
+.top {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  margin-bottom: 9px;
 }
 
 .headline {
   flex: 1;
   min-width: 0;
   font-size: 14.5px;
-  line-height: 1.25;
+  line-height: 1.3;
   color: var(--text, #f4ece4);
-  /* Two lines, because a caught idea is a sentence and truncating it to one hides the idea. */
+  /* Two lines: a caught idea is a sentence, and truncating it to one hides the idea. */
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
@@ -75,10 +83,34 @@
   white-space: nowrap;
 }
 
-/* Shipped is the one row with nothing left to do, so it reads as a result rather than a step. */
-.shipped .at {
-  background: color-mix(in srgb, var(--mint, #69fccb) 12%, var(--tac-surface, #1b1b26));
-  border-color: color-mix(in srgb, var(--mint, #69fccb) 40%, transparent);
+/* THE BAR. Five equal segments across the full width of the row. */
+.bar {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 4px;
+}
+
+.seg {
+  height: 9px;
+  border-radius: 3px;
+  /* A gate ahead: an empty well, so the bar reads as a track rather than as nothing. */
+  background: color-mix(in srgb, var(--text-3, #6f6a64) 22%, transparent);
+}
+
+/* Behind you: filled, and deliberately quieter than the current one. */
+.segDone {
+  background: color-mix(in srgb, var(--mint, #69fccb) 38%, transparent);
+}
+
+/* WHERE IT IS NOW. Full strength plus a ring, so the eye lands on it first. */
+.segAt {
+  background: var(--mint, #69fccb);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--mint, #69fccb) 45%, transparent);
+}
+
+/* Shipped has no "at": every gate is behind it, so the whole bar reads solid. */
+.shipped .segDone {
+  background: color-mix(in srgb, var(--mint, #69fccb) 70%, transparent);
 }
 .shipped .gate {
   color: var(--mint, #69fccb);
@@ -91,11 +123,11 @@
   line-height: 1.6;
 }
 
-/* Tighter squares on a phone so a long headline keeps two readable lines beside them. */
+/* At 375px the five scale labels do not fit as words, so they become the gate numbers. The
+   bars are unchanged: equal columns are exactly what survives a narrow screen. */
 @media (max-width: 560px) {
-  .row {
-    grid-template-columns: repeat(var(--done, 0), 18px) 1fr;
-    gap: 4px;
+  .scaleCell {
+    font-size: 8.5px;
   }
   .headline {
     font-size: 13.5px;

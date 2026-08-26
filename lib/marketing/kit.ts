@@ -1264,6 +1264,20 @@ export type KitRow = {
   pill?: string;
   on: boolean;
   blocked?: string;
+  /**
+   * WHAT IT IS, on hover (D50). Marrs: "on the gate three page it would be great that when you
+   * hovered over any of the options, it gives you an overview of what it is and why you would
+   * use it."
+   *
+   * Both lines already existed on the output and neither reached a screen: `job` is what the
+   * thing is for, and the first caveat is the evidence for reaching for it. The row stays two
+   * lines and the reasoning arrives only when he asks for it.
+   */
+  what: string;
+  /** Why you would pick it: the measured reason, or the reason it is off. */
+  why: string;
+  /** What it produces, in one phrase, e.g. "10 images at 1080 x 1350". */
+  makes: string;
 };
 
 /**
@@ -1273,6 +1287,30 @@ export type KitRow = {
  * decision. That is the only reason the catalogue can hold twenty two outputs and the screen
  * still fit on a phone.
  */
+/** One phrase for what an output physically produces, off its own artifact spec. */
+function makesLine(o: KitOutput): string {
+  const a = o.artifact;
+  if (a.kind === 'video') return `video at ${a.frame.w} x ${a.frame.h}`;
+  if (a.kind === 'pdf') return `a pdf, ${a.pages.v[0]} to ${a.pages.v[1]} pages at ${a.visual.w} x ${a.visual.h}`;
+  if (a.kind === 'image_set') {
+    return `${a.visual.images} image${a.visual.images === 1 ? '' : 's'} at ${a.visual.w} x ${a.visual.h}`;
+  }
+  if (a.kind === 'text') {
+    return `${a.target.v[0]} to ${a.target.v[1]} characters, plus one ${a.visual.w} x ${a.visual.h} image`;
+  }
+  return `long form, plus one ${a.visual.w} x ${a.visual.h} cover`;
+}
+
+/** The hover copy for a row: what it is, and why you would reach for it. */
+function describe(o: KitOutput): Pick<KitRow, 'what' | 'why' | 'makes'> {
+  return {
+    what: o.job,
+    // A blocked output's most useful "why" is the reason it cannot be made yet.
+    why: o.blocked ?? o.caveats?.[0] ?? '',
+    makes: makesLine(o),
+  };
+}
+
 export function kitRows(lane: NarrativeLane): KitRow[] {
   const kind = streamKind(lane);
   const rows: KitRow[] = [];
@@ -1301,6 +1339,7 @@ export function kitRows(lane: NarrativeLane): KitRow[] {
           pill: members.length > 1 ? `x${members.length}` : undefined,
           on: o.on.includes(kind),
           blocked: o.blocked,
+          ...describe(o),
         });
       } else {
         rows.push({
@@ -1311,6 +1350,7 @@ export function kitRows(lane: NarrativeLane): KitRow[] {
           sub: o.sub,
           on: o.on.includes(kind),
           blocked: o.blocked,
+          ...describe(o),
         });
       }
     }

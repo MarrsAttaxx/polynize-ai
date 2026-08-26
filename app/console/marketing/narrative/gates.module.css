@@ -503,3 +503,54 @@
   font-size: 10px;
   color: var(--text-3, #6f6a64);
 }
+
+/* WHAT A KIT OPTION IS, ON HOVER (D50).
+   Marrs: "when you hovered over any of the options it gives you an overview of what it is and
+   why you would use it." The copy was already on the output (job, and the first caveat) and had
+   never reached a screen.
+
+   :hover for a mouse and :focus-within for touch and keyboard, because tapping a row focuses its
+   checkbox. One mechanism, three input methods, and no extra control on a screen whose whole
+   point is that it holds one decision. */
+.row {
+  position: relative;
+}
+.tip {
+  position: absolute;
+  z-index: 30;
+  left: 0;
+  right: 0;
+  top: calc(100% - 6px);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 11px 13px;
+  border-radius: 10px;
+  background: var(--surface-2, #23232f);
+  border: 1px solid color-mix(in srgb, var(--mint, #69fccb) 35%, transparent);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.55);
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: var(--text-2, #cfc8c1);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.12s ease;
+}
+.tip b {
+  font-size: 13px;
+  color: var(--text, #f4ece4);
+}
+.row:hover .tip,
+.row:focus-within .tip {
+  opacity: 1;
+}
+.tipWhy {
+  color: var(--text-3, #6f6a64);
+}
+.tipMakes {
+  font-family: var(--font-jetbrains-mono), monospace;
+  font-size: 10px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--mint, #69fccb) 80%, var(--text-3, #6f6a64));
+}

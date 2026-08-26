@@ -116,6 +116,8 @@ export default async function StreamPage({
    * it, so it starts hard left at the bottom and is still visibly there.
    */
   const gateRank = (g: NarrativeCard['gate']): number => (g === 'shipped' ? 6 : g);
+  /** The five gates, in order, shared by the scale header and every bar. */
+  const GATE_ORDER = [1, 2, 3, 4, 5] as const;
   const lanes = [...narratives]
     .sort(
       (a, b) =>
@@ -124,8 +126,12 @@ export default async function StreamPage({
     )
     .map((c) => ({
       ...c,
-      // Capped at 5 so 'shipped' fills the scale rather than overflowing it.
-      done: Math.min(gateRank(c.gate) - 1, 5),
+      /**
+       * WHICH GATE THE BAR HIGHLIGHTS. 1 to 5 while it is moving; 6 once shipped, which is off
+       * the end of the scale on purpose so every segment renders as behind it and the bar reads
+       * solid rather than leaving a gap where an "at" would have been.
+       */
+      at: gateRank(c.gate),
       gateLabel:
         c.gate === 'shipped' ? 'shipped' : `gate ${c.gate} · ${GATE_LABELS[String(c.gate)]}`,
     }));
@@ -227,32 +233,42 @@ export default async function StreamPage({
           ) : (
             <>
               {/*
-                No scale along the top. A five-column header implies the titles line up with
-                it, and they do not: a completed gate is a fixed-width square so the rows stay
-                readable at 375px, which means the title starts a square-width in rather than a
-                fifth of the page in. The squares carry the funnel and each row names its own
-                gate on the right, which is the honest version of the same information.
+                The scale is honest again. It was dropped when a completed gate was a
+                fixed-width square, because then nothing lined up with it. The segments divide
+                the row equally now, so the header labels sit exactly above the gates they name.
               */}
+              <div className={n.scale} aria-hidden>
+                {GATE_ORDER.map((g) => (
+                  <span key={g} className={n.scaleCell}>
+                    {GATE_LABELS[String(g)]}
+                  </span>
+                ))}
+              </div>
               <div className={n.wrap}>
                 {lanes.map((c) => (
                   <Link
                     key={c.id}
                     href={`/console/marketing/narrative/${c.id}`}
                     className={`${n.row} ${c.gate === 'shipped' ? n.shipped : ''}`}
-                    /**
-                     * The number of gates already passed drives the grid directly, so every
-                     * row sits on one shared five-column scale and the horizontal position of
-                     * a title IS its progress. A CSS variable rather than five classes,
-                     * because the value is a count and not a state.
-                     */
-                    style={{ '--done': c.done } as React.CSSProperties}
                   >
-                    {Array.from({ length: c.done }, (_, i) => (
-                      <span key={i} className={n.done} />
-                    ))}
-                    <span className={n.at}>
+                    <span className={n.top}>
                       <span className={n.headline}>{c.headline}</span>
                       <span className={n.gate}>{c.gateLabel}</span>
+                    </span>
+                    {/*
+                      Five equal segments, three states. Behind it is filled and quiet, the gate
+                      it is AT is full strength, ahead is an empty well. Position is readable
+                      without counting anything.
+                    */}
+                    <span className={n.bar}>
+                      {GATE_ORDER.map((g) => (
+                        <span
+                          key={g}
+                          className={`${n.seg} ${
+                            g < c.at ? n.segDone : g === c.at ? n.segAt : ''
+                          }`}
+                        />
+                      ))}
                     </span>
                   </Link>
                 ))}

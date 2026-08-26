@@ -38,6 +38,22 @@ The template is a property of the PLAN, not of each slide: picked once for the s
 
 Secondary benefit worth keeping in view: templates that need no image prompt per slide **shrink what April has to write**, which is the payload that has been making the 10-slide call fragile.
 
+**3b. A HERO IMAGE that sets the style for the rest.** Marrs: *"we need a 'Hero Image' as an option, so a main hero image gets created that can then set the style for the rest of the images."*
+
+**Half the plumbing exists.** The render route already takes a `referenceUrl` and passes it to Soul as `image_reference`, and `ImageScreen` already sends the first approved slide's background as that reference, so later slides are generated against the first one. What is missing is making it a deliberate STEP rather than a side effect of whichever slide happened to be approved first:
+
+- Generate the hero on its own, before the set, and bless it explicitly.
+- Pin it as the reference for every subsequent generation rather than inferring it from approval order.
+- Let it also be slide 1's background, since that is usually what it is.
+
+This belongs with the template picker (item 3), because "pick a template, then make the hero, then make the rest" is one flow and the hero is what makes a template's look concrete before ten generations are spent.
+
+**3c. The image picker on a text post should show THIS narrative's images first.** Marrs: *"on the text options within a narrative stream, the image selection should be a contextual, narrative specific image pool. As the images would be created for this narrative, then we can have a hidden section at the bottom which with a click you can open the media library."*
+
+Right and it will get worse fast: `MediaPicker` lists the whole stream library, and every approved slide registers into it, so ten slides per carousel per narrative floods it within a week. The narrative's own images are the ones you want on its text posts.
+
+`MediaAsset` has no narrative field today (`media_id`, `stream`, `owner`, `url`, `kind`, `label`, `source`, timestamps), and the only link is that slide approval labels an asset `"<piece title> slide N"`, which is a string match and not a link. So the build is: add an optional `narrative_ref` to `MediaAsset`, stamp it when a generated image is registered, and have `MediaPicker` show that narrative's pool by default with the full library folded behind one click at the bottom. Existing assets have no ref and belong in the library section, which is the correct place for them.
+
 **4. Refine what a carousel IS, across both platforms.** Marrs: *"whatever we have to do here has to be translated across LinkedIn and Instagram... those images would go into the LinkedIn carousel post and the Instagram carousel post."*
 
 Current honest state, now visible on the Gate 4 card: the carousel says **Instagram, and only Instagram**, because the LinkedIn document post is blocked on two things (no PDF builder in the console, and Metricool document scheduling unverified). The slides are the shared asset; the container differs per platform. Once slides exist, turning them into a PDF is the next question.

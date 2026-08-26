@@ -535,6 +535,19 @@ export function NarrativeGates({
                 <div className={g.kitCard}>
                   {items.map((k) => (
                     <div key={k.key} className={g.row}>
+                      {/*
+                        WHAT IT IS AND WHY, on hover (D50). Both lines already existed on the
+                        output and neither reached a screen. Shown on :hover for a mouse and on
+                        :focus-within for touch and keyboard, since tapping the row focuses its
+                        checkbox: one mechanism, three input methods, no extra control on a
+                        screen whose whole point is that it holds one decision.
+                      */}
+                      <span className={g.tip} role="note">
+                        <b>{k.label}</b>
+                        <span>{k.what}</span>
+                        {k.why ? <span className={g.tipWhy}>{k.why}</span> : null}
+                        <span className={g.tipMakes}>Makes: {k.makes}</span>
+                      </span>
                       <input
                         type="checkbox"
                         id={k.key}
