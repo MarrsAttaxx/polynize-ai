@@ -23,11 +23,13 @@ That reordering matters more than it looks. It means the carousel work in progre
 
 ## Blocking a full walkthrough
 
-**1b. Generated images in the media library are saved as vendor urls, so they will 404 (found while building D56).**
+**1b. Generated images in the media library were saved as vendor urls, so they would have 404'd. FIXED (D60).**
 
-`/media/add` stores a url and nothing else, by design (D2, amended 2026-07-14): a media asset is a reference to a file hosted somewhere else. That is right for a Box link and wrong for a Higgsfield generation, whose url is temporary. `MediaGenerate` passes the raw generation url straight to `/add`, so every image generated in the library is an entry that works today and breaks later.
+`/media/add` stores a url and nothing else, by design (D2, amended 2026-07-14): a media asset is a reference to a file hosted somewhere else. That is right for a Box link and wrong for a Higgsfield generation, whose url is temporary.
 
-The hero path does not have this problem any more: D56 added `mirrorImageToHost`, which copies the bytes into our bucket before anything is registered. The fix for the library is to call the same helper on the way into `/add` when the url is a generation rather than a paste. Small, and it should happen before anyone relies on a generated library image.
+**The fix went in `/media/generate`, not in `/add`.** Auditing the four routes that hand a url to the library showed exactly one hole: `/edit` already returned `hostGeneratedImage`'s url and `/overlay` already returned `renderAndHostOverlay`'s, both ours, and `/generate` was the only one still handing back a raw vendor url. So `/add` keeps its contract untouched and needs no flag from a client that might forget to send one, and all three generation routes now agree.
+
+**Anything registered before D60 is still a temporary url.** Nothing scans for or repairs them: a library entry that has stopped loading has to be regenerated. Worth knowing before someone hunts for a bug in the picker.
 
 **1. No file upload.** A media asset is a URL reference only, so a recorded video has to go to Box by hand, its Direct Link copied, and pasted into the stream media library on a different screen before it can be attached to a piece. Nothing on the Script screen, the studio row, or the Recorded button says any of this. This is the last hard gap between Gate 4 and a published post.
 

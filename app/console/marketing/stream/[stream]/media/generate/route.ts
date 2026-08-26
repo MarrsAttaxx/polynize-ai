@@ -21,6 +21,7 @@ import {
 } from '@/lib/marketing/higgsfield';
 import { complete } from '@/lib/llm';
 import { stripEmDashes } from '@/lib/em-dash';
+import { mirrorImageToHost } from '@/lib/marketing/image-host';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -157,5 +158,49 @@ export async function POST(
       { status: res.status === 'nsfw' ? 400 : 502 }
     );
   }
-  return NextResponse.json({ ok: true, urls: res.urls, refinedPrompt, status: res.status });
+
+  /**
+   * INTO OUR BUCKET BEFORE THEY LEAVE THIS ROUTE, or the library fills with links that work
+   * today and 404 later.
+   *
+   * A Higgsfield url is temporary, and `/media/add` stores a url and nothing else by design
+   * (D2, amended 2026-07-14): an asset is a reference to a file hosted somewhere. That is right
+   * for a Box link and wrong for a generation, and this route was the only one still handing
+   * back a raw vendor url. Its two siblings already got this right: `/edit` returns
+   * hostGeneratedImage's url and `/overlay` returns renderAndHostOverlay's, both of them ours.
+   * So the fix belongs here rather than in `/add`, which keeps its contract intact and needs no
+   * flag from a client that might forget to send one.
+   *
+   * ALL AT ONCE, and a failure loses one image rather than the batch. They are independent, and
+   * sequentially this would add four round trips to a wait he has already sat through.
+   */
+  const origin = new URL(req.url).origin;
+  const hosted = await Promise.all(
+    res.urls.map(async (u) => {
+      const out = await mirrorImageToHost(u, { stream, requestOrigin: origin });
+      if ('error' in out) {
+        console.error(`[media.generate] could not store an image: ${out.error}`);
+        return null;
+      }
+      return out.url;
+    })
+  );
+  const urls = hosted.filter((u): u is string => Boolean(u));
+
+  /**
+   * Naming WHICH half broke. The images exist and the storing is what failed, and a message
+   * that only says generation failed sends the next person reading into the model code.
+   */
+  if (urls.length === 0) {
+    return NextResponse.json(
+      {
+        error: 'The images were generated but none of them could be stored. Try again.',
+        refinedPrompt,
+        status: res.status,
+      },
+      { status: 502 }
+    );
+  }
+
+  return NextResponse.json({ ok: true, urls, refinedPrompt, status: res.status });
 }

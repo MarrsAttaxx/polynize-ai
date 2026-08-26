@@ -1424,3 +1424,32 @@ Text plus image is his stated priority 1, and it is the flow where the fold deci
 
 23 new assertions, 301 total.
 
+---
+
+## D60: A generation goes into our bucket before it is registered anywhere
+
+**Adopted 26 August 2026.** Found while building D56, fixed overnight with his approval.
+
+Images generated in the media library were being registered as **raw Higgsfield urls**. Those expire. Every one of them was a library entry that worked the day it was made and would 404 later, with nothing to say why.
+
+### Why the fix is in `/generate` and not in `/add`
+
+The instinct is to fix it at the door, in `/media/add`, since that is where an asset becomes real. That would be wrong. `/add` storing a url and nothing else is a deliberate decision (D2, amended 2026-07-14): an asset is a **reference** to a file hosted somewhere, which is exactly right for the Box links this console was built to accept.
+
+Auditing all four routes that hand a url to the library found exactly one hole:
+
+| Route | What it returned |
+|---|---|
+| `/media/edit` | `hostGeneratedImage`'s url, ours |
+| `/media/overlay` | `renderAndHostOverlay`'s url, ours |
+| `/media/generate` | **a raw vendor url** |
+| hand-pasted in the library | a reference, by design |
+
+So one route was out of step with its own two siblings, and fixing it there keeps `/add`'s contract intact and needs no `mirror: true` flag from a client that might forget to send one. A rule enforced by the route that creates the file cannot be forgotten by a caller.
+
+Mirrored through `mirrorImageToHost`, the helper D56 added: byte for byte, in parallel, and a failure loses one image out of a batch rather than the batch. When every copy fails the error says so, because the images do exist and the storing is what broke, and a message that only says generation failed sends the next reader into the model code.
+
+### What this does not do
+
+**Nothing repairs the entries already saved.** Anything registered before today is still a temporary url, and there is no scan or migration. A library image that has stopped loading has to be regenerated, and that is recorded in the todo so nobody goes looking for a bug in the picker.
+
