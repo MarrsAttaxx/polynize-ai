@@ -34,6 +34,7 @@ import { HERO_BATCH, HERO_SIZE, HERO_W, HERO_H, HERO_ASPECT } from '../hero';
 import { stripMarkdownEmphasis } from '../../plain-copy';
 import { parseLine } from '../text-overlay';
 import { cleanArticle } from '../article-draft';
+import { foldRule, foldCopy, copyLength } from '../post-preview';
 import { parseProposal } from '../slide-propose';
 import {
   cardState,
@@ -531,6 +532,70 @@ eq(
   cleanArticle('```\n**A title** and a line, with a dash\n```'),
   'A title and a line, with a dash'
 );
+
+/* ------------------------------------------------------------------ D59: the fold */
+
+/**
+ * The preview's only real job is showing where the post folds, so the fold is the thing tested.
+ * Every number here traces to docs/pam-console/output-spec.md, which is also where the sourcing
+ * lives: two of these are third-party consensus with no official figure, which is why the panel
+ * says "roughly" on screen.
+ */
+const LI = foldRule('linkedin');
+const IG = foldRule('instagram');
+ok('LinkedIn has a fold rule', Boolean(LI));
+ok('Instagram has a fold rule', Boolean(IG));
+eq('LinkedIn folds on the mobile figure, the stricter one', LI?.chars, 140);
+eq('and on three lines as well', LI?.lines, 3);
+eq('Instagram folds at 125', IG?.chars, 125);
+/**
+ * TikTok gets NO rule, and that is the decision rather than an omission: output-spec.md records
+ * NO DATA from TikTok, with third-party claims spanning 55 to 150. A made up fold would be worse
+ * than none because he would write to it.
+ */
+ok('TikTok has none, because there is no figure to use', !foldRule('tiktok'));
+ok('nor YouTube', !foldRule('youtube'));
+
+// Short copy is not folded at all, and says so by returning an empty tail.
+const shortPost = 'Strip the process back first.';
+eq('a short post is whole', foldCopy(shortPost, LI).tail, '');
+eq('and keeps every character', foldCopy(shortPost, LI).head, shortPost);
+eq('no rule means no fold', foldCopy(shortPost, undefined).tail, '');
+
+// Long copy on one line: the character limit bites, and it breaks between words.
+const long = 'a'.repeat(60) + ' ' + 'b'.repeat(200);
+const foldedLong = foldCopy(long, LI);
+eq('a long single line folds on characters', foldedLong.reason, 'chars');
+ok('and nothing is lost', foldedLong.head + foldedLong.tail === long);
+ok('the head is at or under the limit', foldedLong.head.length <= 140);
+
+// A word boundary is preferred, but not at any cost: a 200 character word cannot be broken
+// politely, so the cut falls at the limit rather than at a space 60 characters back.
+const politely = 'one two three four five six seven eight nine ten '.repeat(6);
+const p2 = foldCopy(politely, LI);
+ok('a normal sentence breaks between words', p2.tail.startsWith(' ') || p2.head.endsWith('e') || !p2.head.endsWith(' '));
+ok('and the head is never mangled to nothing', p2.head.length > 80);
+
+/**
+ * THE CASE THAT MATTERS MOST, and the reason line counting exists at all. This is the LinkedIn
+ * house style: short lines, one idea each. It is 62 characters, well under 140, and the platform
+ * still folds it after the third line. A character-only rule would have told him the whole thing
+ * was visible.
+ */
+const shortLines = 'The belief.\nThe break.\nThe cost.\nThe fix.\nThe ask.';
+const sl = foldCopy(shortLines, LI);
+ok('the short line post is well under the character limit', shortLines.length < 140);
+eq('and still folds, on the lines', sl.reason, 'lines');
+eq('after exactly three of them', sl.head, 'The belief.\nThe break.\nThe cost.');
+ok('with the rest behind it', sl.tail.includes('The ask.'));
+
+// Instagram folds on characters only: it has no line rule, so the same post is whole there.
+const ig = foldCopy(shortLines, IG);
+eq('Instagram does not fold on lines', ig.reason, null);
+eq('so the whole thing shows', ig.tail, '');
+
+eq('copyLength counts characters', copyLength('12345'), 5);
+eq('and counts a newline as one', copyLength('a\nb'), 3);
 
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

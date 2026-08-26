@@ -1,0 +1,249 @@
+/**
+ * THE PLATFORM PREVIEW (D59). The post's shape on the platform, not a pixel copy of its skin.
+ *
+ * It sits in the third column of the editor, on the right, because that is where Marrs asked for
+ * it: "if I'm editing on the left, I can see on the right what it's going to look like."
+ *
+ * The card is deliberately LIGHT while the console is dark. Both feeds are light surfaces, and
+ * previewing light-on-dark would misrepresent the one thing the panel is for: how much of the
+ * hook a reader actually sees, and how it reads against the platform's own contrast.
+ */
+
+.wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.eyebrow {
+  font-family: var(--font-jetbrains-mono), monospace;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-3, #6f6a64);
+}
+
+.tabs {
+  display: flex;
+  gap: 4px;
+  margin-left: auto;
+}
+.tab {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border-radius: 7px;
+  cursor: pointer;
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.12));
+  background: var(--surface-2, #23232f);
+  color: var(--text-2);
+  opacity: 0.55;
+}
+.tab:hover {
+  opacity: 0.85;
+}
+.tabOn {
+  opacity: 1;
+  border-color: var(--mint, #69fccb);
+}
+
+/* ------------------------------------------------------------------ the card */
+
+.card {
+  /* The platforms are light surfaces and so is this, on purpose: see the note at the top. */
+  background: #ffffff;
+  color: #1a1a1a;
+  border-radius: 10px;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  overflow: hidden;
+}
+.ig {
+  /* Instagram's card is the picture, so the frame gets out of the way of it. */
+  padding: 12px 0 10px;
+}
+
+.author {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+.ig .author {
+  padding: 0 12px;
+}
+.avatar {
+  width: 34px;
+  height: 34px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  overflow: hidden;
+  background: #e8e5e1;
+  display: grid;
+  place-items: center;
+}
+.avatarImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+/* No photo on a brand stream: the mint mark at half the circle, matching the engine cards. */
+.avatarMark {
+  width: 17px;
+  height: 17px;
+  border-radius: 50%;
+  background: var(--mint, #69fccb);
+}
+.authorText {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.name {
+  font-size: 13.5px;
+  font-weight: 600;
+  line-height: 1.2;
+  color: #1a1a1a;
+}
+.meta {
+  font-size: 11.5px;
+  color: #5f5f5f;
+  line-height: 1.3;
+}
+
+/* ------------------------------------------------------------------ the copy and the fold */
+
+.copy {
+  margin: 0;
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: #1a1a1a;
+  /* Newlines are load bearing here: on LinkedIn they are what closes the fold early. */
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.ig .copy {
+  padding: 0 12px;
+  font-size: 13px;
+}
+
+/**
+ * BEHIND THE FOLD. Shown rather than removed, faded almost out, so the shape of what is being
+ * hidden is visible: cutting it entirely makes a long post look like a short one.
+ */
+.folded {
+  opacity: 0.26;
+}
+.more {
+  color: #5f5f5f;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.empty {
+  margin: 0;
+  font-size: 13px;
+  color: #8a8a8a;
+  font-style: italic;
+}
+
+/* ------------------------------------------------------------------ the pictures */
+
+.shots {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 2px;
+  position: relative;
+  /* Full bleed inside the card, which is how both feeds show a single image. */
+  margin: 0 -14px;
+}
+.ig .shots {
+  margin: 0;
+}
+.shotsMany {
+  grid-template-columns: 1fr 1fr;
+}
+.shot {
+  display: block;
+  width: 100%;
+  max-height: 320px;
+  object-fit: cover;
+  background: #efece8;
+}
+/* Instagram crops the feed to one shape and the first image decides it. 4:5 is the tallest it
+   allows, which is what the console generates. */
+.shotIg {
+  aspect-ratio: 4 / 5;
+  max-height: none;
+}
+.shotMore {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.62);
+  color: #fff;
+  font-family: var(--font-jetbrains-mono), monospace;
+  font-size: 10px;
+}
+
+/* ------------------------------------------------------------------ the furniture */
+
+.bar {
+  display: flex;
+  gap: 14px;
+  padding-top: 9px;
+  border-top: 1px solid rgba(0, 0, 0, 0.09);
+  font-size: 11.5px;
+  color: #5f5f5f;
+}
+.ig .bar {
+  padding: 9px 12px 0;
+  gap: 12px;
+  font-size: 15px;
+}
+
+/* ------------------------------------------------------------------ the numbers */
+
+.facts {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.fact {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--text-2);
+}
+.factNum {
+  font-family: var(--font-jetbrains-mono), monospace;
+  color: var(--mint, #69fccb);
+  font-weight: 400;
+}
+.note {
+  margin: 0;
+  font-family: var(--font-jetbrains-mono), monospace;
+  font-size: 9.5px;
+  line-height: 1.5;
+  color: var(--text-3, #6f6a64);
+}
+
+.none {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--text-3, #6f6a64);
+}

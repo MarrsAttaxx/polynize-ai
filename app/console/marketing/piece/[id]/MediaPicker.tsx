@@ -8,7 +8,7 @@
  * these are references, resolved to public URLs at publish time.
  */
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import type { MediaAsset, MediaKind } from '@/lib/marketing/media-store';
 import s from './media-picker.module.css';
@@ -20,6 +20,7 @@ export function MediaPicker({
   selected,
   onChange,
   disabled,
+  onAssets,
 }: {
   pieceId: string;
   stream: string;
@@ -31,9 +32,20 @@ export function MediaPicker({
   selected: string[];
   onChange: (ids: string[]) => void;
   disabled?: boolean;
+  /**
+   * The library, handed up as it arrives, so the platform preview can turn the selected ids into
+   * urls without a second fetch of the same list (D59). The picker already has them.
+   */
+  onAssets?: (assets: MediaAsset[]) => void;
 }) {
   const [assets, setAssets] = useState<MediaAsset[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  /**
+   * Held in a ref, not in the effect's deps: a parent that passes an inline arrow would otherwise
+   * change identity on every render and refetch the whole library each time.
+   */
+  const onAssetsRef = useRef(onAssets);
+  onAssetsRef.current = onAssets;
 
   useEffect(() => {
     let cancelled = false;
@@ -41,7 +53,10 @@ export function MediaPicker({
     fetch(`${base}/media?stream=${encodeURIComponent(stream)}`, { cache: 'no-store' })
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
       .then((d) => {
-        if (!cancelled) setAssets((d.media ?? []) as MediaAsset[]);
+        if (cancelled) return;
+        const list = (d.media ?? []) as MediaAsset[];
+        setAssets(list);
+        onAssetsRef.current?.(list);
       })
       .catch(() => {
         if (!cancelled) {

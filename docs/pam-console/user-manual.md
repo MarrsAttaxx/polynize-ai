@@ -194,6 +194,22 @@ From a concept's development hub, click **Create content**.
 
 ---
 
+### 8b2. The platform preview 🧪 (D59)
+
+The text editor is three columns now: **the chat on the far left, what you are editing in the middle, what it will look like on the right.**
+
+The preview is not decoration. It shows **where the post folds**, which is the only thing on that screen you cannot see by reading your own draft:
+
+- **LinkedIn** folds at about 140 characters **or three lines, whichever comes first.** That second one catches out anything written in the house style: five short lines can be 120 characters and still be cut after the third. The panel tells you which limit bit.
+- **Instagram** truncates at about 125 characters, and shows the picture before the caption, which is how that feed actually reads.
+- **TikTok** gets no fold line, because nobody publishes the figure and a made-up one is worse than none.
+
+The card is light because both feeds are light. Everything past the fold is faded rather than hidden, so you can still see how much there is. If a piece serves more than one platform, the icons top right switch between them.
+
+*Worth knowing:* this is ours, not Metricool's. Their preview is a feature of their web app; their API has 527 endpoints and none of them renders a post. Ours works before anything is connected, and it renders the same fields the publisher sends.
+
+At narrower windows the three columns become two (editor and preview) with the chat underneath, and on a phone it stacks: write, check it, then talk about it.
+
 ### 8c. The slide run (image cards) 🧪 (D47)
 
 The carousel and the quote card open here. Same screen, and it already knows how many slides it needs: ten for a carousel, one for a card.

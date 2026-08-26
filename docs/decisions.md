@@ -1363,3 +1363,64 @@ D48 removed three store reads from this page, one of which was every saved piece
 
 It is not a reversal of that reasoning: it starts before the existing parallel block so it overlaps rather than adding a round trip, and it degrades on its own. If the piece list fails, the bars render exactly as they did and only the dots go missing.
 
+---
+
+## D59: What it looks like on the platform, on the right, while you type
+
+**Adopted 26 August 2026.** Marrs: *"What I would like here is a preview of what it would look like on the actual platform. I know that Metricool offers this in the platform. Down the right-hand side, when you change stuff, you can actually see what it's going to look like at the end... as an individual, I'd want to see how that's going to look on the actual platform. It probably should be in the place where I'm editing the piece, so if I'm editing on the left, I can see on the right what it's going to look like."*
+
+And on the layout: *"We could possibly move the context chat down to the bottom left, like most AI platforms now, like Replit... I would say move the context chat to the far left side. You have what you're editing in the middle, and then what it looks like on the right. I think that's a better layout."*
+
+### The Metricool question, answered: no, and it does not matter
+
+He asked whether we could pull it from them. **We cannot.** Their preview is a feature of their own web app, not something the API renders. Their OpenAPI spec at `app.metricool.com/api/swagger.json` has 527 paths covering scheduling, analytics, timelines and best times, and nothing that returns a rendered post. No social API offers this, because a preview is a view and not data.
+
+That is the better answer anyway. Ours can show the fold against figures **this console already holds sources for**, it works before anything is connected to Metricool at all, and it cannot drift out of sync with what we are about to publish, because it renders the same fields the publisher sends.
+
+### The fold is the whole point
+
+A preview that only restates the words is a second textarea. The one fact it carries that nothing else on the screen does is **where the post folds**, because everything past the "see more" is read only by people who already decided to read on.
+
+Every number traces to `docs/pam-console/output-spec.md`, and the sourcing goes with it:
+
+| | Fold | Source |
+|---|---|---|
+| LinkedIn | 140 characters **or three lines**, whichever comes first | Third-party consensus, no official figure |
+| Instagram | 125 characters | Third-party, matching Meta's own ads guide |
+| TikTok | **none drawn** | The spec says NO DATA, claims span 55 to 150 |
+
+**The line rule is the part that earns its keep.** A post written in the LinkedIn house style, short lines one idea each, can be 120 characters and still fold after the third line. A character-only preview would have told him the whole thing was visible. The panel says which limit bit: *"120 characters before the fold, cut by the line breaks rather than the length."*
+
+**TikTok gets no fold line, and that is the decision rather than an omission.** An invented figure would be worse than none, because he would write to it.
+
+The stricter of LinkedIn's two figures is the one previewed. A hook that survives the mobile fold survives desktop; the reverse is not true, and the panel says so underneath: *"Desktop shows about 210 characters."*
+
+### Deliberately not a pixel copy
+
+It is the platform's SHAPE: who posted, the copy with its fold, the image at its real aspect, the furniture underneath. Chasing LinkedIn's exact type stack would go stale the next time they reskin and would tell him nothing this does not.
+
+Two things it does get exactly right, because they change the answer:
+
+- **The card is light while the console is dark.** Both feeds are light surfaces, and previewing light-on-dark would misrepresent the one thing the panel is for.
+- **Instagram is image led**: the picture comes first and the caption sits under it, because that is the actual difference in how the two feeds read. Behind the fold is faded almost out rather than cut, so the shape of what is being hidden stays visible.
+
+The images resolve **by walking the selected ids**, not by filtering the library, because `publish.ts` resolves ids in array order: filtering would show him a different first image than the one that ships.
+
+### Three columns, and DOM order is not column order
+
+Chat far left, the editor in the middle, the preview on the right, exactly as he described.
+
+The document order is **editor, preview, chat**, which is the right order on a phone and the right tab order anywhere: you write, you check it, then you talk about it. Only the wide layout moves the chat left, with `order`, because the middle column is where your eyes should land when three are open.
+
+Three breakpoints rather than two, because three columns under about 1240px are all too narrow to be worth having:
+
+- **Under 1040**: one column, stacked in document order.
+- **1040 to 1239**: two columns, and document order decides which two: the editor and the **preview**, with the chat wrapping underneath. The preview is the panel that has to stay beside what you are typing; a docked conversation reads perfectly well below it.
+- **1240 and up**: the three columns.
+
+### Only the text screen, on purpose
+
+Text plus image is his stated priority 1, and it is the flow where the fold decides whether the post works. The slide run already shows the finished slide full size, which IS its preview, and a video piece has nothing to preview until it is cut. `workspace3` is applied on one screen; every other screen keeps the two-column rule untouched.
+
+23 new assertions, 301 total.
+

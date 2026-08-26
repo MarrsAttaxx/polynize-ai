@@ -11,12 +11,14 @@
  * PUT each time (script stays ''), matching the /state validated write path.
  */
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { BackLink } from '@/app/console/marketing/_components/BackLink';
 import { ExemplarToggle } from './ExemplarToggle';
 import { PieceDeleteButton } from './PieceDeleteButton';
 import { MediaPicker } from './MediaPicker';
+import { PostPreview } from './PostPreview';
+import type { MediaAsset } from '@/lib/marketing/media-store';
 import { ChatPanel } from './ChatPanel';
 import type { MarketingPiece } from '@/lib/marketing/piece-store';
 import s from './text.module.css';
@@ -49,6 +51,25 @@ export function TextOutputScreen({
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [media, setMedia] = useState<string[]>(initial.media ?? []);
+  /**
+   * THE PREVIEW (D59). Which platform is being previewed, and the library the selected ids
+   * resolve against. The library is handed up by the picker below rather than fetched again.
+   */
+  const [library, setLibrary] = useState<MediaAsset[]>([]);
+  const previewNets = initial.platforms?.length ? initial.platforms : ['linkedin'];
+  const [previewNet, setPreviewNet] = useState<string>(previewNets[0]);
+  /**
+   * IN THE ORDER THEY WILL POST. Resolved by walking the selected ids, not by filtering the
+   * library, because the library is in its own order and publish.ts resolves ids in array
+   * order: filtering would show him a different first image than the one that ships.
+   */
+  const previewImages = useMemo(() => {
+    const byId = new Map(library.map((a) => [a.media_id, a]));
+    return media
+      .map((id) => byId.get(id))
+      .filter((a): a is MediaAsset => Boolean(a) && a!.kind === 'image')
+      .map((a) => a.url);
+  }, [media, library]);
 
   const channelCount = initial.platforms?.length ?? 0;
 
@@ -277,7 +298,8 @@ export function TextOutputScreen({
         </div>
       ) : null}
 
-      <div className={c.workspace}>
+      {/* Three columns on this screen only: it is the one with a preview to put in the third. */}
+      <div className={`${c.workspace} ${c.workspace3}`}>
         <div className={s.editorCol}>
           {conceptBody ? (
             /* The source, readable where the writing happens. Same reason as the script
@@ -369,6 +391,7 @@ export function TextOutputScreen({
               latestMedia.current = ids;
               flush();
             }}
+            onAssets={setLibrary}
           />
           <p className={s.hint}>
             {error ? (
@@ -378,6 +401,19 @@ export function TextOutputScreen({
             )}
           </p>
         </div>
+
+        {/* WHAT IT LOOKS LIKE ON THE PLATFORM (D59). Marrs: "if I'm editing on the left, I can
+            see on the right what it's going to look like." Between the editor and the chat in
+            the DOM so a phone reads write, then see it, then talk about it; the desktop grid
+            puts the chat on the far left and this on the far right. */}
+        <PostPreview
+          network={previewNet}
+          copy={body}
+          imageUrls={previewImages}
+          stream={initial.stream}
+          networks={previewNets}
+          onPickNetwork={setPreviewNet}
+        />
 
         <ChatPanel
           content={body}

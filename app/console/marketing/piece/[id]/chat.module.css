@@ -144,8 +144,56 @@
   grid-template-columns: 1fr;
   gap: 20px;
 }
+/**
+ * TWO COLUMNS: the editor and the chat, which is every screen but the text one.
+ */
 @media (min-width: 1040px) {
   .workspace {
+    grid-template-columns: minmax(0, 1.6fr) minmax(320px, 1fr);
+    align-items: start;
+  }
+}
+
+/**
+ * THREE COLUMNS (D59). Chat on the far left, what you are editing in the middle, what it will
+ * look like on the right.
+ *
+ * Marrs: "We could possibly move the context chat down to the bottom left, like most AI platforms
+ * now, like Replit... I would say move the context chat to the far left side. You have what you're
+ * editing in the middle, and then what it looks like on the right. I think that's a better layout."
+ *
+ * DOM ORDER IS NOT COLUMN ORDER HERE, on purpose. The document reads editor, preview, chat, which
+ * is the right order on a phone and the right tab order anywhere: you write, you check it, then
+ * you talk about it. Only the wide layout moves the chat left, with `order`, because the middle
+ * column is the one your eyes should land on when three are open at once.
+ *
+ * Only applied where a preview exists. Two-column screens keep the rule above untouched.
+ */
+@media (min-width: 1240px) {
+  .workspace3 {
+    grid-template-columns: minmax(280px, 0.85fr) minmax(0, 1.5fr) minmax(300px, 1fr);
+    align-items: start;
+  }
+  .workspace3 > :nth-child(1) {
+    order: 2;
+  }
+  .workspace3 > :nth-child(2) {
+    order: 3;
+  }
+  .workspace3 > :nth-child(3) {
+    order: 1;
+  }
+}
+
+/**
+ * Between 1040 and 1240 three columns are all too narrow to be worth having, so the middle width
+ * keeps two. Which two is decided by document order, and document order was chosen for exactly
+ * this: the editor and the PREVIEW take the two columns, and the chat wraps underneath. The
+ * preview is the panel that has to stay beside what you are typing; a docked conversation reads
+ * perfectly well below it.
+ */
+@media (min-width: 1040px) and (max-width: 1239px) {
+  .workspace3 {
     grid-template-columns: minmax(0, 1.6fr) minmax(320px, 1fr);
     align-items: start;
   }
