@@ -82,7 +82,20 @@ At Gate 5 the hand-posts are marked ✋ in the week grid and the button says exa
 
 *How it works:* the mode is stamped onto each calendar entry when the wave is **planned**, so changing a lane's setting later never rewrites how an already-planned wave goes out. Entries planned before this existed are treated as scheduled, which is how they were already behaving.
 
-Below each board sits that stream's **setup** (brand voice, content templates, media library) and, further down, the older sections: core concepts, in-development pieces and podcasts. Concepts are no longer the way in, since the narrative's article replaced them as the source of truth at Gate 2, so they are demoted rather than removed.
+A stream's page is two things now (D48): **Stream setup** at the top (brand voice, content templates, media library), and under it **the narratives as lanes**.
+
+Each narrative is one row on a shared gate scale. A gate it has already passed is a small filled square; the gate it is **at** holds the title. So how far right a headline sits is how far along it is, and the whole column reads as a funnel:
+
+```
+[■][■][■][■][■] The 40 hour week is a rounding error      SHIPPED
+[■][■][■][■] Strip the AI out first                  GATE 5 · SHIP
+[■][■] Emergent AI                                    GATE 3 · KIT
+Nobody wants another dashboard                       GATE 1 · IDEA
+```
+
+**Most developed at the top.** A fresh idea has nothing behind it, so it starts hard left at the bottom and climbs as it moves. That is also where ideas live now: a gate 1 narrative **is** an idea, still visible, with no separate list to keep.
+
+Core concepts, in-development pieces and podcasts are no longer on this page. Those screens still exist and nothing was deleted, they are just not the way in any more.
 
 `/console/marketing/streams` redirects to the front page, because the front page is that screen again.
 

@@ -1032,3 +1032,47 @@ The image screen is a client component and imported the slide module, which impo
 - **A calendar entry still has no output identity**, so the slot is always right and the copy can still be wrong.
 - **Two competing routes into the calendar**: the wave, and "Prepare posts" on the text screen, which creates dateless entries the wave then has to repair.
 
+---
+
+## D48: A stream's page is setup, then a funnel of gate lanes
+
+**Adopted 25 August 2026.** Marrs, after seeing the board: *"we need to get rid of the Core Concepts section, the In-Development section, and the Podcasts section from the Content Stream Dashboards. That's the old way of thinking."*
+
+### The three sections are gone from this page, and nothing is deleted
+
+Core concepts, In development and Podcasts no longer appear on a stream's page. Every one of those screens still exists, is reachable by url, and its data is untouched. What changed is that the stream page stops leading with them, and stops paying for **three full store reads** on the way to first byte to render sections nobody uses.
+
+The narrative's article replaced the concept as the source of truth at Gate 2 (D40), so a concept has not been the way in for some time. This is the layout catching up with that.
+
+**Stream setup moved above the narratives**, his call.
+
+### The lanes, which are the actual idea
+
+> *"I like this kind of idea of them being lanes, and each idea is going through gates. If there's a concept that's a gate 3, there are three squares: two of them are filled in, and the third one says Emergent AI. It's all in line, so we can see over time which narratives are further down into the funnel."*
+
+One row per narrative on a shared scale. A gate already passed is a small filled square; the gate it is **at** is the title itself, taking the rest of the row. So the horizontal position of a headline IS its progress, and a column of rows reads as a funnel without a legend:
+
+```
+[■][■][■][■][■] The 40 hour week is a rounding error      SHIPPED
+[■][■][■][■] Strip the AI out first                  GATE 5 · SHIP
+[■][■] Emergent AI                                    GATE 3 · KIT
+[■] Why your ops team is the bottleneck            GATE 2 · ARTICLE
+Nobody wants another dashboard                       GATE 1 · IDEA
+```
+
+**Sorted most advanced first**, his call, with the most recently touched breaking ties.
+
+### This is what absorbs the idea list
+
+> *"This also allows us to integrate the ideas concept in there. If we're writing an idea and it's only a gate one, it goes to the bottom. It's still an idea, and still there."*
+
+A gate 1 narrative has nothing behind it, so it starts hard left at the bottom of the funnel. It is an idea, it is visibly still there, and it needs no separate section. When it moves it climbs on its own.
+
+**The idea capture box survives, moved rather than removed.** It lived inside the Core concepts panel purely by accident of layout, and it is the only place in the console an idea can be caught, so removing that panel would have removed idea capture entirely. It now sits under the lanes.
+
+### Two things worth recording about the build
+
+**No scale along the top, and that was deliberate after trying it.** A five-column header implies the titles line up with it. They do not: a completed gate is a fixed-width square so the rows stay readable at 375px, which means a gate 3 title starts two square-widths in rather than two fifths of the page in. The header promised an alignment the layout does not have, so it went, and each row names its own gate on the right instead.
+
+**The CSS module checker earned its keep.** The first version imported `../lanes.module.css` from a file sitting beside it, so every class resolved to `undefined` and the lanes would have painted unstyled with no error anywhere. `scripts/check-css-modules.mjs` caught it before it shipped. Run it.
+

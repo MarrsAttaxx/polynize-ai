@@ -1,22 +1,17 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { getCurrentUser } from '@/lib/console-auth';
-import { listSavedPieces, type MarketingPiece } from '@/lib/marketing/piece-store';
-import { listConcepts, type ConceptDoc } from '@/lib/marketing/concept-store';
 import { listIdeas, type Idea } from '@/lib/marketing/idea-store';
 import { Ideas } from './Ideas';
-import { isStreamId, streamLabel, DEFAULT_STREAM } from '@/lib/marketing/streams';
+import { isStreamId, streamLabel } from '@/lib/marketing/streams';
 import { getBrandVoiceForStream } from '@/lib/marketing/brand-voice-store';
 import { listTemplates } from '@/lib/marketing/template-store';
 import { listMediaForStream } from '@/lib/marketing/media-store';
-import { listEpisodes } from '@/lib/marketing/podcast-store';
-import { formatById } from '@/lib/marketing/output-plan';
-import { groupKeyOf } from '@/lib/marketing/dev-group';
 import { BackLink } from '@/app/console/marketing/_components/BackLink';
 import { listNarrativeCards, GATE_LABELS, type NarrativeCard } from '@/lib/marketing/narrative-store';
 import s from '../../../_components/client-card.module.css';
 import l from '../../../_components/launcher.module.css';
-import b from '../../board.module.css';
+import n from './lanes.module.css';
 
 export const dynamic = 'force-dynamic';
 
@@ -29,11 +24,14 @@ export const dynamic = 'force-dynamic';
  * people's work into one list; here it is scoped to one of them, which is the level at which the
  * question "what am I working on" actually has an answer.
  *
- * Core concepts and In development are kept and demoted rather than removed. Marrs: "don't worry
- * about the core concept." The narrative's own article replaced the concept as the source of
- * truth at Gate 2 (D40), so concepts are no longer the way in, but there are real imported
- * concepts behind that section and deleting a screen with data behind it is not something to do
- * on an inference. Say the word and it goes.
+ * D48 removed Core concepts, In development and Podcasts from this page on his word: "that's the
+ * old way of thinking." The narrative's own article replaced the concept as the source of truth at
+ * Gate 2 (D40), so none of the three is the way in any more. NOTHING WAS DELETED: the concept
+ * pages, the development hub and the podcast screens all still exist and are reachable by url,
+ * with their data untouched. This page simply stops leading with them, and stops paying for three
+ * store reads on the way to first byte.
+ *
+ * Stream setup sits ABOVE the narratives, his layout call.
  */
 export default async function StreamPage({
   params,
@@ -60,12 +58,9 @@ export default async function StreamPage({
     );
   }
 
-  // ALL SIX LOADS AT ONCE. They are independent, and awaited one after another they
-  // stacked five round trips (each of which was itself serial internally) into the time
-  // to first byte: opening a stream took three to four seconds. Every one still degrades
-  // on its own, so a single store being down costs its section and not the page.
-  // Ideas load alongside everything else and tolerate their own failure: a broken note list
-  // must not take the concepts and pieces down with it.
+  // EVERY LOAD AT ONCE. They are independent, and awaited one after another they stacked
+  // round trips (each itself serial internally) into the time to first byte. Every one still
+  // degrades on its own, so a single store being down costs its section and not the page.
   const ideasPromise: Promise<Idea[]> = listIdeas(stream).catch((err) => {
     console.error('[marketing.stream] idea list failed:', err);
     return [] as Idea[];
@@ -78,15 +73,13 @@ export default async function StreamPage({
     return [] as NarrativeCard[];
   });
 
-  const [conceptsRes, piecesRes, brandVoiceRes, templatesRes, mediaRes, episodesRes] = await Promise.all([
-    listConcepts(user.email).catch((err) => {
-      console.error('[marketing.stream] concept list failed:', err);
-      return [] as ConceptDoc[];
-    }),
-    listSavedPieces(user.email).catch((err) => {
-      console.error('[marketing.stream] piece list failed:', err);
-      return [] as MarketingPiece[];
-    }),
+  /**
+   * THREE LOADS WENT WITH THE THREE SECTIONS (D48). Concepts, every saved piece, and the
+   * podcast episodes were each a full store read on the way to first byte, and none of them
+   * has anything left to render. Their screens still exist and are reachable by url; this
+   * page simply stops paying for them.
+   */
+  const [brandVoiceRes, templatesRes, mediaRes] = await Promise.all([
     getBrandVoiceForStream(stream).catch((err) => {
       console.error('[marketing.stream] brand voice read failed:', err);
       return null;
@@ -99,10 +92,6 @@ export default async function StreamPage({
       console.error('[marketing.stream] media list failed:', err);
       return [];
     }),
-    listEpisodes(user.email).catch((err) => {
-      console.error('[marketing.stream] episode list failed:', err);
-      return [];
-    }),
   ]);
 
   // Both started before the block above so they overlap with it rather than adding round trips.
@@ -112,46 +101,39 @@ export default async function StreamPage({
   // One list per gate, in gate order, so the eye reads it as a production line: what is waiting
   // to be developed, what is being written, what is being made, what is ready to ship. Shipped
   // is the scoreboard at the end, not a graveyard.
-  const gateOrder: (1 | 2 | 3 | 4 | 5 | 'shipped')[] = [1, 2, 3, 4, 5, 'shipped'];
-  const byGate = new Map<string, NarrativeCard[]>();
-  for (const g of gateOrder) byGate.set(String(g), []);
-  for (const c of narratives) byGate.get(String(c.gate))?.push(c);
+  /**
+   * THE LANES (D48). One row per narrative on a shared five-column gate scale, most advanced
+   * first, so the funnel is readable without reading a word.
+   *
+   * Marrs: "If there's a concept that's a gate 3, there are three squares: two of them are
+   * filled in, and the third one says Emergent AI. It's all in line, so we can see over time
+   * which narratives are further down into the funnel... you can sort them top to bottom, so
+   * the most developed you can bring to the top."
+   *
+   * `done` is how many gates are BEHIND it, which is what indents the title. A narrative at
+   * gate 3 has two squares and its title sits in the third column. Shipped has all five
+   * behind it. And the sort is what absorbs the idea list: a gate 1 note has nothing behind
+   * it, so it starts hard left at the bottom and is still visibly there.
+   */
+  const gateRank = (g: NarrativeCard['gate']): number => (g === 'shipped' ? 6 : g);
+  const lanes = [...narratives]
+    .sort(
+      (a, b) =>
+        gateRank(b.gate) - gateRank(a.gate) ||
+        String(b.updated_at).localeCompare(String(a.updated_at))
+    )
+    .map((c) => ({
+      ...c,
+      // Capped at 5 so 'shipped' fills the scale rather than overflowing it.
+      done: Math.min(gateRank(c.gate) - 1, 5),
+      gateLabel:
+        c.gate === 'shipped' ? 'shipped' : `gate ${c.gate} · ${GATE_LABELS[String(c.gate)]}`,
+    }));
 
-  const concepts: ConceptDoc[] = conceptsRes.filter(
-    (c) => (c.stream || DEFAULT_STREAM) === stream
-  );
-
-  const byId = new Map<string, MarketingPiece>();
-  for (const p of piecesRes) byId.set(p.piece_id, p);
-  const pieces = [...byId.values()].filter((p) => (p.stream || DEFAULT_STREAM) === stream);
-
-  // Group in-development pieces by their core concept: one card per concept,
-  // ALWAYS drilling into the development hub (even for a single piece — the hub
-  // is the standard landing, per Marrs 2026-07-13). groupKeyOf is the SHARED
-  // predicate (lib/marketing/dev-group), so the hub and delete find exactly the
-  // pieces grouped here (see that file for the undeletable-card bug this fixes).
-  const groups = new Map<string, MarketingPiece[]>();
-  for (const p of pieces) {
-    const k = groupKeyOf(p);
-    if (!groups.has(k)) groups.set(k, []);
-    groups.get(k)!.push(p);
-  }
-  const devCount = groups.size;
-
-  // Stream-home core assets (D20/D25): the brand voice every piece in this
-  // stream is written in, and the template library it creates from. Degrade
-  // gracefully on error so the page still renders.
   const brandVoiceSet = !!brandVoiceRes;
   const totalTemplates = templatesRes.length;
   const activeTemplates = templatesRes.filter((t) => t.status === 'active').length;
   const mediaCount = mediaRes.length;
-
-  // PODCAST EPISODES BELONG TO A STREAM, not to the marketing dashboard. Marrs: "it actually belongs
-  // within the Polynize stream of content." An episode is that stream's source material, the same way
-  // a concept is, and the clips it yields become that stream's pieces.
-  const episodes = episodesRes.filter(
-    (e) => (e.stream || DEFAULT_STREAM) === stream && !e.done
-  );
 
   return (
     <>
@@ -165,51 +147,6 @@ export default async function StreamPage({
           />
           <h1 className={s.title}>{streamLabel(stream)}</h1>
         </div>
-
-        {/* THE BOARD, first, because it is the work. Everything below it is setup or archive. */}
-        <section className={`${s.dashSection} ${s.panel}`}>
-          <div className={s.dashSectionHead}>
-            <h2 className={s.dashSectionTitle}>Narratives</h2>
-            <span className={s.dashSectionCount}>{narratives.length}</span>
-          </div>
-          <div className={s.sectionCtas}>
-            <Link
-              href={`/console/marketing/narrative/new?stream=${stream}`}
-              className={s.startConceptCta}
-            >
-              + New narrative
-            </Link>
-          </div>
-          {narratives.length === 0 ? (
-            <p className={s.dashSectionEmpty}>
-              Nothing in flight. A narrative starts as an idea and leaves as a week of content.
-            </p>
-          ) : (
-            gateOrder.map((g) => {
-              const list = byGate.get(String(g)) ?? [];
-              if (list.length === 0) return null;
-              return (
-                <section key={String(g)} className={b.lane}>
-                  <h3 className={b.laneName}>
-                    {g === 'shipped' ? 'Shipped' : `Gate ${g} · ${GATE_LABELS[String(g)]}`}
-                    <span className={b.count}>{list.length}</span>
-                  </h3>
-                  <div className={b.cards}>
-                    {list.map((c) => (
-                      <Link
-                        key={c.id}
-                        href={`/console/marketing/narrative/${c.id}`}
-                        className={b.card}
-                      >
-                        <span className={b.headline}>{c.headline}</span>
-                      </Link>
-                    ))}
-                  </div>
-                </section>
-              );
-            })
-          )}
-        </section>
 
         {/* Stream setup — the assets to get right first (they shape everything
             downstream), so they read above the older sections. */}
@@ -268,162 +205,72 @@ export default async function StreamPage({
           </div>
         </section>
 
+        {/* THE BOARD, first, because it is the work. Everything below it is setup or archive. */}
         <section className={`${s.dashSection} ${s.panel}`}>
           <div className={s.dashSectionHead}>
-            <h2 className={s.dashSectionTitle}>Core concepts</h2>
-            <span className={s.dashSectionCount}>{concepts.length}</span>
+            <h2 className={s.dashSectionTitle}>Narratives</h2>
+            <span className={s.dashSectionCount}>{narratives.length}</span>
           </div>
           <div className={s.sectionCtas}>
             <Link
-              href={`/console/marketing/intake?stream=${stream}`}
+              href={`/console/marketing/narrative/new?stream=${stream}`}
               className={s.startConceptCta}
             >
-              + Develop a concept
-            </Link>
-            <Link
-              href={`/console/marketing/import?stream=${stream}`}
-              className={s.importCta}
-            >
-              Import a concept
-            </Link>
-            <Link
-              href={`/console/marketing/library?stream=${stream}`}
-              className={s.importCta}
-            >
-              Concept library
+              + New narrative
             </Link>
           </div>
-          {concepts.length === 0 ? (
-            <p className={s.dashSectionEmpty}>
-              No concepts yet. Start one and April will interview you.
+          {narratives.length === 0 ? (
+            <p className={n.empty}>
+              Nothing here yet. Catch an idea and it lands at gate 1, at the bottom, until it
+              starts moving.
             </p>
           ) : (
-            <div className={l.cards}>
-              {concepts.map((c) => (
-                <Link
-                  key={c.concept_ref}
-                  href={`/console/marketing/concept/${c.framing_slug}`}
-                  className={`${l.card} ${s.onPanelCard}`}
-                >
-                  <span className={l.cardEyebrow}>concept</span>
-                  <span className={l.cardTitle}>{c.title}</span>
-                  <span className={l.cardDesc}>Open the concept doc.</span>
-                  <span className={l.cardArrow} aria-hidden>
-                    →
-                  </span>
-                </Link>
-              ))}
-            </div>
+            <>
+              {/*
+                No scale along the top. A five-column header implies the titles line up with
+                it, and they do not: a completed gate is a fixed-width square so the rows stay
+                readable at 375px, which means the title starts a square-width in rather than a
+                fifth of the page in. The squares carry the funnel and each row names its own
+                gate on the right, which is the honest version of the same information.
+              */}
+              <div className={n.wrap}>
+                {lanes.map((c) => (
+                  <Link
+                    key={c.id}
+                    href={`/console/marketing/narrative/${c.id}`}
+                    className={`${n.row} ${c.gate === 'shipped' ? n.shipped : ''}`}
+                    /**
+                     * The number of gates already passed drives the grid directly, so every
+                     * row sits on one shared five-column scale and the horizontal position of
+                     * a title IS its progress. A CSS variable rather than five classes,
+                     * because the value is a count and not a state.
+                     */
+                    style={{ '--done': c.done } as React.CSSProperties}
+                  >
+                    {Array.from({ length: c.done }, (_, i) => (
+                      <span key={i} className={n.done} />
+                    ))}
+                    <span className={n.at}>
+                      <span className={n.headline}>{c.headline}</span>
+                      <span className={n.gate}>{c.gateLabel}</span>
+                    </span>
+                  </Link>
+                ))}
+              </div>
+            </>
           )}
 
-          {/* Marrs: "a place under the core concepts, like an idea section." Inside this panel
-              rather than beside it, because an idea is a concept that has not happened yet. */}
+          {/*
+            THE IDEA BOX STAYS, moved rather than removed. It lived inside the Core concepts
+            panel, which is gone, and it is the only place in the console an idea can be
+            caught. Marrs: "If we're writing an idea and it's only a gate one, it goes to the
+            bottom. It's still an idea, and still there." A caught note becomes a narrative
+            at gate 1 through New narrative, which is where it joins the lanes above.
+          */}
           <Ideas stream={stream} initial={ideas} />
         </section>
 
-        <section className={`${s.dashSection} ${s.panel}`}>
-          <div className={s.dashSectionHead}>
-            <h2 className={s.dashSectionTitle}>In development</h2>
-            <span className={s.dashSectionCount}>{devCount}</span>
-          </div>
-          {devCount === 0 ? (
-            <p className={s.dashSectionEmpty}>No pieces in development yet.</p>
-          ) : (
-            <div className={l.cards}>
-              {[...groups.entries()].map(([slug, grouped]) => {
-                const kinds = [
-                  ...new Set(
-                    grouped.map(
-                      (p) => p.pillar || formatById(p.format)?.label || p.format
-                    )
-                  ),
-                ];
-                const conceptBacked = /core-concept-.+\.md$/.test(
-                  grouped[0].concept_ref ?? ''
-                );
-                // THE CARD IS THE CONCEPT, so it is named by the concept. It used to be
-                // labelled with grouped[0].title, i.e. whichever piece happened to be
-                // first, which meant renaming a piece silently renamed this card and the
-                // two ideas became impossible to tell apart. The group key IS the concept
-                // slug, so the concept's own title is the right label; a pre-concept-bank
-                // group with no concept behind it still falls back to its first piece.
-                const conceptTitle =
-                  concepts.find((c) => c.framing_slug === slug)?.title ?? grouped[0].title;
-                return (
-                  <Link
-                    key={slug}
-                    href={`/console/marketing/concept/${slug}/develop`}
-                    className={`${l.card} ${s.onPanelCard}`}
-                  >
-                    <span className={l.cardEyebrow}>
-                      {conceptBacked ? 'core concept · ' : ''}
-                      {grouped.length} piece{grouped.length === 1 ? '' : 's'}
-                    </span>
-                    <span className={l.cardTitle}>{conceptTitle}</span>
-                    <span className={l.cardDesc}>{kinds.join(' · ')}</span>
-                    <span className={l.cardArrow} aria-hidden>
-                      →
-                    </span>
-                  </Link>
-                );
-              })}
-            </div>
-          )}
-        </section>
 
-        <section className={`${s.dashSection} ${s.panel}`}>
-          <div className={s.dashSectionHead}>
-            <h2 className={s.dashSectionTitle}>Podcasts</h2>
-            <span className={s.dashSectionCount}>{episodes.length}</span>
-          </div>
-          {episodes.length === 0 ? (
-            <p className={s.dashSectionEmpty}>
-              No episodes yet.{' '}
-              <Link href={`/console/marketing/podcast?stream=${stream}&new=1`}>
-                Add one
-              </Link>{' '}
-              to mine it for vertical clips.
-            </p>
-          ) : (
-            <div className={l.cards}>
-              {episodes.map((ep) => {
-                const cut = ep.clips.filter((c) => c.status === 'assembled').length;
-                const ruled = ep.clips.filter(
-                  (c) => c.status === 'approved' || c.status === 'assembling' || c.status === 'assembled'
-                ).length;
-                return (
-                  <Link
-                    key={ep.episode_id}
-                    href={`/console/marketing/podcast/${ep.episode_id}`}
-                    className={`${l.card} ${s.onPanelCard}`}
-                  >
-                    <span className={l.cardEyebrow}>
-                      {ep.number ? `episode ${ep.number}` : 'episode'}
-                    </span>
-                    <span className={l.cardTitle}>{ep.title}</span>
-                    <span className={l.cardDesc}>
-                      {ep.clips.length === 0
-                        ? ep.transcript_chars
-                          ? 'Transcript in. No clips proposed yet.'
-                          : 'No transcript yet.'
-                        : `${ep.clips.length} proposed · ${ruled} approved · ${cut} cut`}
-                    </span>
-                    <span className={l.cardArrow} aria-hidden>
-                      →
-                    </span>
-                  </Link>
-                );
-              })}
-            </div>
-          )}
-          {episodes.length ? (
-            <p className={s.dashSectionEmpty} style={{ marginTop: 12 }}>
-              <Link href={`/console/marketing/podcast?stream=${stream}`}>
-                All episodes
-              </Link>
-            </p>
-          ) : null}
-        </section>
       </div>
     </>
   );
