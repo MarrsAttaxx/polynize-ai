@@ -133,3 +133,78 @@
     font-size: 13.5px;
   }
 }
+
+/**
+ * WHERE THE PIECES ARE (D58). One dot per piece, on the same five columns as the bar.
+ *
+ * Marrs: "the gate steps that we create are a little more nuanced. After gate four, you could
+ * have two or three pieces that are on gate five, but you still have some on gate four. Maybe we
+ * need a way to mark how many pieces are just little dots on step five and how many are in step
+ * four."
+ *
+ * The bar says where the NARRATIVE is, which is one number and cannot say this. These say where
+ * its pieces are, and they sit under the gates they belong to rather than in a summary line, so
+ * the answer to "what is left" is read in the column named Create.
+ */
+.counts {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 4px;
+  margin-top: 7px;
+}
+.countCell {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+}
+
+.dots {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  flex: 0 0 auto;
+}
+.dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  /* Still being made: an outline, so it reads as an empty slot. */
+  border: 1px solid color-mix(in srgb, var(--text-3, #6f6a64) 85%, transparent);
+}
+/* Cleared the making step: solid mint, the same colour the bar uses for a gate behind you. */
+.dotOn {
+  background: color-mix(in srgb, var(--mint, #69fccb) 75%, transparent);
+  border-color: transparent;
+}
+.dotMore {
+  font-family: var(--font-jetbrains-mono), monospace;
+  font-size: 8.5px;
+  color: var(--text-3, #6f6a64);
+  margin-left: 1px;
+}
+
+.countWord {
+  font-family: var(--font-jetbrains-mono), monospace;
+  font-size: 8.5px;
+  letter-spacing: 0.04em;
+  color: var(--text-3, #6f6a64);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* At 375px a five column row cannot carry dots AND a word, so the words go and the dots stay:
+   the column they sit under already names them. */
+@media (max-width: 560px) {
+  .countWord {
+    display: none;
+  }
+  .dot {
+    width: 4px;
+    height: 4px;
+  }
+  .dots {
+    gap: 2px;
+  }
+}

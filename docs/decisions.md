@@ -1332,3 +1332,34 @@ The risk in a regex like this is never the marker it misses, it is the character
 
 24 new assertions, 278 total.
 
+---
+
+## D58: A narrative is at one gate. Its pieces are not.
+
+**Adopted 26 August 2026.** Marrs: *"I'm just realising that, on the dashboard, the gate steps that we create are a little more nuanced. After gate four, you could have two or three pieces that are on gate five, but you still have some on gate four. Maybe we need a way to mark how many pieces are just little dots on step five and how many are in step four."*
+
+He is right and the model could not say it. A narrative has one `gate` field, so the D50 bar shows one position, and after Gate 3 a narrative is not one thing any more: it is seven pieces that finish at different times. "Gate 4" on a row could mean one piece left or all seven.
+
+### Dots, under the gate they belong to
+
+One dot per piece, on the same five columns the bar uses, so the answer to "what is left" is read in the column named Create rather than in a summary line somewhere else.
+
+- **Under Create**: a hollow dot for every piece still being made.
+- **Under Ship**: a solid mint dot for every piece that has cleared it.
+
+Two shapes rather than two shades, so the columns read differently out of the corner of your eye.
+
+**`ready` is `cardState`'s own definition**, the same function the Gate 4 cards use: the words exist AND the media is attached. So the dots and the cards can never disagree about what is finished, which they would within a week if this had its own rule.
+
+**Capped at ten, then a number.** The default kit makes seven pieces, so dots are right at this scale; past ten nobody counts them and the overflow would also crowd out the word beside them.
+
+**A shipped narrative gets no dots at all.** Every piece is behind Gate 5, the bar already reads solid and the label already says shipped, so sixteen dots would be ink for nothing. It was also the only case that overflowed its column, which is how the redundancy got noticed.
+
+**Nothing before Gate 4 gets them either**, because there are no pieces yet, and a row with an empty count line reads as missing data rather than as an early gate.
+
+### The load that came back
+
+D48 removed three store reads from this page, one of which was every saved piece, on the reasoning that three serial loads were paying for sections that render nothing. This adds one of them back, because the distribution genuinely lives on the pieces.
+
+It is not a reversal of that reasoning: it starts before the existing parallel block so it overlaps rather than adding a round trip, and it degrades on its own. If the piece list fails, the bars render exactly as they did and only the dots go missing.
+

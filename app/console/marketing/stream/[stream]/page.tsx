@@ -9,9 +9,11 @@ import { listTemplates } from '@/lib/marketing/template-store';
 import { listMediaForStream } from '@/lib/marketing/media-store';
 import { BackLink } from '@/app/console/marketing/_components/BackLink';
 import { listNarrativeCards, GATE_LABELS, type NarrativeCard } from '@/lib/marketing/narrative-store';
+import { listSavedPieces, type MarketingPiece } from '@/lib/marketing/piece-store';
+import { cardState } from '@/lib/marketing/kit';
 import s from '../../../_components/client-card.module.css';
 import l from '../../../_components/launcher.module.css';
-import n from './lanes.module.css';
+import lane from './lanes.module.css';
 
 export const dynamic = 'force-dynamic';
 
@@ -33,6 +35,27 @@ export const dynamic = 'force-dynamic';
  *
  * Stream setup sits ABOVE the narratives, his layout call.
  */
+/**
+ * One dot per piece. Marrs asked for dots and dots are right at this scale: the default kit makes
+ * seven pieces. Past ten nobody counts them, so the overflow becomes a number rather than a
+ * longer row, which also leaves room for the word beside it.
+ *
+ * `on` fills them: a piece that has cleared the making step is solid, one still being made is an
+ * outline, so the two columns read differently even out of the corner of your eye.
+ */
+const DOT_CAP = 10;
+function Dots({ n, on }: { n: number; on: boolean }) {
+  const shown = Math.min(n, DOT_CAP);
+  return (
+    <span className={lane.dots} aria-hidden>
+      {Array.from({ length: shown }, (_, i) => (
+        <span key={i} className={`${lane.dot} ${on ? lane.dotOn : ''}`} />
+      ))}
+      {n > shown ? <span className={lane.dotMore}>+{n - shown}</span> : null}
+    </span>
+  );
+}
+
 export default async function StreamPage({
   params,
 }: {
@@ -74,6 +97,21 @@ export default async function StreamPage({
   });
 
   /**
+   * ONE OF THEM CAME BACK (D58). Marrs: "the gate steps that we create are a little more
+   * nuanced. After gate four, you could have two or three pieces that are on gate five, but you
+   * still have some on gate four."
+   *
+   * He is right, and a single `gate` number on a narrative cannot say it. The distribution lives
+   * on the PIECES, so the piece list is loaded again, but as one parallel read that overlaps the
+   * block below rather than as a serial one, and it degrades on its own: if it fails the bars
+   * render exactly as they did and only the counts under them go missing.
+   */
+  const piecesPromise: Promise<MarketingPiece[]> = listSavedPieces(user.email).catch((err) => {
+    console.error('[marketing.stream] piece list failed:', err);
+    return [] as MarketingPiece[];
+  });
+
+  /**
    * THREE LOADS WENT WITH THE THREE SECTIONS (D48). Concepts, every saved piece, and the
    * podcast episodes were each a full store read on the way to first byte, and none of them
    * has anything left to render. Their screens still exist and are reachable by url; this
@@ -97,6 +135,27 @@ export default async function StreamPage({
   // Both started before the block above so they overlap with it rather than adding round trips.
   const ideas = await ideasPromise;
   const narratives = await narrativesPromise;
+  const pieces = await piecesPromise;
+
+  /**
+   * HOW MANY PIECES ARE STILL BEING MADE, AND HOW MANY HAVE CLEARED IT.
+   *
+   * Deduped by piece_id first, the same way the marketing home does: the store can hand back the
+   * same piece twice and a double would inflate a count with no way to tell from the screen.
+   *
+   * `ready` is cardState's own definition, so the dots and the Gate 4 cards can never disagree:
+   * the words exist AND the media is attached. Anything else is still work.
+   */
+  const byPieceId = new Map<string, MarketingPiece>();
+  for (const p of pieces) byPieceId.set(p.piece_id, p);
+  const pieceCounts = new Map<string, { toMake: number; ready: number }>();
+  for (const p of byPieceId.values()) {
+    if (!p.narrative_ref) continue;
+    const c = pieceCounts.get(p.narrative_ref) ?? { toMake: 0, ready: 0 };
+    if (cardState(p.master ?? '', p) === 'ready') c.ready += 1;
+    else c.toMake += 1;
+    pieceCounts.set(p.narrative_ref, c);
+  }
 
   // One list per gate, in gate order, so the eye reads it as a production line: what is waiting
   // to be developed, what is being written, what is being made, what is ready to ship. Shipped
@@ -134,6 +193,7 @@ export default async function StreamPage({
       at: gateRank(c.gate),
       gateLabel:
         c.gate === 'shipped' ? 'shipped' : `gate ${c.gate} · ${GATE_LABELS[String(c.gate)]}`,
+      counts: pieceCounts.get(c.id) ?? { toMake: 0, ready: 0 },
     }));
 
   const brandVoiceSet = !!brandVoiceRes;
@@ -226,7 +286,7 @@ export default async function StreamPage({
             </Link>
           </div>
           {narratives.length === 0 ? (
-            <p className={n.empty}>
+            <p className={lane.empty}>
               Nothing here yet. Catch an idea and it lands at gate 1, at the bottom, until it
               starts moving.
             </p>
@@ -237,39 +297,71 @@ export default async function StreamPage({
                 fixed-width square, because then nothing lined up with it. The segments divide
                 the row equally now, so the header labels sit exactly above the gates they name.
               */}
-              <div className={n.scale} aria-hidden>
+              <div className={lane.scale} aria-hidden>
                 {GATE_ORDER.map((g) => (
-                  <span key={g} className={n.scaleCell}>
+                  <span key={g} className={lane.scaleCell}>
                     {GATE_LABELS[String(g)]}
                   </span>
                 ))}
               </div>
-              <div className={n.wrap}>
+              <div className={lane.wrap}>
                 {lanes.map((c) => (
                   <Link
                     key={c.id}
                     href={`/console/marketing/narrative/${c.id}`}
-                    className={`${n.row} ${c.gate === 'shipped' ? n.shipped : ''}`}
+                    className={`${lane.row} ${c.gate === 'shipped' ? lane.shipped : ''}`}
                   >
-                    <span className={n.top}>
-                      <span className={n.headline}>{c.headline}</span>
-                      <span className={n.gate}>{c.gateLabel}</span>
+                    <span className={lane.top}>
+                      <span className={lane.headline}>{c.headline}</span>
+                      <span className={lane.gate}>{c.gateLabel}</span>
                     </span>
                     {/*
                       Five equal segments, three states. Behind it is filled and quiet, the gate
                       it is AT is full strength, ahead is an empty well. Position is readable
                       without counting anything.
                     */}
-                    <span className={n.bar}>
+                    <span className={lane.bar}>
                       {GATE_ORDER.map((g) => (
                         <span
                           key={g}
-                          className={`${n.seg} ${
-                            g < c.at ? n.segDone : g === c.at ? n.segAt : ''
+                          className={`${lane.seg} ${
+                            g < c.at ? lane.segDone : g === c.at ? lane.segAt : ''
                           }`}
                         />
                       ))}
                     </span>
+                    {/*
+                      WHERE THE PIECES ARE, which the bar above cannot say (D58). A narrative is
+                      at one gate; its pieces are not. Aligned to the same five columns, so a dot
+                      under Create is a piece still being made and a dot under Ship is one that
+                      has cleared it. Only drawn once there are pieces to count.
+                    */}
+                    {c.gate !== 'shipped' && c.counts.toMake + c.counts.ready > 0 ? (
+                      <span className={lane.counts}>
+                        {GATE_ORDER.map((g) => {
+                          const shipped = c.gate === 'shipped';
+                          const nDots =
+                            g === 4 && !shipped
+                              ? c.counts.toMake
+                              : g === 5
+                                ? shipped
+                                  ? c.counts.toMake + c.counts.ready
+                                  : c.counts.ready
+                                : 0;
+                          const word = g === 4 ? 'to make' : shipped ? 'shipped' : 'ready';
+                          return (
+                            <span key={g} className={lane.countCell}>
+                              {nDots > 0 ? (
+                                <>
+                                  <Dots n={nDots} on={g === 5} />
+                                  <span className={lane.countWord}>{word}</span>
+                                </>
+                              ) : null}
+                            </span>
+                          );
+                        })}
+                      </span>
+                    ) : null}
                   </Link>
                 ))}
               </div>
