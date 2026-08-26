@@ -118,6 +118,64 @@ ok(
   ).slides[0].headline.includes('—')
 );
 
+/* ---- the shapes that used to fail with no log line at all (D49) ---- */
+
+// A wrapper object. In JSON mode a model will happily nest its answer, and `o.slides` alone
+// read that as zero slides and threw.
+for (const wrapped of [
+  '{"plan":{"world":"w","caption":"c","slides":[{"headline":"h","prompt":"p"}]}}',
+  '{"result":{"slides":[{"headline":"h","prompt":"p"}]}}',
+  '{"world":"w","items":[{"headline":"h","prompt":"p"}]}',
+]) {
+  const p = parseProposal(wrapped, 1);
+  eq(`a wrapped response still parses: ${wrapped.slice(0, 22)}`, p.slides.length, 1);
+}
+
+// Reasoning prose in front of the object moved the brace span, so the slice was not JSON.
+ok(
+  'a leading brace in prose does not break it',
+  parseProposal('Thinking: the set {should} open on a claim.\n' + proposal, 10).slides.length === 10
+);
+// And anything after it used to move the end.
+ok(
+  'trailing prose does not break it',
+  parseProposal(proposal + '\n\nThat should work well.', 10).slides.length === 10
+);
+
+// SALVAGE: a truncated response loses the tail, so the complete slides at the head survive.
+{
+  const full = JSON.stringify({
+    world: 'w',
+    caption: 'c',
+    slides: Array.from({ length: 10 }, (_, i) => ({
+      headline: `Slide ${i + 1}`,
+      note: 'n',
+      prompt: 'a photograph',
+    })),
+  });
+  const cut = full.slice(0, Math.floor(full.length * 0.62));
+  const p = parseProposal(cut, 10);
+  ok('a truncated response salvages what is there', p.slides.length >= 3, `got ${p.slides.length}`);
+  ok('and they are numbered from one', p.slides[0].n === 1);
+  ok('and the first one is real', p.slides[0].headline.startsWith('Slide 1'));
+}
+
+// A brace inside a string must not unbalance the scan.
+ok(
+  'a brace inside an image prompt is safe',
+  parseProposal(
+    '{"world":"w","caption":"c","slides":[{"headline":"h","prompt":"a sign reading { open }"}]}',
+    1
+  ).slides[0].prompt.includes('{'),
+);
+
+// The key names a model reaches for when it forgets ours.
+{
+  const p = parseProposal('{"slides":[{"text":"the words","image":"a photo"}]}', 1);
+  eq('text becomes the headline', p.slides[0].headline, 'the words');
+  eq('image becomes the prompt', p.slides[0].prompt, 'a photo');
+}
+
 /* ------------------------------------------------------------ the stored plan */
 
 const madeSlide = (n: number, approved: boolean) => ({

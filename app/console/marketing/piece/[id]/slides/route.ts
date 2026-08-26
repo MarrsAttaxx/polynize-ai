@@ -59,8 +59,17 @@ export async function POST(
         );
       }
       if (e.reason === 'empty') {
+        /**
+         * Only reachable now when there was genuinely nothing usable in the response. A
+         * truncated or oddly wrapped answer is salvaged rather than rejected (D49), so a retry
+         * really is the right advice here rather than a shrug, and the server log carries the
+         * model, the length and both ends of what came back.
+         */
         return NextResponse.json(
-          { error: 'The slides came back empty or malformed. Try again.' },
+          {
+            error:
+              'April returned nothing usable for the slides. Try again, and if it happens twice shorten what you wrote in the box.',
+          },
           { status: 502 }
         );
       }
