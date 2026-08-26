@@ -175,7 +175,9 @@ Worth knowing going in: everything after the shoot is deliberately absent from t
 
 **9. Nothing enforces capacity.** `nextOpenSlots` walks 60 days forward and always finds something, so an oversubscribed channel silently slides posts into future weeks. Improved in D46 (an unplaceable post is now reported rather than saved dateless) but there is still no warning that a lane is oversubscribed. With a maximalist posting strategy this stops being theoretical.
 
-**10. The wave lock is per narrative, not per lane.** Two narratives on one stream planned minutes apart can take the same slot: both read the calendar before either writes. The precedent for the fix is in the same file, where the ship branch already re-reads each entry fresh.
+**10. The wave lock is per narrative, not per lane. FIXED (D64).** The lane now has its own lock, taken after the narrative lock and released before it, so two narratives on one stream take turns and the second sees the first's entries. Expires after two minutes, re-enterable by its own holder, fails OPEN if it cannot be written, and releases only if it is still ours. The optimistic re-check this item suggested was rejected: it costs a store read per entry and still cannot make read-compute-write atomic.
+
+~~**10. The wave lock is per narrative, not per lane.**~~ Two narratives on one stream planned minutes apart can take the same slot: both read the calendar before either writes. The precedent for the fix is in the same file, where the ship branch already re-reads each entry fresh.
 
 **11. Two timezone sources for one post. FIXED (D61).** The entry now carries the zone its time was chosen in, and publish sends that rather than re-deriving it. Entries planned before the stamp fall back to the old config, so nothing already live is reinterpreted.
 

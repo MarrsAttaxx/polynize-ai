@@ -39,6 +39,7 @@ import { timezoneForEntry } from '../posting-schedule';
 import { nextOpenSlots } from '../channel-schedule';
 import { IMAGE_MODELS, providerOf, imageModelById, DEFAULT_IMAGE_MODEL } from '../higgsfield-models';
 import { nearestSoulSize, aspectSentence, frameFor } from '../image-generate';
+import { heldByOther, parseHeld, WAVE_LOCK_MS } from '../wave-lock';
 import { parseProposal } from '../slide-propose';
 import {
   cardState,
@@ -704,6 +705,57 @@ eq('an aspect ratio scales to a 2048 long edge', frameFor(soulModel, undefined, 
 eq('and keeps the ratio', frameFor(soulModel, undefined, '4:3').h, 1536);
 eq('neither one falls back to the old default', frameFor(soulModel).w, 1152);
 eq('garbage falls back too, rather than producing a zero', frameFor(soulModel, 'wide', 'huge').h, 2048);
+
+/* ------------------------------------------------------------------ D64: one wave per lane */
+
+/**
+ * The narrative lock stops the same narrative running twice. This stops two DIFFERENT narratives
+ * on one stream both reading the calendar, both finding 07:00 free, and both taking it. Three
+ * conditions decide whether the lane is free and each one is a way to get it wrong.
+ */
+const nowMs = Date.parse('2026-09-01T10:00:00.000Z');
+const at = (msAgo: number) => new Date(nowMs - msAgo).toISOString();
+
+ok('nothing held is free', !heldByOther(null, 'n1', nowMs));
+ok(
+  'held by another narrative, recently, is not free',
+  heldByOther({ at: at(5_000), narrative: 'n2' }, 'n1', nowMs)
+);
+ok(
+  'held by THIS narrative is free, or a retry refuses its own lock',
+  !heldByOther({ at: at(5_000), narrative: 'n1' }, 'n1', nowMs)
+);
+ok(
+  'an expired lock is free, or a crashed run wedges the stream forever',
+  !heldByOther({ at: at(WAVE_LOCK_MS + 1_000), narrative: 'n2' }, 'n1', nowMs)
+);
+ok(
+  'exactly at the window it has expired',
+  !heldByOther({ at: at(WAVE_LOCK_MS), narrative: 'n2' }, 'n1', nowMs)
+);
+ok(
+  'a lock with an unparseable time is free rather than permanent',
+  !heldByOther({ at: 'whenever', narrative: 'n2' }, 'n1', nowMs)
+);
+ok(
+  'a future-dated lock still holds, rather than reading as expired',
+  heldByOther({ at: at(-30_000), narrative: 'n2' }, 'n1', nowMs)
+);
+
+// A malformed stored blob must read as "no lock", never as a lock nobody can clear.
+ok('junk is not a lock', parseHeld({ nonsense: true }) === null);
+ok('null is not a lock', parseHeld(null) === null);
+ok('a blank time is not a lock', parseHeld({ at: '   ', narrative: 'n' }) === null);
+eq(
+  'a real one keeps its narrative',
+  parseHeld({ at: '2026-09-01T10:00:00.000Z', narrative: 'n7' })?.narrative,
+  'n7'
+);
+eq(
+  'and a missing narrative reads as empty rather than undefined',
+  parseHeld({ at: '2026-09-01T10:00:00.000Z' })?.narrative,
+  ''
+);
 
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

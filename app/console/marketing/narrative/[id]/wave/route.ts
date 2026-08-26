@@ -33,6 +33,8 @@ import {
   saveEntry,
   type CalendarEntry,
 } from '@/lib/marketing/calendar-store';
+import { streamLabel } from '@/lib/marketing/streams';
+import { acquireLaneWave } from '@/lib/marketing/wave-lock';
 import {
   getChannelSchedule,
   matchOpenSlots,
@@ -95,7 +97,39 @@ export async function POST(
     console.error('[narrative.wave] lock write failed:', err);
     return NextResponse.json({ error: 'could not start the run. Try again.' }, { status: 502 });
   }
+
+  /**
+   * AND THE LANE (D64). The narrative lock above stops the same narrative running twice; it cannot
+   * stop two DIFFERENT narratives on the same stream from both reading the calendar, both finding
+   * 07:00 free, and both taking it. What is being protected is the lane's calendar, so the lock
+   * has to be on the lane.
+   *
+   * Taken after the narrative lock, and released before it, so the pair nests cleanly. Two lanes
+   * never block each other.
+   */
+  const laneLock = await acquireLaneWave(narrative.lane, id);
+  if (!laneLock.ok) {
+    // The narrative lock has to come back off, or this narrative is wedged for two minutes over
+    // someone else's run.
+    try {
+      const fresh = await getNarrative(id);
+      if (fresh) {
+        delete fresh.wave_lock_at;
+        await saveNarrative(fresh);
+      }
+    } catch (err) {
+      console.error('[narrative.wave] could not release after a lane clash:', err);
+    }
+    return NextResponse.json(
+      {
+        error: `Another narrative on ${streamLabel(narrative.lane)} is being laid out right now. Give it a minute, then try again.`,
+      },
+      { status: 409 }
+    );
+  }
+
   const unlock = async () => {
+    await laneLock.release();
     try {
       const fresh = await getNarrative(id);
       if (fresh) {

@@ -1572,3 +1572,39 @@ Compared by **value**, not by reference, which is the second half: `hooks`, `med
 
 It captures all three fields it writes and re-checks all three, so a mid-flight change to any of them is caught. Left alone.
 
+---
+
+## D64: The narrative lock guards the narrative. The calendar needed its own.
+
+**Adopted 26 August 2026.** Todo item 10, fixed overnight with his approval.
+
+The wave route already held a lock, on the **narrative**, and it stays: it was a real fix for a real double-publish, where a dropped browser fetch plus a retry click started a second full run and posted the same drafts twice.
+
+It cannot stop the other collision. Two **different** narratives on the same stream, planned in two tabs inside the same run, each take their own narrative lock and then both do this:
+
+```
+read the calendar  ->  work out which slots are free  ->  write entries into them
+```
+
+Both reads happen before either write, so both see 07:00 free and both take it. The stream is double-booked with nothing on screen to say so, and the first signal is two posts going out at once, days later.
+
+### The lock belongs on the thing being protected
+
+Which is **the lane's calendar**, not the narrative. So the lane gets its own lock file, taken after the narrative lock and released before it, so the pair nests. Two narratives on different streams cannot collide and are not blocked; two on the same stream take turns, and the second one sees the first one's entries when its turn comes, which is exactly the read it needed.
+
+**Why not optimistic re-checking**, which was the other candidate and what the todo suggested: re-reading the calendar before every save costs a store read per entry, up to sixteen on a default kit, and it still cannot make read-compute-write atomic. It narrows the window for more work. Taking turns closes it.
+
+### Three ways to get a lock wrong, all three tested
+
+- **It expires.** Two minutes, the same window the narrative lock uses, because a crashed run must not wedge a whole stream forever.
+- **A run can re-enter its own.** The holder's narrative id is recorded, so a retry inside the window is not refused by the lock it set itself. That would have been a worse bug than the one being fixed.
+- **A lock that cannot be read counts as free**, and a malformed one parses to nothing. Guessing "held" produces a stream nobody can ever plan; guessing "free" produces the rare collision this exists to reduce. The narrative lock is still underneath either way.
+
+There is a fourth, and it is in the release rather than the acquire: **release only if it is still ours**, or a run whose lock expired would clear the lock of the run that has since taken over.
+
+### It fails open on purpose
+
+If the lock file cannot be written, the run **goes ahead unlocked** rather than refusing. This is a collision reducer, not a correctness gate, and turning a rare double-booking into a common outage would be the wrong trade. The one thing that must not happen is a narrative that cannot be laid out, so the narrative lock is released before the 409 as well, or a clash would wedge this narrative for two minutes over someone else's run.
+
+12 new assertions, 347 total.
+
