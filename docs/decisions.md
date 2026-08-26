@@ -1284,5 +1284,7 @@ Four candidates, two across, each at 4:3 and roughly 290px wide in the gate's 62
 
 Four generations per attempt instead of one. That is the right trade here and only here, because this is the ONE image the whole narrative is generated against, so the minutes spent settling it are paid back across every slide and post that follows. Nothing else in the console generates a batch.
 
-11 new assertions, 254 total.
+**Four is not a number that can be tuned either.** Soul's `BatchSize` is exactly `{SINGLE: 1, QUAD: 4}`, so a 2 or a 6 would be another 400 minutes into a wait. Asserted against the SDK enum alongside the size.
+
+13 new assertions, 256 total.
 

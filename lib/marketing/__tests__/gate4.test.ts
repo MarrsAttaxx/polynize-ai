@@ -28,7 +28,7 @@ import {
   generationsFor,
   switchKind,
 } from '../slide-templates';
-import { SoulSize } from '@higgsfield/client';
+import { SoulSize, BatchSize } from '@higgsfield/client';
 import { SOUL_SIZES } from '../higgsfield-models';
 import { HERO_BATCH, HERO_SIZE, HERO_W, HERO_H, HERO_ASPECT } from '../hero';
 import { parseProposal } from '../slide-propose';
@@ -459,9 +459,15 @@ eq('the hero size and its dimensions agree', HERO_SIZE, `${HERO_W}x${HERO_H}`);
 eq('and it is exactly 4:3', HERO_W / HERO_H, 4 / 3);
 eq('the css aspect says the same thing', HERO_ASPECT, '4 / 3');
 
-// Four, and the grid is built for four. One would be the old behaviour.
+/**
+ * Four, and the grid is built for four. Same reasoning as the size: Soul's BatchSize is exactly
+ * {SINGLE: 1, QUAD: 4}, so 4 is not a number that can be tuned to taste. A 2 or a 6 here is a
+ * 400 from Higgsfield minutes into a wait, and it typechecks on the way there.
+ */
 eq('four candidates', HERO_BATCH, 4);
 ok('more than one, or there is nothing to choose from', HERO_BATCH > 1);
+ok('the batch is one Soul accepts', Object.values(BatchSize).includes(HERO_BATCH as never));
+eq('and Soul offers no other multi option', Object.values(BatchSize).sort().join(','), '1,4');
 
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);
