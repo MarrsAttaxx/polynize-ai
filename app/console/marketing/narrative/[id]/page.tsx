@@ -14,7 +14,9 @@ import {
   slotKindFor,
   cardState,
   cardStateLabel,
+  plansForTicks,
 } from '@/lib/marketing/kit';
+import { channelLabel } from '@/lib/marketing/channels';
 import { NarrativeGates, type WaveData } from './NarrativeGates';
 
 export const dynamic = 'force-dynamic';
@@ -49,6 +51,13 @@ export default async function NarrativePage({
   if (!narrative) notFound();
 
   // Gate 4: the master pieces, video first because it is the long pole.
+  // The kit's own plan, so each card can say where its posts land. Read from the persisted
+  // ticks, the same source Gate 5 expands from, so the two can never disagree.
+  const plans =
+    narrative.gate === 4 || narrative.gate === 5 || narrative.gate === 'shipped'
+      ? plansForTicks(narrative.kit ?? [], narrative.lane)
+      : [];
+
   const pieces: {
     id: string;
     label: string;
@@ -58,6 +67,18 @@ export default async function NarrativePage({
     /** Whether this card could ship, so Gate 4 stops showing seven identical rows (D47). */
     state: 'empty' | 'drafted' | 'ready';
     stateLabel: string;
+    /**
+     * WHERE THIS ONE GOES (D49). Marrs, looking at Gate 4: "I've got a list of the things I
+     * need to do and work on, but I can't see what platform they refer to. Does that matter,
+     * or is that saying that's agnostic at this point?"
+     *
+     * It is agnostic for exactly one card. The video script is one shoot that becomes ten
+     * posts across all four networks, which is the whole shoot-once-cut-many economy. Every
+     * other card lands on one place: the article and the three text frames are LinkedIn, the
+     * carousel and the quote card are Instagram. So the answer is that it DOES matter, and the
+     * card should say it rather than leave him counting.
+     */
+    where: string;
   }[] = [];
   if (narrative.gate === 4 || narrative.gate === 5 || narrative.gate === 'shipped') {
     for (const pid of narrative.piece_ids ?? []) {
@@ -65,6 +86,13 @@ export default async function NarrativePage({
         const p = await getPiece(owner, pid);
         if (!p) continue;
         const st = cardState(p.master ?? '', p);
+        const plan = plans.find((x) => x.master === p.master);
+        const posts = plan ? plan.outputs.length : 0;
+        const where = plan
+          ? `${plan.placements.map((pl) => channelLabel(pl.network)).join(' · ')}${
+              posts > 1 ? ` · ${posts} posts` : ''
+            }`
+          : '';
         pieces.push({
           id: p.piece_id,
           label: p.title,
@@ -73,6 +101,7 @@ export default async function NarrativePage({
           href: `/console/marketing/piece/${p.piece_id}`,
           state: st,
           stateLabel: cardStateLabel(p.master ?? '', st),
+          where,
         });
       } catch (err) {
         console.error('[narrative] piece read failed:', err);

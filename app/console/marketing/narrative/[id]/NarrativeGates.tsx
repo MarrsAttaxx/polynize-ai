@@ -40,6 +40,8 @@ type PieceRow = {
   /** Whether this card could ship (D47). Advisory: it never blocks the gate. */
   state: 'empty' | 'drafted' | 'ready';
   stateLabel: string;
+  /** Which networks this card's posts land on (D49). */
+  where: string;
 };
 type WaveCell = {
   day: string;
@@ -586,6 +588,7 @@ export function NarrativeGates({
                     >
                       {p.state === 'ready' ? '✓ ready' : p.stateLabel}
                     </span>
+                    {p.where ? <span className={g.where2}>{p.where}</span> : null}
                   </div>
                   <span className={g.open}>open →</span>
                 </Link>

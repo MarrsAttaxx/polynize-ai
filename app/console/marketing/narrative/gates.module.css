@@ -493,3 +493,13 @@
 .badgeReady {
   color: var(--mint, #69fccb);
 }
+
+/* WHERE A GATE 4 CARD'S POSTS LAND (D49). Only the video script is genuinely platform
+   agnostic; everything else goes to one place, and he was counting it himself. */
+.where2 {
+  display: block;
+  margin-top: 3px;
+  font-family: var(--font-jetbrains-mono), monospace;
+  font-size: 10px;
+  color: var(--text-3, #6f6a64);
+}
