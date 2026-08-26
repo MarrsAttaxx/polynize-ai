@@ -18,8 +18,6 @@ export const metadata: Metadata = {
   twitter: { card: 'summary' },
 };
 
-const MISSION_CONTROL_URL =
-  'https://app.polynize.io/#/loop/0f5acd09-8627-479b-9c74-1f044c2e880b/execute?from=%2Fstudio%2Fdesign';
 const BOOKING_URL = 'https://calendar.app.google/rw8Vpd7BkJh5wwig9';
 
 type LinkCard = {
@@ -87,22 +85,6 @@ const GET_STARTED: LinkCard[] = [
       </svg>
     ),
     tail: '→',
-  },
-  {
-    href: MISSION_CONTROL_URL,
-    external: true,
-    featured: true,
-    tag: { label: 'protocol' },
-    meta: 'studio',
-    title: 'Mission control build protocol',
-    desc: 'Run the structured build protocol in polynize studio.',
-    icon: (
-      <svg viewBox="0 0 24 24">
-        <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
-        <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
-      </svg>
-    ),
-    tail: '↗',
   },
   {
     href: BOOKING_URL,
