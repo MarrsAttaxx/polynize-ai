@@ -118,7 +118,31 @@ export async function deleteScheduledPost(blogId: string, id: string): Promise<v
   await mcFetch(`/v2/scheduler/posts/${id}`, { method: 'DELETE', blogId });
 }
 
-/** Metricool's best-time-to-publish suggestions for a brand (feeds Raph, Step 3). */
-export async function bestTimes(blogId: string): Promise<unknown> {
-  return mcFetch('/planner/best-time-to-publish', { method: 'GET', blogId });
+/**
+ * Metricool's best-time-to-publish suggestions for a brand, per network.
+ *
+ * THE PATH WAS WRONG (D49). This called `/planner/best-time-to-publish`, which does not exist:
+ * grepping Metricool's own OpenAPI spec (app.metricool.com/api/swagger.json, 527 paths) for
+ * "planner" returns nothing. The documented path is per PROVIDER, which also means there is no
+ * single call for a whole brand: the slot table has to be assembled network by network.
+ *
+ * Nothing calls this yet, which is the only reason it has never 404'd. It is on the Step 0 spike
+ * list as the source for the real posting times, so it would have failed the moment that ran.
+ *
+ * Timezone is passed explicitly because every Metricool endpoint defaults to Europe/Madrid,
+ * which is the same trap D24 caught on the publish side.
+ */
+export async function bestTimes(
+  blogId: string,
+  provider: 'facebook' | 'instagram' | 'tiktok' | 'linkedin' | 'youtube',
+  opts?: { start?: string; end?: string; timezone?: string }
+): Promise<unknown> {
+  const q = new URLSearchParams();
+  if (opts?.start) q.set('start', opts.start);
+  if (opts?.end) q.set('end', opts.end);
+  q.set('timezone', opts?.timezone ?? 'Australia/Sydney');
+  return mcFetch(`/v2/scheduler/besttimes/${provider}?${q.toString()}`, {
+    method: 'GET',
+    blogId,
+  });
 }

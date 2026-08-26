@@ -56,10 +56,16 @@ async function spaceGrotesk(): Promise<ArrayBuffer> {
   return fontCache;
 }
 
-type Seg = { text: string; highlight: boolean };
+export type Seg = { text: string; highlight: boolean };
 
-/** Split a line into plain/highlight segments (highlight = wrapped in *asterisks*). */
-function parseLine(line: string): Seg[] {
+/**
+ * Split a line into plain/highlight segments (highlight = wrapped in *asterisks*).
+ *
+ * Exported because slide-render.tsx composites the same asterisk grammar into three
+ * templates. One parser, so a highlight means the same thing on a media-library overlay and
+ * on slide seven of a carousel.
+ */
+export function parseLine(line: string): Seg[] {
   const segs: Seg[] = [];
   const rx = /\*([^*]+)\*/g;
   let last = 0;

@@ -51,3 +51,14 @@ Metricool networks: linkedin, facebook, instagram, gbp, twitter, tiktok, youtube
 - Client: `lib/marketing/metricool-client.ts` (mirrors `resend-client.ts`: lazy config, skip-when-unconfigured). Built inert until the env vars land.
 - Brand mapping: a `/console/marketing/settings` (or per-stream) surface lists brands via `/admin/simpleProfiles` and maps each stream to a `blogId`, stored as console config (not env). One-time setup.
 - **D18 schedule test (gate):** before relying on publishing, schedule one real post to a test channel and confirm it lands. Timezone default should be Marrs's (Australia/Sydney), not the CLI's `America/New_York`.
+
+---
+
+## The OpenAPI spec exists, and it is the source of truth (25 August 2026)
+
+**`https://app.metricool.com/api/swagger.json`** is Metricool's complete OpenAPI 3.0.1 spec, 527 paths, linked from their own public docs page at `https://app.metricool.com/resources/apidocs/index.html`. Read it before inferring anything about their API.
+
+**It caught a live wrong path in our own client.** `bestTimes()` called `/planner/best-time-to-publish`; grepping the spec for "planner" returns nothing. The documented path is `GET /v2/scheduler/besttimes/{provider}` (provider in facebook, instagram, tiktok, linkedin, youtube; params start, end, timezone), which also means there is no single call for a whole brand: the slot table has to be assembled network by network. Nothing called it yet, which is the only reason it had never 404'd. Fixed.
+
+**Per-post analytics are real and typed.** See `docs/pam-console/todo.md` item 8 for the endpoint list, the four things a single authenticated call must confirm, and the constraints (Europe/Madrid default on every call, no published rate limits, no per-post lookup, half-documented pagination, and the fact that we must store our own snapshots because Metricool holds no notion of our narratives).
+

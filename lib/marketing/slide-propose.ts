@@ -18,24 +18,98 @@ import {
   SLIDE_W,
   SLIDE_H,
   ROLES,
+  LEGACY_TEMPLATE,
+  brandHexOr,
   cleanField,
   oneOf,
   slideCountFor,
   type Slide,
   type SlidePlan,
   type SlideRole,
+  type SlideTemplate,
 } from './slide-plan';
+import { templateSpec } from './slide-templates';
 
 /* ------------------------------------------------------------------ April writes it */
 
+/**
+ * WHAT SHE WRITES DEPENDS ON THE TEMPLATE, and that is the whole efficiency.
+ *
+ * The template is chosen before she is asked anything, and it owns the typesetting: the type
+ * size, the wrapping, the position, the colours and the furniture are all decided in code
+ * (slide-render.tsx). So the prompt no longer asks for any of it, and on a `plate` set it does
+ * not ask for an image brief or a visual world either, because nothing is generated.
+ *
+ * Three things came out of the brief and each one was a live failure mode:
+ *
+ * 1. "Use a line break where the line should break" is GONE. It asked for a raw newline inside
+ *    a JSON string value, which is invalid JSON, and every headline was another chance to kill
+ *    the whole response. The fitter wraps now, so there is nothing to ask for.
+ * 2. The image rules only appear when there is an image. On a plate set the entire block goes,
+ *    along with the world line.
+ * 3. The example object at the end names exactly the keys wanted for THIS template, because in
+ *    JSON mode the example is the strongest shape signal the model gets.
+ */
+const FIELDS = (t: SlideTemplate, count: number): string => {
+  const spec = templateSpec(t);
+  const lines: string[] = [];
+  lines.push(
+    `1. headline: the words that go ON the slide. Under ${spec.limits.headlineWords} words, hard limit. Do NOT break the lines and do not use any line breaks: the layout sets the type and wraps it for you. Wrap ONE phrase in *asterisks* to highlight it in the brand colour; highlight the phrase that carries the meaning, never a whole line.`
+  );
+  if (spec.limits.subWords > 0) {
+    lines.push(
+      `2. sub: ONE supporting line under the headline, under ${spec.limits.subWords} words, plain, no highlight. It earns its place by adding the thing the headline had to leave out. Leave it out entirely when the headline is complete on its own.`
+    );
+  }
+  lines.push(
+    `${spec.limits.subWords > 0 ? '3' : '2'}. note: one plain line on what this slide is doing and what concept material it stands on. If it stands on the argument rather than on hard material, say so. This is read by the operator, not printed on the slide.`
+  );
+  if (t === 'split') {
+    lines.push(
+      `${spec.limits.subWords > 0 ? '4' : '3'}. prompt: the PHOTOGRAPH for the small window at the top of the card, and ONLY on the slides that genuinely want one. Under 20 words: one subject, the light, the framing. AT MOST ${Math.ceil(
+        count / 2
+      )} of the ${count} slides carry a photograph. On every other slide leave prompt as an empty string, and that slide is set as type alone, which is the alternation this format wants. Two absolutes: never ask for text, words, letters, numbers, signage or logos in the image, and never describe an interface, a chart, a diagram or a slide layout. The only image model available makes photographs of people and cannot draw anything.`
+    );
+  }
+  if (t === 'full') {
+    lines.push(
+      `${spec.limits.subWords > 0 ? '4' : '3'}. prompt: the BACKGROUND image behind those words. Describe a photographic or textural scene: subject, composition, light, mood, under ${spec.limits.promptChars} characters. THREE RULES, all absolute. Never ask for text, words, letters, numbers, signage, logos or captions in the image; the words are composited afterwards in code and a model that also writes them ruins the slide. Leave the area where the text sits visually quiet: uncluttered, low contrast, no face and no busy detail there. Never describe a user interface, a chart, a diagram or a slide layout; this is a photograph behind type, not a rendered slide.`
+    );
+  }
+  return lines.join('\n\n');
+};
+
+const EXAMPLE = (t: SlideTemplate): string => {
+  if (t === 'plate') {
+    return '{"caption":"...","slides":[{"role":"cover","headline":"...","sub":"...","note":"..."}]}';
+  }
+  if (t === 'split') {
+    return '{"world":"...","caption":"...","slides":[{"role":"cover","headline":"...","sub":"...","note":"...","prompt":"..."}]}';
+  }
+  return '{"world":"...","caption":"...","slides":[{"role":"cover","headline":"...","note":"...","prompt":"..."}]}';
+};
+
+const LOOK = (t: SlideTemplate): string => {
+  if (t === 'plate') {
+    return 'THE LOOK IS ALREADY DECIDED: a statement plate. Every slide is type on the brand field, no photograph anywhere, set large. So the words are the whole slide and a vague line has nothing to hide behind.';
+  }
+  if (t === 'split') {
+    return 'THE LOOK IS ALREADY DECIDED: a split card. A photograph sits in a window across the top of the slide and the words sit underneath it on the brand field. The words are never on top of the photograph, so the photograph does not have to make room for them.';
+  }
+  return 'THE LOOK IS ALREADY DECIDED: full frame. One photograph fills the slide and the words sit over it behind a dark scrim, so the words have to be short and the picture has to carry mood rather than detail.';
+};
+
 const SYSTEM = (opts: {
   count: number;
+  template: SlideTemplate;
   outputSpec?: string;
   brandVoice?: string;
   icp?: string;
 }) => `You are April, Polynize's copy chief, planning an image set: ${opts.count} slide${
   opts.count === 1 ? '' : 's'
 } at ${SLIDE_W} x ${SLIDE_H}.
+
+${LOOK(opts.template)}
 
 EVERY SLIDE MUST LAND ON ITS OWN. There is no voiceover and no narrator. A reader who sees only slide six must get something whole from it. A slide that needs the one before it to make sense does not work, and a slide that delivers neither a concrete value nor real curiosity gets cut.
 
@@ -49,22 +123,18 @@ ${
       } is the CLOSE: the takeaway in one sentence plus one ask, and a question there is what drives the comments.`
 }
 
-FOR EACH SLIDE, three things.
+FOR EACH SLIDE:
 
-1. headline: the words that go ON the slide. Under 14 words, hard limit. Use a line break where the line should break, because the break is the typesetting. Wrap ONE phrase in *asterisks* to highlight it in the brand colour; highlight the phrase that carries the meaning, never a whole line.
-
-2. note: one plain line on what this slide is doing and what concept material it stands on. If it stands on the argument rather than on hard material, say so. This is read by the operator, not printed on the slide.
-
-3. prompt: the BACKGROUND image behind those words. Describe a photographic or textural scene: subject, composition, light, mood. THREE RULES, all absolute. Never ask for text, words, letters, numbers, signage, logos or captions in the image; the words are composited afterwards in code and a model that also writes them ruins the slide. Leave the area where the text sits visually quiet: uncluttered, low contrast, no face and no busy detail there. Never describe a user interface, a chart, a diagram or a slide layout; this is a photograph behind type, not a rendered slide.
+${FIELDS(opts.template, opts.count)}
 
 ALSO WRITE, once for the whole set:
-
-world: one line, under 30 words, describing the single visual world all ${
-  opts.count
-} slide${
-  opts.count === 1 ? '' : 's'
-} live in: the palette, the light, the material, the distance. Every slide prompt is generated with this line appended, so it is what makes the set look like one set. Be specific and be consistent with it in every prompt.
-
+${
+  opts.template === 'plate'
+    ? ''
+    : `
+world: one line, under 30 words, describing the single visual world every photograph lives in: the palette, the light, the material, the distance. Each prompt is generated with this line appended, so it is what makes the set look like one set. Be specific and be consistent with it in every prompt.
+`
+}
 caption: the post caption. 100 to 200 words, the hook inside the first 125 characters, and it must agree with slide 1 rather than repeat it word for word. No hashtags.
 ${opts.icp ? `\nWho it is for: ${opts.icp}.\n` : ''}${
   opts.brandVoice ? `\nBRAND VOICE:\n"""\n${opts.brandVoice}\n"""\n` : ''
@@ -72,25 +142,42 @@ ${opts.icp ? `\nWho it is for: ${opts.icp}.\n` : ''}${
 Hard constraints:
 - Ground strictly in the source. Do not invent a fact, name, number, quote, client or outcome it does not contain.
 - Never use the em-dash character (U+2014). Use a comma, a period, or a colon.
+- Every value is a single line of plain text. Never press a line break inside a value.
 
 Return ONLY a JSON object, no prose around it and no code fences:
-{"world":"...","caption":"...","slides":[{"role":"cover","headline":"...","note":"...","prompt":"..."}]}`;
+${EXAMPLE(opts.template)}`;
 
 /**
- * The house defaults for where the words sit. Chosen here so the screen never asks.
+ * The house defaults for where the words sit, and they are now a FALLBACK rather than the
+ * design: `plate` and `split` place the words themselves, and only `full` reads `position`.
+ * Kept because the fields are on the type, the stored plans have them, and the media library's
+ * own overlay still speaks this language.
  *
- * The cover shouts from the centre, body slides sit low so the image reads above them,
- * and the close sits centre again because it is the line the reader leaves with.
+ * The cover shouts from the centre, body slides sit low so the image reads above them, and the
+ * close sits centre again because it is the line the reader leaves with.
  */
-function placementFor(role: SlideRole, count: number): Pick<Slide, 'position' | 'size' | 'baseColor' | 'highlightColor'> {
-  if (role === 'cover') {
-    return { position: 'centre', size: 'large', baseColor: '#ffffff', highlightColor: '#69fccb' };
+function placementFor(
+  role: SlideRole,
+  count: number,
+  accent: string
+): Pick<Slide, 'position' | 'size' | 'baseColor' | 'highlightColor'> {
+  const colours = { baseColor: '#f4ece4', highlightColor: accent };
+  if (role === 'cover' || role === 'close' || count === 1) {
+    return { position: 'centre', size: 'large', ...colours };
   }
-  if (role === 'close' || count === 1) {
-    return { position: 'centre', size: 'large', baseColor: '#ffffff', highlightColor: '#69fccb' };
-  }
-  return { position: 'lower', size: 'medium', baseColor: '#ffffff', highlightColor: '#69fccb' };
+  return { position: 'lower', size: 'medium', ...colours };
 }
+
+/** What the operator chose before April was asked anything. */
+export type SlideBrief = {
+  template: SlideTemplate;
+  /** A brand hex. One per set, so the colour grammar cannot drift slide to slide. */
+  accent?: string;
+  /** The standing label in the corner of every slide, e.g. "Emergent AI". */
+  kicker?: string;
+  /** His own words about what he wants on these slides. */
+  steer?: string;
+};
 
 /**
  * Write the whole slide narrative in one call. Throws DraftError, matching the hooks and
@@ -102,11 +189,12 @@ function placementFor(role: SlideRole, count: number): Pick<Slide, 'position' | 
 export async function proposeSlidePlan(
   owner: string,
   piece: MarketingPiece,
-  steer?: string
+  brief: SlideBrief
 ): Promise<SlidePlan> {
   const source = await conceptBodyForPiece(owner, piece);
   if (!source.trim()) throw new DraftError('no-concept');
 
+  const steer = brief.steer;
   const count = slideCountFor(piece);
   const brandVoice = await getBrandVoiceForStream(piece.stream).catch(() => undefined);
   const outputSpec = piece.master ? promptFragment(piece.master) : undefined;
@@ -120,7 +208,7 @@ export async function proposeSlidePlan(
   let raw: string;
   try {
     raw = await complete({
-      system: SYSTEM({ count, outputSpec, brandVoice, icp: icpLabel(piece.icp) }),
+      system: SYSTEM({ count, template: brief.template, outputSpec, brandVoice, icp: icpLabel(piece.icp) }),
       messages: [
         {
           role: 'user',
@@ -130,12 +218,16 @@ export async function proposeSlidePlan(
         },
       ],
       /**
-       * Well clear of the reasoning floor. The production model is a thinking model whose
-       * reasoning tokens count against max_tokens (roughly 2000 to 2300 on a prompt this
-       * shape), and ten slides carrying a headline, a note and a full image prompt is a
-       * long output on top of that.
+       * A CAP, NOT A TARGET, and sized for the worst template rather than the average one.
+       *
+       * The production model is a thinking model whose reasoning tokens count against
+       * max_tokens (roughly 2000 to 2300 on a prompt this shape). A `full` set is ten
+       * headlines, ten notes and ten scene briefs on top of that, which is the payload that
+       * ran out of room at 10000. A `plate` set has no prompts and no world line and will not
+       * come close to this, and a run that reasons less simply spends less, so the ceiling
+       * matches the house's other big JSON generators (podcast-clips.ts) rather than hedging.
        */
-      maxTokens: 10000,
+      maxTokens: 24000,
       temperature: 0.8,
       json: true,
       model: resolvedModel,
@@ -146,7 +238,12 @@ export async function proposeSlidePlan(
     throw new DraftError('llm-unavailable');
   }
 
-  return parseProposal(raw, count, resolvedModel);
+  return parseProposal(raw, count, {
+    template: brief.template,
+    accent: brief.accent,
+    kicker: brief.kicker,
+    model: resolvedModel,
+  });
 }
 
 /**
@@ -275,7 +372,14 @@ function findSlides(o: Record<string, unknown>): unknown[] {
  * (a wrapped object, and a body whose brace span was wrong) logged nothing at all and left
  * "the slides came back empty or malformed" as the only evidence.
  */
-export function parseProposal(raw: string, count: number, model?: string): SlidePlan {
+export function parseProposal(
+  raw: string,
+  count: number,
+  brief?: { template?: SlideTemplate; accent?: string; kicker?: string; model?: string }
+): SlidePlan {
+  const template = brief?.template ?? LEGACY_TEMPLATE;
+  const accent = brandHexOr(brief?.accent, '#69fccb');
+  const model = brief?.model;
   const body = (() => {
     const t = raw.trim();
     const fence = t.match(/^```(?:\w+)?\s*([\s\S]*?)\s*```$/);
@@ -345,16 +449,42 @@ export function parseProposal(raw: string, count: number, model?: string): Slide
         role,
         // `text` and `words` are what a model reaches for when it forgets the key name.
         headline: cleanField(r.headline ?? r.text ?? r.words, 400),
+        // A template with no room for a supporting line drops it rather than storing a field
+        // nothing will ever draw.
+        sub:
+          templateSpec(template).limits.subWords > 0
+            ? cleanField(r.sub ?? r.subhead ?? r.support, 240) || undefined
+            : undefined,
         note: cleanField(r.note, 400),
-        prompt: cleanField(r.prompt ?? r.image ?? r.background, 1200),
-        ...placementFor(role, count),
+        /**
+         * EMPTY IS LEGAL ON A PLATE, and on a split slide it is the instruction "no photograph
+         * here". A plate prompt is thrown away rather than stored, so a model that writes one
+         * anyway cannot cause a generation nobody asked for.
+         */
+        prompt:
+          template === 'plate' ? '' : cleanField(r.prompt ?? r.image ?? r.background, 1200),
+        ...placementFor(role, count, accent),
       } satisfies Slide;
     })
-    .filter((s) => s.headline !== '' || s.prompt !== '');
+    /**
+     * A HEADLINE IS NOW THE ONLY THING THAT MAKES A SLIDE REAL. It used to be "words or a
+     * picture brief", which was right when every slide was a photograph. On a plate set there
+     * are no prompts at all, so keeping that test would have kept prompt-only junk and thrown
+     * nothing away.
+     */
+    .filter((s) => s.headline !== '');
 
   if (slides.length === 0) {
     console.error(`[slides] every slide came back blank (${where})`);
     throw new DraftError('empty');
   }
-  return { version: 1, world, caption, slides };
+  return {
+    version: 1,
+    template,
+    accent,
+    kicker: cleanField(brief?.kicker, 40),
+    world: template === 'plate' ? '' : world,
+    caption,
+    slides,
+  };
 }

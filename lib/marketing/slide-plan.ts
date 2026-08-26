@@ -29,6 +29,7 @@
  */
 
 import { stripEmDashes } from '@/lib/em-dash';
+import { BRAND_HEXES } from './brand-colors';
 
 /* ------------------------------------------------------------------ the shape */
 
@@ -58,15 +59,50 @@ export type SlideRole = 'cover' | 'body' | 'close';
 export type SlidePosition = 'top' | 'upper' | 'centre' | 'lower' | 'bottom';
 export type SlideSize = 'small' | 'medium' | 'large';
 
+/**
+ * THE TEMPLATE IS A PROPERTY OF THE SET, not of a slide.
+ *
+ * He picks one, writes a line about what he wants, and ten slides come back looking like one
+ * deck. Three, because three is a choice and five is a decision:
+ *
+ *   plate  no image at all. The claim set big on the brand field. Nothing is generated.
+ *   split  a photo in a window at the top, the words underneath on the field. Half the
+ *          slides carry a photo; the rest render as plate, which is the alternation the
+ *          output spec asks for and half the generations.
+ *   full   one generated image edge to edge, the words over a scrim.
+ *
+ * WHY THE SPLIT IS TWO OF THREE WITHOUT A PICTURE: the only live image model is Soul, which
+ * makes photoreal people and cannot make a diagram, a chart, a mark or legible type
+ * (higgsfield-models.ts, FLUX is commented out because its endpoint 404s). A template that
+ * needs no generation cannot be refused, cannot time out, and costs nothing, which is why
+ * `plate` is the default rather than the fallback.
+ */
+export type SlideTemplate = 'plate' | 'split' | 'full';
+export const TEMPLATES: SlideTemplate[] = ['plate', 'split', 'full'];
+
+/** Legacy plans have no template and were composed full bleed, so that is what they stay. */
+export const LEGACY_TEMPLATE: SlideTemplate = 'full';
+
 export type Slide = {
   /** 1-based position, and the only thing that decides post order. Stable for the piece's life. */
   n: number;
   role: SlideRole;
   /** The words composited onto the slide. Wrap a phrase in *asterisks* to highlight it. */
   headline: string;
+  /**
+   * The supporting line under the headline. Optional by design: `plate` and `split` have room
+   * for it, `full` does not and ignores it. Under 18 words, no highlight.
+   */
+  sub?: string;
   /** April's one line on why this slide exists. Read only, and the thing that makes a bad slide diagnosable. */
   note: string;
-  /** The BACKGROUND prompt. No words in it: the words are composited deterministically. */
+  /**
+   * The BACKGROUND prompt. No words in it: the words are composited deterministically.
+   *
+   * EMPTY IS A REAL ANSWER NOW. A `plate` slide never has one, and a `split` slide with an
+   * empty prompt is a deliberate type-only slide in a photo set. Empty means "render this one
+   * without a picture", never "this slide is unfinished".
+   */
   prompt: string;
   position: SlidePosition;
   size: SlideSize;
@@ -84,8 +120,30 @@ export type Slide = {
 export type SlidePlan = {
   version: 1;
   /**
+   * THE TEMPLATE, chosen once, before April writes anything. It decides the typesetting, the
+   * furniture, how many words each slide can carry, and whether there is an image prompt to
+   * write at all, which is why it is picked first and not adjusted per slide.
+   */
+  template: SlideTemplate;
+  /**
+   * The one accent, from the brand palette, for the whole set. Rules, seams, the highlighted
+   * phrase and the swipe cue all use it.
+   *
+   * PLAN LEVEL ON PURPOSE. Coral is human, amber is hybrid and mint is agent, so an accent
+   * rotated per slide for visual variety would quietly remap the brand's only colour
+   * grammar. One accent per set means the colour still means what it means.
+   */
+  accent: string;
+  /**
+   * The standing label in the bottom left of every slide, in mono caps: the piece or the
+   * series it belongs to ("EMERGENT AI"). Written once, not per slide, because repeating it
+   * ten times is ten chances to drift and ten sets of tokens.
+   */
+  kicker: string;
+  /**
    * ONE VISUAL WORLD for the whole set, in one line. Appended to every slide's prompt so
-   * ten separately generated images read as one deck rather than ten stock photos.
+   * separately generated images read as one deck rather than as stock photos. Empty on a
+   * `plate` set, because nothing is generated and there is no world to hold.
    */
   world: string;
   /** The post caption. Written with the slides so the hook and slide one agree. */
@@ -115,6 +173,33 @@ export function oneOf<T extends string>(v: unknown, allowed: T[], fallback: T): 
 }
 
 /**
+ * A brand hex or the house accent. Validated here as well as at the route, because a stored
+ * plan is untrusted jsonb and the accent reaches a rendered PNG.
+ */
+export function brandHexOr(v: unknown, fallback: string): string {
+  const s = typeof v === 'string' ? v.trim().toLowerCase() : '';
+  return BRAND_HEXES.has(s) ? s : fallback;
+}
+
+/**
+ * Does this slide want a generated background? The one place that question is answered.
+ *
+ * `plate` never does. `full` always does. `split` does when April wrote a prompt for it, and a
+ * split slide with no prompt is a type-only slide by design, not a broken one.
+ */
+export function slideWantsImage(template: SlideTemplate, slide: Pick<Slide, 'prompt'>): boolean {
+  if (template === 'plate') return false;
+  if (template === 'full') return true;
+  return slide.prompt.trim().length > 0;
+}
+
+/** The Soul size generated for this template, cropped to the frame by the compositor. */
+export function sourceSizeFor(template: SlideTemplate): string {
+  // The split window is landscape, so a landscape generation crops least into it.
+  return template === 'split' ? '2048x1152' : SLIDE_SOURCE_SIZE;
+}
+
+/**
  * Parse the stored plan defensively. `piece.slides` is untrusted jsonb text, so a
  * malformed plan reads as "no plan yet" and the screen offers to write one, rather than
  * throwing on a render the operator cannot recover from.
@@ -141,6 +226,7 @@ export function parseSlidePlan(raw: string | undefined | null): SlidePlan | null
         n,
         role: oneOf(r.role, ROLES, i === 0 ? 'cover' : 'body'),
         headline: cleanField(r.headline, 400),
+        sub: cleanField(r.sub, 240) || undefined,
         note: cleanField(r.note, 400),
         prompt: cleanField(r.prompt, 1200),
         position: oneOf(r.position, POSITIONS, 'centre'),
@@ -162,6 +248,9 @@ export function parseSlidePlan(raw: string | undefined | null): SlidePlan | null
   if (slides.length === 0) return null;
   return {
     version: 1,
+    template: oneOf(o.template, TEMPLATES, LEGACY_TEMPLATE),
+    accent: brandHexOr(o.accent, '#69fccb'),
+    kicker: cleanField(o.kicker, 40),
     world: cleanField(o.world, 600),
     caption: cleanField(o.caption, 2200),
     slides,

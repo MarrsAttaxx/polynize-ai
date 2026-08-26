@@ -10,7 +10,7 @@ import l from '../_components/launcher.module.css';
 export const dynamic = 'force-dynamic';
 
 /**
- * THE FRONT PAGE: pick a stream or a creator (D45).
+ * THE FRONT PAGE: the content engine, and the streams inside it (D45, retitled D49).
  *
  * Marrs: "I've decided that I want this to be for everyone in the team, so we need that first
  * page to come back where it has Polynize, Marrs, Shourov, Kristin and Julian as the opening.
@@ -57,7 +57,7 @@ export default async function MarketingHome() {
       <div className={s.dashboard}>
         <div className={s.header}>
           <div className={s.eyebrow}>marketing engine</div>
-          <h1 className={s.title}>Whose content</h1>
+          <h1 className={s.title}>Content engine</h1>
         </div>
 
         <div className={s.marketingCtaRow}>
