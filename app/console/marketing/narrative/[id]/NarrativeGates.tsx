@@ -319,6 +319,91 @@ export function NarrativeGates({
     }
   };
 
+  /* ---------------- Gate 4: the look ---------------- */
+
+  /**
+   * THE HERO IMAGE (D51). One image for the whole narrative, made first, that every later image
+   * is generated against.
+   *
+   * It sits above the cards because it is upstream of all of them: settling the look on ONE
+   * generation before spending ten on a carousel is the entire economy. Optional by design, and
+   * the panel says so: a narrative with no hero still works exactly as it did, the slide screen
+   * just falls back to inferring a reference from the first approved slide.
+   */
+  const [heroPrompt, setHeroPrompt] = useState(narrative.hero_prompt ?? '');
+  const [heroPreview, setHeroPreview] = useState<string | null>(null);
+  const [heroBusy, setHeroBusy] = useState<'make' | 'save' | null>(null);
+  const heroLive = narrative.hero_url ?? null;
+
+  const makeHero = async () => {
+    if (heroBusy || heroPrompt.trim().length < 3) return;
+    setHeroBusy('make');
+    setErr(null);
+    try {
+      const res = await fetch(`${base}/hero`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ prompt: heroPrompt.trim() }),
+      });
+      const b = (await res.json().catch(() => null)) as { url?: string; error?: string } | null;
+      if (!res.ok || !b?.url) {
+        setErr(b?.error ?? 'Could not make the look.');
+        return;
+      }
+      setHeroPreview(b.url);
+    } catch {
+      setErr('Network error while making the look.');
+    } finally {
+      setHeroBusy(null);
+    }
+  };
+
+  /**
+   * Blessing it is what registers it. Same two steps as approving a slide: into the stream
+   * library for a real media id, then onto the narrative. Until then it is a preview and
+   * nothing downstream can see it, which is why a rejected hero leaves no litter behind.
+   */
+  const keepHero = async () => {
+    if (heroBusy || !heroPreview) return;
+    setHeroBusy('save');
+    setErr(null);
+    try {
+      const path = window.location.pathname.replace(/\/+$/, '');
+      const at = path.indexOf('/marketing/narrative/');
+      const consoleBase = at === -1 ? '' : path.slice(0, at);
+      const add = `${consoleBase}/marketing/stream/${narrative.lane}/media/add`;
+      const reg = await fetch(add, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          url: heroPreview,
+          kind: 'image',
+          // Named off the idea so the asset is findable in the library later, and so the
+          // narrative-scoped pool (todo 3c) has something to match on before it has a real ref.
+          label: `${narrative.idea.trim().slice(0, 60) || 'Narrative'} hero`.slice(0, 90),
+        }),
+      });
+      const rb = (await reg.json().catch(() => null)) as
+        | { asset?: { media_id: string }; error?: string }
+        | null;
+      if (!reg.ok || !rb?.asset) {
+        setErr(rb?.error ?? 'Could not save the hero to the library.');
+        return;
+      }
+      const { narrative: next } = await put({
+        hero_url: heroPreview,
+        hero_media_id: rb.asset.media_id,
+        hero_prompt: heroPrompt.trim(),
+      });
+      setNarrative(next);
+      setHeroPreview(null);
+    } catch {
+      setErr('Network error saving the look.');
+    } finally {
+      setHeroBusy(null);
+    }
+  };
+
   /* ---------------- Gate 5: the wave ---------------- */
 
   const [shipping, setShipping] = useState(false);
@@ -584,6 +669,61 @@ export function NarrativeGates({
 
       {gate === 4 ? (
         <>
+          {/* THE LOOK, above the cards because it is upstream of every image below it (D51). */}
+          <div className={g.card}>
+            <h3 className={g.lookHead}>The look</h3>
+            <p className={g.lookWhy}>
+              One image for this whole narrative. Every picture made below is generated against
+              it, so the set holds together. Optional: skip it and each image finds its own way.
+            </p>
+            {heroLive && !heroPreview ? (
+              <div className={g.lookRow}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={heroLive} alt="" className={g.lookThumb} />
+                <span className={g.lookState}>✓ set. Every image below follows this.</span>
+              </div>
+            ) : null}
+            {heroPreview ? (
+              <div className={g.lookRow}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={heroPreview} alt="" className={g.lookThumb} />
+                <span className={g.lookState}>Not saved yet.</span>
+              </div>
+            ) : null}
+            <textarea
+              className={g.lookBox}
+              rows={2}
+              placeholder="What does this narrative look like? A scene, the light, the mood."
+              value={heroPrompt}
+              onChange={(e) => setHeroPrompt(e.target.value)}
+              disabled={heroBusy !== null}
+            />
+            <div className={g.lookBtns}>
+              <button
+                type="button"
+                className={g.lookGo}
+                onClick={makeHero}
+                disabled={heroBusy !== null || heroPrompt.trim().length < 3}
+              >
+                {heroBusy === 'make'
+                  ? 'Making…'
+                  : heroLive || heroPreview
+                    ? 'Try another'
+                    : 'Make the look'}
+              </button>
+              {heroPreview ? (
+                <button
+                  type="button"
+                  className={g.lookKeep}
+                  onClick={keepHero}
+                  disabled={heroBusy !== null}
+                >
+                  {heroBusy === 'save' ? 'Saving…' : 'Use this one'}
+                </button>
+              ) : null}
+            </div>
+          </div>
+
           {pieces.length === 0 ? (
             <p className={g.meta}>
               {(narrative.piece_ids?.length ?? 0) > 0

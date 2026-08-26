@@ -58,11 +58,19 @@ export function ImageScreen({
   initial,
   conceptBody,
   sourceLabel = 'The concept',
+  heroUrl,
 }: {
   initial: MarketingPiece;
   conceptBody?: string;
   /** What the source is called: 'The article' for a Gates piece, 'The concept' otherwise. */
   sourceLabel?: string;
+  /**
+   * THE NARRATIVE'S HERO (D51): the style reference every image in this narrative is generated
+   * against. Absent on a narrative with no hero, and on a piece with no narrative behind it, in
+   * which case the old behaviour stands and the reference is inferred from the first approved
+   * slide's background.
+   */
+  heroUrl?: string;
 }) {
   const wanted = slideCountFor(initial);
   const isCard = wanted === 1;
@@ -273,9 +281,14 @@ export function ImageScreen({
       setError(null);
       try {
         const url = window.location.pathname.replace(/\/+$/, '') + '/slides/render';
-        // Keep the whole set in one visual world: the first blessed background is the
-        // reference every later slide is generated against.
-        const reference = current.slides.find((sl) => sl.approved && sl.bg_url)?.bg_url;
+        /**
+         * Keep the whole set in one visual world. The narrative's HERO is the reference when
+         * there is one, because that is an image he chose; otherwise fall back to the first
+         * blessed background, which is a guess made from approval order and is what the hero
+         * exists to replace.
+         */
+        const reference =
+          heroUrl ?? current.slides.find((sl) => sl.approved && sl.bg_url)?.bg_url;
         const res = await fetch(url, {
           method: 'POST',
           headers: { 'content-type': 'application/json' },
@@ -318,7 +331,9 @@ export function ImageScreen({
         setRendering(null);
       }
     },
-    [patchSlide]
+    // heroUrl belongs here: makeSlide reads it, so without it the closure keeps whatever the
+    // hero was at mount and a hero set during this session would be ignored until a reload.
+    [patchSlide, heroUrl]
   );
 
   /**

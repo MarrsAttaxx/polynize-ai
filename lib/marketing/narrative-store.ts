@@ -68,6 +68,25 @@ export type Narrative = {
    * window, accepted because it replaces a window that was minutes wide.
    */
   wave_lock_at?: string;
+  /**
+   * THE HERO IMAGE, and it belongs to the NARRATIVE rather than to a piece (D51).
+   *
+   * Marrs: "we need a 'Hero Image' as an option, so a main hero image gets created that can
+   * then set the style for the rest of the images."
+   *
+   * It sets the look for every image the narrative produces: the carousel slides, the quote
+   * card, and the image on each text post. A piece cannot own that, because the look has to
+   * outlive any one of them and be the same across all of them.
+   *
+   * The reference plumbing already existed: the render route passes `referenceUrl` to Soul as
+   * `image_reference`, and the slide screen was inferring it from whichever slide happened to be
+   * approved first. The hero replaces that guess with a decision.
+   */
+  hero_url?: string;
+  /** The library id, so the hero is attachable to a post like any other image. */
+  hero_media_id?: string;
+  /** What was asked for, kept so a reroll is one tap rather than a retype. */
+  hero_prompt?: string;
   created_at: string; // ISO
   updated_at: string; // ISO
 };
@@ -159,6 +178,15 @@ export function normalizeNarrative(x: unknown): Narrative | null {
     ...(kit !== undefined ? { kit } : {}),
     ...(piece_ids !== undefined ? { piece_ids } : {}),
     ...(typeof r.wave_lock_at === 'string' ? { wave_lock_at: r.wave_lock_at } : {}),
+    // The hero (D51). A url with no media id is a preview that was never blessed, so both
+    // have to survive a round trip independently or "made but not saved" becomes "saved".
+    ...(typeof r.hero_url === 'string' && r.hero_url ? { hero_url: r.hero_url.slice(0, 2000) } : {}),
+    ...(typeof r.hero_media_id === 'string' && r.hero_media_id
+      ? { hero_media_id: r.hero_media_id.slice(0, 200) }
+      : {}),
+    ...(typeof r.hero_prompt === 'string' && r.hero_prompt
+      ? { hero_prompt: r.hero_prompt.slice(0, 1200) }
+      : {}),
     created_at: typeof r.created_at === 'string' ? r.created_at : '',
     updated_at: typeof r.updated_at === 'string' ? r.updated_at : '',
   };

@@ -29,6 +29,9 @@ export async function PUT(
     article?: unknown;
     gate?: unknown;
     kit?: unknown;
+    hero_url?: unknown;
+    hero_media_id?: unknown;
+    hero_prompt?: unknown;
   } | null;
   if (!body) return NextResponse.json({ error: 'invalid json' }, { status: 400 });
 
@@ -50,6 +53,21 @@ export async function PUT(
   }
   if (Array.isArray(body.kit)) {
     narrative.kit = body.kit.filter((x): x is string => typeof x === 'string').slice(0, 40);
+  }
+  /**
+   * THE HERO (D51). Set together or cleared together: a url with no library id is a preview
+   * nobody blessed, and storing one without the other would make "made but not saved" read as
+   * saved to every screen downstream.
+   */
+  if (typeof body.hero_url === 'string' && typeof body.hero_media_id === 'string') {
+    narrative.hero_url = body.hero_url.slice(0, 2000);
+    narrative.hero_media_id = body.hero_media_id.slice(0, 200);
+    if (typeof body.hero_prompt === 'string') {
+      narrative.hero_prompt = body.hero_prompt.slice(0, 1200);
+    }
+  } else if (body.hero_url === null) {
+    delete narrative.hero_url;
+    delete narrative.hero_media_id;
   }
 
   try {

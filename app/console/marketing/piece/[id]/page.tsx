@@ -8,6 +8,7 @@ import { ScriptScreen } from './ScriptScreen';
 import { scaffoldScript } from '@/lib/marketing/concept-parse';
 import { TextOutputScreen } from './TextOutputScreen';
 import { ImageScreen } from './ImageScreen';
+import { getNarrative } from '@/lib/marketing/narrative-store';
 import s from './script.module.css';
 
 export const dynamic = 'force-dynamic';
@@ -86,11 +87,27 @@ export default async function MarketingPiecePage({
     );
   }
   if (kind === 'image') {
+    /**
+     * THE NARRATIVE'S HERO (D51), if it has one. It is the style reference every image in this
+     * narrative is generated against, which is why it is read here rather than inferred on the
+     * screen from whichever slide happened to be approved first.
+     *
+     * Tolerant of its own failure: no hero is a weaker set, never a broken screen.
+     */
+    let heroUrl: string | undefined;
+    if (piece.narrative_ref) {
+      try {
+        heroUrl = (await getNarrative(piece.narrative_ref))?.hero_url;
+      } catch (err) {
+        console.error('[marketing] hero read failed:', err);
+      }
+    }
     return (
       <ImageScreen
         initial={piece}
         conceptBody={conceptBody}
         sourceLabel={sourceLabel}
+        heroUrl={heroUrl}
       />
     );
   }

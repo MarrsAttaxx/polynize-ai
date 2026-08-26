@@ -554,3 +554,79 @@
   text-transform: uppercase;
   color: color-mix(in srgb, var(--mint, #69fccb) 80%, var(--text-3, #6f6a64));
 }
+
+/* THE LOOK: the narrative's hero image (D51). It sits above the Gate 4 cards because it is
+   upstream of every image made below it, and settling the look on one generation before spending
+   ten on a carousel is the whole economy of it. */
+.lookHead {
+  font-size: 14px;
+  color: var(--text, #f4ece4);
+  margin: 0 0 4px;
+}
+.lookWhy {
+  font-family: var(--font-jetbrains-mono), monospace;
+  font-size: 10.5px;
+  line-height: 1.55;
+  color: var(--text-3, #6f6a64);
+  margin: 0 0 10px;
+}
+.lookRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+/* 4:5, the frame every image in the set is cropped to. */
+.lookThumb {
+  width: 64px;
+  height: 80px;
+  object-fit: cover;
+  border-radius: 7px;
+  border: 1px solid color-mix(in srgb, var(--mint, #69fccb) 40%, transparent);
+  flex: 0 0 auto;
+}
+.lookState {
+  font-family: var(--font-jetbrains-mono), monospace;
+  font-size: 10.5px;
+  color: var(--text-2, #cfc8c1);
+}
+.lookBox {
+  width: 100%;
+  box-sizing: border-box;
+  resize: vertical;
+  background: var(--surface-2, #23232f);
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.1));
+  border-radius: 8px;
+  padding: 9px 11px;
+  font-size: 13.5px;
+  line-height: 1.45;
+  color: var(--text, #f4ece4);
+  font-family: inherit;
+}
+.lookBtns {
+  display: flex;
+  gap: 8px;
+  margin-top: 9px;
+  flex-wrap: wrap;
+}
+.lookGo,
+.lookKeep {
+  font-family: var(--font-jetbrains-mono), monospace;
+  font-size: 11.5px;
+  padding: 8px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.14));
+  background: var(--surface-2, #23232f);
+  color: var(--text, #f4ece4);
+}
+.lookKeep {
+  background: var(--mint, #69fccb);
+  border-color: var(--mint, #69fccb);
+  color: #0a0a0f;
+}
+.lookGo:disabled,
+.lookKeep:disabled {
+  opacity: 0.45;
+  cursor: default;
+}

@@ -2,7 +2,22 @@
 
 **The running list of what is asked for and not yet built.** Kept here rather than in chat because a request made in one session and acted on three sessions later needs somewhere durable to live. Newest asks at the top of each section.
 
-Anything already built is in `decisions.md` (D1 to D49), not here. This file is only what is still owed.
+Anything already built is in `decisions.md`, not here. This file is only what is still owed.
+
+## The order, set by Marrs 25 August 2026
+
+**Build order:** hero image (**done**, D51) → narrative image pool (3c) → template picker (3).
+
+**Flow priority, which is a different axis and outranks the build order when they disagree:**
+
+| Priority | Flow |
+|---|---|
+| **1** | **Text + image.** The one to get right. |
+| 2 | Video |
+| 3 | PDF |
+| low | LinkedIn carousel |
+
+That reordering matters more than it looks. It means the carousel work in progress is serving priority 3 and low, while **the image on a text post is priority 1** and today has no generation path at all: `TextOutputScreen` offers only the media picker. So the hero and the narrative pool are not carousel features, they are the text-plus-image flow, and the template picker is the one item that is genuinely carousel-first.
 
 ---
 
@@ -38,9 +53,15 @@ The template is a property of the PLAN, not of each slide: picked once for the s
 
 Secondary benefit worth keeping in view: templates that need no image prompt per slide **shrink what April has to write**, which is the payload that has been making the 10-slide call fragile.
 
-**3b. A HERO IMAGE that sets the style for the rest.** Marrs: *"we need a 'Hero Image' as an option, so a main hero image gets created that can then set the style for the rest of the images."*
+**3b. A HERO IMAGE that sets the style for the rest. DONE (D51).** Marrs: *"we need a 'Hero Image' as an option, so a main hero image gets created that can then set the style for the rest of the images."*
 
-**Half the plumbing exists.** The render route already takes a `referenceUrl` and passes it to Soul as `image_reference`, and `ImageScreen` already sends the first approved slide's background as that reference, so later slides are generated against the first one. What is missing is making it a deliberate STEP rather than a side effect of whichever slide happened to be approved first:
+"The look" panel now sits at the top of Gate 4, above the cards, because it is upstream of every image below it. Write a line, make it, and blessing it registers it in the library and pins it on the narrative. Every image generated afterwards is generated against it. Optional: a narrative with no hero behaves exactly as before.
+
+Still owed on the hero, small: it is not yet offered as the image on a **text** post, which is priority 1. It has a real library id so it is already attachable by hand; what is missing is the text screen offering it by default, which is the same build as 3c.
+
+Original reasoning, kept:
+
+**Half the plumbing existed.** The render route already takes a `referenceUrl` and passes it to Soul as `image_reference`, and `ImageScreen` already sends the first approved slide's background as that reference, so later slides are generated against the first one. What is missing is making it a deliberate STEP rather than a side effect of whichever slide happened to be approved first:
 
 - Generate the hero on its own, before the set, and bless it explicitly.
 - Pin it as the reference for every subsequent generation rather than inferring it from approval order.
@@ -107,6 +128,18 @@ Known constraints to design around, not discovered later:
 - **We must store our own snapshots regardless.** Metricool scopes data to a BRAND and holds no notion of our narrative, piece or post type, and states no retention window. Without our own periodic pull keyed to calendar entries there is no history, no trend, and no way to answer "did the Emergent AI carousel outperform". Budget the store as part of the build.
 - **YouTube per-video is missing.** No `/v2/analytics/posts/youtube`. The only own-channel path is `/stats/youtube/videos`, whose summary reads "This method is deprecated". YouTube is account-level only until tested.
 - **The Advanced Analytics add-on gates the best path.** Per-narrative "campaign dashboards" exist and would be ideal, but `PerformanceDashboardDto.locked` is documented as true once the brand is past the free limit without the add-on. Build on the raw per-post endpoints and treat dashboards as an accelerator.
+
+---
+
+## Video: evaluate ChatCut before building more of our own (asked 25 August 2026)
+
+Marrs: *"for the video editing flow, I've found a possible better option called ChatCut. What I want to do when we get there is feed you a finished video I've created, and the raw video, and to see if our current video editing model or ChatCut can achieve the same thing."*
+
+**A bake-off, not a decision.** He supplies a finished video he cut himself plus the raw footage, and the test is whether either path reproduces it: our own pipeline, or ChatCut.
+
+Setup when we get there: **read `chatcut.io/claude` and install the ChatCut plugin.** Do not install it before the comparison is actually being run, and do not treat it as chosen: the point of handing over a known-good finished cut is that it is a real target with a real answer, which is a much better test than a feature list.
+
+Worth knowing going in: everything after the shoot is deliberately absent from the console today (no cut, no render, no export, and no upload). So this is not "replace something that works", it is choosing what to build for a stage that does not exist yet, which is the right time to ask the question.
 
 ---
 

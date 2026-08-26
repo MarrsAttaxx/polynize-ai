@@ -1076,3 +1076,41 @@ A gate 1 narrative has nothing behind it, so it starts hard left at the bottom o
 
 **The CSS module checker earned its keep.** The first version imported `../lanes.module.css` from a file sitting beside it, so every class resolved to `undefined` and the lanes would have painted unstyled with no error anywhere. `scripts/check-css-modules.mjs` caught it before it shipped. Run it.
 
+---
+
+## D51: A narrative has a look, and the look is one image
+
+**Adopted 25 August 2026.** Marrs: *"we need a 'Hero Image' as an option, so a main hero image gets created that can then set the style for the rest of the images."*
+
+### What it replaces is a guess
+
+The reference plumbing already existed: the slide render route passes `referenceUrl` to Soul as `image_reference`, so a later slide can be generated in the same world as an earlier one. But the slide screen was **inferring** that reference from whichever slide happened to be approved first. So the look of a ten slide set was decided by approval order, which is not a decision anybody made.
+
+The hero replaces that with one image he chose. And settling the look on **one** generation before spending ten is the whole economy of it.
+
+### It belongs to the NARRATIVE, not to a piece
+
+`Narrative` gained `hero_url`, `hero_media_id` and `hero_prompt`. A piece could not own this: the look has to outlive any one piece and be the same across all of them, since the carousel slides, the quote card and the image on every text post are all the same narrative's images.
+
+**Set together or cleared together.** A url with no library id is a preview nobody blessed, and storing one without the other would make "made but not saved" read as saved to every screen downstream.
+
+### The panel sits above the Gate 4 cards
+
+Because it is upstream of every image made below it. Write a line about the look, make it, and it appears as a preview marked "Not saved yet". Blessing it does the same two steps approving a slide does: register it in the stream library for a real media id, then pin it on the narrative. Until then it is a preview, so **a rejected hero leaves no litter in the library and no half state on the narrative.**
+
+Optional by design and the panel says so: a narrative with no hero behaves exactly as it did, and the slide screen falls back to the old inference.
+
+### Reuse, and the one reuse worth naming
+
+Generation is the same `generateImages` call the media library makes. The crop is `renderAndHostOverlay` with **empty text**, which is the compositor the slide route already proved: `frame` forces exactly 1080 x 1350 with the source object-fit cover. That is what makes the hero usable directly as the image on a text post rather than only as a style reference, which matters because text plus image is now the highest priority flow.
+
+### One bug caught in review
+
+`makeSlide` reads the hero and is a `useCallback`, so without `heroUrl` in its dependency array the closure would keep whatever the hero was at mount, and a hero set during the same session would be ignored until a reload. Added.
+
+### Priorities recorded at the same time
+
+Marrs set both a build order and a flow priority, and they are different axes: build order is hero, then the narrative image pool, then the template picker; flow priority is **text plus image first**, then video, then pdf, with the LinkedIn carousel low.
+
+That reordering is worth stating plainly because it changes what the carousel work is for. The template picker serves priority 3 and low. The hero and the narrative image pool serve **priority 1**, because the image on a text post has no generation path at all today: `TextOutputScreen` offers only the media picker. They are text-plus-image features that happen to have arrived through the carousel.
+
