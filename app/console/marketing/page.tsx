@@ -22,10 +22,6 @@ export const dynamic = 'force-dynamic';
  * mixes five people's work into one list where nobody can find their own. So the board did not
  * go away, it moved down a level. Whose work, then which narrative.
  *
- * The title was "Whose content", which named the first question the page asks rather than
- * the thing the page is. It is the Content Engine (Marrs, 21 Aug 2026), and the eyebrow
- * dropped to "marketing" so the two do not both say engine.
- *
  * The card counts are NARRATIVES now, not concepts and pieces. What matters on this screen is
  * how much work each person has moving and how much has landed.
  */
@@ -60,8 +56,8 @@ export default async function MarketingHome() {
       <div className={s.bgPattern} aria-hidden />
       <div className={s.dashboard}>
         <div className={s.header}>
-          <div className={s.eyebrow}>marketing</div>
-          <h1 className={s.title}>Content Engine</h1>
+          <div className={s.eyebrow}>marketing engine</div>
+          <h1 className={s.title}>Whose content</h1>
         </div>
 
         <div className={s.marketingCtaRow}>
