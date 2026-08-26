@@ -189,6 +189,8 @@ What it was, kept because the shape recurs: the wave picked a time from `getChan
 
 **13. Two competing routes into the calendar.** The wave, and "Prepare posts for N channels" on the text screen, which creates entries with no `scheduled_at` that the wave then has to repair.
 
-**14. The autosave can drop an agreed hook.** On the Script screen the save loop re-checks only the script and the media refs, so a hooks or title change landing mid-flight is never re-sent while the indicator still says Saved. "Propose the arc" then refuses with the hooks visibly ticked on screen. The image screen's autosave does not have this bug and is the pattern to copy.
+**14. The autosave can drop an agreed hook. FIXED (D63).** The loop now snapshots all seven fields, builds the PUT body from that snapshot, and compares it whole by value, so a field cannot be sent without being checked. Reproduced first: the trigger is a mid-flight change followed by a BLUR, because blur clears the debounce and then early-returns, leaving the loop's re-check as the only rescue. Before the fix: one PUT, stale value, "Saved". After: two PUTs, correct value. The Text screen was audited and does not have it.
+
+~~**14. The autosave can drop an agreed hook.**~~ On the Script screen the save loop re-checks only the script and the media refs, so a hooks or title change landing mid-flight is never re-sent while the indicator still says Saved. "Propose the arc" then refuses with the hooks visibly ticked on screen. The image screen's autosave does not have this bug and is the pattern to copy.
 
 **15. No test runner beyond two suites.** `npm run test:marketing` (111 assertions) and `npm run test:blueprint`. Everything else is unverified by anything but a typecheck, and `tsc` cannot see a client component importing server code, which shipped a 500 once already (D47).

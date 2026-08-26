@@ -1533,3 +1533,42 @@ His overnight guardrail was no credits, and there is no OpenRouter key in this w
 
 The carousel slide route stays on Soul for now. Its type is composited in code anyway, so text rendering buys it nothing, and switching it would change the look of every slide already made.
 
+---
+
+## D63: An autosave that checks two of its seven fields is an autosave that lies
+
+**Adopted 26 August 2026.** Todo item 14, fixed overnight with his approval.
+
+The Script screen's save loop built its PUT body from **seven** refs and then re-checked **two** of them. A change to the title, the treatment, the hooks, the arc or the concept-read that landed while a PUT was in flight was never re-sent, and the indicator went to Saved anyway.
+
+### The exact window, reproduced
+
+The debounce hides most of it, which is why this survived: a mid-flight change usually re-arms the 1000ms timer and a second save runs after the first finishes. The hole is the path where **that nudge is swallowed**:
+
+1. An edit starts a PUT.
+2. Mid-flight, another field changes and the field is **blurred**, which is what clicking any button does.
+3. Blur calls `flush()`, which **clears the debounce timer** and calls `save()`.
+4. `save()` sees `inFlight` and returns early. The timer is now gone, so nothing will re-arm it.
+5. The loop's own re-check is the only rescue left, and it was looking at the wrong two fields.
+
+Which is exactly the symptom recorded in the todo: agree a hook, press "Propose the arc", and the arc call refuses with the hooks visibly ticked on screen, because the server was never told.
+
+Reproduced against the real component with a stubbed slow PUT, then re-run after the fix:
+
+| | PUTs | The title that landed | Indicator |
+|---|---|---|---|
+| Before | 1 | the stale one | Saved |
+| After | 2 | the mid-flight change | Saved |
+
+### The fix restores a property rather than adding a check
+
+**The image screen never had this bug, for one reason: it holds its whole state in a single ref**, so its one comparison covers everything it can write. That is the property, and it was lost on the Script screen by having seven refs and remembering two.
+
+So the seven are gathered into one `snapshot()`, **the PUT body is built from that snapshot**, and the snapshot is compared whole. A field cannot be sent without also being checked, which means adding an eighth field to this screen cannot reintroduce the bug. That is worth more than the fix itself.
+
+Compared by **value**, not by reference, which is the second half: `hooks`, `media` and `concept_read` are arrays, so a setter that mutated one in place was invisible to the old `!==` while one that rebuilt it with identical contents caused a pointless resend. Stringifying a seven field object twice per save costs nothing measurable.
+
+### The Text screen was audited, not assumed
+
+It captures all three fields it writes and re-checks all three, so a mid-flight change to any of them is caught. Left alone.
+

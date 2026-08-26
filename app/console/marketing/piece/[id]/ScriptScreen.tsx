@@ -110,31 +110,55 @@ export function ScriptScreen({
   // newest content (last-write-wins by construction). A fetch failure breaks the
   // loop with an honest 'error'; the next edit/flush starts a fresh save. There
   // is no queued value to strand, so an error can never poison the next cycle.
+  /**
+   * EVERYTHING THIS SCREEN OWNS, in one object (D63).
+   *
+   * The save loop used to build its body from seven refs and then re-check TWO of them, so an edit
+   * to the title, the treatment, the hooks, the arc or the concept-read landing mid-flight was
+   * never re-sent while the indicator went to Saved. Agreeing a hook and then pressing "Propose
+   * the arc" refused with the hooks visibly ticked on screen, because the server had never been
+   * told.
+   *
+   * The image screen never had this bug for one reason: it holds its whole state in a single ref,
+   * so its one comparison covers everything. This is that property, restored by construction. The
+   * PUT body is built FROM this snapshot, so a field cannot be sent without also being checked:
+   * adding an eighth field to the screen cannot reintroduce the bug.
+   */
+  const snapshot = useCallback(
+    () => ({
+      title: latestTitle.current.trim() || initial.title,
+      script: latest.current,
+      media: latestMedia.current,
+      treatment: latestTreatment.current,
+      hooks: latestHooks.current,
+      outline: latestOutline.current,
+      concept_read: latestConceptRead.current,
+    }),
+    [initial.title]
+  );
+
   const save = useCallback(async () => {
-    if (inFlight.current) return; // a running loop will pick up latest.current
+    if (inFlight.current) return; // a running loop will pick up the latest snapshot
     inFlight.current = true;
     const url =
       stateUrlRef.current || window.location.pathname.replace(/\/+$/, '') + '/state';
     try {
       for (;;) {
-        const content = latest.current;
-        const mediaContent = latestMedia.current;
+        const sent = snapshot();
+        /**
+         * Compared by VALUE, not by reference, which is the second half of the fix: `hooks`,
+         * `media` and `concept_read` are arrays, and a setter that rebuilds one with the same
+         * contents used to trigger a pointless resend while one that mutated in place was missed
+         * entirely. Stringifying a seven field object twice per save costs nothing measurable.
+         */
+        const sentKey = JSON.stringify(sent);
         setSaveState('saving');
         let ok = false;
         try {
           const res = await fetch(url, {
             method: 'PUT',
             headers: { 'content-type': 'application/json' },
-            body: JSON.stringify({
-              ...initial,
-              title: latestTitle.current.trim() || initial.title,
-              script: content,
-              media: mediaContent,
-              treatment: latestTreatment.current,
-              hooks: latestHooks.current,
-              outline: latestOutline.current,
-              concept_read: latestConceptRead.current,
-            }),
+            body: JSON.stringify({ ...initial, ...sent }),
           });
           ok = res.ok;
         } catch {
@@ -144,15 +168,15 @@ export function ScriptScreen({
           setSaveState('error');
           break;
         }
-        // newer edit arrived mid-flight (script OR media) -> re-send the latest
-        if (latest.current !== content || latestMedia.current !== mediaContent) continue;
+        // A newer edit to ANY field landed mid-flight, so send the whole thing again.
+        if (JSON.stringify(snapshot()) !== sentKey) continue;
         setSaveState('saved');
         break;
       }
     } finally {
       inFlight.current = false;
     }
-  }, [initial]);
+  }, [initial, snapshot]);
 
   /**
    * Agreeing a hook or editing the arc has to persist like any other edit. Each setter writes
