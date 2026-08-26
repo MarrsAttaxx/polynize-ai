@@ -32,6 +32,7 @@ import {
 import { PlatformIcon } from '@/app/console/marketing/_components/PlatformIcon';
 import { channelLabel } from '@/lib/marketing/channels';
 import { HERO_BATCH } from '@/lib/marketing/hero';
+import { IMAGE_MODELS, DEFAULT_IMAGE_MODEL } from '@/lib/marketing/higgsfield-models';
 import g from '../gates.module.css';
 
 type PieceRow = {
@@ -355,6 +356,16 @@ export function NarrativeGates({
    *
    * A url rather than an index, so the live hero can open in the same viewer as a candidate.
    */
+  /**
+   * WHICH MODEL MAKES IT (D62). Marrs: "What image model is being used for the images in the gate
+   * for the look section? It's very inconsistent, especially in the text. I'd rather use Nano
+   * Banana Pro."
+   *
+   * Soul cannot render text at all, which is why every prompt here forbids it and why brand type
+   * is composited in code. A Gemini image model can, so the choice belongs on the screen rather
+   * than in a constant.
+   */
+  const [heroModel, setHeroModel] = useState<string>(DEFAULT_IMAGE_MODEL);
   const [heroZoom, setHeroZoom] = useState<string | null>(null);
   const heroLive = narrative.hero_url ?? null;
   const zoomCloseRef = useRef<HTMLButtonElement>(null);
@@ -379,7 +390,7 @@ export function NarrativeGates({
       const res = await fetch(`${base}/hero`, {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ prompt: heroPrompt.trim() }),
+        body: JSON.stringify({ prompt: heroPrompt.trim(), model: heroModel }),
       });
       const b = (await res.json().catch(() => null)) as { urls?: string[]; error?: string } | null;
       if (!res.ok || !b?.urls?.length) {
@@ -782,6 +793,25 @@ export function NarrativeGates({
               onChange={(e) => setHeroPrompt(e.target.value)}
               disabled={heroBusy !== null}
             />
+            {/* THE MODEL (D62). Only worth a control now that there is more than one, and the
+                blurb is the reason to switch: Soul cannot spell, the Gemini models can. */}
+            <label className={g.lookModel}>
+              <span className={g.lookModelLabel}>Made by</span>
+              <select
+                value={heroModel}
+                onChange={(e) => setHeroModel(e.target.value)}
+                disabled={heroBusy !== null}
+              >
+                {IMAGE_MODELS.map((m) => (
+                  <option key={m.id} value={m.id}>
+                    {m.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <p className={g.lookModelWhy}>
+              {IMAGE_MODELS.find((m) => m.id === heroModel)?.blurb ?? ''}
+            </p>
             <div className={g.lookBtns}>
               <button
                 type="button"

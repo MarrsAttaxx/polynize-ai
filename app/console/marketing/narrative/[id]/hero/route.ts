@@ -50,10 +50,15 @@ import { z } from 'zod';
 import { getCurrentUser } from '@/lib/console-auth';
 import { getNarrative } from '@/lib/marketing/narrative-store';
 import { isStreamId } from '@/lib/marketing/streams';
-import { isHiggsfieldConfigured, generateImages } from '@/lib/marketing/higgsfield';
-import { imageModelById } from '@/lib/marketing/higgsfield-models';
-import { mirrorImageToHost } from '@/lib/marketing/image-host';
-import { HERO_BATCH, HERO_SIZE } from '@/lib/marketing/hero';
+import { isHiggsfieldConfigured } from '@/lib/marketing/higgsfield';
+import {
+  imageModelById,
+  providerOf,
+  DEFAULT_IMAGE_MODEL,
+} from '@/lib/marketing/higgsfield-models';
+import { openRouterKey } from '@/lib/marketing/openrouter-image';
+import { generateHostedImages } from '@/lib/marketing/image-generate';
+import { HERO_BATCH, HERO_W, HERO_H } from '@/lib/marketing/hero';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -63,6 +68,11 @@ export const maxDuration = 300;
 const BodySchema = z.object({
   /** What the look is. His words, not April's: this is the one image he is art directing. */
   prompt: z.string().trim().min(3).max(1200),
+  /**
+   * WHICH MODEL (D62). An unknown id falls back to the default rather than 400ing: a stale picker
+   * value must not stop him making a look.
+   */
+  model: z.string().trim().max(60).optional(),
 });
 
 export async function POST(
@@ -96,15 +106,26 @@ export async function POST(
     return NextResponse.json({ error: 'unknown stream' }, { status: 400 });
   }
 
-  if (!isHiggsfieldConfigured()) {
+  const model = imageModelById(body.model ?? '') ?? imageModelById(DEFAULT_IMAGE_MODEL);
+  if (!model) {
+    return NextResponse.json({ error: 'no image model is configured' }, { status: 400 });
+  }
+  /**
+   * Higgsfield keys are only needed by Higgsfield models now, so the check moved here from above:
+   * a Gemini model needs an OpenRouter key and nothing else, and refusing it for a missing
+   * Higgsfield key would be a lie.
+   */
+  if (providerOf(model) === 'higgsfield' && !isHiggsfieldConfigured()) {
     return NextResponse.json(
       { error: 'Image generation is not connected yet. Add the Higgsfield keys in Vercel.' },
       { status: 400 }
     );
   }
-  const model = imageModelById('soul');
-  if (!model) {
-    return NextResponse.json({ error: 'no image model is configured' }, { status: 400 });
+  if (providerOf(model) === 'openrouter' && !openRouterKey()) {
+    return NextResponse.json(
+      { error: 'That model needs an OpenRouter key. Add it in Vercel, or pick Soul.' },
+      { status: 400 }
+    );
   }
 
   /**
@@ -138,53 +159,23 @@ export async function POST(
     'not a screenshot, not a slide layout, not a poster. ' +
     'No text, no words, no letters, no numbers, no logos and no signage anywhere in the image.';
 
-  const res = await generateImages(model.endpoint, {
-    prompt,
-    width_and_height: HERO_SIZE,
-    quality: '1080p',
-    batch_size: HERO_BATCH,
-  });
-  if (res.status !== 'completed' || res.urls.length === 0) {
-    return NextResponse.json(
-      {
-        error:
-          res.status === 'nsfw'
-            ? 'That prompt was refused by the image model. Reword the look and try again.'
-            : (res.error ?? `Generation returned no image (status: ${res.status}).`),
-      },
-      { status: res.status === 'nsfw' ? 400 : 502 }
-    );
-  }
-
   /**
-   * ALL OF THEM AT ONCE, and a failure loses one candidate rather than the batch. Sequentially
-   * this would be four round trips added to a generation he has already waited minutes for, and
-   * they are independent: nothing about copying the second file depends on the first.
+   * ONE CALL FOR BOTH PROVIDERS, and it comes back already stored in our bucket. Higgsfield does
+   * the batch in one request; an OpenRouter model has no size parameter and no batch, so the
+   * dispatcher makes four requests and crops each result to the frame.
    */
-  const origin = new URL(req.url).origin;
-  const hosted = await Promise.all(
-    res.urls.slice(0, HERO_BATCH).map(async (u) => {
-      const out = await mirrorImageToHost(u, { stream: narrative.lane, requestOrigin: origin });
-      if ('error' in out) {
-        console.error(`[hero] could not store a candidate: ${out.error}`);
-        return null;
-      }
-      return out.url;
-    })
+  const gen = await generateHostedImages(
+    model,
+    { prompt, count: HERO_BATCH, frame: { w: HERO_W, h: HERO_H } },
+    { stream: narrative.lane, requestOrigin: new URL(req.url).origin }
   );
-  const urls = hosted.filter((u): u is string => Boolean(u));
-
-  /**
-   * Every copy failed, so the generation is spent and there is nothing durable to show. Saying
-   * WHICH half broke matters: the images exist and the storing is what did not work, and a
-   * message that only says "could not make the look" sends someone reading the generation code.
-   */
-  if (urls.length === 0) {
+  if (gen.urls.length === 0) {
     return NextResponse.json(
-      { error: 'The images were generated but none of them could be stored. Try again.' },
+      { error: gen.error ?? 'Could not make the look. Try again.' },
       { status: 502 }
     );
   }
+  const urls = gen.urls;
 
   return NextResponse.json({ ok: true, urls, prompt: body.prompt.trim() });
 }

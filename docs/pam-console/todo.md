@@ -103,7 +103,11 @@ Right and it will get worse fast: `MediaPicker` lists the whole stream library, 
 
 Current honest state, now visible on the Gate 4 card: the carousel says **Instagram, and only Instagram**, because the LinkedIn document post is blocked on two things (no PDF builder in the console, and Metricool document scheduling unverified). The slides are the shared asset; the container differs per platform. Once slides exist, turning them into a PDF is the next question.
 
-**5. A second image model.** Nano Banana Pro (`google/gemini-3-pro-image`, about $2/1M) and ChatGPT Image 2 (`openai/gpt-5.4-image-2`, about $15/1M) are both strong on infographics and diagrams, against the console's photoreal-only Soul. `lib/marketing/higgsfield-models.ts` is the only file that needs to change. FLUX Kontext is commented out there because its endpoint 404s.
+**5. A second image model. DONE (D62).** Nano Banana 2 (`google/gemini-3.1-flash-image`) and Nano Banana Pro (`google/gemini-3-pro-image`) are both registered and both reachable from the hero panel's model picker and the media library. Both ids verified against OpenRouter's public model list. **Not yet fired against a live key**, so the first real generation is the test: a 404 comes back as "OpenRouter does not have this model enabled on this account" rather than as a silent failure.
+
+The note below was written before it was built, and its guess about scope was wrong in a useful way: `higgsfield-models.ts` was NOT the only file that needed to change, because these models are on a different provider with no size parameter at all. See D62.
+
+~~**5. A second image model.**~~ Nano Banana Pro (`google/gemini-3-pro-image`, about $2/1M) and ChatGPT Image 2 (`openai/gpt-5.4-image-2`, about $15/1M) are both strong on infographics and diagrams, against the console's photoreal-only Soul. `lib/marketing/higgsfield-models.ts` is the only file that needs to change. FLUX Kontext is commented out there because its endpoint 404s.
 
 ---
 
@@ -175,7 +179,7 @@ Worth knowing going in: everything after the shoot is deliberately absent from t
 
 **11. Two timezone sources for one post. FIXED (D61).** The entry now carries the zone its time was chosen in, and publish sends that rather than re-deriving it. Entries planned before the stamp fall back to the old config, so nothing already live is reinterpreted.
 
-~~**11. Two timezone sources for one post.**~~ The wave picks a time from `getChannelSchedule(lane).timezone`; `publishEntry` sends it paired with `getPostingSchedule()[stream].timezone`. Both default to Sydney so it is invisible today. Typed slots (D46) make it categorical rather than cosmetic: the post the grid labels the morning video would go out in the afternoon.
+What it was, kept because the shape recurs: the wave picked a time from `getChannelSchedule(lane).timezone` while `publishEntry` sent it paired with `getPostingSchedule()[stream].timezone`. Both default to Sydney so it was invisible. Typed slots (D46) made it categorical rather than cosmetic: the post the grid labels the morning video would have gone out in the afternoon. **The lesson to reuse: anything the wave decides must be stamped on the entry, not re-derived from config at ship time.**
 
 ---
 

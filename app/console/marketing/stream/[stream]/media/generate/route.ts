@@ -12,7 +12,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getCurrentUser } from '@/lib/console-auth';
 import { isStreamId } from '@/lib/marketing/streams';
-import { imageModelById } from '@/lib/marketing/higgsfield-models';
+import { imageModelById, providerOf } from '@/lib/marketing/higgsfield-models';
 import {
   isHiggsfieldConfigured,
   generateImages,
@@ -21,7 +21,8 @@ import {
 } from '@/lib/marketing/higgsfield';
 import { complete } from '@/lib/llm';
 import { stripEmDashes } from '@/lib/em-dash';
-import { mirrorImageToHost } from '@/lib/marketing/image-host';
+import { generateHostedImages, frameFor } from '@/lib/marketing/image-generate';
+import { openRouterKey } from '@/lib/marketing/openrouter-image';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -82,13 +83,6 @@ export async function POST(
   if (!isStreamId(stream)) {
     return NextResponse.json({ error: 'unknown stream' }, { status: 400 });
   }
-  if (!isHiggsfieldConfigured()) {
-    return NextResponse.json(
-      { error: 'Image generation is not configured (Higgsfield keys missing).' },
-      { status: 400 }
-    );
-  }
-
   let body: z.infer<typeof GenSchema>;
   try {
     body = GenSchema.parse(await req.json());
@@ -96,6 +90,11 @@ export async function POST(
     return NextResponse.json({ error: 'invalid request' }, { status: 400 });
   }
 
+  /**
+   * THE KEY CHECK MOVED BELOW THE MODEL (D62). It used to refuse before knowing which model was
+   * asked for, so a Gemini model, which needs only an OpenRouter key, would have been turned away
+   * for a missing Higgsfield one.
+   */
   const model = imageModelById(body.modelId);
   if (!model) {
     return NextResponse.json({ error: 'unknown model' }, { status: 400 });
@@ -132,75 +131,44 @@ export async function POST(
     console.error('[media.generate] prompt refine failed, using raw prompt:', err);
   }
 
-  // Build the model-specific input.
-  const input: Record<string, unknown> = { prompt: refinedPrompt };
-  if (model.sizing === 'aspect_ratio') {
-    input.aspect_ratio = body.aspectRatio || '9:16';
-  } else {
-    input.width_and_height = body.size || '1152x2048';
-    input.quality = '1080p';
-    input.batch_size = body.batchSize || 1;
-    if (model.supportsSoulId && body.soulId) input.custom_reference_id = body.soulId;
-    if (model.supportsStyle && body.styleId) input.style_id = body.styleId;
-    if (model.supportsReferenceImage && body.referenceUrl) {
-      input.image_reference = { type: 'image_url', image_url: body.referenceUrl };
-    }
-  }
-
-  const res = await generateImages(model.endpoint, input);
-  if (res.status !== 'completed' || res.urls.length === 0) {
+  if (providerOf(model) === 'higgsfield' && !isHiggsfieldConfigured()) {
     return NextResponse.json(
-      {
-        error: res.error ?? `Generation returned no images (status: ${res.status}).`,
-        refinedPrompt,
-        status: res.status,
-      },
-      { status: res.status === 'nsfw' ? 400 : 502 }
+      { error: 'Image generation is not configured (Higgsfield keys missing).' },
+      { status: 400 }
+    );
+  }
+  if (providerOf(model) === 'openrouter' && !openRouterKey()) {
+    return NextResponse.json(
+      { error: `${model.label} needs an OpenRouter key. Add it in Vercel, or pick another model.` },
+      { status: 400 }
     );
   }
 
   /**
-   * INTO OUR BUCKET BEFORE THEY LEAVE THIS ROUTE, or the library fills with links that work
-   * today and 404 later.
-   *
-   * A Higgsfield url is temporary, and `/media/add` stores a url and nothing else by design
-   * (D2, amended 2026-07-14): an asset is a reference to a file hosted somewhere. That is right
-   * for a Box link and wrong for a generation, and this route was the only one still handing
-   * back a raw vendor url. Its two siblings already got this right: `/edit` returns
-   * hostGeneratedImage's url and `/overlay` returns renderAndHostOverlay's, both of them ours.
-   * So the fix belongs here rather than in `/add`, which keeps its contract intact and needs no
-   * flag from a client that might forget to send one.
-   *
-   * ALL AT ONCE, and a failure loses one image rather than the batch. They are independent, and
-   * sequentially this would add four round trips to a wait he has already sat through.
+   * ONE CALL, BOTH PROVIDERS, ALREADY HOSTED (D62). The frame is what the dispatcher needs rather
+   * than a provider-specific size string: Higgsfield is asked for the nearest native size it
+   * allows, and an OpenRouter result is cropped to exactly this, since that provider has no
+   * dimension parameter at all.
    */
-  const origin = new URL(req.url).origin;
-  const hosted = await Promise.all(
-    res.urls.map(async (u) => {
-      const out = await mirrorImageToHost(u, { stream, requestOrigin: origin });
-      if ('error' in out) {
-        console.error(`[media.generate] could not store an image: ${out.error}`);
-        return null;
-      }
-      return out.url;
-    })
+  const gen = await generateHostedImages(
+    model,
+    {
+      prompt: refinedPrompt,
+      count: body.batchSize ?? 1,
+      frame: frameFor(model, body.size, body.aspectRatio),
+      referenceUrl: body.referenceUrl,
+      soulId: body.soulId,
+      styleId: body.styleId,
+    },
+    { stream, requestOrigin: new URL(req.url).origin }
   );
-  const urls = hosted.filter((u): u is string => Boolean(u));
-
-  /**
-   * Naming WHICH half broke. The images exist and the storing is what failed, and a message
-   * that only says generation failed sends the next person reading into the model code.
-   */
-  if (urls.length === 0) {
+  if (gen.urls.length === 0) {
     return NextResponse.json(
-      {
-        error: 'The images were generated but none of them could be stored. Try again.',
-        refinedPrompt,
-        status: res.status,
-      },
+      { error: gen.error ?? 'Generation returned no images.', refinedPrompt },
       { status: 502 }
     );
   }
+  const urls = gen.urls;
 
-  return NextResponse.json({ ok: true, urls, refinedPrompt, status: res.status });
+  return NextResponse.json({ ok: true, urls, refinedPrompt, status: 'completed' });
 }

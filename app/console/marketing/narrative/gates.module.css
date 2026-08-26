@@ -791,3 +791,39 @@
     max-height: calc(100vh - 150px);
   }
 }
+
+/* WHICH MODEL MAKES THE LOOK (D62). A select, because it is a list that will grow and because the
+   choice is made once per batch rather than tuned. */
+.lookModel {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-top: 9px;
+}
+.lookModelLabel {
+  font-family: var(--font-jetbrains-mono), monospace;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-3, #6f6a64);
+  flex: 0 0 auto;
+}
+.lookModel select {
+  flex: 1 1 auto;
+  min-width: 0;
+  background: var(--surface-2, #23232f);
+  color: var(--text, #f4ece4);
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.12));
+  border-radius: 8px;
+  padding: 7px 9px;
+  font-family: var(--font-jetbrains-mono), monospace;
+  font-size: 11.5px;
+}
+/* Why you would switch, which is the whole point of showing the choice at all. */
+.lookModelWhy {
+  margin: 6px 0 0;
+  font-family: var(--font-jetbrains-mono), monospace;
+  font-size: 9.5px;
+  line-height: 1.55;
+  color: var(--text-3, #6f6a64);
+}

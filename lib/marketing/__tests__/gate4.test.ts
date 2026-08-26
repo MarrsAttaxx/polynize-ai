@@ -37,6 +37,8 @@ import { cleanArticle } from '../article-draft';
 import { foldRule, foldCopy, copyLength } from '../post-preview';
 import { timezoneForEntry } from '../posting-schedule';
 import { nextOpenSlots } from '../channel-schedule';
+import { IMAGE_MODELS, providerOf, imageModelById, DEFAULT_IMAGE_MODEL } from '../higgsfield-models';
+import { nearestSoulSize, aspectSentence, frameFor } from '../image-generate';
 import { parseProposal } from '../slide-propose';
 import {
   cardState,
@@ -644,6 +646,64 @@ ok(
   slots.every((sl) => sl.timezone === 'America/New_York')
 );
 ok('never as a bare string', slots.every((sl) => typeof sl.dateTime === 'string' && sl.dateTime.length >= 16));
+
+/* ------------------------------------------------------------------ D62: two providers */
+
+/**
+ * Both new model ids were checked against OpenRouter's public model list before they were written
+ * down, which mattered: image-edit.ts carries a note that "the 3.x image previews 404 on this
+ * account's OpenRouter access", and the GA ids are different strings from the preview ones. These
+ * assertions hold the registry's shape; only a live call can prove account access.
+ */
+for (const m of IMAGE_MODELS) {
+  ok(`${m.id}: has a label and an endpoint`, Boolean(m.label && m.endpoint));
+  ok(`${m.id}: provider resolves`, ['higgsfield', 'openrouter'].includes(providerOf(m)));
+}
+eq('the default is still Soul', DEFAULT_IMAGE_MODEL, 'soul');
+ok('and the default resolves to a real model', Boolean(imageModelById(DEFAULT_IMAGE_MODEL)));
+eq(
+  'an older entry with no provider field reads as higgsfield',
+  providerOf({ id: 'x', label: 'x', blurb: 'x', endpoint: 'x', sizing: 'width_and_height' }),
+  'higgsfield'
+);
+eq('Nano Banana 2 is the id he supplied', imageModelById('nano-banana-2')?.endpoint, 'google/gemini-3.1-flash-image');
+eq('and it is on OpenRouter', providerOf(imageModelById('nano-banana-2')!), 'openrouter');
+ok('and it is flagged as able to render text, which Soul is not', imageModelById('nano-banana-2')?.goodForText === true);
+ok('Soul is not', !imageModelById('soul')?.goodForText);
+
+/**
+ * NEAREST SOUL SIZE. Higgsfield rejects anything off its allow-list, so a frame has to be mapped
+ * rather than passed through. Nearest by ASPECT, because the shape is what a frame is for.
+ */
+eq('an exact 4:3 frame maps to the 4:3 size', nearestSoulSize({ w: 2048, h: 1536 }), '2048x1536');
+eq('a 4:5 slide frame maps to the nearest portrait', nearestSoulSize({ w: 1080, h: 1350 }), '1536x2048');
+eq('a square maps to the square', nearestSoulSize({ w: 1000, h: 1000 }), '1536x1536');
+eq('16:9 maps to 16:9', nearestSoulSize({ w: 1920, h: 1080 }), '2048x1152');
+eq('9:16 maps to the tall one', nearestSoulSize({ w: 1080, h: 1920 }), '1152x2048');
+ok(
+  'and every answer is a size Soul actually accepts',
+  [
+    { w: 2048, h: 1536 },
+    { w: 1080, h: 1350 },
+    { w: 1000, h: 1000 },
+    { w: 1920, h: 1080 },
+    { w: 1080, h: 1920 },
+    { w: 3000, h: 400 },
+  ].every((f) => Object.values(SoulSize).includes(nearestSoulSize(f) as never))
+);
+
+/** The words that stand in for the missing size parameter. */
+ok('a 4:3 frame is described as landscape 4:3', aspectSentence({ w: 2048, h: 1536 }).includes('landscape 4:3'));
+ok('a 4:5 frame is described as portrait 4:5', aspectSentence({ w: 1080, h: 1350 }).includes('portrait 4:5'));
+ok('and the pixels are named too', aspectSentence({ w: 2048, h: 1536 }).includes('2048 by 1536'));
+
+/** The two controls a screen might offer, both landing on pixels. */
+const soulModel = imageModelById('soul')!;
+eq('a size string wins', frameFor(soulModel, '2048x1536').w, 2048);
+eq('an aspect ratio scales to a 2048 long edge', frameFor(soulModel, undefined, '4:3').w, 2048);
+eq('and keeps the ratio', frameFor(soulModel, undefined, '4:3').h, 1536);
+eq('neither one falls back to the old default', frameFor(soulModel).w, 1152);
+eq('garbage falls back too, rather than producing a zero', frameFor(soulModel, 'wide', 'huge').h, 2048);
 
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

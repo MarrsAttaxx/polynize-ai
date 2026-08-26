@@ -1484,3 +1484,52 @@ The resolution rule is one line, so it lives in `posting-schedule.ts` as `timezo
 
 10 new assertions, 308 total.
 
+---
+
+## D62: Two image providers, because Soul cannot spell
+
+**Adopted 26 August 2026.** Marrs: *"What image model is being used for the images in the gate for the look section? It's very inconsistent, especially in the text. I'd rather use Nano Banana Pro. Actually, that's the model I want to use, but let me know what model is being used at the moment."* Then: *"there is a Nano Banana too, and in OpenRouter, its Model ID is: google/gemini-3.1-flash-image"*
+
+### The answer to his question
+
+**Higgsfield Soul, and it was the only image model in the console.** One entry in `IMAGE_MODELS`. Every image in PAM came from it: the hero, every carousel slide, everything in the media library.
+
+**The text is not inconsistency, it is a hard limit.** Soul is photoreal-people-focused and cannot render legible type. That is so settled in this codebase that every image prompt ends with *"no text, no words, no letters, no numbers, no logos and no signage"*, the entire slide compositor exists to draw brand type in code instead, and the registry has a `goodForText` flag that no model set to true. An 1882 New York street is the worst case for that instruction, because the reference material is covered in signage, so the model paints lettering anyway and it comes out as gibberish.
+
+### Both ids were verified, not remembered
+
+`image-edit.ts` carries a note saying *"The 3.x image previews 404 on this account's OpenRouter access"*, which is exactly the kind of thing that turns into a wrong string shipped. So both ids were checked against OpenRouter's public model list, which needs no key and costs nothing:
+
+| id | Their name for it | Per image out |
+|---|---|---|
+| `google/gemini-3.1-flash-image` | **Nano Banana 2** (Gemini 3.1 Flash Image) | $0.00006 |
+| `google/gemini-3-pro-image` | **Nano Banana Pro** (Gemini 3 Pro Image) | $0.00012 |
+
+His id is real, and their own name for it is Nano Banana 2. The stale note was about the **preview** ids, which are separate strings; these are GA. Both are registered, because his two messages named both and one line of registry each is cheaper than a second conversation.
+
+### The providers are not one shape, and that decided the design
+
+The same public list settled the parameter question, which is the load-bearing fact here: **`supported_parameters` for both Gemini image models is seed, temperature, top_p, max_tokens, reasoning and response_format. Nothing about dimensions.**
+
+| | Higgsfield Soul | OpenRouter Gemini |
+|---|---|---|
+| Size | exact, from a 13 value allow-list | **no parameter at all** |
+| Four candidates | one request, `batch_size: 4` | four requests |
+| Aspect guarantee | the API | prompted, then cropped in code |
+
+So a flag on one interface would have been a lie. `image-generate.ts` is the one place that knows there are two, and every caller asks it for a **frame in pixels**: Soul gets the nearest native size by aspect, and an OpenRouter result gets cropped to exactly the frame through the overlay compositor's crop path, which is already in production on the media library's overlay route. That keeps the promise D56 made when it stopped cropping the hero: what he judges on screen is what is stored.
+
+### It always returns urls we host
+
+Which makes D60 structural rather than remembered. A caller **cannot** get an ephemeral vendor url out of `generateHostedImages`, so it cannot register one. The bug fixed this morning is now impossible to reintroduce by adding a fourth caller.
+
+### The key check moved below the model
+
+Both generation routes used to refuse before knowing which model was asked for, so a Gemini model, which needs only an OpenRouter key, would have been turned away for a missing Higgsfield one. Now each provider is checked for its own key, and the error names which key and offers the other model.
+
+### Untested against a live call, deliberately
+
+His overnight guardrail was no credits, and there is no OpenRouter key in this worktree, so **no image has been generated through this path**. Everything structural is asserted (27 new assertions, 335 total) and the request shape is copied from `image-edit.ts`, which is proven against production against the same endpoint with the same `modalities` field. What remains unproven is whether his OpenRouter key has access to these two models, which is one click to find out and returns a named error rather than a silent failure if it does not.
+
+The carousel slide route stays on Soul for now. Its type is composited in code anyway, so text rendering buys it nothing, and switching it would change the look of every slide already made.
+
