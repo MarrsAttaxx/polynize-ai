@@ -626,3 +626,51 @@
   background: rgba(255, 122, 107, 0.06);
   border-bottom: 1px solid rgba(255, 122, 107, 0.25);
 }
+
+/**
+ * UPLOAD (D65). Above the paste field, because it is now the easier of the two ways in and the
+ * pasted Box link is the fallback rather than the default.
+ */
+.uploadRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+/* A label wrapping a hidden file input: the native control cannot be styled, and a button that
+   opens a file dialog has to BE the input or the click has to be forwarded. */
+.uploadBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 16px;
+  border-radius: 9px;
+  cursor: pointer;
+  font-family: var(--font-jetbrains-mono), monospace;
+  font-size: 12px;
+  background: var(--mint, #69fccb);
+  color: #0a0a0f;
+  border: 1px solid var(--mint, #69fccb);
+  flex: 0 0 auto;
+}
+.uploadBtn:hover {
+  filter: brightness(1.06);
+}
+.uploadBtn:has(input:disabled) {
+  opacity: 0.5;
+  cursor: default;
+  filter: none;
+}
+
+/* The limits, and the one thing that still has to go through Box, said where the choice is made
+   rather than in a doc nobody opens. */
+.uploadNote {
+  flex: 1 1 260px;
+  min-width: 0;
+  font-family: var(--font-jetbrains-mono), monospace;
+  font-size: 10px;
+  line-height: 1.55;
+  color: var(--text-3, #6f6a64);
+}

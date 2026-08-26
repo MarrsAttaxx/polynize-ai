@@ -1608,3 +1608,43 @@ If the lock file cannot be written, the run **goes ahead unlocked** rather than 
 
 12 new assertions, 347 total.
 
+---
+
+## D65: Upload an image, and be straight about why video still cannot
+
+**Adopted 26 August 2026.** Todo item 1, the one it calls *"the last hard gap between Gate 4 and a published post"*, fixed overnight with his approval. Half of it.
+
+A media asset is a url reference only (D2, amended 2026-07-14), so getting a picture into the library meant hosting it somewhere else and pasting the link. There is now an **Upload an image** button above the paste field.
+
+### Presigned, because a phone photo breaks the alternative
+
+Vercel caps a serverless request body at **4.5MB**. A photo off a phone clears that on its own, so a route that accepts the bytes would fail on a fraction of real files with a platform error nobody can act on.
+
+So the browser asks for a short-lived presigned PUT and sends the bytes **straight to the bucket**. The size limit becomes ours to choose rather than the platform's to impose, and no Vercel function ever holds the file.
+
+Three properties worth keeping:
+
+- **The server owns the key.** It is a fresh uuid, because the filename is the whole security surface: nothing a caller sends can walk the path, collide with an existing object, or make the serving route emit something unexpected. The browser's filename is used for the **label** only, which is text.
+- **The signature commits to the content type.** The browser must send exactly that header or the bucket rejects the PUT, so a url issued for a png cannot be used to store something else.
+- **Registration is last.** The upload lands, and only then does `/add` record it, exactly as a generated image does. An abandoned upload leaves bytes nobody points at, never a library entry pointing at nothing.
+
+### Video is refused, and this is the honest part
+
+Uploading a video would work. **Serving it would not.** `/console/generated/[stream]/[file]` reads the whole object into memory and returns it, which is right for a 2MB picture and wrong for a 500MB video, and the bucket is private so there is no direct url to hand out instead.
+
+**That is the actual reason this console uses Box for video**, and it took building the upload to see it clearly: the gap was never the upload, it was the delivery. So a video is refused at the file picker, before any network call, with the reason and the workaround in the message rather than accepted and later discovered to be unplayable.
+
+**This needs a decision from Marrs, and it is an infrastructure one, not a code one.** Three options, in the order I would pick them:
+
+1. **Vercel Blob.** Public urls by default, built for exactly this, and Metricool could fetch a video directly. New integration on his account.
+2. **A public prefix on the existing bucket.** A bucket-policy change so `pam/public/` is world-readable, then hand out the direct url. Cheapest, and it means one of our prefixes is genuinely public.
+3. **Stream through the route with Range support.** No infrastructure change, but fragile at Vercel's response limits and the worst of the three for a big file.
+
+Until then Box stays the video path, which is what the hint under the paste field has always said.
+
+### One new dependency
+
+`@aws-sdk/s3-request-presigner`, the official companion to the `@aws-sdk/client-s3` already installed. Checked before and after: **`npm audit` reports the same 6 pre-existing high findings either way**, all in `ws` and unrelated, so this added nothing. Those six are worth a look at some point and were left alone tonight, because an `audit fix` unattended is how a build breaks.
+
+24 new assertions, 371 total.
+

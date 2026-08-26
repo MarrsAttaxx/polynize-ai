@@ -31,7 +31,13 @@ That reordering matters more than it looks. It means the carousel work in progre
 
 **Anything registered before D60 is still a temporary url.** Nothing scans for or repairs them: a library entry that has stopped loading has to be regenerated. Worth knowing before someone hunts for a bug in the picker.
 
-**1. No file upload.** A media asset is a URL reference only, so a recorded video has to go to Box by hand, its Direct Link copied, and pasted into the stream media library on a different screen before it can be attached to a piece. Nothing on the Script screen, the studio row, or the Recorded button says any of this. This is the last hard gap between Gate 4 and a published post.
+**1. No file upload. HALF FIXED (D65): images upload, video needs a decision from you.**
+
+Images now upload straight from the library, presigned direct to the bucket so the 4.5MB Vercel body cap is not in the way. **Video is refused at the picker with the reason**, because building this surfaced the real blocker: the gap was never the upload, it was the DELIVERY. `/console/generated/...` reads a whole object into memory to serve it, and the bucket is private, so there is no way to hand Metricool a video url. That is why Box is the video path.
+
+**Your call, three options:** (1) Vercel Blob, public urls by default, built for this, new integration on your account. (2) A public `pam/public/` prefix on the existing bucket via a policy change, cheapest. (3) Stream through the route with Range support, no infra change but fragile at Vercel's limits. I would pick them in that order.
+
+~~**1. No file upload.**~~ A media asset is a URL reference only, so a recorded video has to go to Box by hand, its Direct Link copied, and pasted into the stream media library on a different screen before it can be attached to a piece. Nothing on the Script screen, the studio row, or the Recorded button says any of this. This is the last hard gap between Gate 4 and a published post.
 
 **2. Metricool has never actually been fired.** The D18 gate: the publish button has never been pressed against a real brand. Everything downstream of Gate 5 is unproven.
 

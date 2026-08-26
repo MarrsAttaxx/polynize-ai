@@ -40,6 +40,12 @@ import { nextOpenSlots } from '../channel-schedule';
 import { IMAGE_MODELS, providerOf, imageModelById, DEFAULT_IMAGE_MODEL } from '../higgsfield-models';
 import { nearestSoulSize, aspectSentence, frameFor } from '../image-generate';
 import { heldByOther, parseHeld, WAVE_LOCK_MS } from '../wave-lock';
+import {
+  checkUpload,
+  labelFromFilename,
+  UPLOAD_TYPES,
+  MAX_UPLOAD_BYTES,
+} from '../media-upload';
 import { parseProposal } from '../slide-propose';
 import {
   cardState,
@@ -756,6 +762,52 @@ eq(
   parseHeld({ at: '2026-09-01T10:00:00.000Z' })?.narrative,
   ''
 );
+
+/* ------------------------------------------------------------------ D65: upload */
+
+/**
+ * The same rules run in the browser (to say no before a 40MB file is read) and on the server
+ * (which cannot trust the browser for any of it), so they are one pure function and it is tested
+ * once. The three refusals are deliberately different messages, because "too big" is something he
+ * can act on, "video" is a platform limit with a named workaround, and an unknown type is neither.
+ */
+const okPng = checkUpload('image/png', 2 * 1024 * 1024);
+ok('a 2MB png is fine', okPng.ok);
+eq('and its extension is png', okPng.ok ? okPng.ext : '', 'png');
+eq('jpeg maps to jpg', (() => { const r = checkUpload('image/jpeg', 1000); return r.ok ? r.ext : ''; })(), 'jpg');
+ok('webp is allowed', checkUpload('image/webp', 1000).ok);
+ok('a charset on the type does not break it', checkUpload('image/png; charset=binary', 1000).ok);
+ok('and neither does casing', checkUpload('IMAGE/PNG', 1000).ok);
+
+// VIDEO IS REFUSED HERE, with the reason, rather than uploaded and then found to be unservable.
+const vid = checkUpload('video/mp4', 1000);
+ok('video is refused', !vid.ok);
+ok('and the refusal names Box, which is the actual workaround', !vid.ok && /Box/.test(vid.error));
+ok('a mov is refused too', !checkUpload('video/quicktime', 1000).ok);
+
+// Size, at the boundary in both directions.
+ok('exactly at the cap is allowed', checkUpload('image/png', MAX_UPLOAD_BYTES).ok);
+ok('one byte over is not', !checkUpload('image/png', MAX_UPLOAD_BYTES + 1).ok);
+ok('an empty file is refused', !checkUpload('image/png', 0).ok);
+ok('and so is a nonsense size', !checkUpload('image/png', Number.NaN).ok);
+ok('a pdf is refused for now', !checkUpload('application/pdf', 1000).ok);
+ok('and something unknown is refused', !checkUpload('application/x-thing', 1000).ok);
+
+/**
+ * The label is the only thing a filename is used for. It never reaches the stored key, which is a
+ * uuid, so a name cannot walk the path or collide.
+ */
+eq('separators become spaces', labelFromFilename('brand-shoot_final-v3.jpg'), 'brand shoot final v3');
+eq('the extension goes', labelFromFilename('hero.png'), 'hero');
+eq('a name that is only an extension still gets a label', labelFromFilename('.png'), 'Uploaded image');
+eq('an empty name gets one too', labelFromFilename(''), 'Uploaded image');
+ok('a long name is capped', labelFromFilename('x'.repeat(300) + '.png').length <= 90);
+eq('a path-looking name is text, not a path', labelFromFilename('../../etc/passwd.png'), '../../etc/passwd');
+
+// Every offered type is one the check accepts, or the file dialog would filter to a refusal.
+for (const t of Object.keys(UPLOAD_TYPES)) {
+  ok(`${t}: offered and accepted`, checkUpload(t, 1000).ok);
+}
 
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

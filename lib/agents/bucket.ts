@@ -147,3 +147,35 @@ export async function listKeys(prefix: string): Promise<string[]> {
   } while (token);
   return keys;
 }
+
+/**
+ * A PRESIGNED PUT, so the browser can send bytes straight to the bucket (D65).
+ *
+ * Vercel caps a serverless request body at 4.5MB, which a phone photo clears on its own, so an
+ * upload that goes through one of our routes fails on a fraction of real files with a platform
+ * error nobody can act on. This hands the browser a url it can PUT to directly, and the size limit
+ * becomes ours to choose.
+ *
+ * The signature COMMITS TO THE CONTENT TYPE. The browser has to send exactly this `Content-Type`
+ * header or the PUT is rejected by the bucket, which is what stops a caller from being handed a
+ * url for a png and using it to store something else.
+ *
+ * Short lived on purpose: this is used seconds after it is issued, and a url that can write into
+ * the bucket should not outlive the click that asked for it.
+ */
+export async function presignPut(
+  key: string,
+  contentType: string,
+  expiresInSeconds = 120
+): Promise<string> {
+  const { getSignedUrl } = await import('@aws-sdk/s3-request-presigner');
+  return getSignedUrl(
+    client(),
+    new PutObjectCommand({
+      Bucket: bucketName(),
+      Key: key,
+      ContentType: contentType,
+    }),
+    { expiresIn: expiresInSeconds }
+  );
+}

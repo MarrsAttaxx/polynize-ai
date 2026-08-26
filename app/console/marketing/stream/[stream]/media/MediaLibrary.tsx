@@ -16,6 +16,12 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import type { MediaAsset } from '@/lib/marketing/media-store';
+import {
+  checkUpload,
+  labelFromFilename,
+  UPLOAD_TYPES,
+  MAX_UPLOAD_BYTES,
+} from '@/lib/marketing/media-upload';
 import { STREAMS } from '@/lib/marketing/streams';
 import s from './media.module.css';
 
@@ -171,8 +177,103 @@ export function MediaLibrary({
     }
   };
 
+  /**
+   * UPLOAD A FILE (D65), which is three steps and only the middle one is big.
+   *
+   * Ask for a presigned url, PUT the bytes straight to the bucket, then register the result
+   * through the same /add route a pasted link uses. The bytes never touch a Vercel function, which
+   * is what gets past the 4.5MB request body cap that a phone photo clears on its own.
+   *
+   * Registration is the LAST step on purpose: an abandoned upload leaves bytes nobody points at,
+   * never a library entry pointing at nothing.
+   */
+  const upload = async (file: File) => {
+    if (busy) return;
+    const check = checkUpload(file.type || '', file.size);
+    if (!check.ok) {
+      setError(check.error);
+      return;
+    }
+    setBusy(true);
+    setError(null);
+    setNotice(`Uploading ${file.name}…`);
+    try {
+      const signRes = await fetch(base() + '/upload-url', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ contentType: file.type, bytes: file.size }),
+      });
+      const sign = (await signRes.json().catch(() => null)) as
+        | { uploadUrl?: string; url?: string; contentType?: string; error?: string }
+        | null;
+      if (!signRes.ok || !sign?.uploadUrl || !sign.url) {
+        setError(sign?.error ?? 'Could not start the upload.');
+        return;
+      }
+
+      // Exactly the content type the signature committed to, or the bucket rejects the PUT.
+      const put = await fetch(sign.uploadUrl, {
+        method: 'PUT',
+        headers: { 'content-type': sign.contentType ?? file.type },
+        body: file,
+      });
+      if (!put.ok) {
+        setError(`The upload was rejected (${put.status}). Try again.`);
+        return;
+      }
+
+      const res = await fetch(base() + '/add', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          url: sign.url,
+          kind: 'image',
+          label: label.trim() || labelFromFilename(file.name),
+        }),
+      });
+      const data = (await res.json().catch(() => null)) as
+        | { asset?: MediaAsset; error?: string }
+        | null;
+      if (!res.ok) {
+        setError(data?.error ?? 'It uploaded but could not be added to the library.');
+        return;
+      }
+      if (data?.asset) setAssets((a) => [data.asset as MediaAsset, ...a]);
+      setLabel('');
+      setNotice(`${file.name} is in the library.`);
+      router.refresh();
+    } catch {
+      setError('Network error during the upload. Try again.');
+    } finally {
+      setBusy(false);
+    }
+  };
+
   return (
     <div className={s.wrap}>
+      {/* UPLOAD, above the paste field, because it is now the easier of the two ways in. */}
+      <div className={s.uploadRow}>
+        <label className={s.uploadBtn}>
+          <input
+            type="file"
+            accept={Object.keys(UPLOAD_TYPES).join(',')}
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              // Cleared so picking the same file twice still fires a change.
+              e.target.value = '';
+              if (f) void upload(f);
+            }}
+            disabled={busy}
+            hidden
+          />
+          {busy ? 'Working…' : 'Upload an image'}
+        </label>
+        <span className={s.uploadNote}>
+          PNG, JPEG or WebP, up to {MAX_UPLOAD_BYTES / 1024 / 1024}MB. Video still goes through Box:
+          our bucket is private and a video is too large to serve through the console.
+        </span>
+      </div>
+
       <form id="media-add" className={s.addForm} onSubmit={add}>
         <input
           className={s.urlInput}
