@@ -248,9 +248,27 @@ facts about the platform and about what performs on it, not preferences, so they
 away:\n"""\n${spec}\n"""${note}`;
 }
 
+/**
+ * THE HOUSE VOICE, and it is deliberately less precise than it was (D53).
+ *
+ * Marrs: "just a note for April to adjust her writing style to be more human. Not super
+ * precise, a bit more human to human, conversational for direct."
+ *
+ * The old block said "short sentences, say the sharp thing plainly" and nothing else about
+ * rhythm, so a model optimising for it produced a run of clipped declaratives of near identical
+ * length. Every sentence landing with the same weight is the single most machine-sounding thing
+ * prose can do, and it reads as precise rather than as spoken.
+ *
+ * So the correction is about VARIANCE, not about softening: keep the directness, lose the
+ * uniformity. The rules below are all things a person does and a model does not do unprompted.
+ */
 const VOICE_AND_DASH = `Polynize voice:
 - Direct, contrarian, concrete. No hype, no filler, no corporate throat-clearing.
-- Short sentences. Say the sharp thing plainly.
+- WRITE LIKE ONE PERSON TALKING TO ANOTHER, not like a document about the subject. Say "you" when you mean the reader. Say "I" when the piece has a first person and the concept gives you the standing to.
+- VARY THE SENTENCE LENGTH, and this matters more than any other line here. A long sentence that carries a thought through to its end, then a short one that lands it. Three sentences of the same length in a row is the sound of a machine.
+- Contractions are normal. So is opening a sentence with And, But or So when that is how the thought actually joins.
+- BE CONVERSATIONAL RATHER THAN EXACT. Where the natural phrase and the technically precise phrase differ, use the natural one: a reader who feels talked to finishes the piece, and a reader who feels briefed does not. Precision that costs the rhythm is not worth it.
+- Do not hedge in every sentence. One qualified claim reads as careful; five in a row reads as a committee. Cut "arguably", "it could be said", "in many cases", "generally speaking".
 - No emoji. No hashtags unless the concept calls for them.
 - Never use em-dashes. Use commas, periods, or colons instead.`;
 

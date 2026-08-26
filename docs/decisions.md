@@ -1114,3 +1114,43 @@ Marrs set both a build order and a flow priority, and they are different axes: b
 
 That reordering is worth stating plainly because it changes what the carousel work is for. The template picker serves priority 3 and low. The hero and the narrative image pool serve **priority 1**, because the image on a text post has no generation path at all today: `TextOutputScreen` offers only the media picker. They are text-plus-image features that happen to have arrived through the carousel.
 
+---
+
+## D52: A narrative's own images come first
+
+**Adopted 25 August 2026.** Marrs: *"on the text options within a narrative stream, the image selection should be a contextual, narrative specific image pool. As the images would be created for this narrative, then we can have a hidden section at the bottom which with a click you can open the media library."*
+
+Right, and it degrades fast: every approved slide and every hero registers into the stream library, so ten slides per carousel per narrative floods it inside a week and a text post's picker becomes a wall of other narratives' slides. That matters more now that text plus image is priority 1.
+
+`MediaAsset` gained an optional `narrative_ref`, stamped at both points where an image is generated **inside** a narrative: the hero panel and slide approval. The picker shows that narrative's pool open and folds everything else behind one "the whole library" toggle with a count.
+
+**An unstamped asset is not wrong.** It belongs to the whole library, which is exactly where a hand-pasted Box link belongs, and where everything registered before today sits.
+
+### The hero is a scene, not a face, and it was right by accident
+
+Marrs: *"the hero image is not always going to be someone's face... for the AI emergent article they want to generate a hero image, which may be 1882, New York... it's less likely people are going to use the Soul image reference."*
+
+The hero route already sends a **prompt only**, with no Soul ID and no reference image, so it is scene generation from the first line, and the panel asks for "a scene, the light, the mood". Nothing to change. Recorded so nobody later "fixes" it into a portrait tool.
+
+What it does sharpen is the second-image-model item: Soul is a photoreal **people** model being asked for 1882 New York, which it will do passably and not well. Nano Banana Pro or GPT Image 2 matters more for the hero than for anything else in the kit, because the hero is the one image the whole narrative inherits from.
+
+---
+
+## D53: April writes like a person, which mostly means varying the sentence length
+
+**Adopted 25 August 2026.** Marrs: *"a note for April to adjust her writing style to be more human. Not super precise, a bit more human to human, conversational for direct."*
+
+**The diagnosis, because it decides the fix.** The house voice block said "Direct, contrarian, concrete" and "Short sentences. Say the sharp thing plainly", and nothing at all about rhythm. A model optimising for that produces a run of clipped declaratives of near identical length, and **every sentence landing with the same weight is the single most machine-sounding thing prose can do.** It reads as precise rather than as spoken, which is exactly what he described.
+
+So the correction is about **variance, not softening**. The directness stays. What was added is the set of things a person does and a model does not do unprompted:
+
+- One person talking to another, not a document about the subject.
+- **Vary the sentence length**, and this is flagged as mattering more than any other line: three sentences of the same length in a row is the sound of a machine.
+- Contractions are normal, and so is opening on And, But or So when that is how the thought actually joins.
+- **Conversational rather than exact.** Where the natural phrase and the technically precise phrase differ, take the natural one. Precision that costs the rhythm is not worth it.
+- Stop hedging every sentence. One qualified claim reads as careful, five in a row reads as a committee.
+
+Applied to the shared voice block in `draft.ts`, so it reaches every text post, every script and every chat rewrite, and separately to the article's own register line, which had its own "told plainly" phrasing.
+
+**Deliberately NOT applied to the slide writer.** A slide headline is a fragment under 14 words, so the sentence-variance rule has nothing to act on, and that prompt is the one that has been truncating: adding two hundred tokens of voice guidance to the call that already fails on payload would trade a real problem for a cosmetic one.
+
