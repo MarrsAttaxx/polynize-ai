@@ -360,6 +360,8 @@ export function TextOutputScreen({
           <MediaPicker
             pieceId={initial.piece_id}
             stream={initial.stream}
+            // This narrative's own images first, the whole library folded below (D52).
+            narrativeRef={initial.narrative_ref}
             selected={media}
             disabled={chatBusy}
             onChange={(ids) => {

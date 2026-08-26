@@ -43,6 +43,23 @@ export type MediaAsset = {
   source: MediaSource;
   created_at: string;
   updated_at?: string;
+  /**
+   * WHICH NARRATIVE THIS IMAGE WAS MADE FOR (D52).
+   *
+   * Marrs: "on the text options within a narrative stream, the image selection should be a
+   * contextual, narrative specific image pool. As the images would be created for this
+   * narrative, then we can have a hidden section at the bottom which with a click you can open
+   * the media library."
+   *
+   * He is right and it degrades fast: every approved slide registers into the stream library, so
+   * ten slides per carousel per narrative floods it inside a week and the picker becomes a wall
+   * of other people's slides.
+   *
+   * Optional, and absent on everything registered before this existed. An asset with no ref is
+   * not wrong, it simply belongs to the whole library rather than to one narrative, which is
+   * exactly where a hand-pasted Box link belongs.
+   */
+  narrative_ref?: string;
 };
 
 const PREFIX = 'pam/media-library';

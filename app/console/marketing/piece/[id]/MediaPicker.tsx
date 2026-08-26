@@ -8,7 +8,7 @@
  * these are references, resolved to public URLs at publish time.
  */
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import type { MediaAsset, MediaKind } from '@/lib/marketing/media-store';
 import s from './media-picker.module.css';
@@ -16,12 +16,18 @@ import s from './media-picker.module.css';
 export function MediaPicker({
   pieceId,
   stream,
+  narrativeRef,
   selected,
   onChange,
   disabled,
 }: {
   pieceId: string;
   stream: string;
+  /**
+   * THIS NARRATIVE'S POOL COMES FIRST (D52). Set on any piece cut from a narrative, which is
+   * every piece the Gates produce.
+   */
+  narrativeRef?: string;
   selected: string[];
   onChange: (ids: string[]) => void;
   disabled?: boolean;
@@ -67,7 +73,61 @@ export function MediaPicker({
     onChange(hasVideo ? [id] : [...selected, id]);
   };
 
+  /**
+   * TWO POOLS, and the narrative's own comes first.
+   *
+   * Marrs: "the image selection should be a contextual, narrative specific image pool. As the
+   * images would be created for this narrative, then we can have a hidden section at the bottom
+   * which with a click you can open the media library."
+   *
+   * Every approved slide and every hero registers into the stream library, so without this split
+   * a text post's picker is a wall of other narratives' slides within a week. Assets with no
+   * narrative stamp (a hand-pasted Box link, anything from before D52) belong to the library
+   * half, which is the right home for them.
+   */
+  const { mine, rest } = useMemo(() => {
+    const all = assets ?? [];
+    if (!narrativeRef) return { mine: [], rest: all };
+    return {
+      mine: all.filter((a) => a.narrative_ref === narrativeRef),
+      rest: all.filter((a) => a.narrative_ref !== narrativeRef),
+    };
+  }, [assets, narrativeRef]);
+
+  /** The library half is folded by default: it is the escape hatch, not the first choice. */
+  const [libraryOpen, setLibraryOpen] = useState(false);
+
   const manageHref = `/console/marketing/stream/${stream}/media`;
+
+  const tile = (m: MediaAsset) => {
+    const on = selected.includes(m.media_id);
+    return (
+      <button
+        key={m.media_id}
+        type="button"
+        className={`${s.tile} ${on ? s.on : ''}`}
+        onClick={() => toggle(m.media_id, m.kind)}
+        disabled={disabled}
+        aria-pressed={on}
+        title={m.label}
+      >
+        {m.kind === 'image' ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={m.url} alt={m.label} className={s.img} loading="lazy" />
+        ) : (
+          <span className={s.video} aria-hidden>
+            ▶
+          </span>
+        )}
+        {on ? (
+          <span className={s.check} aria-hidden>
+            ✓
+          </span>
+        ) : null}
+        <span className={s.tileLabel}>{m.label}</span>
+      </button>
+    );
+  };
 
   return (
     <div className={s.wrap}>
@@ -86,41 +146,43 @@ export function MediaPicker({
         <p className={s.empty}>
           No media in this stream&rsquo;s library yet.{' '}
           <Link href={manageHref} className={s.manage}>
-            Add some →
+            Add some &rarr;
           </Link>
         </p>
       ) : (
-        <div className={s.grid}>
-          {assets.map((m) => {
-            const on = selected.includes(m.media_id);
-            return (
-              <button
-                key={m.media_id}
-                type="button"
-                className={`${s.tile} ${on ? s.on : ''}`}
-                onClick={() => toggle(m.media_id, m.kind)}
-                disabled={disabled}
-                aria-pressed={on}
-                title={m.label}
-              >
-                {m.kind === 'image' ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={m.url} alt={m.label} className={s.img} loading="lazy" />
-                ) : (
-                  <span className={s.video} aria-hidden>
-                    ▶
-                  </span>
-                )}
-                {on ? (
-                  <span className={s.check} aria-hidden>
-                    ✓
-                  </span>
-                ) : null}
-                <span className={s.tileLabel}>{m.label}</span>
-              </button>
-            );
-          })}
-        </div>
+        <>
+          {/* THIS NARRATIVE'S OWN IMAGES, first and open (D52). */}
+          {narrativeRef ? (
+            mine.length > 0 ? (
+              <div className={s.grid}>{mine.map(tile)}</div>
+            ) : (
+              <p className={s.empty}>
+                Nothing made for this narrative yet. Make the look at gate 4, or open the library
+                below.
+              </p>
+            )
+          ) : null}
+
+          {/* THE WHOLE LIBRARY, folded: the escape hatch, not the first choice. */}
+          {rest.length > 0 ? (
+            narrativeRef ? (
+              <>
+                <button
+                  type="button"
+                  className={s.libToggle}
+                  onClick={() => setLibraryOpen((v) => !v)}
+                  aria-expanded={libraryOpen}
+                >
+                  {libraryOpen ? '▾' : '▸'} the whole library
+                  <span className={s.libCount}>{rest.length}</span>
+                </button>
+                {libraryOpen ? <div className={s.grid}>{rest.map(tile)}</div> : null}
+              </>
+            ) : (
+              <div className={s.grid}>{rest.map(tile)}</div>
+            )
+          ) : null}
+        </>
       )}
       {assets && assets.length > 0 ? (
         <p className={s.constraint}>

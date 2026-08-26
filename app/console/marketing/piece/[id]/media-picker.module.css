@@ -122,3 +122,32 @@
   white-space: nowrap;
   text-align: left;
 }
+
+/* THE WHOLE LIBRARY, folded (D52). This narrative's own images are the first choice; everything
+   else in the stream is the escape hatch, because every approved slide and every hero registers
+   into the library and a text post's picker was becoming a wall of other narratives' slides. */
+.libToggle {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 10px;
+  padding: 6px 2px;
+  background: none;
+  border: 0;
+  cursor: pointer;
+  font-family: var(--font-jetbrains-mono), monospace;
+  font-size: 10.5px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-3, #6f6a64);
+}
+.libToggle:hover {
+  color: var(--text-2, #cfc8c1);
+}
+.libCount {
+  font-size: 9.5px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: var(--surface-2, #23232f);
+  color: var(--text-3, #6f6a64);
+}

@@ -69,7 +69,17 @@ Original reasoning, kept:
 
 This belongs with the template picker (item 3), because "pick a template, then make the hero, then make the rest" is one flow and the hero is what makes a template's look concrete before ten generations are spent.
 
-**3c. The image picker on a text post should show THIS narrative's images first.** Marrs: *"on the text options within a narrative stream, the image selection should be a contextual, narrative specific image pool. As the images would be created for this narrative, then we can have a hidden section at the bottom which with a click you can open the media library."*
+**3c. The image picker on a text post shows THIS narrative's images first. DONE (D52).**
+
+Old ask below. Also worth recording, from the same conversation:
+
+**THE HERO IS USUALLY A SCENE, NOT A FACE.** Marrs: *"the hero image is not always going to be someone's face. It could just be a Higgsfield-generated image. For the AI emergent article... they want to generate a hero image, which may be 1882, New York... For a particular narrative, it's less likely people are going to use the Soul image reference."*
+
+The hero route already works this way: it sends a prompt only, with **no Soul ID and no reference image**, so it is scene generation from the first line. The panel copy asks for "a scene, the light, the mood" rather than a person. Nothing to change, and it is worth knowing that it was right by accident rather than by design, so nobody "fixes" it into a portrait tool later.
+
+What this DOES sharpen is item 5. Soul is a photoreal-**people** model being asked for 1882 New York, which it will do passably and not well. A second model (Nano Banana Pro or GPT Image 2) matters more for the hero than for anything else in the kit, because the hero is the one image the whole narrative inherits from.
+
+Original ask, kept for the reasoning: Marrs: *"on the text options within a narrative stream, the image selection should be a contextual, narrative specific image pool. As the images would be created for this narrative, then we can have a hidden section at the bottom which with a click you can open the media library."*
 
 Right and it will get worse fast: `MediaPicker` lists the whole stream library, and every approved slide registers into it, so ten slides per carousel per narrative floods it within a week. The narrative's own images are the ones you want on its text posts.
 

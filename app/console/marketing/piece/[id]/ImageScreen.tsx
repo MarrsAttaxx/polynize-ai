@@ -353,7 +353,13 @@ export function ImageScreen({
         const res = await fetch(streamMediaRef.current + '/add', {
           method: 'POST',
           headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({ url: slide.url, kind: 'image', label }),
+          body: JSON.stringify({
+            url: slide.url,
+            kind: 'image',
+            label,
+            // Stamped so this narrative's posts see their own slides first (D52).
+            narrative_ref: initial.narrative_ref,
+          }),
         });
         const b = (await res.json().catch(() => null)) as
           | { asset?: MediaAsset; error?: string }
@@ -381,7 +387,7 @@ export function ImageScreen({
         setApproving(false);
       }
     },
-    [approving, initial.title, patchSlide]
+    [approving, initial.title, initial.narrative_ref, patchSlide]
   );
 
   /**

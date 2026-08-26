@@ -25,6 +25,12 @@ const BodySchema = z.object({
   url: z.string().trim().min(1).max(2000),
   kind: z.enum(['image', 'video']).optional(),
   label: z.string().trim().max(200).optional(),
+  /**
+   * The narrative this image was made for (D52). Sent by anything generating inside a
+   * narrative: the hero panel and slide approval. Absent for a hand-pasted library link, which
+   * belongs to the whole stream rather than to one narrative.
+   */
+  narrative_ref: z.string().trim().max(64).optional(),
 });
 
 export async function POST(
@@ -107,6 +113,7 @@ export async function POST(
     label: label.slice(0, 200),
     source: /box\.com/i.test(parsed.hostname) ? 'box' : 'url',
     created_at: new Date().toISOString(),
+    ...(body.narrative_ref ? { narrative_ref: body.narrative_ref } : {}),
   };
 
   try {

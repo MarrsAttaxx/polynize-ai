@@ -381,6 +381,8 @@ export function NarrativeGates({
           // Named off the idea so the asset is findable in the library later, and so the
           // narrative-scoped pool (todo 3c) has something to match on before it has a real ref.
           label: `${narrative.idea.trim().slice(0, 60) || 'Narrative'} hero`.slice(0, 90),
+          // Stamped so the picker on this narrative's posts shows it first (D52).
+          narrative_ref: narrative.id,
         }),
       });
       const rb = (await reg.json().catch(() => null)) as
