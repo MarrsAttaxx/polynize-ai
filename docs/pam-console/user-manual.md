@@ -36,8 +36,24 @@ PAM (Polynize Agent Management) is the marketing engine: it takes an idea, shape
 - **Gate 1 · Idea**: type a fresh idea or pick from that stream's inbox. There is nothing else to decide: you got here from someone's board, so whose narrative it is was already answered by the click.
 - **Gate 2 · Article**: April drafts the long form (300 to 450 words) on first view; edit it directly or give her one instruction at a time in the docked chat. The article is the source of truth for every piece cut from it, and it publishes as-is. The interview step is retired.
 - **Gate 3 · Kit**: per-platform ticks, and each one now names the actual post rather than a count (D42). LinkedIn gives you the **Article**, a **Contrarian post**, a **Hard moment** (or a **Field report** on the Polynize lane), **Numbered rules**, and the **Document carousel** (off, no PDF builder yet). Instagram gives **Reels x3**, the **Carousel** and one **Image**. TikTok and YouTube carry the same three cuts. Defaults total **15 posts**, and the button says so. Confirming creates one piece per thing that has to be written, so three named LinkedIn posts are three pieces with three drafts, not one draft shown three times.
-- **Gate 4 · Create**: one card per thing to make, video first because it is the long pole. Each card says whether it is finished: `✓ ready`, or what is missing (`no images yet, needs 10`). Text and video open their editors as before; **image cards open the slide run** (see §8c). Seven cards on the default kit. April is told what each one has to BE: the contrarian post gets "state the belief, then break it" and a 1,300 to 2,500 character band; the numbered rules post gets a different instruction; the video script is told there is no target duration and where on-screen text is allowed to sit.
+- **Gate 4 · Create**: starts with **The look** (see §3b3), then one card per thing to make, video first because it is the long pole. Each card says whether it is finished: `✓ ready`, or what is missing (`no images yet, needs 10`). Text and video open their editors as before; **image cards open the slide run** (see §8c). Seven cards on the default kit. April is told what each one has to BE: the contrarian post gets "state the belief, then break it" and a 1,300 to 2,500 character band; the numbered rules post gets a different instruction; the video script is told there is no target duration and where on-screen text is allowed to sit.
 - **Gate 5 · Ship**: the week laid out from each channel's slots, two a day, queued as **drafts** first. One button ships the wave: scheduled posts go live through Metricool, hand-posts are emailed to you (see §3c). Every chip on the grid carries its time, so you can see what lands when (see §3d).
+
+### 3b3. The look: one image the whole narrative follows 🧪 (D51, rebuilt D56)
+
+Gate 4 opens with it, because it is upstream of every picture below it. Write a line about what this narrative looks like (a scene, the light, the mood) and press **Make 4 to choose from**.
+
+- **Four at a time, at 4:3.** One prompt, one wait, four candidates, two across.
+- **Click one and it opens full size.** That is where you choose. Nothing about clicking a picture is irreversible: the tile enlarges, the viewer commits. Escape or the backdrop closes it.
+- Each tile also has its own **Use this one**, so an obvious winner does not need the round trip.
+- **Try 4 more** as many times as you like. Only the one you bless is saved, and it goes into the stream library stamped with this narrative so its own posts see it first.
+- The one that is set stays on screen at a readable size and opens in the same viewer, so you can check it without digging.
+
+Once it is set, **every image generated anywhere in this narrative is generated against it**: each carousel slide, each post image. That is what makes a set look like a set instead of like six stock photos.
+
+Optional, and it stays optional. A narrative with no look behaves exactly as it did: each image finds its own way, and a carousel infers its reference from the first slide you approve.
+
+*Worth knowing:* it is four generations per attempt rather than one. That is deliberate and it only happens here, because this is the single image everything else follows, so the minutes spent settling it are paid back across the whole narrative. It is also usually a scene rather than a person: no Soul ID and no reference photo are sent, so "1882 New York, a crowd on a winter street" is exactly the kind of prompt it is for.
 
 ### 3b2. What the kit knows about each post 🧪 (D42)
 

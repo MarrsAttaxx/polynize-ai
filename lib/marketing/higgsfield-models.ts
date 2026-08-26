@@ -56,13 +56,21 @@ export function imageModelById(id: string): ImageModel | undefined {
 export const ASPECT_RATIOS = ['9:16', '1:1', '16:9', '4:3', '3:4'] as const;
 
 /**
- * Size options for `width_and_height` models (Soul). These MUST be values from
- * Higgsfield's SoulSize allow-list (the API rejects anything else); see the SDK's
- * SoulSize enum. 1152x2048 is a true 9:16.
+ * Size options offered for `width_and_height` models (Soul). Every value MUST be one of
+ * Higgsfield's own SoulSize values, because the API rejects anything else.
+ *
+ * THIS IS A CURATED SUBSET, NOT THE ALLOW-LIST. The SDK's SoulSize has 13 entries; these are the
+ * ones worth offering. That distinction cost something once already: the four listed here were
+ * read as the whole allow-list, so 4:3 looked impossible and a crop looked like the only way to
+ * get one, when `2048x1536` was sitting in the enum the whole time. When a shape is missing,
+ * check `SoulSize` in @higgsfield/client before concluding it cannot be generated.
+ *
+ * 1152x2048 is a true 9:16.
  */
 export const SOUL_SIZES: { id: string; label: string }[] = [
   { id: '1152x2048', label: 'Vertical 9:16' },
   { id: '1536x2048', label: 'Portrait 3:4' },
   { id: '1536x1536', label: 'Square 1:1' },
+  { id: '2048x1536', label: 'Landscape 4:3' },
   { id: '2048x1152', label: 'Landscape 16:9' },
 ];

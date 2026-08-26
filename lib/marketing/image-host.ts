@@ -69,7 +69,65 @@ export function hostOrigin(requestOrigin?: string): string {
   return 'https://pam.polynize.ai';
 }
 
+/**
+ * The type from the bytes themselves, for when the server that served them did not say.
+ *
+ * A generation CDN can hand back `application/octet-stream` or no content type at all, and
+ * refusing a perfectly good JPEG because of a missing header is the kind of failure that reads
+ * as "the image could not be saved" and sends someone hunting through the generation code.
+ */
+function sniffImageType(bytes: Buffer): string | null {
+  if (bytes.length < 12) return null;
+  if (bytes[0] === 0xff && bytes[1] === 0xd8) return 'image/jpeg';
+  if (bytes.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]))) {
+    return 'image/png';
+  }
+  if (bytes.subarray(0, 4).toString('ascii') === 'RIFF' && bytes.subarray(8, 12).toString('ascii') === 'WEBP') {
+    return 'image/webp';
+  }
+  return null;
+}
+
+/** 25MB. A 2048px generation is a couple of megabytes; anything near this is not one. */
+const MAX_MIRROR_BYTES = 25 * 1024 * 1024;
+
 export type HostResult = { url: string } | { error: string };
+
+/**
+ * COPY SOMEONE ELSE'S IMAGE INTO OUR BUCKET, BYTE FOR BYTE.
+ *
+ * A generation url is temporary. `/media/add` stores a url and nothing else, so anything
+ * registered straight off a vendor CDN is a library entry that works today and 404s later. The
+ * only durable move is to take the bytes.
+ *
+ * Byte for byte and NOT through the compositor, which is the other way to end up with a hosted
+ * copy: `renderAndHostOverlay` re-encodes to PNG at a frame you give it, so it changes both the
+ * file size and the aspect. That is right when the point is to compose something and wrong when
+ * the point is to keep exactly what the model made.
+ */
+export async function mirrorImageToHost(
+  sourceUrl: string,
+  opts: { stream: string; requestOrigin?: string }
+): Promise<HostResult> {
+  let bytes: Buffer;
+  let contentType: string;
+  try {
+    const res = await fetch(sourceUrl);
+    if (!res.ok) return { error: `Could not read the generated image (${res.status}).` };
+    bytes = Buffer.from(await res.arrayBuffer());
+    if (bytes.length === 0) return { error: 'The generated image came back empty.' };
+    if (bytes.length > MAX_MIRROR_BYTES) {
+      return { error: 'That image is too large to store.' };
+    }
+    const declared = (res.headers.get('content-type') ?? '').toLowerCase();
+    contentType = extForContentType(declared) ? declared : (sniffImageType(bytes) ?? declared);
+  } catch (e) {
+    console.error('[image-host] mirror fetch failed:', e);
+    return { error: 'Network error reading the generated image.' };
+  }
+  return hostGeneratedImage(bytes, contentType, opts);
+}
+
 
 /**
  * Store the bytes and return a public url for them.

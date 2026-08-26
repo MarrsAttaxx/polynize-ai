@@ -28,6 +28,9 @@ import {
   generationsFor,
   switchKind,
 } from '../slide-templates';
+import { SoulSize } from '@higgsfield/client';
+import { SOUL_SIZES } from '../higgsfield-models';
+import { HERO_BATCH, HERO_SIZE, HERO_W, HERO_H, HERO_ASPECT } from '../hero';
 import { parseProposal } from '../slide-propose';
 import {
   cardState,
@@ -436,6 +439,29 @@ eq(
   parseSlidePlan(JSON.stringify({ version: 1, slides: [{ n: 1, headline: 'x' }] }))?.template,
   LEGACY_TEMPLATE
 );
+
+/* ------------------------------------------------------------------ D56: the hero batch */
+
+/**
+ * THE ONE ASSERTION THAT CANNOT BE MADE BY READING. A width_and_height Soul does not recognise
+ * is a 400 from Higgsfield at generation time, minutes into a wait, and nothing upstream of that
+ * catches it: it typechecks, it lints, it deploys. So the size is checked against the SDK's own
+ * enum rather than against a list in this repo, which is exactly the list that was wrong.
+ */
+ok('the hero size is a real Soul size', Object.values(SoulSize).includes(HERO_SIZE as never));
+for (const sz of SOUL_SIZES) {
+  ok(`${sz.id}: offered and real`, Object.values(SoulSize).includes(sz.id as never));
+}
+
+// 4:3, exactly, and the declared dimensions agree with the string sent to the model. A crop
+// would mean the photograph he picked is not the photograph he gets.
+eq('the hero size and its dimensions agree', HERO_SIZE, `${HERO_W}x${HERO_H}`);
+eq('and it is exactly 4:3', HERO_W / HERO_H, 4 / 3);
+eq('the css aspect says the same thing', HERO_ASPECT, '4 / 3');
+
+// Four, and the grid is built for four. One would be the old behaviour.
+eq('four candidates', HERO_BATCH, 4);
+ok('more than one, or there is nothing to choose from', HERO_BATCH > 1);
 
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

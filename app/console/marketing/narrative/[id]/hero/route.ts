@@ -7,21 +7,39 @@
  * Marrs: "we need a 'Hero Image' as an option, so a main hero image gets created that can then
  * set the style for the rest of the images."
  *
+ * FOUR AT A TIME, AT 4:3 (D56). Marrs: "I would like the prompt to generate four images, and
+ * then you choose the one you want. Make those 4:3 ratio."
+ *
+ * One prompt, one request, four candidates. Soul takes `batch_size`, so this is one generation
+ * call rather than four, and 4:3 is a real Soul size (`2048x1536`) rather than a crop of a
+ * landscape, which matters because a crop would mean the photograph he picked is not quite the
+ * photograph he gets.
+ *
  * WHY IT IS A DECISION AND NOT A SIDE EFFECT. The reference plumbing already existed: the slide
  * render route passes `referenceUrl` to Soul as `image_reference`, and the slide screen was
  * inferring that reference from whichever slide happened to be approved first. So the look of a
  * ten slide set was decided by approval order. The hero replaces that with one image he chose,
  * and settling it on ONE generation before spending ten is the whole economy of the thing.
  *
- * REUSE, not reimplementation. Generation is lib/marketing/higgsfield.generateImages, the same
- * call the media library's generate route makes. The crop to the post frame is
- * renderAndHostOverlay with EMPTY text, which is the compositor already proven by the slide
- * route: it forces the canvas to exactly 1080 x 1350 with the source object-fit cover, so the
- * hero is usable as a post image and not only as a reference.
+ * ALL FOUR ARE COPIED INTO OUR BUCKET BEFORE THEY ARE SHOWN, and that is not premature work.
  *
- * NOTHING IS PERSISTED HERE. The screen shows the result, and blessing it registers it through the
- * library's own add route and saves it onto the narrative through ./state. Same discipline as the
- * slide routes: a rejected hero leaves no litter in the library and no half-state on the narrative.
+ * A Higgsfield url is temporary and `/media/add` stores a url and nothing else, so registering
+ * one straight off their CDN makes a library entry that works today and 404s later. The
+ * alternative shape, hosting only the one he picks, means the client hands the server a url to go
+ * and fetch, which is a request forgery hole for the sake of saving three small files. So the
+ * candidates he judges ARE the files that get used, and the three he rejects are unregistered
+ * bytes in a bucket that nothing points at.
+ *
+ * Byte for byte, through mirrorImageToHost rather than the compositor. renderAndHostOverlay would
+ * also produce a hosted copy, but it re-encodes to PNG at a frame you give it, which is right
+ * when the point is to compose something and wrong when the point is to keep exactly what the
+ * model made. The hero used to go through it to force the 1080 x 1350 post frame; at 4:3 there is
+ * nothing to force.
+ *
+ * NOTHING IS PERSISTED HERE. Four hosted files and no record of them anywhere: the screen shows
+ * them, and blessing one registers THAT one through the library's own add route and saves it onto
+ * the narrative through ./state. Same discipline as the slide routes: a rejected hero leaves no
+ * litter in the library and no half-state on the narrative.
  *
  * Team scope only.
  */
@@ -34,12 +52,12 @@ import { getNarrative } from '@/lib/marketing/narrative-store';
 import { isStreamId } from '@/lib/marketing/streams';
 import { isHiggsfieldConfigured, generateImages } from '@/lib/marketing/higgsfield';
 import { imageModelById } from '@/lib/marketing/higgsfield-models';
-import { renderAndHostOverlay } from '@/lib/marketing/text-overlay';
-import { SLIDE_W, SLIDE_H, SLIDE_SOURCE_SIZE } from '@/lib/marketing/slide-plan';
+import { mirrorImageToHost } from '@/lib/marketing/image-host';
+import { HERO_BATCH, HERO_SIZE } from '@/lib/marketing/hero';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
-/** A Higgsfield generation polls for up to 240s, and the crop follows it. */
+/** A Higgsfield generation polls for up to 240s, and four copies into the bucket follow it. */
 export const maxDuration = 300;
 
 const BodySchema = z.object({
@@ -101,9 +119,9 @@ export async function POST(
 
   const res = await generateImages(model.endpoint, {
     prompt,
-    width_and_height: SLIDE_SOURCE_SIZE,
+    width_and_height: HERO_SIZE,
     quality: '1080p',
-    batch_size: 1,
+    batch_size: HERO_BATCH,
   });
   if (res.status !== 'completed' || res.urls.length === 0) {
     return NextResponse.json(
@@ -118,30 +136,34 @@ export async function POST(
   }
 
   /**
-   * Cropped to the post frame with NO text on it. `frame` forces exactly 1080 x 1350 with the
-   * source object-fit cover, which is what makes the hero usable directly as the image on a text
-   * post rather than only as a style reference.
+   * ALL OF THEM AT ONCE, and a failure loses one candidate rather than the batch. Sequentially
+   * this would be four round trips added to a generation he has already waited minutes for, and
+   * they are independent: nothing about copying the second file depends on the first.
    */
-  const out = await renderAndHostOverlay(
-    res.urls[0],
-    {
-      text: '',
-      position: 'centre',
-      hAlign: 'centre',
-      size: 'medium',
-      baseColor: '#ffffff',
-      highlightColor: '#69fccb',
-      frame: { w: SLIDE_W, h: SLIDE_H },
-    },
-    { stream: narrative.lane, requestOrigin: new URL(req.url).origin }
+  const origin = new URL(req.url).origin;
+  const hosted = await Promise.all(
+    res.urls.slice(0, HERO_BATCH).map(async (u) => {
+      const out = await mirrorImageToHost(u, { stream: narrative.lane, requestOrigin: origin });
+      if ('error' in out) {
+        console.error(`[hero] could not store a candidate: ${out.error}`);
+        return null;
+      }
+      return out.url;
+    })
   );
-  if (out.error || !out.url) {
-    // The raw generation is still good, so it rides back rather than costing him the wait.
+  const urls = hosted.filter((u): u is string => Boolean(u));
+
+  /**
+   * Every copy failed, so the generation is spent and there is nothing durable to show. Saying
+   * WHICH half broke matters: the images exist and the storing is what did not work, and a
+   * message that only says "could not make the look" sends someone reading the generation code.
+   */
+  if (urls.length === 0) {
     return NextResponse.json(
-      { error: out.error ?? 'Could not crop the hero.', raw_url: res.urls[0] },
+      { error: 'The images were generated but none of them could be stored. Try again.' },
       { status: 502 }
     );
   }
 
-  return NextResponse.json({ ok: true, url: out.url, prompt: body.prompt.trim() });
+  return NextResponse.json({ ok: true, urls, prompt: body.prompt.trim() });
 }

@@ -1238,3 +1238,51 @@ The **Size** select did nothing: the fitter sizes type to the words it was given
 
 29 new assertions, 243 total: the specs and the ids are the same three, the cost maths, the full switch matrix in both directions, and the template surviving a save and reload.
 
+---
+
+## D56: Four heroes at 4:3, big enough to see, and one of them is the look
+
+**Adopted 26 August 2026.** Marrs, on the D51 hero panel: *"I like on gate four how it starts with the look. I think that's cool. What I would like there is that the prompt generates four images, and then you choose the one you want. Make those 4:3 ratio for the prompt, and I've done this, and it comes up very small. I can't see the image or click on it. I can't interact with that image. It just says 'not saved' at all. I need the images to come up clearly, and if I click, it enlarges them so I can see them properly, and then I select one."*
+
+Three separate complaints, and all three were true: one candidate where he wanted four, the wrong shape, and a 64 by 80 thumbnail with the words "Not saved yet" beside it and nothing to click.
+
+### 4:3 was available the whole time
+
+The obvious read was that Soul could not do 4:3, because `SOUL_SIZES` in this repo lists four sizes and none of them is 4:3, under a comment saying values **must** come from Higgsfield's allow-list. That comment is true and the list is not the allow-list: **the SDK's `SoulSize` has 13 entries**, and two of them are 4:3. `2048x1536` is `SoulSize.LANDSCAPE_2048x1536`.
+
+So this needed no crop, which is the part that matters: a crop would mean the photograph he picked is not quite the photograph he gets. The repo's list is now labelled as the curated subset it is, with 4:3 added, and a test asserts every offered size against the SDK's enum rather than against a list in this repo. **That assertion cannot be made by reading.** A size Soul does not recognise is a 400 minutes into a wait, and it typechecks, lints and deploys on the way there.
+
+### The hero is no longer cropped to the post frame
+
+D51 ran the hero through `renderAndHostOverlay` with empty text, which forced it to exactly 1080 x 1350 so it could be used directly as the image on a post rather than only as a style reference. At 4:3 there is nothing to force, so that step is gone and the hero is stored byte for byte as the model made it.
+
+**What that costs:** the hero is landscape now, so it is not a ready made Instagram 4:5 image. That is the right trade. The priority 1 flow is text plus image on LinkedIn, where 4:3 is the better shape anyway, and it is still a real library asset attachable to anything. What it loses is being pre-cropped for Instagram, which nothing was relying on yet.
+
+### All four are copied into our bucket before they are shown
+
+A Higgsfield url is temporary, and `/media/add` stores a url and nothing else, so anything registered straight off their CDN is a library entry that works today and 404s later.
+
+The alternative shape, hosting only the one he picks, means the client hands the server a url and asks it to go and fetch it, which is a request forgery hole for the sake of not storing three small files. So all four are mirrored on the way back, the candidates he judges are the files that get used, and the three he rejects are unregistered bytes in a bucket that nothing points at.
+
+Byte for byte, through a new `mirrorImageToHost`, not through the compositor: `renderAndHostOverlay` re-encodes to PNG at a frame you give it, which is right when the point is to compose something and wrong when the point is to keep exactly what the model made. It sniffs the type from the bytes when the CDN does not declare one, because refusing a good JPEG over a missing header reads as "the image could not be saved" and sends someone hunting through the generation code.
+
+**Known and separate:** the media library has the same durability problem and this does not fix it. Images generated there are registered as raw Higgsfield urls. Logged as its own item.
+
+### The interaction he described, exactly
+
+Four candidates, two across, each at 4:3 and roughly 290px wide in the gate's 620px column. Clicking one opens it full size, up to 1200px, where the choice is actually made. Nothing about a click is irreversible: the tile enlarges, the viewer commits.
+
+- Each tile also carries its own `Use this one`, so an obvious winner does not need the round trip.
+- The hero that is already set gets the same treatment at 260px and opens in the same viewer, because "is this still the right look" is a question you answer by looking at it.
+- That viewer shows `Use this one` only for a candidate. The one already set has nothing to choose.
+- Escape closes it, the backdrop closes it, and the close button takes focus, matching the console's other modals.
+- One across at 375px, because two 4:3 pictures on a phone is two small pictures, which is the complaint again.
+
+"Not saved yet" is gone. It was answering a question nobody asked; what he needed to know was that there were four and that he had to pick one, which is what the line says now.
+
+### The cost, said out loud
+
+Four generations per attempt instead of one. That is the right trade here and only here, because this is the ONE image the whole narrative is generated against, so the minutes spent settling it are paid back across every slide and post that follows. Nothing else in the console generates a batch.
+
+11 new assertions, 254 total.
+

@@ -31,6 +31,7 @@ import {
 } from '@/lib/marketing/kit';
 import { PlatformIcon } from '@/app/console/marketing/_components/PlatformIcon';
 import { channelLabel } from '@/lib/marketing/channels';
+import { HERO_BATCH } from '@/lib/marketing/hero';
 import g from '../gates.module.css';
 
 type PieceRow = {
@@ -337,9 +338,38 @@ export function NarrativeGates({
    * just falls back to inferring a reference from the first approved slide.
    */
   const [heroPrompt, setHeroPrompt] = useState(narrative.hero_prompt ?? '');
-  const [heroPreview, setHeroPreview] = useState<string | null>(null);
+  /**
+   * FOUR CANDIDATES, NOT ONE (D56). Marrs: "I would like the prompt to generate four images, and
+   * then you choose the one you want."
+   *
+   * They are already hosted by the time they arrive, so what is on screen is what gets used and
+   * a candidate is a real file rather than a preview. None of them is on the narrative until one
+   * is blessed, which is why this is component state and not a save.
+   */
+  const [heroOptions, setHeroOptions] = useState<string[]>([]);
   const [heroBusy, setHeroBusy] = useState<'make' | 'save' | null>(null);
+  /**
+   * WHICH ONE IS OPEN BIG. Marrs: "it comes up very small. I can't see the image or click on
+   * it... I need the images to come up clearly, and if I click, it enlarges them so I can see
+   * them properly, and then I select one."
+   *
+   * A url rather than an index, so the live hero can open in the same viewer as a candidate.
+   */
+  const [heroZoom, setHeroZoom] = useState<string | null>(null);
   const heroLive = narrative.hero_url ?? null;
+  const zoomCloseRef = useRef<HTMLButtonElement>(null);
+
+  // Escape closes the viewer, and Close takes focus on open, matching the console's other
+  // modals. Bound only while something is open so it cannot swallow a key on the gate itself.
+  useEffect(() => {
+    if (!heroZoom) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setHeroZoom(null);
+    };
+    document.addEventListener('keydown', onKey);
+    zoomCloseRef.current?.focus();
+    return () => document.removeEventListener('keydown', onKey);
+  }, [heroZoom]);
 
   const makeHero = async () => {
     if (heroBusy || heroPrompt.trim().length < 3) return;
@@ -351,12 +381,13 @@ export function NarrativeGates({
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ prompt: heroPrompt.trim() }),
       });
-      const b = (await res.json().catch(() => null)) as { url?: string; error?: string } | null;
-      if (!res.ok || !b?.url) {
+      const b = (await res.json().catch(() => null)) as { urls?: string[]; error?: string } | null;
+      if (!res.ok || !b?.urls?.length) {
         setErr(b?.error ?? 'Could not make the look.');
         return;
       }
-      setHeroPreview(b.url);
+      setHeroOptions(b.urls);
+      setHeroZoom(null);
     } catch {
       setErr('Network error while making the look.');
     } finally {
@@ -369,8 +400,8 @@ export function NarrativeGates({
    * library for a real media id, then onto the narrative. Until then it is a preview and
    * nothing downstream can see it, which is why a rejected hero leaves no litter behind.
    */
-  const keepHero = async () => {
-    if (heroBusy || !heroPreview) return;
+  const keepHero = async (chosen: string) => {
+    if (heroBusy || !chosen) return;
     setHeroBusy('save');
     setErr(null);
     try {
@@ -382,7 +413,7 @@ export function NarrativeGates({
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({
-          url: heroPreview,
+          url: chosen,
           kind: 'image',
           // Named off the idea so the asset is findable in the library later, and so the
           // narrative-scoped pool (todo 3c) has something to match on before it has a real ref.
@@ -399,12 +430,15 @@ export function NarrativeGates({
         return;
       }
       const { narrative: next } = await put({
-        hero_url: heroPreview,
+        hero_url: chosen,
         hero_media_id: rb.asset.media_id,
         hero_prompt: heroPrompt.trim(),
       });
       setNarrative(next);
-      setHeroPreview(null);
+      // The other three stop existing as far as the screen is concerned. They are unregistered
+      // bytes in the bucket that nothing points at, which is the whole reason a reject is free.
+      setHeroOptions([]);
+      setHeroZoom(null);
     } catch {
       setErr('Network error saving the look.');
     } finally {
@@ -684,20 +718,62 @@ export function NarrativeGates({
               One image for this whole narrative. Every picture made below is generated against
               it, so the set holds together. Optional: skip it and each image finds its own way.
             </p>
-            {heroLive && !heroPreview ? (
-              <div className={g.lookRow}>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={heroLive} alt="" className={g.lookThumb} />
+            {/* THE ONE THAT IS SET. Shown at a size you can actually read, and it opens big
+                like a candidate does, because "is this still the right look" is a question you
+                answer by looking at it rather than at a thumbnail. */}
+            {heroLive && heroOptions.length === 0 ? (
+              <div className={g.lookSet}>
+                <button
+                  type="button"
+                  className={g.lookShotBtn}
+                  onClick={() => setHeroZoom(heroLive)}
+                  aria-label="See the look full size"
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={heroLive} alt="" className={g.lookShot} />
+                </button>
                 <span className={g.lookState}>✓ set. Every image below follows this.</span>
               </div>
             ) : null}
-            {heroPreview ? (
-              <div className={g.lookRow}>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={heroPreview} alt="" className={g.lookThumb} />
-                <span className={g.lookState}>Not saved yet.</span>
-              </div>
+
+            {/* THE FOUR. Two across, each at 4:3 and big enough to judge, and clicking one
+                opens it full size rather than doing anything irreversible. */}
+            {heroOptions.length > 0 ? (
+              <>
+                <p className={g.lookPick}>
+                  {heroOptions.length === 1
+                    ? 'One came back. Click it to see it big.'
+                    : `${heroOptions.length} to choose from. Click one to see it big, then use it.`}
+                </p>
+                <div className={g.lookGrid}>
+                  {heroOptions.map((u, i) => (
+                    <div key={u} className={g.lookTile}>
+                      <button
+                        type="button"
+                        className={g.lookShotBtn}
+                        onClick={() => setHeroZoom(u)}
+                        aria-label={`See option ${i + 1} full size`}
+                      >
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={u} alt="" className={g.lookShot} />
+                        <span className={g.lookExpand} aria-hidden>
+                          ⤢
+                        </span>
+                      </button>
+                      <button
+                        type="button"
+                        className={g.lookUse}
+                        onClick={() => void keepHero(u)}
+                        disabled={heroBusy !== null}
+                      >
+                        {heroBusy === 'save' ? 'Saving…' : 'Use this one'}
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </>
             ) : null}
+
             <textarea
               className={g.lookBox}
               rows={2}
@@ -714,22 +790,49 @@ export function NarrativeGates({
                 disabled={heroBusy !== null || heroPrompt.trim().length < 3}
               >
                 {heroBusy === 'make'
-                  ? 'Making…'
-                  : heroLive || heroPreview
-                    ? 'Try another'
-                    : 'Make the look'}
+                  ? `Making ${HERO_BATCH}…`
+                  : heroLive || heroOptions.length > 0
+                    ? `Try ${HERO_BATCH} more`
+                    : `Make ${HERO_BATCH} to choose from`}
               </button>
-              {heroPreview ? (
-                <button
-                  type="button"
-                  className={g.lookKeep}
-                  onClick={keepHero}
-                  disabled={heroBusy !== null}
-                >
-                  {heroBusy === 'save' ? 'Saving…' : 'Use this one'}
-                </button>
-              ) : null}
             </div>
+
+            {/* FULL SIZE, and the place the choice is actually made. Same shape as the console's
+                other modals: Escape closes, the backdrop closes, the close button takes focus. */}
+            {heroZoom ? (
+              <div
+                className={g.lookZoom}
+                role="dialog"
+                aria-modal="true"
+                aria-label="The look, full size"
+                onClick={(e) => {
+                  if (e.target === e.currentTarget) setHeroZoom(null);
+                }}
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={heroZoom} alt="" className={g.lookZoomImg} />
+                <div className={g.lookZoomBar}>
+                  {heroOptions.includes(heroZoom) ? (
+                    <button
+                      type="button"
+                      className={g.lookKeep}
+                      onClick={() => void keepHero(heroZoom)}
+                      disabled={heroBusy !== null}
+                    >
+                      {heroBusy === 'save' ? 'Saving…' : 'Use this one'}
+                    </button>
+                  ) : null}
+                  <button
+                    ref={zoomCloseRef}
+                    type="button"
+                    className={g.lookGo}
+                    onClick={() => setHeroZoom(null)}
+                  >
+                    Close
+                  </button>
+                </div>
+              </div>
+            ) : null}
           </div>
 
           {pieces.length === 0 ? (

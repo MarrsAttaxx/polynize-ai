@@ -23,6 +23,12 @@ That reordering matters more than it looks. It means the carousel work in progre
 
 ## Blocking a full walkthrough
 
+**1b. Generated images in the media library are saved as vendor urls, so they will 404 (found while building D56).**
+
+`/media/add` stores a url and nothing else, by design (D2, amended 2026-07-14): a media asset is a reference to a file hosted somewhere else. That is right for a Box link and wrong for a Higgsfield generation, whose url is temporary. `MediaGenerate` passes the raw generation url straight to `/add`, so every image generated in the library is an entry that works today and breaks later.
+
+The hero path does not have this problem any more: D56 added `mirrorImageToHost`, which copies the bytes into our bucket before anything is registered. The fix for the library is to call the same helper on the way into `/add` when the url is a generation rather than a paste. Small, and it should happen before anyone relies on a generated library image.
+
 **1. No file upload.** A media asset is a URL reference only, so a recorded video has to go to Box by hand, its Direct Link copied, and pasted into the stream media library on a different screen before it can be attached to a piece. Nothing on the Script screen, the studio row, or the Recorded button says any of this. This is the last hard gap between Gate 4 and a published post.
 
 **2. Metricool has never actually been fired.** The D18 gate: the publish button has never been pressed against a real brand. Everything downstream of Gate 5 is unproven.
@@ -57,9 +63,11 @@ The template is a property of the PLAN, not of each slide: picked once for the s
 
 Secondary benefit worth keeping in view: templates that need no image prompt per slide **shrink what April has to write**, which is the payload that has been making the 10-slide call fragile.
 
-**3b. A HERO IMAGE that sets the style for the rest. DONE (D51).** Marrs: *"we need a 'Hero Image' as an option, so a main hero image gets created that can then set the style for the rest of the images."*
+**3b. A HERO IMAGE that sets the style for the rest. DONE (D51), rebuilt as a four-up chooser (D56).** Marrs: *"we need a 'Hero Image' as an option, so a main hero image gets created that can then set the style for the rest of the images."*
 
 "The look" panel now sits at the top of Gate 4, above the cards, because it is upstream of every image below it. Write a line, make it, and blessing it registers it in the library and pins it on the narrative. Every image generated afterwards is generated against it. Optional: a narrative with no hero behaves exactly as before.
+
+**D56 rebuilt the panel** on his three complaints: one candidate became **four at 4:3**, the 64 by 80 thumbnail became a two-across grid at ~290px, and clicking a picture opens it full size, which is where the choice is made. 4:3 turned out to be a real Soul size (`2048x1536`) sitting unused in the SDK's 13 entry enum, so it needs no crop. The hero is therefore **landscape now and no longer pre-cropped to the 1080 x 1350 post frame**, which suits the LinkedIn text-plus-image flow and costs the ready made Instagram crop that nothing was using yet.
 
 Still owed on the hero, small: it is not yet offered as the image on a **text** post, which is priority 1. It has a real library id so it is already attachable by hand; what is missing is the text screen offering it by default, which is the same build as 3c.
 

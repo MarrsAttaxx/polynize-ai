@@ -570,20 +570,147 @@
   color: var(--text-3, #6f6a64);
   margin: 0 0 10px;
 }
-.lookRow {
+/**
+ * THE HERO CANDIDATES (D56). Four 4:3 photographs, two across, at a size you can judge.
+ *
+ * Marrs: "it comes up very small. I can't see the image or click on it. I can't interact with
+ * that image... I need the images to come up clearly, and if I click, it enlarges them so I can
+ * see them properly, and then I select one."
+ *
+ * The old shape was a 64 x 80 thumbnail next to the words "Not saved yet", which is the whole
+ * complaint: too small to judge, and nothing to click. Every part of it is replaced, including
+ * the 4:5 crop, since a hero is generated at 4:3 now and is not cropped to the post frame.
+ */
+.lookPick {
+  font-family: var(--font-jetbrains-mono), monospace;
+  font-size: 10.5px;
+  color: var(--text-2, #cfc8c1);
+  margin: 0 0 8px;
+}
+
+.lookGrid {
+  display: grid;
+  /* Two across. Four in a row on a wide panel would be four small pictures again, which is the
+     thing being fixed; two means each one is roughly half the panel. */
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.lookTile {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+/* The image is a button, so it is reachable by keyboard and obviously clickable. */
+.lookShotBtn {
+  position: relative;
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: zoom-in;
+  border-radius: 8px;
+  line-height: 0;
+}
+.lookShotBtn:focus-visible {
+  outline: 2px solid var(--mint, #69fccb);
+  outline-offset: 2px;
+}
+
+.lookShot {
+  display: block;
+  width: 100%;
+  /* 4:3, held before the file loads, so the grid does not jump as four images arrive. */
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.12));
+  background: var(--surface-2, #23232f);
+  transition: border-color 0.15s ease;
+}
+.lookShotBtn:hover .lookShot {
+  border-color: var(--mint, #69fccb);
+}
+
+/* The enlarge mark, so "click me" does not depend on noticing the cursor. */
+.lookExpand {
+  position: absolute;
+  right: 7px;
+  bottom: 7px;
+  width: 24px;
+  height: 24px;
+  display: grid;
+  place-items: center;
+  border-radius: 6px;
+  background: rgba(10, 10, 15, 0.72);
+  color: var(--text, #f4ece4);
+  font-size: 13px;
+  line-height: 1;
+  pointer-events: none;
+}
+
+.lookUse {
+  font-family: var(--font-jetbrains-mono), monospace;
+  font-size: 11px;
+  padding: 7px 10px;
+  border-radius: 7px;
+  cursor: pointer;
+  border: 1px solid color-mix(in srgb, var(--mint, #69fccb) 55%, transparent);
+  background: transparent;
+  color: var(--mint, #69fccb);
+}
+.lookUse:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--mint, #69fccb) 12%, transparent);
+}
+.lookUse:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+/* The one that is set: the same picture treatment, at a width that reads as settled rather
+   than as one of a set still being chosen. */
+.lookSet {
   display: flex;
   align-items: center;
-  gap: 12px;
-  margin-bottom: 10px;
+  gap: 14px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
 }
-/* 4:5, the frame every image in the set is cropped to. */
-.lookThumb {
-  width: 64px;
-  height: 80px;
-  object-fit: cover;
-  border-radius: 7px;
-  border: 1px solid color-mix(in srgb, var(--mint, #69fccb) 40%, transparent);
+.lookSet .lookShotBtn {
+  width: 260px;
   flex: 0 0 auto;
+}
+
+/* FULL SIZE. Above the decision bar, which sits at z-index 20. */
+.lookZoom {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 20px;
+  background: rgba(6, 6, 10, 0.9);
+}
+.lookZoomImg {
+  max-width: min(1200px, 100%);
+  /* Room for the buttons underneath at any window height. */
+  max-height: calc(100vh - 120px);
+  object-fit: contain;
+  border-radius: 10px;
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.16));
+}
+.lookZoomBar {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
 }
 .lookState {
   font-family: var(--font-jetbrains-mono), monospace;
@@ -648,4 +775,19 @@
   border-radius: 999px;
   background: var(--surface-2, #23232f);
   color: var(--text-3, #6f6a64);
+}
+
+/* At 375px two 4:3 pictures across is two small pictures, which is the complaint again. One
+   across, full width, and the set hero stops being a fixed 260. */
+@media (max-width: 560px) {
+  .lookGrid {
+    grid-template-columns: 1fr;
+  }
+  .lookSet .lookShotBtn {
+    width: 100%;
+    flex: 1 1 100%;
+  }
+  .lookZoomImg {
+    max-height: calc(100vh - 150px);
+  }
 }
