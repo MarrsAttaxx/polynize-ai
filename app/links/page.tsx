@@ -6,11 +6,11 @@ import s from './links.module.css';
 export const metadata: Metadata = {
   title: 'links · polynize.ai',
   description:
-    'polynize.ai resources. Map your business, run build protocols, talk to our team.',
+    'polynize.ai resources. Map your job against AI, map your team, see a capability map, talk to our team.',
   openGraph: {
     title: 'links | polynize.ai',
     description:
-      'polynize.ai resources. Map your business, run build protocols, talk to our team.',
+      'polynize.ai resources. Map your job against AI, map your team, see a capability map, talk to our team.',
     url: 'https://polynize.ai/links',
     siteName: 'polynize.ai',
     type: 'website',
@@ -34,17 +34,56 @@ type LinkCard = {
   tail?: string;
 };
 
+/**
+ * The live experiences first, because this page is a link in a bio and whatever sits at
+ * the top is what most people click. Ordered by what the visitor has to give up: the job
+ * map asks for a job description they already have, the team map asks eight questions
+ * about their business, and the capability map asks for nothing at all.
+ */
 const GET_STARTED: LinkCard[] = [
   {
-    href: '/blueprint',
+    href: '/job-mapping',
+    featured: true,
+    tag: { label: 'new', mint: true },
+    meta: 'free',
+    title: 'Map your job against AI',
+    desc: 'Paste your job description. See which parts of the role stay human, which become hybrid, and which an agent can run.',
+    icon: (
+      <svg viewBox="0 0 24 24">
+        <path d="M7 3.5h9l4 4v13H7z" />
+        <path d="M16 3.5V8h4" />
+        <path d="M10.5 12.5h6M10.5 16h4" />
+      </svg>
+    ),
+    tail: '→',
+  },
+  {
+    /* Not '/blueprint'. That path still 308s here, and a redirect hop on the one page
+       built for sharing is a wasted round trip on a phone. */
+    href: '/map-your-team',
     featured: true,
     tag: { label: 'recommended', mint: true },
     meta: 'free',
-    title: 'Build your blueprint',
-    desc: 'Answer eight questions. See every capability benchmarked against what good looks like.',
+    title: 'Map your team',
+    desc: 'Answer eight questions about one bottleneck. Get a capability blueprint you can share with your team.',
     icon: (
       <svg viewBox="0 0 24 24">
         <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+      </svg>
+    ),
+    tail: '→',
+  },
+  {
+    href: '/capability-mapping',
+    featured: true,
+    tag: { label: 'interactive' },
+    meta: 'no signup',
+    title: 'See a capability map',
+    desc: 'Pick a team and watch its work get mapped: every capability allocated human, hybrid or agentic.',
+    icon: (
+      <svg viewBox="0 0 24 24">
+        <path d="M2 9l7-3 6 3 7-3v13l-7 3-6-3-7 3z" />
+        <path d="M9 6v13M15 9v13" />
       </svg>
     ),
     tail: '→',
@@ -146,21 +185,6 @@ const CONNECT: LinkCard[] = [
     ),
     tail: '↗',
   },
-  {
-    href: 'https://polynize.io',
-    external: true,
-    tag: { label: 'studio' },
-    meta: 'polynize.io',
-    title: 'Polynize cognitive studio',
-    desc: 'Run thinking protocols and design cognitive systems.',
-    icon: (
-      <svg viewBox="0 0 24 24">
-        <circle cx="12" cy="12" r="10" />
-        <path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
-      </svg>
-    ),
-    tail: '↗',
-  },
 ];
 
 export default function LinksPage() {
@@ -185,7 +209,7 @@ export default function LinksPage() {
             links<span className={s.heroDot}>.</span>
           </h1>
           <p className={s.heroSub}>
-            map your business into an agent workforce. run the build protocol. talk to our team.
+            map your job. map your team. see a capability map. talk to our team.
           </p>
         </div>
       </div>
