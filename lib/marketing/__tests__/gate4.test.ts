@@ -36,7 +36,12 @@ import { parseLine } from '../text-overlay';
 import { cleanArticle } from '../article-draft';
 import { foldRule, foldCopy, copyLength } from '../post-preview';
 import { timezoneForEntry } from '../posting-schedule';
-import { nextOpenSlots } from '../channel-schedule';
+import {
+  nextOpenSlots,
+  laneTimezone,
+  defaultChannelSchedule,
+  normalizeChannelSchedule,
+} from '../channel-schedule';
 import { IMAGE_MODELS, providerOf, imageModelById, DEFAULT_IMAGE_MODEL } from '../higgsfield-models';
 import { nearestSoulSize, aspectSentence, frameFor } from '../image-generate';
 import { heldByOther, parseHeld, WAVE_LOCK_MS } from '../wave-lock';
@@ -878,6 +883,69 @@ ok('x increases left to right', sp.pts.every((p, i, arr) => i === 0 || arr[i - 1
 ok('the largest value sits highest, which is the smallest y', sp.pts[1].y < sp.pts[0].y && sp.pts[1].y < sp.pts[2].y);
 eq('a flat series does not divide by zero', sparklinePoints([5, 5, 5], 100, 40).pts.length, 3);
 eq('an empty series draws nothing', sparklinePoints([], 100, 40).pts.length, 0);
+
+/* ------------------------------------------------------------------ D68: where a lane lives */
+
+/**
+ * Marrs: "Kristen's in California, but that's okay. We can fix that."
+ *
+ * Three levels of precedence and every one of them exists for a reason, so all three are held:
+ * a value the operator saved beats the lane's known home, which beats the Sydney default.
+ */
+eq('Kristin is on California time by default', laneTimezone('kristin'), 'America/Los_Angeles');
+eq('and everyone else is on Sydney', laneTimezone('marrs'), 'Australia/Sydney');
+eq('an unknown lane gets Sydney too', laneTimezone('someone-new'), 'Australia/Sydney');
+eq('no lane at all still resolves', laneTimezone(undefined), 'Australia/Sydney');
+eq(
+  'what the operator saved beats the lane default',
+  laneTimezone('kristin', 'Europe/London'),
+  'Europe/London'
+);
+eq(
+  'and it beats Sydney for everyone else',
+  laneTimezone('marrs', 'America/New_York'),
+  'America/New_York'
+);
+eq('a blank saved value is ignored, not sent as a zone', laneTimezone('kristin', '   '), 'America/Los_Angeles');
+
+// The default schedule carries it, which is what the wave reads when no file exists.
+eq('the default schedule uses the lane home', defaultChannelSchedule('kristin').timezone, 'America/Los_Angeles');
+eq('and honours an override', defaultChannelSchedule('kristin', 'Asia/Tokyo').timezone, 'Asia/Tokyo');
+eq('marrs stays put', defaultChannelSchedule('marrs').timezone, 'Australia/Sydney');
+
+/**
+ * A STORED value still wins over both, or a deliberate setting would be overwritten by a default
+ * every time the file was read.
+ */
+eq(
+  'a stored zone beats everything',
+  normalizeChannelSchedule({ timezone: 'Pacific/Auckland' }, 'kristin', 'Europe/London').timezone,
+  'Pacific/Auckland'
+);
+eq(
+  'an absent stored zone falls to the editable one',
+  normalizeChannelSchedule({}, 'kristin', 'Europe/London').timezone,
+  'Europe/London'
+);
+eq(
+  'and with neither, to the lane home',
+  normalizeChannelSchedule({}, 'kristin').timezone,
+  'America/Los_Angeles'
+);
+
+/**
+ * THE POINT OF ALL OF IT: a slot picked on Kristin's lane is paired with HER zone, because
+ * scheduled_at is wall-clock and a wall-clock time without its zone is not a time.
+ */
+const kSlots = nextOpenSlots(
+  defaultChannelSchedule('kristin'),
+  'instagram',
+  1,
+  [],
+  new Date('2026-09-01T00:00:00Z')
+);
+eq('one slot back', kSlots.length, 1);
+eq('carrying California, not Sydney', kSlots[0].timezone, 'America/Los_Angeles');
 
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

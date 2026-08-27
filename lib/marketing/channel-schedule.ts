@@ -145,6 +145,22 @@ const MANUAL_BY_DEFAULT: Record<string, Network[]> = {
   marrs: ['linkedin'],
 };
 
+/**
+ * WHERE A LANE'S PERSON ACTUALLY IS (D68).
+ *
+ * Marrs: "Just to note that Kristen's in California, but that's okay. We can fix that."
+ *
+ * Every lane used to default to Sydney, which is right for four of five people and wrong for the
+ * one who is fifteen hours away: her morning video would have gone out in her late afternoon.
+ *
+ * A named default rather than a shrug, for the same reason MANUAL_BY_DEFAULT above is one: the
+ * fact belongs in the code where it is true, not in a config file someone has to remember to set
+ * before her first wave. An explicitly saved value still wins over this.
+ */
+const LANE_TIMEZONE: Record<string, string> = {
+  kristin: 'America/Los_Angeles',
+};
+
 const SAFE_LANE = /^[a-z0-9_-]{1,40}$/;
 
 function keyFor(lane: string): string {
@@ -154,7 +170,17 @@ function keyFor(lane: string): string {
 
 const HHMM = /^([01]\d|2[0-3]):[0-5]\d$/;
 
-export function defaultChannelSchedule(lane?: string): LaneChannelSchedule {
+export function laneTimezone(lane?: string, fallback?: string): string {
+  /**
+   * PRECEDENCE, and each step is there for a reason:
+   *   a value the operator saved  >  the lane's known home  >  Sydney.
+   * `fallback` is the operator-editable one, passed in by the caller that can read it, so this
+   * stays pure and testable.
+   */
+  return (fallback && fallback.trim()) || (lane && LANE_TIMEZONE[lane]) || DEFAULT_TIMEZONE;
+}
+
+export function defaultChannelSchedule(lane?: string, fallbackTz?: string): LaneChannelSchedule {
   const channels = {} as ChannelSlots;
   const modes = {} as ChannelModes;
   const prefers = {} as ChannelSlotPrefers;
@@ -165,7 +191,7 @@ export function defaultChannelSchedule(lane?: string): LaneChannelSchedule {
     prefers[n] = {};
     for (const t of channels[n]) prefers[n][t] = defaultPrefersFor(n, t);
   }
-  return { timezone: DEFAULT_TIMEZONE, channels, modes, prefers };
+  return { timezone: laneTimezone(lane, fallbackTz), channels, modes, prefers };
 }
 
 /**
@@ -235,10 +261,16 @@ function normalizeSlotPrefers(
 }
 
 /** Tolerant parse of whatever is on disk: bad slots dropped, missing networks defaulted. */
-export function normalizeChannelSchedule(x: unknown, lane?: string): LaneChannelSchedule {
+export function normalizeChannelSchedule(
+  x: unknown,
+  lane?: string,
+  fallbackTz?: string
+): LaneChannelSchedule {
   const o = (x && typeof x === 'object' ? x : {}) as Record<string, unknown>;
   const timezone =
-    typeof o.timezone === 'string' && o.timezone.trim() ? o.timezone.trim() : DEFAULT_TIMEZONE;
+    typeof o.timezone === 'string' && o.timezone.trim()
+      ? o.timezone.trim()
+      : laneTimezone(lane, fallbackTz);
   const rawChannels = (
     o.channels && typeof o.channels === 'object' ? o.channels : {}
   ) as Record<string, unknown>;
@@ -272,18 +304,40 @@ export function normalizeChannelSchedule(x: unknown, lane?: string): LaneChannel
 /**
  * A lane's schedule, defaults on any failure. This feeds the auto-queue path, so a
  * broken config file must degrade to the placeholder times, not take queueing down.
+ *
+ * IT NOW HONOURS THE TIMEZONE THE OPERATOR CAN ACTUALLY EDIT (D68). Nothing has ever written a
+ * lane's schedule file, so its timezone was pinned to the Sydney default forever, while the field
+ * on the Connect Metricool page wrote a DIFFERENT store. Since D61 made the wave's zone the one
+ * stamped on an entry and sent to Metricool, that made the only editable timezone decorative for
+ * everything a wave creates.
+ *
+ * So the posting schedule's per-stream timezone becomes the fallback here. One field, one effect.
+ * A read failure on it costs the fallback and nothing else, which is why it is caught separately.
  */
 export async function getChannelSchedule(lane: string): Promise<LaneChannelSchedule> {
   const key = keyFor(lane);
+
+  let editable: string | undefined;
+  try {
+    const { getPostingSchedule } = await import('./metricool-config-store');
+    editable = (await getPostingSchedule())[lane]?.timezone;
+  } catch (err) {
+    console.error(`[channel-schedule] posting schedule read failed for ${lane}:`, err);
+  }
+
   try {
     if (isBucketConfigured()) {
-      return normalizeChannelSchedule(JSON.parse((await getObjectText(key)) || 'null'), lane);
+      return normalizeChannelSchedule(
+        JSON.parse((await getObjectText(key)) || 'null'),
+        lane,
+        editable
+      );
     }
     const s = (await getSheetState(key)) as { schedule?: unknown } | null;
-    return normalizeChannelSchedule(s?.schedule, lane);
+    return normalizeChannelSchedule(s?.schedule, lane, editable);
   } catch (err) {
     console.error(`[channel-schedule] read failed for ${lane}:`, err);
-    return defaultChannelSchedule(lane);
+    return defaultChannelSchedule(lane, editable);
   }
 }
 

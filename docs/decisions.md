@@ -1722,3 +1722,42 @@ The two confirmations are deliberately different sentences. The draft one says w
 
 On the `marrs` lane **LinkedIn is manual by default** (D41): he posts it by hand because scheduled LinkedIn posts lose reach. So a Metricool test on his own stream is Instagram, TikTok or YouTube, and a LinkedIn entry there will never be the thing that proves the pipe.
 
+---
+
+## D68: A lane's timezone is where its person actually is
+
+**Adopted 27 August 2026.** Marrs, mid-test: *"Just to note that Kristen's in California, but that's okay. We can fix that."*
+
+He also said the timezones were all working, and they looked like they were. They were not, and finding out why is the more useful half of this.
+
+### The setting he checked had no effect on a wave
+
+Two stores hold a timezone:
+
+| Store | Who edits it | Who reads it |
+|---|---|---|
+| `pam/config/posting-schedule.json`, per stream | **the Connect Metricool page** | Add to queue |
+| `pam/channel-schedule/{lane}.json`, per lane | **nothing. no UI exists** | **the wave** |
+
+**Nothing has ever written a lane's schedule file**, so its timezone was pinned to the Sydney default forever. And D61, yesterday, made the wave's zone the one stamped on the entry and sent to Metricool, precisely so a time and its zone could not drift apart. Correct fix, and it had this consequence: it promoted the timezone with no UI to being the one that ships, which made the only editable timezone decorative for everything a wave creates.
+
+So the field he verified governed Add to queue and nothing else. Kristin's wave would have gone out on Sydney time whatever that page said.
+
+### One field, one effect
+
+The posting schedule's per-stream timezone is now the **fallback** for a lane's schedule, so the one editable field governs the wave too. Three levels, each there for a reason:
+
+1. A value explicitly saved on the lane file. Nothing writes one today, and if a lane UI ever exists a deliberate setting must not be overwritten by a default on every read.
+2. **The posting schedule**, which is what the operator can actually edit.
+3. The lane's known home, then Sydney.
+
+### Kristin's home is in the code, not in a config file
+
+`LANE_TIMEZONE` names it, the same way `MANUAL_BY_DEFAULT` names his LinkedIn being hand-posted. A fact that is true belongs where it is true, rather than in a file someone has to remember to set before her first wave. Fifteen hours is not a rounding error: her morning video would have gone out in her late afternoon, and the D46 slot types would have said morning while meaning nothing of the kind.
+
+### Still owed
+
+**Two stores for one concept is the actual debt**, and this narrows it rather than paying it. The posting schedule also holds ideal slots that the channel schedule holds per network, so there are two answers to "when does this lane post" as well. Worth collapsing, and not while he is mid-test.
+
+15 new assertions, 433 total.
+

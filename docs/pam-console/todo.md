@@ -205,4 +205,6 @@ What it was, kept because the shape recurs: the wave picked a time from `getChan
 
 ~~**14. The autosave can drop an agreed hook.**~~ On the Script screen the save loop re-checks only the script and the media refs, so a hooks or title change landing mid-flight is never re-sent while the indicator still says Saved. "Propose the arc" then refuses with the hooks visibly ticked on screen. The image screen's autosave does not have this bug and is the pattern to copy.
 
+**16. Two stores hold one lane's schedule.** `pam/config/posting-schedule.json` (per stream: timezone + ideal slots, edited on the Connect Metricool page) and `pam/channel-schedule/{lane}.json` (per lane: timezone + per-network slots + modes + prefers, edited by nothing). D68 made the editable timezone govern both, so the immediate bug is gone, but there are still two answers to "when does this lane post" and only one of them has a UI. Collapse them, or give the lane file a UI and make it the single authority.
+
 **15. No test runner beyond two suites.** `npm run test:marketing` (111 assertions) and `npm run test:blueprint`. Everything else is unverified by anything but a typecheck, and `tsc` cannot see a client component importing server code, which shipped a 500 once already (D47).
