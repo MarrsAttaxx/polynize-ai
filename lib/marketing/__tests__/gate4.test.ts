@@ -46,6 +46,12 @@ import {
   UPLOAD_TYPES,
   MAX_UPLOAD_BYTES,
 } from '../media-upload';
+import {
+  mockAnalytics,
+  compactNumber,
+  signedPct,
+  sparklinePoints,
+} from '../analytics-mock';
 import { parseProposal } from '../slide-propose';
 import {
   cardState,
@@ -808,6 +814,70 @@ eq('a path-looking name is text, not a path', labelFromFilename('../../etc/passw
 for (const t of Object.keys(UPLOAD_TYPES)) {
   ok(`${t}: offered and accepted`, checkUpload(t, 1000).ok);
 }
+
+/* ------------------------------------------------------------------ D66: the analytics mock */
+
+/**
+ * A MOCK'S ONLY JOB IS TO BE TRUSTED ABOUT SHAPE, so the thing tested is that it adds up. The first
+ * version generated the per-network numbers independently of the headline, so a tile said 95.3K
+ * beside four bars summing to 63K, and nobody would trust a panel that cannot add up.
+ */
+for (const scope of ['engine', 'marrs', 'polynize', 'kristin']) {
+  const a = mockAnalytics(scope);
+  eq(
+    `${scope}: the platform split sums to the headline`,
+    a.byNetwork.reduce((t, n) => t + n.impressions, 0),
+    a.impressions
+  );
+  eq(`${scope}: the trend sums to the headline too`, a.trend.reduce((t, n) => t + n, 0), a.impressions);
+  eq(`${scope}: twelve trend points`, a.trend.length, 12);
+  ok(`${scope}: no negative share`, a.byNetwork.every((n) => n.impressions >= 0));
+  ok(`${scope}: the bars are sorted biggest first`, a.byNetwork.every((n, i, arr) => i === 0 || arr[i - 1].impressions >= n.impressions));
+  ok(
+    `${scope}: no single best post exceeds the period`,
+    a.topPosts.every((p) => p.impressions <= a.impressions)
+  );
+  ok(`${scope}: and they are sorted too`, a.topPosts.every((p, i, arr) => i === 0 || arr[i - 1].impressions >= p.impressions));
+}
+
+/**
+ * DETERMINISTIC, and this is not a nicety: the panel renders on the SERVER, so a random number
+ * would differ from the one the browser computes, which is a hydration mismatch rather than a
+ * cosmetic difference.
+ */
+eq(
+  'the same scope gives the same numbers every time',
+  JSON.stringify(mockAnalytics('marrs')),
+  JSON.stringify(mockAnalytics('marrs'))
+);
+ok(
+  'and two scopes do not give identical numbers',
+  JSON.stringify(mockAnalytics('marrs')) !== JSON.stringify(mockAnalytics('kristin'))
+);
+ok('the scale multiplies the numbers up', mockAnalytics('marrs', 4).impressions > mockAnalytics('marrs').impressions);
+
+// The stat tile's auto-compact contract: separated under 10,000, compacted above.
+eq('a small number keeps its separator', compactNumber(1284), '1,284');
+eq('ten thousand compacts', compactNumber(12_900), '12.9K');
+eq('a round compact loses its .0', compactNumber(12_000), '12K');
+eq('millions compact too', compactNumber(4_200_000), '4.2M');
+eq('9,999 is still readable in full', compactNumber(9999), '9,999');
+eq('zero is zero', compactNumber(0), '0');
+
+// A flat period has to READ as flat, not as a blank.
+eq('a positive delta carries its sign', signedPct(12.3), '+12.3%');
+eq('a negative one keeps its own', signedPct(-4.6), '-4.6%');
+eq('and flat is said in words', signedPct(0), 'no change');
+eq('a rounding-to-zero delta is flat too', signedPct(0.04), 'no change');
+
+/** The sparkline geometry: inside its box, oldest to newest, biggest value at the smallest y. */
+const sp = sparklinePoints([10, 50, 30], 100, 40, 3);
+eq('one point per value', sp.pts.length, 3);
+ok('all inside the box', sp.pts.every((p) => p.x >= 0 && p.x <= 100 && p.y >= 0 && p.y <= 40));
+ok('x increases left to right', sp.pts.every((p, i, arr) => i === 0 || arr[i - 1].x < p.x));
+ok('the largest value sits highest, which is the smallest y', sp.pts[1].y < sp.pts[0].y && sp.pts[1].y < sp.pts[2].y);
+eq('a flat series does not divide by zero', sparklinePoints([5, 5, 5], 100, 40).pts.length, 3);
+eq('an empty series draws nothing', sparklinePoints([], 100, 40).pts.length, 0);
 
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

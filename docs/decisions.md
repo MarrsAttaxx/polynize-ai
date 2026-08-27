@@ -1648,3 +1648,45 @@ Until then Box stays the video path, which is what the hint under the paste fiel
 
 24 new assertions, 371 total.
 
+---
+
+## D66: The analytics panel, at the bottom, honest about being a mock
+
+**Adopted 26 August 2026.** Todo item 7, built overnight with his approval.
+
+Marrs: *"on the main engine page, where it shows everyone, so it's an aggregation of all those stats. And when you go into each of the streams, each one of those streams has an analytics section also. I think it's always going to be the thing at the bottom, because you don't want to look at that first... I'd at least like a mock-up there at the moment, and we're talking about as much data as we can and making it as visual as possible."*
+
+Both places, both at the bottom, below the ideas box on a stream board.
+
+### Every field is one Metricool actually returns
+
+That is the whole discipline of a mock: it is a **promise about what the real panel will show**, so inventing a metric their API cannot give us would be designing a screen we then have to take away. The four tiles and the two table columns map to documented per-post fields: LinkedIn impressions, clicks and engagement; Instagram reach and follows-gained-from-a-post.
+
+What is still unsettled is named on the panel itself: whether `ProviderStatus.id`, which this console stores as `external_ref` when it schedules, is the same id the analytics endpoints take as `postId`. They are documented separately and nowhere stated to be the same, and that single question decides whether any of this can be tied to **our** posts. One authenticated call answers it (todo item 8).
+
+### The form was picked before the colour
+
+Which is the step that usually goes backwards:
+
+- Four headline numbers are a **KPI row of stat tiles**, each with a 12 point sparkline. Not the grouped bar chart four numbers usually get turned into.
+- Four networks compared is **horizontal bars**: magnitude against identity.
+- Five posts with mixed measures is a **table**, which is also the panel's table view, so nothing is gated behind reading a chart.
+
+**One hue, and identity comes from the logos.** Every mark is mint; the networks are told apart by their own `PlatformIcon` and their name, never by colour. That is stronger than a colour key, and it protects the one colour semantic the brand has: coral is human, amber is hybrid, mint is agent, so spending those four on LinkedIn, Instagram, TikTok and YouTube would quietly remap it.
+
+The house mark specs are applied rather than approximated: a 4px rounded data-end square at the baseline, a 2px line with round caps, an end marker of at least 8px carrying a 2px surface ring, an area wash at 10%, hairline recessive furniture, the value labelled only at a bar's tip, and text always in text tokens with the coloured mark beside it. Proportional figures on the big tile values, tabular only in the table's number columns.
+
+### Two things caught by looking at it rather than by reading it
+
+**The numbers did not add up.** The first version generated the per-network split independently of the headline, so a tile said 95.3K beside four bars summing to 63K. For a mock that is not cosmetic, it is the mock failing at its only job: nobody trusts a panel that cannot add. The split is now a weighted division of the headline with the remainder going to the last bar, the five best posts are a fraction of the same total, and **a test asserts the sum on every scope**.
+
+**The table pushed the page sideways** at 375px. It has a real minimum width, since two of its three columns are mono numerals that cannot wrap, so it scrolls inside its own container and the page does not. Dropping the third column on a phone was the other option and it drops data rather than just the view of it.
+
+### Deterministic, not random
+
+`Math.random` would produce a different number on the server than in the browser, which is a hydration mismatch rather than a cosmetic difference. Seeded off the scope name, so the Marrs panel also looks the same on every reload and a screenshot of it stays true.
+
+The trend **wanders rather than climbs**, because a mock that only goes up teaches the wrong thing about what the panel is for, which is noticing when something stopped working.
+
+47 new assertions, 418 total.
+

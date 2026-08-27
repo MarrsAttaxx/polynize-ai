@@ -121,7 +121,9 @@ The note below was written before it was built, and its guess about scope was wr
 
 **6. Rename the front page.** Done: "Whose content" is now "Content engine".
 
-**7. Analytics in two places, always at the bottom.** Marrs: *"on the main engine page, where it shows everyone, so it's an aggregation of all those stats. And when you go into each of the streams, each one of those streams has an analytics section also. I think it's always going to be the thing at the bottom, because you don't want to look at that first... I'd at least like a mock-up there at the moment, and we're talking about as much data as we can and making it as visual as possible."*
+**7. Analytics in two places, always at the bottom. MOCK BUILT (D66).** At the bottom of the engine page (aggregated) and at the bottom of every stream. Every field maps to something Metricool documents per post, so it is a promise about the real panel rather than decoration, and it is labelled `sample numbers` in amber with the reason underneath. Still a mock: item 8 below is what makes it real.
+
+~~**7. Analytics in two places, always at the bottom.**~~ Marrs: *"on the main engine page, where it shows everyone, so it's an aggregation of all those stats. And when you go into each of the streams, each one of those streams has an analytics section also. I think it's always going to be the thing at the bottom, because you don't want to look at that first... I'd at least like a mock-up there at the moment, and we're talking about as much data as we can and making it as visual as possible."*
 
 The two screens answer different questions and should not be the same tiles with a filter:
 

@@ -4,6 +4,7 @@ import { getCurrentUser } from '@/lib/console-auth';
 import { narrativeCountsByLane, GATE_LABELS } from '@/lib/marketing/narrative-store';
 import { listSavedPieces, type MarketingPiece } from '@/lib/marketing/piece-store';
 import { STREAMS, STREAM_AVATARS } from '@/lib/marketing/streams';
+import { AnalyticsPanel } from './_components/AnalyticsPanel';
 import s from '../_components/client-card.module.css';
 import l from '../_components/launcher.module.css';
 
@@ -117,6 +118,11 @@ export default async function MarketingHome() {
         <p className={s.dashSectionEmpty} style={{ marginTop: 28 }}>
           Every narrative walks the same five gates: {[1, 2, 3, 4, 5].map((g) => GATE_LABELS[String(g)]).join(', ')}.
         </p>
+
+        {/* AT THE BOTTOM (D66). Marrs: "it's always going to be the thing at the bottom, because
+            you don't want to look at that first." Aggregated here, per stream on a stream board,
+            and scaled up because every stream's work sits under this page. */}
+        <AnalyticsPanel scope="engine" title="Across every stream" scale={4} />
       </div>
     </>
   );

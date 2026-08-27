@@ -4,6 +4,7 @@ import { getCurrentUser } from '@/lib/console-auth';
 import { listIdeas, type Idea } from '@/lib/marketing/idea-store';
 import { Ideas } from './Ideas';
 import { isStreamId, streamLabel } from '@/lib/marketing/streams';
+import { AnalyticsPanel } from '@/app/console/marketing/_components/AnalyticsPanel';
 import { getBrandVoiceForStream } from '@/lib/marketing/brand-voice-store';
 import { listTemplates } from '@/lib/marketing/template-store';
 import { listMediaForStream } from '@/lib/marketing/media-store';
@@ -378,7 +379,9 @@ export default async function StreamPage({
           <Ideas stream={stream} initial={ideas} />
         </section>
 
-
+        {/* AT THE BOTTOM (D66), below the ideas, because it is the last thing you look at and
+            never the first. This stream's own numbers, where the engine page aggregates. */}
+        <AnalyticsPanel scope={stream} title={`${streamLabel(stream)} · last 12 weeks`} />
       </div>
     </>
   );
