@@ -208,3 +208,56 @@
     gap: 2px;
   }
 }
+
+/**
+ * DELETE, AS A SIBLING OF THE ROW (D76). The row is a link, so the button cannot live inside it:
+ * a button in an anchor is invalid HTML and the click resolves to whichever the browser prefers.
+ */
+.rowWrap {
+  position: relative;
+}
+
+/* Over the row's bottom-right corner, clear of the gate label at the top and of the dots, which
+   only ever occupy the middle three columns. */
+.del {
+  position: absolute;
+  right: 9px;
+  bottom: 9px;
+  width: 22px;
+  height: 22px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border-radius: 6px;
+  cursor: pointer;
+  border: 1px solid transparent;
+  background: transparent;
+  /* Quiet, not hidden: a reveal-on-hover control is undiscoverable, and he asked for this because
+     he could not find one. */
+  color: color-mix(in srgb, var(--text-3, #6f6a64) 70%, transparent);
+  font-size: 15px;
+  line-height: 1;
+  font-family: var(--font-jetbrains-mono), monospace;
+  transition:
+    color 0.15s ease,
+    border-color 0.15s ease;
+}
+.del:hover:not(:disabled) {
+  /* Coral, because this is the one destructive control on the board and coral is what the brand
+     already uses for a negative direction. */
+  color: var(--coral, #ff7a6b);
+  border-color: color-mix(in srgb, var(--coral, #ff7a6b) 45%, transparent);
+}
+.del:focus-visible {
+  outline: 2px solid var(--coral, #ff7a6b);
+  outline-offset: 1px;
+}
+.del:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+
+/* Room for it, so a two-line headline and the dots never run under the button. */
+.row {
+  padding-right: 38px;
+}

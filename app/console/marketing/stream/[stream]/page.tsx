@@ -5,6 +5,7 @@ import { listIdeas, type Idea } from '@/lib/marketing/idea-store';
 import { Ideas } from './Ideas';
 import { isStreamId, streamLabel } from '@/lib/marketing/streams';
 import { AnalyticsPanel } from '@/app/console/marketing/_components/AnalyticsPanel';
+import { NarrativeDelete } from './NarrativeDelete';
 import { getBrandVoiceForStream } from '@/lib/marketing/brand-voice-store';
 import { listTemplates } from '@/lib/marketing/template-store';
 import { listMediaForStream } from '@/lib/marketing/media-store';
@@ -307,8 +308,11 @@ export default async function StreamPage({
               </div>
               <div className={lane.wrap}>
                 {lanes.map((c) => (
+                  /* The row is a Link and the delete is its SIBLING (D76): a button inside an
+                     anchor is invalid HTML and the click resolves to whichever the browser
+                     prefers. Wrapped so each control can only mean one thing. */
+                  <div key={c.id} className={lane.rowWrap}>
                   <Link
-                    key={c.id}
                     href={`/console/marketing/narrative/${c.id}`}
                     className={`${lane.row} ${c.gate === 'shipped' ? lane.shipped : ''}`}
                   >
@@ -364,6 +368,8 @@ export default async function StreamPage({
                       </span>
                     ) : null}
                   </Link>
+                  <NarrativeDelete id={c.id} headline={c.headline} />
+                  </div>
                 ))}
               </div>
             </>

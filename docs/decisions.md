@@ -1996,3 +1996,41 @@ Not suppressed. Among them, three worth naming:
 
 That is the whole point. D74 reached production because nothing stood between the typo and the deploy.
 
+---
+
+## D76: Deleting a narrative, without leaving something behind that publishes itself
+
+**Adopted 27 August 2026.** Marrs: *"i need a way to delete 'Narratives' on the dashboard."*
+
+`deleteNarrative` already existed in the store with no route and no button, so nothing could reach it.
+
+### A narrative is not one record, and that is the whole design
+
+It owns pieces, and after Gate 5 it owns calendar entries, some of which may be sitting in Metricool waiting to go out. A delete that removed only the narrative would leave two kinds of debris, and **the second kind publishes itself**: posts from a narrative he deleted, appearing days later, with nothing in the console left to explain them.
+
+| | |
+|---|---|
+| **Taken with it** | the narrative, its pieces, its draft calendar entries |
+| **Refused** | an entry scheduled and not yet gone out |
+| **Accepted** | an entry already published |
+
+**The refusal is the important one.** A scheduled post is live on Metricool's side and removing our row would not stop it, so the delete stops, names which posts and when, and says to cancel them in Metricool first. Unscheduling is an outward-facing action and should be a deliberate act rather than a side effect of tidying a board.
+
+**Published entries do not block it.** That post exists in the world and deleting our row changes nothing about it. Refusing there would make old narratives undeletable forever, which is the opposite of what he asked for.
+
+### Three orderings that matter
+
+- **The calendar is checked before anything is removed**, so a refusal leaves the narrative exactly as it was. Deleting the pieces and then discovering a live post would be the worst possible order.
+- **A calendar read failure refuses too.** If we cannot see the calendar then whether anything is live is unknown, and deleting on an unknown is how a post goes out from a narrative nobody can find.
+- **On the way down: entries, then pieces, then the narrative.** The narrative is the index everything else is found through, so removing it first would orphan whatever failed after it with no way back to it.
+
+Partial failures are reported rather than swallowed: the narrative is gone either way, which is what he asked for, and an orphaned piece is a thing he should know exists.
+
+### The button is a sibling of the row, not a child
+
+The lane row is a `<Link>`, and **a `<button>` inside an `<a>` is invalid HTML** whose click resolves to whichever the browser prefers: it either navigates or deletes, unpredictably. So the row is wrapped and the button sits beside it, positioned over the bottom-right corner, clear of the gate label above and the piece dots beside it, with 38px of row padding so nothing runs under it.
+
+Verified in a browser rather than assumed: the button is not inside the anchor, it sits within the row's bounds, and a click on it does not navigate.
+
+**Quiet but not hidden**, in coral on hover. A reveal-on-hover control is undiscoverable, and he asked for this because he could not find one.
+
