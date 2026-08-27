@@ -13,6 +13,7 @@
 
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
+import { llmErrorText } from '@/lib/llm/error-text';
 import { getCurrentUser } from '@/lib/console-auth';
 import { getPiece } from '@/lib/marketing/piece-store';
 import { proposeHooks, DraftError, scriptModelInUse } from '@/lib/marketing/draft';
@@ -71,7 +72,7 @@ export async function POST(
       }
     }
     return NextResponse.json(
-      { error: 'The writing assistant is unavailable right now. Try again in a moment.' },
+      { error: llmErrorText(e, 'The writing assistant') },
       { status: 502 }
     );
   }

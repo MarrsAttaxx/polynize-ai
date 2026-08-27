@@ -16,6 +16,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getCurrentUser } from '@/lib/console-auth';
 import { complete, type ChatMessage } from '@/lib/llm';
+import { llmErrorText } from '@/lib/llm/error-text';
 import { stripEmDashes } from '@/lib/em-dash';
 import { stripMarkdownEmphasis, NO_MARKDOWN_INSTRUCTION } from '@/lib/plain-copy';
 import { getPiece } from '@/lib/marketing/piece-store';
@@ -157,7 +158,7 @@ export async function POST(
     const msg = e instanceof Error ? e.message : String(e);
     console.error(`[marketing.chat] LLM call threw: ${msg}`);
     return NextResponse.json(
-      { error: 'The editing assistant is unavailable right now. Try again in a moment.' },
+      { error: llmErrorText(e, 'The editing assistant') },
       { status: 502 }
     );
   }

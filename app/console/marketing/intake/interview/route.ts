@@ -9,6 +9,7 @@
 
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
+import { llmErrorText } from '@/lib/llm/error-text';
 import { z } from 'zod';
 import { getCurrentUser } from '@/lib/console-auth';
 import { getAgentProvider } from '@/lib/agents/socket';
@@ -69,7 +70,7 @@ export async function POST(req: NextRequest) {
     const msg = e instanceof Error ? e.message : String(e);
     console.error(`[intake.interview] converse threw: ${msg}`);
     return NextResponse.json(
-      { error: 'April is unavailable right now. Try again in a moment.' },
+      { error: llmErrorText(e, 'April') },
       { status: 502 }
     );
   }

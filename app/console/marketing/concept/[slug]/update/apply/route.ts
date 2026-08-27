@@ -19,6 +19,7 @@ import { getCurrentUser } from '@/lib/console-auth';
 import { getConcept, saveConcept } from '@/lib/marketing/concept-store';
 import { getBrandVoiceForStream } from '@/lib/marketing/brand-voice-store';
 import { complete } from '@/lib/llm';
+import { llmErrorText } from '@/lib/llm/error-text';
 import { stripEmDashes } from '@/lib/em-dash';
 
 export const dynamic = 'force-dynamic';
@@ -118,7 +119,7 @@ export async function POST(
   } catch (e) {
     console.error(`[concept.update.apply] LLM threw: ${e instanceof Error ? e.message : String(e)}`);
     return NextResponse.json(
-      { error: 'April is unavailable right now. Try again in a moment.' },
+      { error: llmErrorText(e, 'April') },
       { status: 502 }
     );
   }

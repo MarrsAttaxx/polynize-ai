@@ -1799,3 +1799,46 @@ The client, the snapshot store and the nightly pull are about a day. Building al
 
 17 new assertions, 450 total.
 
+---
+
+## D70: An error that says "try again" when a retry cannot help
+
+**Adopted 27 August 2026.** Marrs: *"April is not working getting error: April is unavailable right now. Try again in a moment."* Then: *"I got it creating a new idea."*
+
+### The message was the bug before the outage was
+
+`April is unavailable right now. Try again in a moment.` was thrown by **eleven routes** and meant eleven different things. The provider layer already raises good errors, `OpenRouter 429: ...`, `OpenRouter returned no content`, `OpenRouter stream timed out after 240000ms`, and every one was caught and flattened into that sentence.
+
+**And for most of the causes the advice is wrong.** A revoked key, an empty account, and a model the key cannot use are all permanent until somebody changes something. "Try again in a moment" sends the operator in a circle while the real fix is one line in Vercel.
+
+### What diagnosing it actually took, which is the argument for the change
+
+Reading OpenRouter's public model list to confirm the configured model still exists. Reading the prompt to confirm a template literal still interpolated. Running the markdown stripper I shipped last night against a real article to rule it out (0ms, no throw, arithmetic and `snake_case` intact). Attempting Vercel's runtime logs, which return 403 for this team, and the CLI, which is not on PATH.
+
+**None of that would have been necessary if the screen had said "OpenRouter refused the key".**
+
+### What it says now
+
+| Cause | What it says | Retry? |
+|---|---|---|
+| Key not set | names both env vars | no, it is a deploy |
+| Empty response | **blames the token ceiling**, not the provider | no, raise max_tokens |
+| 401 / 403 | refused the key, and says no retry will fix it | no |
+| 402 | out of credit | no |
+| 404 | the model, not the key | no |
+| 429 | rate limited | **yes, genuinely** |
+| 5xx | their side | yes |
+| 400 / 422 | a payload problem, with the detail | no |
+
+The empty-response case earns its own wording because it looks like an outage and is not: the production model reasons before it answers and those tokens count against `max_tokens`, so a ceiling below the reasoning floor is spent entirely on thinking and returns an empty string. **That has bitten this codebase twice.** A generic "try again" is how it bit it the second time.
+
+### It never echoes a secret
+
+The provider errors carry a response body. OpenRouter's do not include the key, but a redaction pass over bearer tokens, `sk-` keys and long hex blobs costs nothing, and the alternative is trusting that forever. Tested, including that the sentence still says something useful after redacting.
+
+### What this does NOT do
+
+**It does not fix the outage.** The cause is still unknown, on the provider side, and invisible from here. What changes is that the next attempt names it, which turns twenty minutes of elimination into ten seconds of reading.
+
+21 new assertions, 471 total.
+

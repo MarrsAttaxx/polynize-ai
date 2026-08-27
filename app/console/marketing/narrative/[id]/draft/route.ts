@@ -9,6 +9,7 @@
 
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
+import { llmErrorText } from '@/lib/llm/error-text';
 import { getCurrentUser } from '@/lib/console-auth';
 import { getNarrative, saveNarrative } from '@/lib/marketing/narrative-store';
 import { draftArticle } from '@/lib/marketing/article-draft';
@@ -61,7 +62,7 @@ export async function POST(
   } catch (err) {
     console.error('[narrative.draft] draft failed:', err);
     return NextResponse.json(
-      { error: 'April is unavailable right now. Try again in a moment.' },
+      { error: llmErrorText(err, 'April') },
       { status: 502 }
     );
   }

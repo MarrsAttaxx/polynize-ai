@@ -58,6 +58,7 @@ import {
   sparklinePoints,
 } from '../analytics-mock';
 import { joinReport, harvestIds } from '../analytics-probe';
+import { llmErrorText } from '../../llm/error-text';
 import { parseProposal } from '../slide-propose';
 import {
   cardState,
@@ -1004,6 +1005,55 @@ for (let i = 0; i < 40; i += 1) {
   cur = next;
 }
 ok('depth is bounded rather than unbounded', harvestIds(deep).length < 12);
+
+/* ------------------------------------------------------------------ D70: say what broke */
+
+/**
+ * Marrs: "April is not working getting error: April is unavailable right now. Try again in a
+ * moment." One message, thrown by eleven routes, meaning eleven different things, and "try again"
+ * is wrong advice for most of them.
+ *
+ * These hold the mapping, because a message that names the wrong cause is worse than the generic
+ * one: it sends someone to check a key that was never the problem.
+ */
+const t = (m: string) => llmErrorText(new Error(m));
+
+ok('a missing key says so', /no API key configured/.test(t('OPENROUTER_API_KEY is not set')));
+ok('and names the env vars', /OPENROUTER_API_KEY/.test(t('OPENROUTER_API_KEY is not set')));
+
+// The one that looks like an outage and is not: the reasoning floor, which has bitten twice.
+ok('empty content blames the token ceiling', /max_tokens/.test(t('OpenRouter returned no content')));
+ok('and does not tell him to retry', !/worth a retry/.test(t('OpenRouter returned no content')));
+
+ok('a timeout reads as a timeout', /took too long/.test(t('OpenRouter stream timed out after 240000ms (model=x)')));
+
+// The statuses where retrying is pointless get told apart from the one where it is not.
+ok('401 points at the key', /refused the key \(401\)/.test(t('OpenRouter 401: {"error":"no auth"}')));
+ok('and says a retry will not fix it', /no retry will fix it/.test(t('OpenRouter 401: nope')));
+ok('403 lands on the same answer', /refused the key \(403\)/.test(t('OpenRouter 403: forbidden')));
+ok('402 is out of credit', /out of credit/.test(t('OpenRouter 402: insufficient balance')));
+ok('404 is the model, not the key', /model available on this key/.test(t('OpenRouter 404: no such model')));
+ok('429 IS worth waiting for', /waiting a minute/.test(t('OpenRouter 429: slow down')));
+ok('a 500 blames their side', /Their side, not ours/.test(t('OpenRouter 503: upstream')));
+ok('400 is a payload problem', /payload problem/.test(t('OpenRouter 400: bad request field')));
+
+// The caller's own name for itself, since two different words already existed for one layer.
+ok('the writing assistant keeps its name', /The writing assistant took too long/.test(llmErrorText(new Error('timed out'), 'The writing assistant')));
+
+/**
+ * NEVER ECHO A SECRET. The provider errors carry a response body, and while OpenRouter's do not
+ * include the key, a redaction pass costs nothing and the alternative is trusting that forever.
+ */
+const leaked = llmErrorText(new Error('OpenRouter said: Authorization: Bearer sk-or-v1-abcdef1234567890abcdef'));
+ok('a bearer token is redacted', !/sk-or-v1-abcdef/.test(leaked));
+ok('and so is the sk- form', !/sk-live-/.test(llmErrorText(new Error('key sk-live-9876543210abcdef failed'))));
+ok('a long hex blob goes too', !/deadbeef1234567890abcdef1234567890/.test(llmErrorText(new Error('token deadbeef1234567890abcdef1234567890'))));
+ok('but the sentence still says something', llmErrorText(new Error('weird failure')).length > 10);
+
+// An unrecognised error hands back what was said rather than inventing a category.
+ok('unknown errors are passed through', /weird failure/.test(t('weird failure')));
+ok('and are capped rather than dumped', llmErrorText(new Error('x'.repeat(4000))).length < 400);
+ok('a non-Error is survivable', llmErrorText(null).length > 0);
 
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);
