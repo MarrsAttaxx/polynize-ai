@@ -146,3 +146,79 @@ export async function bestTimes(
     blogId,
   });
 }
+
+/**
+ * A READ-ONLY PROBE THAT REPORTS INSTEAD OF THROWING (D69).
+ *
+ * `mcFetch` throws on a non-200, which is right for publishing: a failed schedule must stop. It is
+ * exactly wrong for finding out what an endpoint does, where the status IS the answer. A 403 means
+ * the account tier does not include API analytics, a 404 means the path moved, and a 200 carrying
+ * `text/csv` means the documented JSON schema is not what comes back. All three are findings, and
+ * a thrown error turns all three into "something broke".
+ *
+ * GET only, and it never writes. This is the tool that answers the four open questions in
+ * docs/pam-console/todo.md item 8 without putting anything at risk.
+ */
+export type McProbe = {
+  path: string;
+  url: string;
+  status: number | null;
+  contentType: string | null;
+  /** Parsed when the body was JSON. */
+  json?: unknown;
+  /** The first part of the raw body, always, so a CSV or an HTML error page is visible as itself. */
+  bodyHead: string;
+  error?: string;
+};
+
+export async function mcProbeGet(
+  path: string,
+  opts: { blogId?: string; params?: Record<string, string> } = {}
+): Promise<McProbe> {
+  const c = creds();
+  const shown = `${BASE_URL}${path}`;
+  if (!c) {
+    return { path, url: shown, status: null, contentType: null, bodyHead: '', error: 'Metricool is not configured.' };
+  }
+  const url = new URL(shown);
+  url.searchParams.set('userId', c.userId);
+  if (opts.blogId) url.searchParams.set('blogId', opts.blogId);
+  for (const [k, v] of Object.entries(opts.params ?? {})) url.searchParams.set(k, v);
+
+  // The token is in a header, so the url is safe to show back on screen for diagnosis.
+  const safeUrl = url.toString();
+
+  try {
+    const res = await fetch(safeUrl, {
+      method: 'GET',
+      headers: { 'X-Mc-Auth': c.token, Accept: 'application/json' },
+    });
+    const contentType = res.headers.get('content-type');
+    const text = await res.text().catch(() => '');
+    let json: unknown;
+    if (text && /json/i.test(contentType ?? '')) {
+      try {
+        json = JSON.parse(text);
+      } catch {
+        // Left undefined: bodyHead still carries what actually arrived.
+      }
+    }
+    return {
+      path,
+      url: safeUrl,
+      status: res.status,
+      contentType,
+      json,
+      bodyHead: text.slice(0, 1200),
+    };
+  } catch (e) {
+    return {
+      path,
+      url: safeUrl,
+      status: null,
+      contentType: null,
+      bodyHead: '',
+      error: e instanceof Error ? e.message : String(e),
+    };
+  }
+}

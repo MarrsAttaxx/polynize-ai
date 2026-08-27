@@ -1761,3 +1761,41 @@ The posting schedule's per-stream timezone is now the **fallback** for a lane's 
 
 15 new assertions, 433 total.
 
+---
+
+## D69: The analytics spike, as one click
+
+**Adopted 27 August 2026.** Marrs: *"How do we make the analytics numbers real?"*
+
+The honest answer is that the code is the easy part. Four things have to be true about **his Metricool account** before a single real number can appear, and todo item 8 has carried them as "one authenticated call" for weeks. Nobody was going to make that call by hand, so it became a page.
+
+`/console/marketing/metricool/probe`, six GETs, nothing written.
+
+### What it settles
+
+1. **Is the account on Advanced or Custom?** API analytics are documented as those tiers only. A refusal here and the panel is a permanent mock however much we build. The probe can tell a tier refusal from a token problem, because it also calls the brand list that the Connect page already uses: that working while the analytics calls 403 **is** the tier answer.
+2. **Does the join work?** Everything rests on the id Metricool returns when we publish, which we already store as `external_ref`, being the same id its analytics take as `postId`. Both are documented and **nowhere does the spec say they are the same**. The probe compares our stored ids against the ids in their feed and prints the verdict.
+3. **Do TikTok and Threads return JSON or CSV?** Their paths document a 200 with no schema and a summary that says "Download a CSV". The response's own content type is the entire answer, so it is printed.
+4. **Does LinkedIn enumerate everything?** Their limitations page hedges, and it matters more here than elsewhere because his personal LinkedIn is hand-posted by design (D41) and therefore never went through Metricool at all.
+
+### Why a probe instead of just building it
+
+The client, the snapshot store and the nightly pull are about a day. Building all of it and then finding the join does not work would mean throwing away the part that matters, because **the join is what makes a number belong to a piece**. Without it the panel is a vanity dashboard: real numbers, attached to nothing we chose.
+
+### Two things the probe is careful about
+
+**It reports instead of throwing.** `mcFetch` throws on a non-200, which is right for publishing, where a failure must stop, and exactly wrong here, where the status IS the finding. A 403, a 404 and a 200 carrying `text/csv` are three different answers that a thrown error flattens into "something broke".
+
+**It harvests ids shape-agnostically.** We do not yet know whether the feed is `{data: []}`, `{posts: []}` or a bare array, so guessing one and finding nothing would be indistinguishable from the endpoint being empty. It walks the tree, bounded in depth, collecting any `id`, `postId` or `post_id`.
+
+**A number and a string are the same id.** One side of an untested pairing may well be numeric and the other a string; reporting "no overlap" over a type difference is precisely the false negative that would send the build down the fallback path for nothing.
+
+### The chain after it, in order
+
+1. The probe. Ten minutes, and it decides the rest.
+2. **Our own snapshot store**, which is not optional and is the piece most likely to be skipped. Metricool scopes data to a brand, holds no notion of our narratives or pieces, and states no retention window. Without periodic pulls stored our side there is no history, no trend, and no answer to "did the Emergent AI carousel outperform".
+3. A nightly pull, with backoff and a cache, because no rate limits are published anywhere and the engine page aggregates every stream.
+4. **The panel last.** Swapped tile by tile, showing "no data yet" where there is none rather than a zero, because a zero is a claim.
+
+17 new assertions, 450 total.
+

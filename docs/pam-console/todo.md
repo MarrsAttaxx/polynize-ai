@@ -140,7 +140,13 @@ The load-bearing tile is the **frame ladder**: each post type ranked by median r
 
 Person and company voices must never be pooled in a ranking: a personal profile takes 63% higher engagement than a company page at similar impressions, so pooled, Polynize ranks below every human every time and teaches nothing. `streamKind()` already exists to branch on.
 
-**8. THE METRICOOL ANALYTICS SPIKE, and it is one call.** Everything in item 7 beyond the two real-now tiles rests on assumptions that a single authenticated request would settle.
+**8. THE METRICOOL ANALYTICS SPIKE. THE PROBE IS BUILT (D69), the call is Marrs's to make.**
+
+Open `/console/marketing/metricool/probe` (optionally `?stream=marrs&days=90`). Six GETs, nothing written, and it prints a verdict on each of the four questions below plus the raw body of every response. Send the page back and the next step is a build rather than a question.
+
+Order of the build after it: probe, then OUR OWN snapshot store (not optional, see the constraints), then a nightly pull with backoff, then the panel swapped tile by tile showing "no data yet" rather than a zero, because a zero is a claim.
+
+**8a. The original research, kept because the constraints below are the design.** Everything in item 7 beyond the two real-now tiles rests on assumptions that a single authenticated request would settle.
 
 Good news first: **yes, per-post analytics are real.** Metricool publishes a complete OpenAPI 3.0.1 spec at `https://app.metricool.com/api/swagger.json` (527 paths, linked from their own docs). Documented per-post endpoints with full typed schemas:
 

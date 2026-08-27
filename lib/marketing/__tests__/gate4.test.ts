@@ -57,6 +57,7 @@ import {
   signedPct,
   sparklinePoints,
 } from '../analytics-mock';
+import { joinReport, harvestIds } from '../analytics-probe';
 import { parseProposal } from '../slide-propose';
 import {
   cardState,
@@ -946,6 +947,63 @@ const kSlots = nextOpenSlots(
 );
 eq('one slot back', kSlots.length, 1);
 eq('carrying California, not Sydney', kSlots[0].timezone, 'America/Los_Angeles');
+
+/* ------------------------------------------------------------------ D69: the analytics probe */
+
+/**
+ * The probe's whole value is the verdict it prints, so the verdict logic is what is tested. A false
+ * "no overlap" would send the build down a fragile fallback join for nothing, and a false "they
+ * match" is worse: it would ship a panel attaching numbers to the wrong pieces.
+ */
+eq(
+  'matching ids close the loop',
+  joinReport(['111', '222'], ['222', '333']).verdict,
+  'they match, the loop closes'
+);
+eq(
+  'no overlap says so',
+  joinReport(['111'], ['999']).verdict,
+  'no overlap, a fallback join is needed'
+);
+eq('nothing of ours cannot be judged', joinReport([], ['999']).verdict, 'no ids of ours to compare');
+eq('nothing of theirs cannot either', joinReport(['111'], []).verdict, 'analytics returned no ids');
+
+/**
+ * A NUMBER AND A STRING ARE THE SAME ID. One side of a documented-but-untested pairing may well be
+ * numeric and the other a string, and reporting "no overlap" over a type difference is exactly the
+ * false negative that would cost a day.
+ */
+eq(
+  'a numeric id matches its string',
+  joinReport(['12345'], [12345 as unknown as string]).verdict,
+  'they match, the loop closes'
+);
+eq('whitespace does not break a match', joinReport([' 42 '], ['42']).matched.length, 1);
+eq('and blanks are dropped rather than matched', joinReport(['', '  '], ['']).verdict, 'no ids of ours to compare');
+eq('duplicates are counted once', joinReport(['7', '7'], ['7']).ours.length, 1);
+
+/**
+ * HARVESTING IDS IS SHAPE-AGNOSTIC ON PURPOSE. We do not yet know whether the feed is
+ * { data: [] }, { posts: [] } or a bare array, so guessing one and finding nothing would be
+ * indistinguishable from the endpoint being empty.
+ */
+eq('a bare array', harvestIds([{ id: 'a' }, { id: 'b' }]).length, 2);
+eq('wrapped in data', harvestIds({ data: [{ id: 'a' }] })[0], 'a');
+eq('wrapped twice', harvestIds({ result: { posts: [{ postId: 'x' }] } })[0], 'x');
+eq('snake case too', harvestIds({ posts: [{ post_id: 'y' }] })[0], 'y');
+eq('numbers become strings', harvestIds({ id: 99 })[0], '99');
+eq('nothing to find is empty, not a crash', harvestIds({ a: { b: { c: 1 } } }).length, 0);
+eq('null is safe', harvestIds(null).length, 0);
+eq('a string is safe', harvestIds('nope').length, 0);
+// A cycle-shaped or absurdly deep blob must not hang the page.
+const deep: Record<string, unknown> = { id: 'top' };
+let cur = deep;
+for (let i = 0; i < 40; i += 1) {
+  const next: Record<string, unknown> = { id: `deep${i}` };
+  cur.child = next;
+  cur = next;
+}
+ok('depth is bounded rather than unbounded', harvestIds(deep).length < 12);
 
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);
