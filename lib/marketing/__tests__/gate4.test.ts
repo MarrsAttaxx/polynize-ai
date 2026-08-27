@@ -570,9 +570,10 @@ const LI = foldRule('linkedin');
 const IG = foldRule('instagram');
 ok('LinkedIn has a fold rule', Boolean(LI));
 ok('Instagram has a fold rule', Boolean(IG));
-eq('LinkedIn folds on the mobile figure, the stricter one', LI?.chars, 140);
-eq('and on three lines as well', LI?.lines, 3);
+eq('LinkedIn folds on the mobile figure', LI?.chars, 140);
+eq('and after the first paragraph', LI?.paragraphs, 1);
 eq('Instagram folds at 125', IG?.chars, 125);
+ok('Instagram has no paragraph rule', IG?.paragraphs === undefined);
 /**
  * TikTok gets NO rule, and that is the decision rather than an omission: output-spec.md records
  * NO DATA from TikTok, with third-party claims spanning 55 to 150. A made up fold would be worse
@@ -594,30 +595,45 @@ eq('a long single line folds on characters', foldedLong.reason, 'chars');
 ok('and nothing is lost', foldedLong.head + foldedLong.tail === long);
 ok('the head is at or under the limit', foldedLong.head.length <= 140);
 
-// A word boundary is preferred, but not at any cost: a 200 character word cannot be broken
-// politely, so the cut falls at the limit rather than at a space 60 characters back.
-const politely = 'one two three four five six seven eight nine ten '.repeat(6);
-const p2 = foldCopy(politely, LI);
-ok('a normal sentence breaks between words', p2.tail.startsWith(' ') || p2.head.endsWith('e') || !p2.head.endsWith(' '));
-ok('and the head is never mangled to nothing', p2.head.length > 80);
+/**
+ * THE REAL POST HE PUBLISHED, and the reason the rule changed (D77). Metricool's own LinkedIn
+ * preview cut this after the first paragraph, 68 characters, nowhere near 140. Their preview is
+ * better evidence than the third-party consensus this started from, so the fixture is his actual
+ * copy and the expected cut is what Metricool actually showed him.
+ */
+const hisPost = [
+  'Everyone arguing about AI right now is measuring it against a candle.',
+  '',
+  'Did it save an hour. Did it write the report faster. Did it replace a human task for cheaper. That is the entire debate, and it is the wrong scale.',
+  '',
+  'On September 4th, 1882, electricity switched on in New York.',
+].join('\n');
+const his = foldCopy(hisPost, LI);
+eq('his post folds at the paragraph, not the character count', his.reason, 'paragraph');
+eq('showing exactly the opening line, as Metricool did', his.head, 'Everyone arguing about AI right now is measuring it against a candle.');
+eq('which is 69 characters, well short of the 140 the docs implied', his.head.length, 69);
+ok('and the rest is behind the fold', his.tail.includes('the wrong scale'));
+ok('nothing is lost', his.head + his.tail === hisPost);
 
 /**
- * THE CASE THAT MATTERS MOST, and the reason line counting exists at all. This is the LinkedIn
- * house style: short lines, one idea each. It is 62 characters, well under 140, and the platform
- * still folds it after the third line. A character-only rule would have told him the whole thing
- * was visible.
+ * A post written as ONE BLOCK still gets the character cap, or a wall of text would report as
+ * fully visible just because it has no paragraph break.
  */
-const shortLines = 'The belief.\nThe break.\nThe cost.\nThe fix.\nThe ask.';
-const sl = foldCopy(shortLines, LI);
-ok('the short line post is well under the character limit', shortLines.length < 140);
-eq('and still folds, on the lines', sl.reason, 'lines');
-eq('after exactly three of them', sl.head, 'The belief.\nThe break.\nThe cost.');
-ok('with the rest behind it', sl.tail.includes('The ask.'));
+const oneBlock = 'word '.repeat(80).trim();
+const blocked = foldCopy(oneBlock, LI);
+eq('one long block folds on characters', blocked.reason, 'chars');
+ok('and well under the whole thing', blocked.head.length < oneBlock.length);
 
-// Instagram folds on characters only: it has no line rule, so the same post is whole there.
-const ig = foldCopy(shortLines, IG);
-eq('Instagram does not fold on lines', ig.reason, null);
-eq('so the whole thing shows', ig.tail, '');
+// A SINGLE newline is not a paragraph break: that would cut a two-line opening in half.
+const twoLines = 'Line one.\nLine two.\n\nAnd the second paragraph.';
+const tl = foldCopy(twoLines, LI);
+eq('a single newline does not fold it', tl.head, 'Line one.\nLine two.');
+eq('the blank line does', tl.reason, 'paragraph');
+
+// Instagram folds on characters only, so the same post cuts at a different place.
+const ig = foldCopy(hisPost, IG);
+eq('Instagram cuts on length', ig.reason, 'chars');
+ok('mid first paragraph', ig.head.length <= 125);
 
 eq('copyLength counts characters', copyLength('12345'), 5);
 eq('and counts a newline as one', copyLength('a\nb'), 3);

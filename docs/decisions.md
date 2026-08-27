@@ -2034,3 +2034,46 @@ Verified in a browser rather than assumed: the button is not inside the anchor, 
 
 **Quiet but not hidden**, in coral on hover. A reveal-on-hover control is undiscoverable, and he asked for this because he could not find one.
 
+---
+
+## D77: A real post went out, and it corrected three things
+
+**Adopted 27 August 2026.** Marrs: *"I posted a LinkedIn post, and it got scheduled fine for 5:00 PM today. I checked on Metricool, and it was all up. The image was in, and it was looking good."*
+
+**Todo item 2 is closed.** The publish button has now been pressed against a real brand, the payload was right, the media url was fetchable from their side, and the timezone landed. Everything downstream of Gate 5 has stopped being theory. Then he reported three faults, and two of them turned out to be one.
+
+### The preview showed the whole post, so the image fell off the screen
+
+*"the image that I was selecting wasn't showing in our preview... The way it was showing the text was a bit weird. It wasn't the same as it would have on LinkedIn. It would have just shown the first two lines, then it says More and then condenses all of that up and then has an image."*
+
+D59 rendered the tail of the post **dimmed rather than hidden**, reasoning that showing the shape of what is hidden beats cutting it. That was wrong, and it was wrong twice:
+
+1. It misrepresents the platform, which collapses.
+2. **It hid the image.** An 1,884 character post rendered in full pushed the picture below the bottom of the viewport, so an attached image looked missing. One bug, two symptoms, and the second one is the one he noticed.
+
+Collapsed now. On his real post the card carries **69 characters instead of 405**, so the image sits directly under two lines. How much is hidden is said as a number under the card, which is the honest place for a fact about the copy rather than part of the copy.
+
+### His screenshot is better evidence than the spec was
+
+The fold rule came from third-party consensus: 140 characters, or three line breaks. **Metricool's own preview cut his post at 69 characters**, at the first paragraph break, nowhere near 140.
+
+Their preview is a far better source than a blog aggregating other blogs, so the rule is now **the first paragraph OR 140 characters, whichever comes first**, and his actual published copy is the test fixture with the expected cut being what Metricool actually showed him.
+
+Two details that came out of writing it: a **single** newline is not a paragraph break, or a two-line opening would be cut in half and reported as the fold; and a post written as one long block still gets the character cap, or a wall of text would report as fully visible purely because it has no blank line in it.
+
+### The "View in Metricool" link went to a 404
+
+*"It probably should just redirect straight to the calendar page."*
+
+`https://app.metricool.com/planning` is not a path they serve; it redirects to `/public/error/404`. It was written when nothing had ever clicked it.
+
+His working url is `/planner/calendar`, and the one he was actually looking at carries `blogId` and `userId`, so the link now opens the calendar **for that stream's brand** rather than whichever brand the session last had open. With five streams mapped to five brands that is the difference between a useful link and a confusing one. A missing `METRICOOL_USER_ID` degrades to the default brand rather than breaking.
+
+There is no per-post deep link to build: their API returns an id and documents no url for one, which is the same open question the analytics join turns on.
+
+### How this was verified
+
+The fold is measured rather than eyeballed: 405 characters in, 69 rendered, 334 hidden, and the rendered text asserted to equal his opening line exactly. **The image's position in the card was not re-checked in a browser this time**, because another session holds port 3000; it is unchanged from the D59 layout that was verified at 1100px, where the image rendered correctly under short copy. The bug was never the position, it was the length of what preceded it.
+
+24 assertions changed or added, 502 total.
+

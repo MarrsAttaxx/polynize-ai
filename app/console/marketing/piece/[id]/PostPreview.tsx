@@ -114,14 +114,20 @@ export function PostPreview({
           ) : null}
 
           {copy.trim() ? (
+            /**
+             * COLLAPSED, NOT DIMMED (D77). This used to render the whole post with the tail faded
+             * out, which was wrong twice over. Marrs: "The way it was showing the text was a bit
+             * weird. It wasn't the same as it would have on LinkedIn. It would have just shown the
+             * first two lines, then it says More and then condenses all of that up and then has an
+             * image."
+             *
+             * And the second fault was the consequence of the first: an 1,884 character post
+             * rendered in full pushed the IMAGE below the bottom of the screen, so the picture he
+             * had attached looked like it was missing. One bug, two symptoms.
+             */
             <p className={s.copy}>
               {head}
-              {tail ? (
-                <>
-                  <span className={s.folded}>{tail}</span>
-                  <span className={s.more}>{rule?.moreLabel}</span>
-                </>
-              ) : null}
+              {tail ? <span className={s.more}>{rule?.moreLabel}</span> : null}
             </p>
           ) : (
             <p className={s.empty}>Nothing written yet.</p>
@@ -159,7 +165,10 @@ export function PostPreview({
             {tail ? (
               <>
                 <strong className={s.factNum}>{head.length}</strong> characters before the fold
-                {reason === 'lines' ? ', cut by the line breaks rather than the length' : ''}.
+                {reason === 'paragraph'
+                  ? ', cut at the paragraph break rather than by length'
+                  : ''}
+                . <span className={s.factHidden}>{tail.trim().length} characters are behind it.</span>
               </>
             ) : (
               <>

@@ -139,12 +139,13 @@
 }
 
 /**
- * BEHIND THE FOLD. Shown rather than removed, faded almost out, so the shape of what is being
- * hidden is visible: cutting it entirely makes a long post look like a short one.
+ * BEHIND THE FOLD, and it is now GONE from the card rather than dimmed inside it (D77).
+ *
+ * The dimmed version was wrong about the platform and it also hid the image: a 1,884 character post
+ * rendered in full pushed the picture below the bottom of the screen, so an attached image looked
+ * missing. How much is hidden is said in words under the card instead, which is the honest place
+ * for a fact about the copy rather than part of the copy.
  */
-.folded {
-  opacity: 0.26;
-}
 .more {
   color: #5f5f5f;
   font-weight: 600;
@@ -245,5 +246,10 @@
   margin: 0;
   font-size: 12.5px;
   line-height: 1.5;
+  color: var(--text-3, #6f6a64);
+}
+
+/* How much is behind the fold, said as a number rather than shown as dimmed text. */
+.factHidden {
   color: var(--text-3, #6f6a64);
 }

@@ -26,33 +26,36 @@ export type FoldRule = {
   /** Characters visible before the fold. */
   chars: number;
   /**
-   * Lines visible before the fold, when a platform folds on line count as well.
+   * Paragraphs visible before the fold, when a platform folds on structure as well as length.
    *
-   * This matters more than the character count for anything written in the LinkedIn house style:
-   * output-spec.md records that "line breaks count, so many short lines truncate even earlier".
-   * A post of five three-word lines is 60 characters and still folded.
+   * MEASURED AGAINST METRICOOL'S OWN PREVIEW (D77), which is a better source than the third-party
+   * consensus this started from. Marrs published a real post whose first paragraph is 68 characters
+   * and Metricool's LinkedIn preview cut it right there, at the paragraph break, nowhere near 140.
+   *
+   * So the structure wins over the count for anything written in the house style, and one paragraph
+   * is what the fold shows. A post written as one long block still gets the character cap.
    */
-  lines?: number;
+  paragraphs?: number;
   /** What the platform's own control says. */
   moreLabel: string;
-  /** Said on screen, because these are consensus figures and not published ones. */
+  /** Said on screen, because these are observed and consensus figures rather than published ones. */
   note: string;
 };
 
 /**
- * LinkedIn folds at roughly 140 characters on mobile and roughly 210 on desktop. The stricter
- * one is previewed: a hook that survives the mobile fold survives both, and the reverse is not
- * true. Three lines is the shape the same source describes.
+ * LinkedIn folds after the FIRST PARAGRAPH or about 140 characters, whichever comes first, and it
+ * COLLAPSES: everything after is hidden behind the control, not dimmed, which is why the image sits
+ * directly under two lines of text rather than under the whole post.
  *
- * Instagram truncates at about 125 characters. Meta publishes no figure for the feed, but their
- * own ads guide recommends 125 characters of primary text, which matches the third-party number.
+ * Instagram truncates at about 125 characters. Meta publishes no figure for the feed, but their own
+ * ads guide recommends 125 characters of primary text, which matches the third-party number.
  */
 const FOLDS: Record<PreviewNetwork, FoldRule> = {
   linkedin: {
     chars: 140,
-    lines: 3,
+    paragraphs: 1,
     moreLabel: '…see more',
-    note: 'Roughly where LinkedIn folds on a phone. Desktop shows about 210 characters.',
+    note: 'Where LinkedIn folds: the first paragraph, or about 140 characters. Everything after it is hidden until someone taps.',
   },
   instagram: {
     chars: 125,
@@ -76,7 +79,7 @@ export type Folded = {
   /** What is behind the fold. Empty when the whole post is visible. */
   tail: string;
   /** Which limit closed it, so the panel can say why. */
-  reason: 'chars' | 'lines' | null;
+  reason: 'chars' | 'paragraph' | null;
 };
 
 /**
@@ -92,15 +95,20 @@ export function foldCopy(text: string, rule: FoldRule | undefined): Folded {
   let cut = text.length;
   let reason: Folded['reason'] = null;
 
-  if (rule.lines) {
-    // The index just past the Nth newline: everything from there on is behind the fold.
+  if (rule.paragraphs) {
+    /**
+     * A PARAGRAPH BREAK IS A BLANK LINE, which is how everything in this console is written and how
+     * the platforms read it. Counting single newlines instead would cut a two-line address block in
+     * half and report it as the fold.
+     */
+    const rx = /\n[ \t]*\n/g;
     let seen = 0;
-    for (let i = 0; i < text.length; i += 1) {
-      if (text[i] !== '\n') continue;
+    let m: RegExpExecArray | null;
+    while ((m = rx.exec(text)) !== null) {
       seen += 1;
-      if (seen === rule.lines) {
-        cut = i;
-        reason = 'lines';
+      if (seen === rule.paragraphs) {
+        cut = m.index;
+        reason = 'paragraph';
         break;
       }
     }

@@ -11,7 +11,7 @@
 import { saveEntry, type CalendarEntry } from './calendar-store';
 import { resolveMediaUrls } from './media-store';
 import { getBrandMap, getPostingSchedule } from './metricool-config-store';
-import { isMetricoolConfigured, schedulePost } from './metricool-client';
+import { isMetricoolConfigured, schedulePost, metricoolCalendarUrl } from './metricool-client';
 import { metricoolNetwork, channelLabel } from './channels';
 import { streamLabel } from './streams';
 import { defaultStreamSchedule, timezoneForEntry } from './posting-schedule';
@@ -117,7 +117,21 @@ export async function publishEntry(
    */
   entry.status = draft ? 'draft' : 'scheduled';
   if (result.id) entry.external_ref = result.id;
-  entry.metricool_url = 'https://app.metricool.com/planning';
+  /**
+   * THE LINK THAT 404'D (D77). Marrs: "the 'View in Metricool' button sends me to the following
+   * error: https://app.metricool.com/public/error/404. It probably should just redirect straight to
+   * the calendar page."
+   *
+   * `/planning` is not a path Metricool serves. The real one is `/planner/calendar`, and the url he
+   * was actually looking at carries the brand and the account, so the link lands on the calendar for
+   * THIS stream rather than on whichever brand the session last had open. That matters with five
+   * streams mapped to five brands.
+   *
+   * There is no per-post deep link to build: their API returns an id but documents no url for one,
+   * which is the same open question the analytics join turns on. The calendar for the right brand is
+   * the closest honest destination, and it beats a 404 by a distance.
+   */
+  entry.metricool_url = metricoolCalendarUrl(blogId);
   entry.updated_at = new Date().toISOString();
 
   try {

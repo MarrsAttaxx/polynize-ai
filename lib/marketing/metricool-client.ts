@@ -49,6 +49,28 @@ async function mcFetch(
   return res.json().catch(() => ({}));
 }
 
+/**
+ * WHERE TO SEND SOMEONE LOOKING FOR A POST (D77).
+ *
+ * `/planning`, which the console used, is not a path Metricool serves: it redirects to
+ * `/public/error/404`. The working one is `/planner/calendar`, and it takes the brand and the
+ * account as query params, so the link opens the calendar for the RIGHT brand rather than whichever
+ * one the session last had open. With five streams mapped to five brands that is the difference
+ * between a useful link and a confusing one.
+ *
+ * The userId comes from the same env the API calls use. Without it the path still works and simply
+ * lands on the default brand, so a missing env degrades rather than breaks.
+ */
+export function metricoolCalendarUrl(blogId?: string): string {
+  const base = 'https://app.metricool.com/planner/calendar';
+  const params = new URLSearchParams();
+  if (blogId) params.set('blogId', blogId);
+  const userId = process.env.METRICOOL_USER_ID;
+  if (userId) params.set('userId', userId);
+  const qs = params.toString();
+  return qs ? `${base}?${qs}` : base;
+}
+
 export type MetricoolBrand = { blogId: string; label: string; raw: unknown };
 
 /**
