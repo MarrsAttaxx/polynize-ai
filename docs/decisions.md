@@ -1879,3 +1879,36 @@ Set or unset, plus the character count, because **a truncated paste is a real ca
 
 Three tiny completions per load, sequential rather than parallel: three at once against a key being rate limited turns one 429 into three and makes the answer harder to read.
 
+---
+
+## D73: When we cannot classify an error, say where it came from
+
+**Adopted 27 August 2026.** Marrs, after D70 made the messages honest: **"April failed: Maximum call stack size exceeded"**.
+
+That is a `RangeError` from **our own code**, not a provider answer. D70 was the right change and this is the gap it left: the unclassified branch handed back the exception text and nothing else, and for an internal fault the text is the least useful half.
+
+### What the message alone cost
+
+An hour of elimination, all of it recorded here so the next person does not repeat it. Each of these was checked and **cleared with evidence**, not assertion:
+
+- **The markdown stripper from D57.** The obvious suspect, since it shipped hours earlier into this exact path. Run against a 2,660 character article and then against six pathological inputs (60 unbalanced asterisks, 60 unbalanced underscores, a 4,000 character run with one asterisk, `a_b` repeated 1,500 times): **0ms, no throw**, arithmetic and `snake_case` intact.
+- **The code-fence unwrap**, pre-existing and the better suspect, because `^```...([\s\S]*?)\s*```$` has nested quantifiers and a truncated reply opens a fence it never closes. Tested at 2.5k, 5k and 10k characters, closed and unclosed: **0ms**. V8 handles it.
+- **The streaming loop and the plain completion.** Read both. No recursion, no spread-into-call, nothing that grows the stack.
+- **The model.** `google/gemini-3.5-flash` still present on OpenRouter's live public list.
+- **The account.** He confirmed it is not credits.
+- **Vercel's runtime logs**, which return 403 for this team, and the CLI, which is not on PATH.
+
+### The fix is not a guess
+
+**An unclassifiable error now carries the top of its stack**: three frames, as `file:line`, with the build's long prefixes trimmed to the last two path segments. That is the difference between "something broke" and "it broke here", and it turns the next attempt into a location instead of another hour.
+
+**Only on that branch.** A 402 needs no stack, and every classified case already names its own fix, so adding frames there would be noise on the messages that are already working.
+
+Redacted like everything else, and a thrown non-Error simply has no stack to take rather than crashing the reporter.
+
+### The honest state
+
+**The bug is not fixed.** It is not in any of the six places checked, and I stopped guessing rather than keep going: five wrong hypotheses in a row is a signal to change instrument, not to try a sixth. The next click names the file.
+
+8 new assertions, 479 total.
+

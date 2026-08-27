@@ -1055,5 +1055,41 @@ ok('unknown errors are passed through', /weird failure/.test(t('weird failure'))
 ok('and are capped rather than dumped', llmErrorText(new Error('x'.repeat(4000))).length < 400);
 ok('a non-Error is survivable', llmErrorText(null).length > 0);
 
+/* ------------------------------------------------------------------ D73: where it broke */
+
+/**
+ * Marrs: "April failed: Maximum call stack size exceeded".
+ *
+ * A RangeError from our own code, not a provider answer, and the message alone cost an hour: the
+ * markdown stripper, the fence unwrap, the streaming loop, the model list and the account were all
+ * checked and cleared before it was clear the message would never say WHERE.
+ *
+ * So an unclassifiable error carries the top of its stack now. These hold the two halves of that:
+ * the unclassified case gains a location, and a classified one does not gain noise.
+ */
+function blowTheStack(): string {
+  const recurse = (n: number): number => (n <= 0 ? 0 : recurse(n - 1) + 1);
+  try {
+    recurse(1e6);
+    return 'did not throw';
+  } catch (e) {
+    return llmErrorText(e, 'April');
+  }
+}
+const stacked = blowTheStack();
+ok('the RangeError message survives', /Maximum call stack size exceeded/.test(stacked));
+ok('and it now says where', /\[[^\]]*:\d+:\d+/.test(stacked));
+ok('naming a file', /gate4\.test/.test(stacked));
+
+// A classified provider error needs no stack: its own sentence already names the fix.
+const classified = llmErrorText(new Error('OpenRouter 402: insufficient balance'));
+ok('402 gains no stack', !/:\d+:\d+/.test(classified));
+ok('nor does 401', !/:\d+:\d+/.test(llmErrorText(new Error('OpenRouter 401: nope'))));
+ok('nor an empty response', !/:\d+:\d+/.test(llmErrorText(new Error('OpenRouter returned no content'))));
+
+// A thrown non-Error has no stack to take, and must not crash the reporter.
+ok('a string throw is survivable', llmErrorText('just a string').length > 0);
+ok('and gains no bracket', !/\[/.test(llmErrorText('just a string')));
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

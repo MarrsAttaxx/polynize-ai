@@ -90,8 +90,44 @@ export function llmErrorText(err: unknown, who = 'April'): string {
     return `OpenRouter had a server error (${status}). Their side, not ours, so a retry is the right move.`;
   }
 
-  // Unrecognised: hand back what was actually said rather than inventing a category for it.
-  return `${who} failed: ${detail(msg)}`;
+  /**
+   * UNRECOGNISED, WHICH IS THE CASE THAT NEEDS THE MOST HELP (D73).
+   *
+   * "April failed: Maximum call stack size exceeded" is a RangeError from our own code, not a
+   * provider answer, and the message alone cost an hour of elimination: the markdown stripper, the
+   * fence unwrap, the streaming loop, the model list and the account were all checked and cleared
+   * before it was clear the message would never say where it came from.
+   *
+   * So when the error cannot be classified as a provider condition, the top of the STACK rides
+   * along. File and line, three frames, which is the difference between "something broke" and
+   * "it broke here". Only on this branch: a 402 needs no stack, and every classified case above
+   * already names its own fix.
+   */
+  const where = topFrames(err);
+  return `${who} failed: ${detail(msg)}${where ? ` [${where}]` : ''}`;
+}
+
+/**
+ * The first frames of a stack, as `file:line`, with the build's long prefixes dropped.
+ *
+ * Deliberately not the whole stack: three frames name the culprit and a wall of text in a toast
+ * gets closed unread. Redacted like everything else, in case a path ever carries a token.
+ */
+function topFrames(err: unknown, count = 3): string {
+  if (!(err instanceof Error) || !err.stack) return '';
+  const frames = err.stack
+    .split('\n')
+    .slice(1)
+    .map((line) => {
+      const m = line.match(/\(?([^()\s]+:\d+:\d+)\)?\s*$/);
+      if (!m) return '';
+      // Keep the tail of the path: /var/task/.next/server/chunks/1234.js:5:6 is only useful as
+      // the last couple of segments plus the line.
+      return m[1].split('/').slice(-2).join('/');
+    })
+    .filter(Boolean)
+    .slice(0, count);
+  return redact(frames.join(' <- '));
 }
 
 function detail(msg: string): string {
