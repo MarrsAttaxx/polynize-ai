@@ -59,6 +59,7 @@ import {
 } from '../analytics-mock';
 import { joinReport, harvestIds } from '../analytics-probe';
 import { llmErrorText } from '../../llm/error-text';
+import { laneVoice } from '../article-draft';
 import { parseProposal } from '../slide-propose';
 import {
   cardState,
@@ -1090,6 +1091,46 @@ ok('nor an empty response', !/:\d+:\d+/.test(llmErrorText(new Error('OpenRouter 
 // A thrown non-Error has no stack to take, and must not crash the reporter.
 ok('a string throw is survivable', llmErrorText('just a string').length > 0);
 ok('and gains no bracket', !/\[/.test(llmErrorText('just a string')));
+
+/* ------------------------------------------------------------------ D74: the lane register */
+
+/**
+ * THE TEST THAT SHOULD HAVE EXISTED A WEEK AGO.
+ *
+ * `laneVoice` read `return laneVoice(lane) ?? KIND_VOICE[...]`: the function's own name where the
+ * MAP belonged. Unconditional infinite recursion, so every article draft and every April revision
+ * threw "Maximum call stack size exceeded" and Gate 2 was dead for a week.
+ *
+ * Nothing caught it. TypeScript cannot, because `laneVoice(lane)` is a `string` and `string ?? x`
+ * is legal rather than an error. No lint runs here. And D45's tests covered the KIT's per-stream
+ * invariant rather than this one, so the safety net that commit described did not reach the line.
+ *
+ * So: every lane, every time, a real string. Merely CALLING it is most of the test, because the
+ * failure mode was a throw rather than a wrong answer.
+ */
+for (const lane of STREAM_IDS) {
+  let out = '';
+  let threw = '';
+  try {
+    out = laneVoice(lane);
+  } catch (e) {
+    threw = e instanceof Error ? e.message : String(e);
+  }
+  eq(`${lane}: the lane register does not throw`, threw, '');
+  ok(`${lane}: and returns real instruction text`, out.length > 40);
+  ok(`${lane}: naming a register`, /lane/i.test(out));
+}
+
+// The hand-written overrides are USED, which is the half a fallback-only version would still pass.
+ok('marrs gets his own register', /MARRS lane/.test(laneVoice('marrs')));
+ok('polynize gets its own', /POLYNIZE lane/.test(laneVoice('polynize')));
+
+/**
+ * And a lane with no hand-written register falls back to its KIND rather than to nothing, which is
+ * the behaviour D45 was actually trying to add when it introduced the bug.
+ */
+ok('kristin falls back to the person register', /PERSONAL lane/.test(laneVoice('kristin')));
+ok('and a person register is not the brand one', !/BRAND lane/.test(laneVoice('kristin')));
 
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

@@ -1912,3 +1912,42 @@ Redacted like everything else, and a thrown non-Error simply has no stack to tak
 
 8 new assertions, 479 total.
 
+---
+
+## D74: laneVoice called itself, and Gate 2 was dead for a week
+
+**Adopted 27 August 2026.** Marrs: **"April failed: Maximum call stack size exceeded [chunks/4026.js:1:2663 <- chunks/4026.js:1:2670 <- chunks/4026.js:1:2670]"**
+
+### The bug, in one line
+
+```ts
+function laneVoice(lane: NarrativeLane): string {
+  return laneVoice(lane) ?? KIND_VOICE[streamKind(lane)];   // the FUNCTION, not the MAP
+}
+```
+
+It should have been `LANE_VOICE[lane]`. I typed the function's own name in place of the map it was meant to read, in **D45, a week ago**, and the commit that did it describes the intended behaviour correctly in its own message: *"The article's lane register falls back to the kind."*
+
+Unconditional infinite recursion. So `draftArticle` and `reviseArticle` both threw, which means **Gate 2, the article and April's chat on it, has been completely broken since 20 August**. It went unnoticed because the week's work was Gates 3 to 5: the kit, the hero, the templates, the calendar and the wave.
+
+### Why nothing caught it
+
+- **TypeScript cannot.** `laneVoice(lane)` returns `string`, and `string ?? x` is legal, not an error. The `??` silently became unreachable code.
+- **No lint runs here.** `next lint` is not configured; it prompts for setup.
+- **`LANE_VOICE` became unused** and nothing objects to an unused module const.
+- **D45's tests covered the wrong invariant.** That commit added a per-stream check over the KIT, and its message says a lane whose defaults resolve to nothing should be "a test failure rather than a dead screen". The sentiment was right and the check did not reach this line.
+
+### The two frames were the whole diagnosis
+
+`4026.js:1:2670 <- 4026.js:1:2670`, the **same offset twice**, is direct self-recursion rather than deep recursion. That is what turned an hour of elimination into a five-minute scan: a regex over every function in `lib/` for one whose own body calls its own name returned eight candidates, and exactly one of them sat in the article path.
+
+Which is the argument for D73 in a sentence. The message alone (`Maximum call stack size exceeded`) had already cost an hour across five wrong hypotheses; the location cost minutes.
+
+### What went in with the fix
+
+`laneVoice` is **exported** now, purely so it can be tested, and every lane is asserted to return real instruction text without throwing. Calling it *is* most of the test, because the failure was a throw rather than a wrong answer. The overrides are checked too, since a fallback-only implementation would pass a weaker test.
+
+The same scan cleared the rest of the codebase: the only other self-call in a return, `parseFigureReply`, calls a different function.
+
+19 new assertions, 498 total.
+

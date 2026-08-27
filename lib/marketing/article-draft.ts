@@ -59,8 +59,23 @@ const KIND_VOICE: Record<StreamKind, string> = {
     'This is a BRAND lane: educational, concrete, show-the-work, written for the company rather than by a person. Teach by walking through the actual thing rather than asserting conclusions about it, and never claim first-person experience the brand cannot have.',
 };
 
-function laneVoice(lane: NarrativeLane): string {
-  return laneVoice(lane) ?? KIND_VOICE[streamKind(lane)];
+/**
+ * THE LANE'S OWN REGISTER, falling back to its KIND (D45, fixed D74).
+ *
+ * THE BUG THIS CARRIES A SCAR FROM. This read `return laneVoice(lane) ?? ...`: the FUNCTION'S own
+ * name where the MAP belonged. Unconditional infinite recursion, so every article draft and every
+ * April revision threw `Maximum call stack size exceeded`, and Gate 2 was dead for a week.
+ *
+ * Nothing caught it. TypeScript cannot: `laneVoice(lane)` is a `string`, and `string ?? x` is legal
+ * rather than an error, so the `??` silently became unreachable. No lint runs here. And the tests
+ * that shipped with D45 covered the KIT's per-stream invariant, not this one, so the safety net the
+ * commit message claimed did not reach the line it was describing.
+ *
+ * Exported now for exactly that reason: a prompt fragment that resolves to nothing, or does not
+ * resolve at all, has to be a test failure rather than a dead screen.
+ */
+export function laneVoice(lane: NarrativeLane): string {
+  return LANE_VOICE[lane] ?? KIND_VOICE[streamKind(lane)];
 }
 
 /**

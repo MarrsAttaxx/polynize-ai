@@ -213,4 +213,6 @@ What it was, kept because the shape recurs: the wave picked a time from `getChan
 
 **16. Two stores hold one lane's schedule.** `pam/config/posting-schedule.json` (per stream: timezone + ideal slots, edited on the Connect Metricool page) and `pam/channel-schedule/{lane}.json` (per lane: timezone + per-network slots + modes + prefers, edited by nothing). D68 made the editable timezone govern both, so the immediate bug is gone, but there are still two answers to "when does this lane post" and only one of them has a UI. Collapse them, or give the lane file a UI and make it the single authority.
 
+**17. Nothing lints. `next lint` is not configured, it prompts for setup.** D74 was a function calling itself instead of reading a map, which TypeScript cannot catch (`string ?? x` is legal) and which left `LANE_VOICE` unused with nothing objecting. A configured `no-unused-vars` plus `no-constant-binary-expression` would have caught both halves at commit time. It cost a week of Gate 2 being dead.
+
 **15. No test runner beyond two suites.** `npm run test:marketing` (111 assertions) and `npm run test:blueprint`. Everything else is unverified by anything but a typecheck, and `tsc` cannot see a client component importing server code, which shipped a 500 once already (D47).
