@@ -28,7 +28,23 @@ export function toDateTime(scheduledAt: string): string {
   return raw.replace(/\.\d+/, '').replace(/Z$/, '').slice(0, 19);
 }
 
-export async function publishEntry(owner: string, entry: CalendarEntry): Promise<PublishResult> {
+export async function publishEntry(
+  owner: string,
+  entry: CalendarEntry,
+  /**
+   * SEND IT AS A DRAFT INSTEAD OF PUBLISHING IT (D67).
+   *
+   * The first ever real call to Metricool should not be able to put anything in public. A draft
+   * lands in Metricool's own planner with `autoPublish` off, so it proves the whole chain, the
+   * token, the brand id, the payload shape, the media urls, the date and its timezone, while the
+   * only person who can see the result is him.
+   *
+   * The client has always accepted `draft` and nothing ever passed it, so the capability was
+   * documented and inert. Same shape of gap D42 found with `firstCommentText`.
+   */
+  opts: { draft?: boolean } = {}
+): Promise<PublishResult> {
+  const draft = opts.draft === true;
   if (!isMetricoolConfigured()) {
     return { ok: false, status: 400, error: 'Metricool is not connected. Add the keys in Vercel, then map your brands.' };
   }
@@ -82,7 +98,7 @@ export async function publishEntry(owner: string, entry: CalendarEntry): Promise
       dateTime: toDateTime(entry.scheduled_at),
       timezone,
       media,
-      draft: false,
+      draft,
       // The link belongs in the first comment on LinkedIn, never in the body (D42). The client
       // has always accepted this and it was never passed, so the rule was documented and inert.
       firstCommentText: entry.first_comment?.trim() || undefined,
@@ -93,7 +109,13 @@ export async function publishEntry(owner: string, entry: CalendarEntry): Promise
     return { ok: false, status: 502, error: `Metricool rejected the post: ${msg}` };
   }
 
-  entry.status = 'scheduled';
+  /**
+   * A DRAFT IS NOT SCHEDULED, and the calendar must not say it is. It keeps its draft status so
+   * nothing downstream counts it as live, and it keeps the returned id, which is the whole point
+   * of a dry run: that id is the thing to compare against what the analytics endpoints take as
+   * `postId` (todo item 8).
+   */
+  entry.status = draft ? 'draft' : 'scheduled';
   if (result.id) entry.external_ref = result.id;
   entry.metricool_url = 'https://app.metricool.com/planning';
   entry.updated_at = new Date().toISOString();

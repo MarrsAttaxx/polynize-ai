@@ -39,7 +39,9 @@ Images now upload straight from the library, presigned direct to the bucket so t
 
 ~~**1. No file upload.**~~ A media asset is a URL reference only, so a recorded video has to go to Box by hand, its Direct Link copied, and pasted into the stream media library on a different screen before it can be attached to a piece. Nothing on the Script screen, the studio row, or the Recorded button says any of this. This is the last hard gap between Gate 4 and a published post.
 
-**2. Metricool has never actually been fired.** The D18 gate: the publish button has never been pressed against a real brand. Everything downstream of Gate 5 is unproven.
+**2. Metricool has never actually been fired. NOW HAS A DRY RUN (D67).** `Send as draft` on any calendar entry sends the real call with `autoPublish` off: it proves the token, the brand id, the payload, the media urls and the timezone, and publishes nowhere. It also returns an `external_ref` to compare against the analytics `postId`, which is item 8's whole question, at no risk. The live press is still his and still unproven.
+
+~~**2. Metricool has never actually been fired.**~~ The D18 gate: the publish button has never been pressed against a real brand. Everything downstream of Gate 5 is unproven.
 
 ---
 

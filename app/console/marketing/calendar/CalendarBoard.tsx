@@ -146,19 +146,30 @@ export function CalendarBoard({ initial }: { initial: CalendarEntry[] }) {
       return n;
     });
 
-  const schedule = async (entry: CalendarEntry) => {
+  /**
+   * SEND ONE ENTRY TO METRICOOL. `draft` sends it with autoPublish off (D67), which is the dry run
+   * for the first ever real write: everything is proved except going public.
+   *
+   * The two confirms are deliberately different sentences. A draft says where it will and will not
+   * appear, because the whole value of it is knowing nothing went out; a publish names the channel
+   * and the date, because that is the thing that cannot be taken back.
+   */
+  const schedule = async (entry: CalendarEntry, draft = false) => {
     const when = entry.scheduled_at ? ` for ${entry.scheduled_at.slice(0, 10)}` : '';
-    if (
-      !window.confirm(
-        `Schedule this ${channelLabel(entry.channel)} post${when}? It will be sent to Metricool.`
-      )
-    ) {
+    const ask = draft
+      ? `Send this ${channelLabel(entry.channel)} post to Metricool as a DRAFT? It will appear in the Metricool planner and will NOT be published anywhere.`
+      : `Schedule this ${channelLabel(entry.channel)} post${when}? It will be sent to Metricool and it WILL go out at that time.`;
+    if (!window.confirm(ask)) {
       return;
     }
     setBusy(entry.entry_id);
     setErr(entry.entry_id, null);
     try {
-      const res = await fetch(entryUrl(entry.entry_id) + '/schedule', { method: 'POST' });
+      const res = await fetch(entryUrl(entry.entry_id) + '/schedule', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ draft }),
+      });
       const b = (await res.json().catch(() => null)) as
         | { entry?: CalendarEntry; error?: string; warning?: string }
         | null;
@@ -248,6 +259,21 @@ export function CalendarBoard({ initial }: { initial: CalendarEntry[] }) {
                 >
                   Add to queue
                 </button>
+                {/* THE DRY RUN (D67), and it sits BEFORE the real button on purpose: the first
+                    thing you should be able to do to a post is prove the pipe works without
+                    putting anything in public. Needs a time, because the time and its timezone
+                    are half of what the dry run is checking. */}
+                {e.scheduled_at ? (
+                  <button
+                    type="button"
+                    className={s.queueBtn}
+                    onClick={() => schedule(e, true)}
+                    disabled={busy === e.entry_id}
+                    title="Send it to the Metricool planner without publishing it"
+                  >
+                    Send as draft
+                  </button>
+                ) : null}
                 {e.scheduled_at ? (
                   <button
                     type="button"

@@ -1690,3 +1690,35 @@ The trend **wanders rather than climbs**, because a mock that only goes up teach
 
 47 new assertions, 418 total.
 
+---
+
+## D67: The first real Metricool call is a draft
+
+**Adopted 27 August 2026.** Marrs: *"Let's fire Metricool for real, walk me through it."*
+
+Todo item 2 has been the biggest thing on the board for weeks: the publish button has never been pressed against a real brand, so everything downstream of Gate 5 is theory. Walking him through it turned up the thing missing from the walkthrough.
+
+### Every existing path publishes
+
+Both routes into Metricool, `Add to queue` and `Schedule at set time`, call `publishEntry`, which hardcoded `draft: false` and therefore `autoPublish: true`. So the only way to find out whether the integration works was to put something on a real channel and watch.
+
+**The client has always supported `draft`.** `schedulePost` takes it and sets `autoPublish: !draft`. Nothing ever passed it, so the capability was documented and inert, which is exactly the shape of gap D42 found with `firstCommentText`.
+
+### What a draft proves, which is nearly everything
+
+A draft lands in Metricool's own planner and publishes nowhere. It exercises the token, the brand id, the payload shape, the `providers` objects, the media urls being publicly fetchable, the date, and the timezone pairing. The only thing it does not exercise is Metricool actually pushing to the network.
+
+**It also answers the analytics question for free.** The response id is stored as `external_ref`, and whether that id is the same one the analytics endpoints take as `postId` is the single unknown blocking the whole analytics panel (todo item 8). A draft produces one to compare, at no risk.
+
+### Two decisions inside a small change
+
+**A drafted entry keeps `draft` status.** It gets the `external_ref`, because the id is the point, but it must not read as `scheduled` or the calendar would claim something is live that is not, and every count downstream of it would be wrong.
+
+**The default stays a real publish, and the flag has to be explicit.** A button that says Schedule has always meant schedule. Quietly drafting would be the more dangerous of the two mistakes: he would believe a wave had gone out when nothing had.
+
+The two confirmations are deliberately different sentences. The draft one says where it will and will not appear, because knowing nothing went out is the entire value of it. The publish one names the channel and the date, because that is the part that cannot be taken back.
+
+### One thing the walkthrough turned up about his own lane
+
+On the `marrs` lane **LinkedIn is manual by default** (D41): he posts it by hand because scheduled LinkedIn posts lose reach. So a Metricool test on his own stream is Instagram, TikTok or YouTube, and a LinkedIn entry there will never be the thing that proves the pipe.
+
