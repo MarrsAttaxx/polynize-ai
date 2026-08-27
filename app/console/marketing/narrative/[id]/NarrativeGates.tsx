@@ -1043,7 +1043,7 @@ export function NarrativeGates({
           <p className={g.loop}>
             numbers flow back from Metricool as they land
             <br />
-            winners feed the next kit and April's examples
+            winners feed the next kit and April&rsquo;s examples
           </p>
           <div className={g.bar}>
             <Link href="/console/marketing" className={g.go} style={{ display: 'block', textAlign: 'center', textDecoration: 'none', boxSizing: 'border-box' }}>

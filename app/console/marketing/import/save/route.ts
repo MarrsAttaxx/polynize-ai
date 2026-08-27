@@ -54,19 +54,26 @@ export async function POST(req: NextRequest) {
   if (body.mode !== 'update') {
     try {
       const baseSlug = framingSlug(framing);
-      for (let n = 1; n <= 50 && baseSlug; n++) {
-        const candidate = n === 1 ? baseSlug : `${baseSlug}-${n}`;
-        const found = await getConcept(user.email, candidate);
-        if (!found) break;
-        if (found.framing.trim() === framing) {
-          return NextResponse.json(
-            {
-              error: `A concept titled "${found.title}" already exists. Import again as an update to replace its content, or change the title.`,
-              existing_slug: found.framing_slug,
-              conflict: true,
-            },
-            { status: 409 }
-          );
+      /**
+       * The guard is checked ONCE, here, rather than inside the loop condition where it used to
+       * sit. It never changed, so it read as though the loop might end because of it and hid the
+       * bound that actually matters, which is n <= 50. Flagged by no-unmodified-loop-condition.
+       */
+      if (baseSlug) {
+        for (let n = 1; n <= 50; n++) {
+          const candidate = n === 1 ? baseSlug : `${baseSlug}-${n}`;
+          const found = await getConcept(user.email, candidate);
+          if (!found) break;
+          if (found.framing.trim() === framing) {
+            return NextResponse.json(
+              {
+                error: `A concept titled "${found.title}" already exists. Import again as an update to replace its content, or change the title.`,
+                existing_slug: found.framing_slug,
+                conflict: true,
+              },
+              { status: 409 }
+            );
+          }
         }
       }
     } catch (err) {

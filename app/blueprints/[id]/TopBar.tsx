@@ -1,4 +1,5 @@
 import s from './blueprint.module.css';
+import Link from 'next/link';
 import { BOOKING_URL } from './util';
 import { TrackedLink } from '@/app/_components/TrackedLink';
 
@@ -9,7 +10,7 @@ type Props = {
 export function TopBar({ docRef }: Props) {
   return (
     <header className={s.top}>
-      <a href="/">polynize</a>
+      <Link href="/">polynize</Link>
       <span>BP-{docRef}</span>
       <div className={s.topRight}>
         <TrackedLink

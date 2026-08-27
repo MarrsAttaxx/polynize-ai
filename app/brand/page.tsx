@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Link from 'next/link';
 import { BRAND_TOKENS } from '@/lib/brand/tokens';
 import { DraftingGrid } from '@/app/_components/DraftingGrid';
 import s from './brand.module.css';
@@ -46,7 +47,7 @@ export default function BrandPage() {
 
       <header className={s.top}>
         <div className={s.brand}>
-          <a href="/">polynize</a>
+          <Link href="/">polynize</Link>
           <span className={s.brandSlash}>/</span>
           <span>brand</span>
         </div>
@@ -512,7 +513,7 @@ export default function BrandPage() {
             polynize.ai / brand · v{t.version} · last updated {todayLabel}
           </p>
           <p>
-            <a href="/">back to home</a>
+            <Link href="/">back to home</Link>
           </p>
         </footer>
       </main>

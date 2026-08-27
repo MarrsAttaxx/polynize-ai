@@ -109,13 +109,13 @@ export async function readQuestions(slug: string): Promise<QuestionsDoc> {
   try {
     const parsed = LenientQuestionsDocSchema.safeParse(JSON.parse(raw));
     if (!parsed.success) {
-      // eslint-disable-next-line no-console
+       
       console.error(`[questions-io] questions.json schema mismatch for ${slug}`, parsed.error.issues.slice(0, 3));
       return { ...EMPTY_DOC, questions: [] };
     }
     return { schema_version: '1.0', questions: parsed.data.questions ?? [] };
   } catch (err) {
-    // eslint-disable-next-line no-console
+     
     console.error(`[questions-io] questions.json parse failed for ${slug}`, err);
     return { ...EMPTY_DOC, questions: [] };
   }

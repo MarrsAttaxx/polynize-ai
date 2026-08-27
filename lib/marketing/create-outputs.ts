@@ -16,7 +16,7 @@ import {
   savePiece,
   type MarketingPiece,
 } from './piece-store';
-import { formatById, type FormatDef } from './output-plan';
+import { type FormatDef } from './output-plan';
 import { scaffoldScript } from './concept-parse';
 import { templateKey, getTemplate, type ContentTemplate } from './template-store';
 import { getLibraryTemplate, type LibraryTemplate } from './template-library';

@@ -24,7 +24,7 @@ import s from './timeline.module.css';
 const DAY_WIDTH = 22;
 const LABEL_COL = 180;
 const LANE_HEIGHT = 40;
-const AXIS_HEIGHT = 32; // 24px axis + 8px margin
+const _AXIS_HEIGHT = 32; // 24px axis + 8px margin
 
 const MS_PER_DAY = 86400000;
 

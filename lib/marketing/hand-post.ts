@@ -52,7 +52,7 @@ export async function sendHandPostBrief(
   narrativeTitle: string,
   posts: HandPost[]
 ): Promise<{ sent: number; skipped: string | null }> {
-  /* eslint-disable-next-line prefer-const */
+   
   try {
     if (posts.length === 0) return { sent: 0, skipped: 'nothing to hand over' };
 

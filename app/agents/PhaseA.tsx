@@ -100,9 +100,9 @@ export function PhaseA({ initial, initialStep, onAnswersChange, onComplete }: Pr
     const trimmed = bottleneckDraft.trim();
     if (!trimmed || probing) return;
     const lastFollowUp = exchanges.length > 0 ? exchanges[exchanges.length - 1].follow_up : undefined;
-    const newExchange: Exchange = lastFollowUp
-      ? { user: trimmed, follow_up: undefined }
-      : { user: trimmed, follow_up: undefined };
+    // The `newExchange` that used to sit here was dead: both branches of its ternary were
+    // identical, and nothing read the result. The follow_up belongs to the PRIOR exchange, per
+    // the note below, so this one never carried one either way. lastFollowUp is still used.
     // The follow_up belongs to the PRIOR exchange (it was the question we asked).
     // We model exchanges as the user's reply; the follow_up field on each entry
     // records the probe text shown TO the user before they wrote that reply.

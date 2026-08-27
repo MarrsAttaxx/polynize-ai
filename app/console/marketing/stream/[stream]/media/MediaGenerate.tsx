@@ -27,7 +27,7 @@ type SoulIdOpt = { id: string; name: string; status: string };
 type Options = { configured: boolean; soulStyles: SoulStyle[]; soulIds: SoulIdOpt[] };
 
 export function MediaGenerate({
-  stream,
+  stream: _stream,
   images,
   base: baseOverride,
   onSaved,

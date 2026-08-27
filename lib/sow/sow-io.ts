@@ -40,7 +40,7 @@ function seedHuman(
 function normalize(raw: unknown): SowDoc | null {
   const parsed = LenientSowDocSchema.safeParse(raw);
   if (!parsed.success) {
-    // eslint-disable-next-line no-console
+     
     console.error('[sow-io] sow.json schema mismatch', parsed.error.issues.slice(0, 3));
     return null;
   }
@@ -88,7 +88,7 @@ export async function readSowDoc(slug: string): Promise<SowDoc | null> {
   try {
     json = JSON.parse(raw);
   } catch (err) {
-    // eslint-disable-next-line no-console
+     
     console.error(`[sow-io] sow.json JSON.parse failed for ${slug}`, err);
     return null;
   }

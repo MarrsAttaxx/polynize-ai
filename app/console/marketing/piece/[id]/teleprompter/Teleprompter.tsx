@@ -37,7 +37,7 @@ const SPEEDS = [12, 20, 30, 42, 60, 84, 120] as const;
 const DEFAULT_SPEED = 2;
 
 export function Teleprompter({
-  title,
+  title: _title,
   sections,
   backHref,
 }: {

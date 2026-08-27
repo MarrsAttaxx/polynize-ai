@@ -70,7 +70,7 @@ If you did not request this, you can safely ignore this email.`,
     });
     return { ok: true };
   } catch (err) {
-    // eslint-disable-next-line no-console
+     
     console.error('[console-auth] failed to send magic link', err);
     return { ok: false };
   }

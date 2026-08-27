@@ -41,7 +41,8 @@ export function ConsoleApp() {
   const [activity, setActivity] = useState(SEED_ACTIVITY);
   const [tweaks, setTweaks] = useState<Tweaks>(DEFAULT_TWEAKS);
   const [tweaksOpen, setTweaksOpen] = useState(false);
-  const [hydrated, setHydrated] = useState(false);
+  // Only the setter is read from here; hydratedRef below carries the value.
+  const [, setHydrated] = useState(false);
   const hydratedRef = useRef(false);
 
   // Hydrate

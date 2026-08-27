@@ -1951,3 +1951,48 @@ The same scan cleared the rest of the codebase: the only other self-call in a re
 
 19 new assertions, 498 total.
 
+---
+
+## D75: The linter, and the receipt for why
+
+**Adopted 27 August 2026.** Marrs: *"set up the linter. I dont know what that is, but i'll trust you that we need it."*
+
+### What it is, since he asked
+
+A program that reads the code looking for mistakes a compiler is not allowed to complain about. TypeScript checks that the types line up. A linter checks for things that type-check perfectly and are still obviously wrong.
+
+### The receipt, tested rather than argued
+
+D74 was `return laneVoice(lane) ?? KIND_VOICE[...]`, a function calling itself where it meant to read a map. It type-checked, it shipped, and Gate 2 was dead for a week.
+
+The bug was **put back temporarily** to check the linter actually earns its place:
+
+| | Verdict |
+|---|---|
+| ESLint | **error** · `'LANE_VOICE' is assigned a value but never used` |
+| TypeScript | **silent** · zero mentions |
+
+The map the line was supposed to read became referenced by nothing, and that is the tell. `no-constant-binary-expression` was the other candidate and it did not fire on this shape, so the honest credit goes to `no-unused-vars`. Both are on.
+
+### Deliberately narrow, and that is the design
+
+`eslint-config-next` brings hundreds of rules and this codebase has never been linted, so turning everything on produces a wall that gets ignored, which is **worse than no linter**: a warning nobody reads trains people to skip warnings.
+
+So the rule set is small and every entry is a correctness rule. Errors: unused vars, constant binary expressions, self-assign, self-compare, unreachable code, duplicate cases, unmodified loop conditions. Off, with reasons written next to them: `no-explicit-any` (used deliberately at store boundaries that validate immediately after), `no-console` (the probes print raw diagnostics on purpose), `no-await-in-loop` (the wave and the slide run await in loops by design).
+
+**The list grows when a bug shows us which rule was missing.** That is how it earned its first two entries.
+
+### 20 errors existed. All 20 are fixed.
+
+Not suppressed. Among them, three worth naming:
+
+- **A dead import I left yesterday** in `media/generate/route.ts`: `generateImages`, orphaned when D62 moved that route onto the dispatcher. The linter found it the first time it ran.
+- **Four `<a href="/">` links to internal pages**, which do a full page reload instead of client navigation. Behaviour, not style, which is why that rule is an error.
+- **A loop whose condition contained something that never changed**, hiding the bound that actually mattered. Not an infinite loop, since `n <= 50` held it, but it read like one.
+
+### It gates the build
+
+`prebuild` now runs `check:css && lint:ci`, so a lint **error** stops a deploy. `--quiet` means warnings never do: 16 remain, mostly `alt` on images composed inside `next/og`, where the rule is a false positive because nobody reads a Satori canvas with a screen reader.
+
+That is the whole point. D74 reached production because nothing stood between the typo and the deploy.
+

@@ -117,7 +117,7 @@ const pad2 = (n: number): string => (n < 10 ? `0${n}` : String(n));
 function normalise(text: string): string[] {
   return text
     .replace(/\r\n?/g, '\n')
-    // eslint-disable-next-line no-control-regex
+     
     .replace(/[\u0000-\u0008\u000b-\u001f]/g, ' ')
     .split('\n')
     .map((l) => l.replace(/\s+/g, ' ').trim())

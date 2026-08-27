@@ -66,7 +66,7 @@ const vercelProvider: AnalyticsProvider = {
   track(event, props) {
     if (typeof window === 'undefined') return;
     if (process.env.NODE_ENV !== 'production') {
-      // eslint-disable-next-line no-console
+       
       console.debug('[analytics] %s', event, props ?? {});
     }
     vercelTrack(event, props);

@@ -226,11 +226,11 @@ const carlEnvelope = {
 
 const carlResult = validateCapabilityMapV05(carlEnvelope);
 if (!carlResult.ok) {
-  // eslint-disable-next-line no-console
+   
   console.error('Carl envelope FAILED:', carlResult.error);
   throw new Error('Carl envelope validation failed.');
 }
-// eslint-disable-next-line no-console
+ 
 console.log('OK: Carl-shaped CapabilityMapV05 envelope validates.');
 
 // ----- 1b. Team agents cap: min 2, max 6 (raised from 5) -----
@@ -280,9 +280,9 @@ if (validateCapabilityMapV05(carlWithTeam({ ...baseTeam, team_leader: 'Nobody' }
 if (!validateCapabilityMapV05(carlWithTeam({ ...baseTeam, team_leader: 'Triage Agent' })).ok) {
   throw new Error('team_leader matching an agent should validate.');
 }
-// eslint-disable-next-line no-console
+ 
 console.log('OK: team_leader required and must match an agent (3-tier generation).');
-// eslint-disable-next-line no-console
+ 
 console.log('OK: team agents cap is min 2, max 6 (6 valid, 7 invalid, 1 invalid).');
 
 // ----- 2. EngagementModel fixture -----
@@ -329,11 +329,11 @@ const engagementModel: EngagementModel = {
 
 const emResult = EngagementModelSchema.safeParse(engagementModel);
 if (!emResult.success) {
-  // eslint-disable-next-line no-console
+   
   console.error('EngagementModel failed:', emResult.error.format());
   throw new Error('EngagementModel validation failed.');
 }
-// eslint-disable-next-line no-console
+ 
 console.log('OK: minimal EngagementModel validates.');
 
 // ----- 3. WorkPlan fixture -----
@@ -425,11 +425,11 @@ const workPlan: WorkPlan = {
 
 const wpResult = WorkPlanSchema.safeParse(workPlan);
 if (!wpResult.success) {
-  // eslint-disable-next-line no-console
+   
   console.error('WorkPlan failed:', wpResult.error.format());
   throw new Error('WorkPlan validation failed.');
 }
-// eslint-disable-next-line no-console
+ 
 console.log('OK: minimal WorkPlan validates.');
 
 // ----- 4. ProjectTimeline fixture -----
@@ -465,11 +465,11 @@ const timeline: ProjectTimeline = {
 
 const tlResult = ProjectTimelineSchema.safeParse(timeline);
 if (!tlResult.success) {
-  // eslint-disable-next-line no-console
+   
   console.error('Timeline failed:', tlResult.error.format());
   throw new Error('Timeline validation failed.');
 }
-// eslint-disable-next-line no-console
+ 
 console.log('OK: minimal ProjectTimeline validates.');
 
 // ----- 5. LockState round-trip -----
@@ -482,8 +482,8 @@ const lock = {
 };
 const lockResult = LockStateSchema.safeParse(lock);
 if (!lockResult.success) throw new Error('LockState failed.');
-// eslint-disable-next-line no-console
+ 
 console.log('OK: LockState validates.');
 
-// eslint-disable-next-line no-console
+ 
 console.log('\nAll Stage 2 schema fixtures passed.');

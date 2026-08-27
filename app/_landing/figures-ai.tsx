@@ -23,8 +23,8 @@
  * evidence the page has not earned. The dials say it in how far the arc has filled.
  */
 
-import { VENDORS, VendorLogo, type VendorName } from './VendorLogos';
-import { Bezel, BotBody, Person, arc, brackets, f, graticule, pol, rand } from './hud';
+import { VendorLogo, type VendorName } from './VendorLogos';
+import { Bezel, BotBody, Person, f, graticule, pol } from './hud';
 import type { FigureRegistry } from './BeatFigure';
 import s from './story.module.css';
 

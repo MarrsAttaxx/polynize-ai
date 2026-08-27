@@ -15,7 +15,6 @@ import { isStreamId } from '@/lib/marketing/streams';
 import { imageModelById, providerOf } from '@/lib/marketing/higgsfield-models';
 import {
   isHiggsfieldConfigured,
-  generateImages,
   getSoulStyleList,
   listSoulIdentities,
 } from '@/lib/marketing/higgsfield';

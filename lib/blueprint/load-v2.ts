@@ -116,7 +116,7 @@ async function safeRead(slug: string, path: string): Promise<string | null> {
     // 404 etc. — file simply not present. Anything else logs and returns null.
     const msg = err instanceof Error ? err.message : String(err);
     if (!/Not Found|404/i.test(msg)) {
-      // eslint-disable-next-line no-console
+       
       console.error(`[load-v2] read ${slug}:${path} failed`, msg);
     }
     return null;
@@ -132,7 +132,7 @@ async function loadCapabilityMap(
   try {
     json = JSON.parse(raw);
   } catch (err) {
-    // eslint-disable-next-line no-console
+     
     console.error(`[load-v2] capability-map.json JSON.parse failed for ${slug}`, err);
     return null;
   }
@@ -147,7 +147,7 @@ async function loadCapabilityMap(
   // is safe.
   const parsed = LenientCapabilityMapV05EnvelopeSchema.safeParse(json);
   if (!parsed.success) {
-    // eslint-disable-next-line no-console
+     
     console.error(
       `[load-v2] capability-map.json schema mismatch for ${slug}`,
       parsed.error.issues.slice(0, 3)
@@ -166,13 +166,13 @@ async function loadEngagementModel(
   try {
     json = JSON.parse(raw);
   } catch (err) {
-    // eslint-disable-next-line no-console
+     
     console.error(`[load-v2] engagement-model.json parse failed for ${slug}`, err);
     return null;
   }
   const parsed = EngagementModelSchema.safeParse(json);
   if (!parsed.success) {
-    // eslint-disable-next-line no-console
+     
     console.error(
       `[load-v2] engagement-model.json schema mismatch for ${slug}`,
       parsed.error.issues.slice(0, 3)
@@ -191,13 +191,13 @@ async function loadTimeline(
   try {
     json = JSON.parse(raw);
   } catch (err) {
-    // eslint-disable-next-line no-console
+     
     console.error(`[load-v2] timeline.json parse failed for ${slug}`, err);
     return null;
   }
   const parsed = ProjectTimelineSchema.safeParse(json);
   if (!parsed.success) {
-    // eslint-disable-next-line no-console
+     
     console.error(
       `[load-v2] timeline.json schema mismatch for ${slug}`,
       parsed.error.issues.slice(0, 3)
@@ -216,7 +216,7 @@ async function loadClientConfig(slug: string): Promise<ClientConfigV2 | null> {
     ClientConfigV2AdditionsSchema.partial().safeParse(parsed);
     return parsed as ClientConfigV2;
   } catch (err) {
-    // eslint-disable-next-line no-console
+     
     console.error(`[load-v2] client-config.yaml parse failed for ${slug}`, err);
     return null;
   }
@@ -238,7 +238,7 @@ async function loadWorkPlans(
       try {
         json = JSON.parse(planRaw);
       } catch {
-        // eslint-disable-next-line no-console
+         
         console.error(
           `[load-v2] work-plans/${entry.id}/work-plan.json parse failed for ${slug}`
         );
@@ -246,7 +246,7 @@ async function loadWorkPlans(
       }
       const parsed = WorkPlanSchema.safeParse(json);
       if (!parsed.success) {
-        // eslint-disable-next-line no-console
+         
         console.error(
           `[load-v2] work-plans/${entry.id}/work-plan.json schema mismatch for ${slug}`,
           parsed.error.issues.slice(0, 3)

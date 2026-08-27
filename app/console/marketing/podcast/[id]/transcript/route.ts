@@ -89,7 +89,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
   let transcript = (body.transcript ?? '').trim();
   let source: 'pasted' | 'descript' = 'pasted';
-  let projectId = body.descript_project_id ?? ep.descript_project_id;
+  const projectId = body.descript_project_id ?? ep.descript_project_id;
   let compositionId = body.descript_composition_id ?? ep.descript_composition_id;
 
   if (!transcript) {

@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import Link from 'next/link';
 import type { JobBlueprint } from '@/lib/agents/job-blueprint-schema';
 import { track } from '@/lib/analytics';
 import { JobBlueprintDoc } from './JobBlueprintDoc';
@@ -155,9 +156,9 @@ export function JobMappingFlow() {
           <p className={s.afterLine}>
             We have emailed you this link. The map is yours to keep and to share.
           </p>
-          <a className={s.btnGhost} href="/job-mapping">
+          <Link className={s.btnGhost} href="/job-mapping">
             Map another role
-          </a>
+          </Link>
         </div>
       </>
     );

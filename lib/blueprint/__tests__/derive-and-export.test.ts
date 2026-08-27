@@ -30,7 +30,7 @@ let passed = 0;
 function check(name: string, cond: boolean) {
   if (!cond) throw new Error(`FAIL: ${name}`);
   passed += 1;
-  // eslint-disable-next-line no-console
+   
   console.log(`ok  ${name}`);
 }
 function eq<T>(name: string, a: T, b: T) {
@@ -252,5 +252,5 @@ function blueprint(model: EngagementModel | null): BlueprintV2 {
   check('export footer present', md.includes('End of context snapshot'));
 }
 
-// eslint-disable-next-line no-console
+ 
 console.log(`\nAll ${passed} assertions passed.`);

@@ -65,7 +65,7 @@ function toDraft(t: ContentTemplate): Draft {
 }
 
 export function TemplatesManager({
-  stream,
+  stream: _stream,
   initial,
   library,
 }: {

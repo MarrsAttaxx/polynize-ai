@@ -5,14 +5,16 @@
   "scripts": {
     "dev": "next dev",
     "check:css": "node scripts/check-css-modules.mjs",
-    "prebuild": "npm run check:css",
+    "prebuild": "npm run check:css && npm run lint:ci",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
+    "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test:marketing": "npx --yes tsx lib/marketing/__tests__/gate4.test.ts",
     "proof:slides": "npx --yes tsx --tsconfig tsconfig.proof.json scripts/slide-proof.tsx",
-    "test:blueprint": "npx --yes tsx lib/blueprint/__tests__/schema-v2.fixture.ts && npx --yes tsx lib/blueprint/__tests__/derive-and-export.test.ts"
+    "test:blueprint": "npx --yes tsx lib/blueprint/__tests__/schema-v2.fixture.ts && npx --yes tsx lib/blueprint/__tests__/derive-and-export.test.ts",
+    "lint:fix": "eslint . --fix",
+    "lint:ci": "eslint . --quiet"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1080.0",

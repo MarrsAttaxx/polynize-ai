@@ -17,7 +17,7 @@ async function silentPost(path: string, body: unknown): Promise<void> {
       credentials: 'same-origin',
     });
   } catch (e) {
-    // eslint-disable-next-line no-console
+     
     console.warn(`[persist] ${path} failed`, e);
   }
 }

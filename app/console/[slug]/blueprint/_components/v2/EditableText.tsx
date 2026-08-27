@@ -113,7 +113,7 @@ export function EditableText({
           placeholder={placeholder}
           rows={3}
           autoFocus
-          // eslint-disable-next-line jsx-a11y/no-autofocus
+           
         />
       ) : (
         <input
