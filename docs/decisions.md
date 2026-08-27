@@ -1842,3 +1842,40 @@ The provider errors carry a response body. OpenRouter's do not include the key, 
 
 21 new assertions, 471 total.
 
+---
+
+## D72: April has its own API key, which is why April alone can be dead
+
+**Adopted 27 August 2026.** Marrs: *"April is not working."* Then, after D70 made the errors honest: *"Its not creits."*
+
+Not 402, Vercel's runtime logs are 403 for this team, and the model still exists on OpenRouter's public list. That left guessing, so `/console/marketing/llm-probe` makes the calls itself and prints what comes back.
+
+### The lead the probe exists to test
+
+**April does not use the console's key.** `article-draft.ts` and `draft.ts` both pass `apiKey: process.env.APRIL_OPENROUTER_API_KEY`, and the OpenRouter client falls back to `OPENROUTER_API_KEY` **only when that is unset**.
+
+So a rotated, revoked or truncated April key breaks April specifically while every other LLM call in the console keeps working. Which is precisely the reported shape: April is down and nothing else is complaining.
+
+That was a deliberate design (per-agent keys so an agent's cognition bills to its own account), and the cost of it is this failure mode. Worth keeping, worth knowing about.
+
+### So it calls with both keys and prints both answers
+
+One working and the other refusing **is** the diagnosis, and the page computes the conclusion rather than leaving it to be spotted:
+
+- April's fails, console's works → **the April key**, replace it, nothing else was affected.
+- April's works, console's fails → the fallback is broken, April is fine, something else is not.
+- Both fail identically → the account or the model, not a key.
+- Both work → not the key at all, read the third call.
+
+### The third call is the one that catches a non-outage
+
+A deliberately low ceiling, because the production model reasons before it answers and those tokens count against `max_tokens`: below the floor the whole budget goes on thinking and the response is an **empty string** rather than an error. That has bitten this codebase twice. If the two generous calls answer and the low one comes back empty, the fault is a ceiling somewhere in the prompt layer and not the provider.
+
+### It never prints a key, and it does print lengths
+
+Set or unset, plus the character count, because **a truncated paste is a real cause** and the length is the only safe way to see it. An OpenRouter key normally runs to the 60s or 70s of characters, so a 40 is visible as wrong without ever showing a character of it.
+
+### What it costs
+
+Three tiny completions per load, sequential rather than parallel: three at once against a key being rate limited turns one 429 into three and makes the answer harder to read.
+
