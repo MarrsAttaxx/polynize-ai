@@ -19,6 +19,8 @@ import {
   masterDetail,
 } from '@/lib/marketing/kit';
 import { NarrativeGates, type WaveData } from './NarrativeGates';
+import { connectedList } from '@/lib/marketing/connected-networks';
+import { getBrandMap, type BrandMap } from '@/lib/marketing/metricool-config-store';
 
 export const dynamic = 'force-dynamic';
 
@@ -231,5 +233,20 @@ export default async function NarrativePage({
     }
   }
 
-  return <NarrativeGates initial={narrative} pieces={pieces} wave={wave} />;
+  /**
+   * WHICH PLATFORMS THIS LANE CAN ACTUALLY POST TO (D78), read from the brand's own Metricool
+   * profile. Degrades to null on every failure path, which shows every network: hiding work over a
+   * failed config read would be worse than offering a platform he cannot post to.
+   */
+  const brandMap = await getBrandMap().catch(() => ({}) as BrandMap);
+  const connected = await connectedList(brandMap[narrative.lane]).catch(() => null);
+
+  return (
+    <NarrativeGates
+      initial={narrative}
+      pieces={pieces}
+      wave={wave}
+      connectedNetworks={connected}
+    />
+  );
 }

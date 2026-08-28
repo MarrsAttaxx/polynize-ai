@@ -32,6 +32,7 @@ import {
 import { PlatformIcon } from '@/app/console/marketing/_components/PlatformIcon';
 import { channelLabel } from '@/lib/marketing/channels';
 import { HERO_BATCH } from '@/lib/marketing/hero';
+import { networkAvailable } from '@/lib/marketing/connected-networks';
 import { IMAGE_MODELS, DEFAULT_IMAGE_MODEL } from '@/lib/marketing/higgsfield-models';
 import g from '../gates.module.css';
 
@@ -94,10 +95,17 @@ export function NarrativeGates({
   initial,
   pieces,
   wave,
+  connectedNetworks: connected = null,
 }: {
   initial: Narrative;
   pieces: PieceRow[];
   wave: WaveData;
+  /**
+   * The networks this lane's Metricool brand has connected (D78), or null when we do not know:
+   * not mapped, not configured, or the call failed. Null shows every network, because hiding work
+   * over a failed config read is worse than offering a platform he cannot post to.
+   */
+  connectedNetworks?: string[] | null;
 }) {
   const router = useRouter();
   const [narrative, setNarrative] = useState(initial);
@@ -654,6 +662,15 @@ export function NarrativeGates({
           {KIT_NETWORK_ORDER.map((net) => {
             const items = rows.filter((k) => k.network === net);
             if (items.length === 0) return null;
+            /**
+             * ONLY WHAT THE BRAND HAS CONNECTED (D78). Marrs: "In Gate 3 how do we only show
+             * platforms that the user is subscribed to in Metricool?"
+             *
+             * `connectedNetworks` is null when we do not know, which shows everything: a brand that
+             * is not mapped yet, or a Metricool call that failed, must never quietly remove work
+             * from the kit.
+             */
+            if (!networkAvailable(connected, net)) return null;
             const cls =
               net === 'linkedin'
                 ? g.logoLi

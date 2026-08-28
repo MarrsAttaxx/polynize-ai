@@ -60,6 +60,7 @@ import {
 import { joinReport, harvestIds } from '../analytics-probe';
 import { llmErrorText } from '../../llm/error-text';
 import { laneVoice } from '../article-draft';
+import { networksFromProfile, networkAvailable } from '../connected-networks';
 import { parseProposal } from '../slide-propose';
 import {
   cardState,
@@ -1147,6 +1148,61 @@ ok('polynize gets its own', /POLYNIZE lane/.test(laneVoice('polynize')));
  */
 ok('kristin falls back to the person register', /PERSONAL lane/.test(laneVoice('kristin')));
 ok('and a person register is not the brand one', !/BRAND lane/.test(laneVoice('kristin')));
+
+/* ------------------------------------------------------------------ D78: connected platforms */
+
+/**
+ * Marrs: "In Gate 3 how do we only show platforms that the user is subscribed to in Metricool? We
+ * can do this manually if needed."
+ *
+ * It did not need to be manual: /admin/simpleProfiles already carries a per-platform field on every
+ * brand and non-null means connected. The fixture below is his OWN Polynize brand, copied from the
+ * probe output, so this is tested against a real response rather than an imagined one.
+ */
+const polynizeBrand = {
+  id: 5249078,
+  label: 'Polynize AI',
+  twitter: null,
+  facebook: '787610667764287',
+  instagram: 'polynize.ai',
+  linkedinCompany: 'urn:li:organization:18565952',
+  youtube: null,
+  tiktok: 'polynize.ai',
+  threads: null,
+  bluesky: null,
+  pinterest: null,
+  inUserId: null,
+};
+const pn = networksFromProfile(polynizeBrand);
+ok('his Instagram is connected', pn.has('instagram'));
+ok('his TikTok is connected', pn.has('tiktok'));
+ok('LinkedIn counts via the COMPANY field, which is the only one his brand has', pn.has('linkedin'));
+ok('YouTube is not connected, and is not claimed to be', !pn.has('youtube'));
+eq('so three of our four networks', pn.size, 3);
+
+/**
+ * LINKEDIN NEEDS THREE FIELDS. There is no plain `linkedin`: a company page arrives as
+ * linkedinCompany and a PERSONAL profile as inUserId or linkedInUserProfileURL. Checking only the
+ * company field would have hidden LinkedIn on every personal lane, which is four of the five people
+ * here and the platform he cares most about.
+ */
+ok('a personal profile counts via inUserId', networksFromProfile({ inUserId: '12345' }).has('linkedin'));
+ok('and via the profile url', networksFromProfile({ linkedInUserProfileURL: 'https://x' }).has('linkedin'));
+ok('an empty string is not a connection', !networksFromProfile({ instagram: '   ' }).has('instagram'));
+ok('nor is null', !networksFromProfile({ instagram: null }).has('instagram'));
+eq('junk yields nothing rather than throwing', networksFromProfile('nope').size, 0);
+eq('and so does null', networksFromProfile(null).size, 0);
+
+/**
+ * THE RULE FAILS OPEN, and this is the assertion that matters most: hiding work because a config
+ * call timed out is worse than offering a platform he cannot post to, because he would have no way
+ * to tell that from "we decided not to post there".
+ */
+ok('unknown shows every network', networkAvailable(null, 'youtube'));
+ok('known shows what is connected', networkAvailable(['linkedin', 'instagram'], 'instagram'));
+ok('and hides what is not', !networkAvailable(['linkedin', 'instagram'], 'youtube'));
+/** An empty list is an ANSWER, not an absence: this brand genuinely has nothing wired up. */
+ok('an empty answer hides everything', !networkAvailable([], 'linkedin'));
 
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

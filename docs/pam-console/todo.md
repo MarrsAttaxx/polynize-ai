@@ -109,6 +109,8 @@ Right and it will get worse fast: `MediaPicker` lists the whole stream library, 
 
 `MediaAsset` has no narrative field today (`media_id`, `stream`, `owner`, `url`, `kind`, `label`, `source`, timestamps), and the only link is that slide approval labels an asset `"<piece title> slide N"`, which is a string match and not a link. So the build is: add an optional `narrative_ref` to `MediaAsset`, stamp it when a generated image is registered, and have `MediaPicker` show that narrative's pool by default with the full library folded behind one click at the bottom. Existing assets have no ref and belong in the library section, which is the correct place for them.
 
+**3d. Gate 3 shows only connected platforms. DONE (D78).** Read from `/admin/simpleProfiles`, which the Connect page already calls: non-null per-platform field means connected. Fails open on every unknown. Kristin and Julian are unmapped and unconnected, so their gates show everything, which is correct: we cannot know yet.
+
 **4. Refine what a carousel IS, across both platforms.** Marrs: *"whatever we have to do here has to be translated across LinkedIn and Instagram... those images would go into the LinkedIn carousel post and the Instagram carousel post."*
 
 Current honest state, now visible on the Gate 4 card: the carousel says **Instagram, and only Instagram**, because the LinkedIn document post is blocked on two things (no PDF builder in the console, and Metricool document scheduling unverified). The slides are the shared asset; the container differs per platform. Once slides exist, turning them into a PDF is the next question.

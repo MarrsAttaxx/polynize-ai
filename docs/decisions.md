@@ -2077,3 +2077,47 @@ The fold is measured rather than eyeballed: 405 characters in, 69 rendered, 334 
 
 24 assertions changed or added, 502 total.
 
+---
+
+## D78: The probe asked with the wrong parameter names, and the answer was already in the payload
+
+**Adopted 28 August 2026.** Marrs ran the probe on three streams and sent the output.
+
+### All five analytics calls returned 500, and it was mine
+
+```
+{"status":"INTERNAL_SERVER_ERROR","code":"500","title":"InternalError",
+ "detail":"Required request parameter 'from' for method parameter type String is not present"}
+```
+
+I sent `start` and `end`. **They want `from` and `to`.** The names came from the `besttimes` endpoint, which really does take `start`/`end`, and I assumed the analytics endpoints matched their sibling. They do not.
+
+Read from their OpenAPI spec this time rather than inferred: `from`, `to`, optional `timezone`, and **both dates are full ISO 8601 datetimes** (`2021-01-01T10:00:00`), not the bare dates I was sending, which was the second thing wrong. `/timelines` additionally requires `network` and `metric`, neither of which has a documented enum.
+
+**What the failure told us anyway, which is a lot.** A 500 whose body names the missing parameter means the path exists, the token authenticated, and the brand id resolved. **A tier refusal would have been 401 or 403.** So question 1 is still formally unanswered but the encouraging half is settled: nothing about his account is blocking these calls.
+
+Question 2 could not be answered at all, and the probe said so correctly: every stream showed 0 calendar entries, so there were no ids of ours to compare. His published post is on a piece the probe's stream filter did not match, which is the next thing to check.
+
+### Gate 3 was answered by a payload we were already receiving
+
+`/admin/simpleProfiles` returned 200, and inside it, per brand:
+
+```
+"instagram":"polynize.ai"   "tiktok":"polynize.ai"
+"linkedinCompany":"urn:li:organization:18565952"   "youtube":null
+```
+
+**Non-null means connected.** No manual toggles needed, and the answer was sitting in a response the Connect page has been making all along.
+
+Confirmed against the spec rather than one screenshot: `PublicBlog` carries twelve platform fields, all typed string.
+
+**LinkedIn needs three fields, not one**, and this is the part that would have broken quietly. There is no plain `linkedin`: a company page arrives as `linkedinCompany`, a personal profile as `inUserId` or `linkedInUserProfileURL`. Checking only the company field would have hidden LinkedIn on every personal lane, which is four of the five people here and the platform he cares most about.
+
+**It fails open, deliberately.** Not configured, not mapped, call failed, brand absent: every network shows. Hiding work because a config read timed out is worse than offering a platform he cannot post to, because he would have no way to tell that from "we decided not to post there". An empty list, though, is an *answer* rather than an absence, and does hide everything.
+
+Cached for ten minutes, because Gate 3 renders often and a brand's connections change roughly never. Passed as an ARRAY, not a Set: the gate is a client component and a Set crosses that boundary as an empty object, which would have silently hidden every network.
+
+His own Polynize brand payload is the test fixture.
+
+20 new assertions, 517 total.
+

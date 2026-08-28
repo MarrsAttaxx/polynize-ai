@@ -115,7 +115,26 @@ export type ProbeRun = {
  * expensive one to be wrong about, is answered with real ids from the same window.
  */
 export async function runProbe(input: ProbeInput, ourIds: string[]): Promise<ProbeRun> {
-  const p = { start: input.start, end: input.end, timezone: input.timezone };
+  /**
+   * `from` AND `to`, NOT `start` AND `end` (D78).
+   *
+   * The first run of this probe returned 500 on all five analytics calls with
+   * "Required request parameter 'from' ... is not present". The parameter names came from the
+   * `besttimes` endpoint, which does take `start` and `end`, and I assumed the analytics endpoints
+   * matched. They do not.
+   *
+   * Read from their OpenAPI spec this time rather than inferred from a sibling: every analytics
+   * endpoint takes `from`, `to` and an optional `timezone`, and both dates are FULL ISO 8601
+   * DATETIMES ("2021-01-01T10:00:00"), not bare dates, which was the second thing wrong.
+   *
+   * Worth keeping: a 500 whose body names the missing parameter is a far better failure than a
+   * silent empty list. It said exactly what was wrong.
+   */
+  const p = {
+    from: `${input.start}T00:00:00`,
+    to: `${input.end}T23:59:59`,
+    timezone: input.timezone,
+  };
   const blogId = input.blogId;
 
   const calls = await Promise.all([
@@ -125,10 +144,19 @@ export async function runProbe(input: ProbeInput, ourIds: string[]): Promise<Pro
     mcProbeGet('/v2/analytics/posts/instagram', { blogId, params: p }),
     // Documented as maybe-CSV. The content type in the response is the whole answer.
     mcProbeGet('/v2/analytics/posts/tiktok', { blogId, params: p }),
-    // The account-level engine behind every sparkline and KPI tile.
-    mcProbeGet('/v2/analytics/timelines', { blogId, params: p }),
+    /**
+     * `/timelines` needs `network` AND `metric` on top of the dates, and the spec documents no enum
+     * for either, so a wrong guess returns a 500 that looks like a fault rather than a question.
+     * It is the account-level engine behind the sparklines, which is a later problem than the join,
+     * so it is asked with a plausible pair and its answer is read as a hint rather than a verdict.
+     */
+    mcProbeGet('/v2/analytics/timelines', {
+      blogId,
+      params: { ...p, network: 'linkedin', metric: 'impressions' },
+    }),
     // Already used by the Connect page, included so a tier refusal can be told apart from a
-    // token problem: this one working while the others 403 IS the tier answer.
+    // token problem: this one working while the others 403 IS the tier answer. It also carries
+    // which platforms the brand has connected, which is what Gate 3 filters on (D78).
     mcProbeGet('/admin/simpleProfiles'),
   ]);
 
