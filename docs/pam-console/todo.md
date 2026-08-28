@@ -144,7 +144,16 @@ The load-bearing tile is the **frame ladder**: each post type ranked by median r
 
 Person and company voices must never be pooled in a ranking: a personal profile takes 63% higher engagement than a company page at similar impressions, so pooled, Polynize ranks below every human every time and teaches nothing. `streamKind()` already exists to branch on.
 
-**8. THE METRICOOL ANALYTICS SPIKE. THE PROBE IS BUILT (D69), the call is Marrs's to make.**
+**8. THE METRICOOL ANALYTICS SPIKE. ALL FOUR QUESTIONS ANSWERED, 28 August 2026.** Probe run against Polynize, Marrs and Shourov.
+
+1. **Tier: AVAILABLE.** Every analytics endpoint returned 200 on his Advanced plan. The panel can be real.
+2. **The join: the ids are different spaces, and we stored the wrong one.** Our `external_ref` is `367684553`, which is Metricool's own `ScheduledPost.id` (an integer). Their analytics `postId` is the platform URN, `urn:li:ugcPost:7498175968910561281`. **But the spec has the bridge:** `ProviderStatus` carries `id` AND `publicUrl` per network, and the analytics rows carry the matching `url`. At schedule time the post has not published so there is no provider id yet, so the fix is a SECOND READ after publication: GET the scheduled post, store `providers[].id` and `providers[].publicUrl`, and join on the url. That is an exact string match, not the fuzzy text-and-timestamp fallback that was feared. A nightly pull has to happen anyway, so this costs nothing extra.
+3. **TikTok returns JSON, not CSV.** Real per-video metrics: `videoId`, `viewCount`, `likeCount`, `engagement`, `impressionSources`, `shareUrl`. No CSV parser needed.
+4. **LinkedIn enumerates EVERYTHING, not just Metricool-published posts.** Marrs's feed returned 28 posts including his hand-posted ones, which is a bonus rather than a limitation: his manual LinkedIn is measurable, and D41's hand-posting decision does not blind us after all.
+
+Also learned: a brand with no connection returns a clean `403 "There is no instagram connection for blog: 6530743"` (Shourov), which is a second and more direct way to detect connected platforms than the profile fields D78 uses. `/timelines` works per network where connected (Polynize) and 500s with a Metricool-side null where not, so it needs a connected-network guard before it is called.
+
+**8a. The probe itself (D69, params fixed in D78).**
 
 Open `/console/marketing/metricool/probe` (optionally `?stream=marrs&days=90`). Six GETs, nothing written, and it prints a verdict on each of the four questions below plus the raw body of every response. Send the page back and the next step is a build rather than a question.
 
