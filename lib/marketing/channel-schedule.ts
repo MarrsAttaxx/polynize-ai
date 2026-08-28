@@ -341,7 +341,10 @@ export async function getChannelSchedule(lane: string): Promise<LaneChannelSched
   }
 }
 
-export async function saveChannelSchedule(lane: string, s: LaneChannelSchedule): Promise<void> {
+export async function saveChannelSchedule(
+  lane: string,
+  s: LaneChannelSchedule
+): Promise<LaneChannelSchedule> {
   const key = keyFor(lane);
   // Normalize on the way in, so garbage can never be persisted and read back as truth.
   // The lane is passed so an explicitly saved mode survives and a missing one still lands
@@ -352,6 +355,12 @@ export async function saveChannelSchedule(lane: string, s: LaneChannelSchedule):
   } else {
     await saveSheetState(key, { schedule: clean });
   }
+  /**
+   * RETURNS WHAT WAS STORED, not what was asked for, so a screen can show the difference (D79). An
+   * emptied time list becomes that network's defaults in here; a caller that echoes this back makes
+   * that correction visible instead of surprising the operator on their next visit.
+   */
+  return clean;
 }
 
 /** Wall is not exported by posting-schedule.ts, so it is derived from a helper it does export. */

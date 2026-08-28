@@ -2121,3 +2121,45 @@ His own Polynize brand payload is the test fixture.
 
 20 new assertions, 517 total.
 
+
+## D79: One queue, per platform, and it is ours
+
+**Adopted 28 August 2026.** Marrs, on what he expected "Add to queue" to be:
+
+> "I want to know what that feature does, because I'm assuming that somewhere in Metricool there is a queue section. I can, for each of the brands, dictate on each of the platforms what time and how many posts per day to do on each platform, and then it just adds to that queue. That's ideally what I'd like, so I can set that once and just go add to queue, add to queue."
+
+His mental model is right. Two things about it were wrong on our side.
+
+### Metricool has no queue, so the queue is ours
+
+Their API creates a post at a concrete `publicationDate`. There is no append-to-queue call anywhere in their 528 paths (checked, `docs/pam-console/metricool-api.md`). So "add to queue" means "work out the next free slot on this channel and schedule at that exact time", computed here. The queue exists, it just lives in this console rather than in theirs.
+
+### There were two slot tables and the button read the wrong one
+
+`pam/config/posting-schedule.json` held per-STREAM times and had the only UI. `pam/channel-schedule/{lane}.json` held the per-NETWORK times, modes and slot kinds that the wave actually uses, and was edited by nothing. So the operator could set posting times all day and change nothing that shipped, while the queue consumed slots from a list the wave never looked at.
+
+I had recorded this as todo item 16 rather than as a bug, which undersold it. **A settings screen wired to a store nothing reads is worse than no settings screen, because it answers the question wrongly.** D68 patched the timezone half of it and I left the rest.
+
+The lane file is now the single authority:
+
+- **Connect Metricool edits it**, per network per stream: LinkedIn, Instagram, TikTok, YouTube each get their own times.
+- **The number of times IS the posts-per-day answer.** Two times on LinkedIn means two LinkedIn posts a day. No separate count field, because a count and a list of times can disagree and then something has to decide which wins.
+- **"Add to queue" and the wave now call the same function on the same table**, so they agree by construction rather than by coincidence.
+- **The queue is per platform.** LinkedIn's queue no longer fills up because Instagram was busy, and an occupied slot on that channel is skipped rather than doubled.
+- **Mode is on the screen too** (auto / by hand), because it had nowhere to be seen: his own LinkedIn is hand-posted by default (D41), so a LinkedIn post on his lane never goes through Metricool at all, and without this control that reads as a bug rather than a choice.
+
+The old per-stream `slots` are no longer written but their values are carried over rather than cleared. A dead field is not worth destroying data over.
+
+### The save echoes back what was stored
+
+The store falls back to a network's defaults when its time list arrives empty, which is right for a broken config file and reads as a failed save if you clear a field on purpose: you would type nothing, save, and find `08:30` back in the box on your next visit with nothing having said so. `saveChannelSchedule` now returns the normalized result and the screen adopts it, so the correction happens in front of you.
+
+### Capacity was answered with a sentence, not a limit
+
+Todo item 9 wanted enforcement. It does not need any: the slots ARE the capacity, so a third LinkedIn post on a two-slot day lands tomorrow and nothing can be double-booked. What was missing was anyone saying so. Press the button eleven times and the eleventh post is a week and a half out, which is fine if you meant it and a nasty surprise if you did not.
+
+So the queue now reports its depth when the slot it took is a week or more out, and **in amber under the entry rather than in coral**: a queue three weeks deep is a fact, not a fault, and painting a successful add as a failure is how a useful sentence gets learned as noise. A hard cap was rejected. The point of the button is that it can be pressed repeatedly without thinking.
+
+Also: the confirm dialog now says what the button does, since that is what he asked. Which platform's queue, where the times come from, and that it goes to Metricool at that time.
+
+17 new assertions, 534 total.

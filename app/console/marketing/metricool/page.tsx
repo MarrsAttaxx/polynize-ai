@@ -2,12 +2,8 @@ import { redirect } from 'next/navigation';
 import { getCurrentUser } from '@/lib/console-auth';
 import { STREAMS } from '@/lib/marketing/streams';
 import { isMetricoolConfigured, listBrands, type MetricoolBrand } from '@/lib/marketing/metricool-client';
-import {
-  getBrandMap,
-  getPostingSchedule,
-  type BrandMap,
-  type PostingSchedule,
-} from '@/lib/marketing/metricool-config-store';
+import { getBrandMap, type BrandMap } from '@/lib/marketing/metricool-config-store';
+import { getChannelSchedule } from '@/lib/marketing/channel-schedule';
 import { MetricoolSettings } from './MetricoolSettings';
 import { BackLink } from '@/app/console/marketing/_components/BackLink';
 import s from './metricool.module.css';
@@ -30,7 +26,17 @@ export default async function MetricoolPage() {
   let brands: MetricoolBrand[] = [];
   let error: string | null = null;
   let map: BrandMap = {};
-  let schedule: PostingSchedule = {};
+  /**
+   * THE LANE SCHEDULES, which is now the only slot table (D79).
+   *
+   * This page used to edit `posting-schedule.slots`, a second per-stream list that nothing read any
+   * more: the wave and "Add to queue" both take their times from here. Editing the dead one is why
+   * the timezone Marrs set had no effect on what shipped.
+   */
+  let lanes: Record<
+    string,
+    { timezone: string; channels: Record<string, string[]>; modes: Record<string, 'auto' | 'manual'> }
+  > = {};
 
   if (configured) {
     try {
@@ -43,11 +49,23 @@ export default async function MetricoolPage() {
     } catch {
       map = {};
     }
-    try {
-      schedule = await getPostingSchedule();
-    } catch {
-      schedule = {};
-    }
+    /**
+     * Read per lane rather than in one call, because each lane is its own object in the store and a
+     * missing one has to fall back to that lane's defaults (his LinkedIn manual, Kristin in
+     * California) rather than to an empty row that would look like "no posting times set".
+     */
+    lanes = Object.fromEntries(
+      await Promise.all(
+        STREAMS.map(async (st) => {
+          try {
+            const cfg = await getChannelSchedule(st.id);
+            return [st.id, { timezone: cfg.timezone, channels: cfg.channels, modes: cfg.modes }] as const;
+          } catch {
+            return [st.id, { timezone: 'Australia/Sydney', channels: {}, modes: {} }] as const;
+          }
+        })
+      )
+    );
   }
 
   return (
@@ -86,7 +104,7 @@ export default async function MetricoolPage() {
           streams={[...STREAMS]}
           brands={brands}
           initialMap={map}
-          initialSchedule={schedule}
+          initialLanes={lanes}
         />
       )}
     </div>

@@ -1,23 +1,39 @@
 /**
- * POST /console/marketing/calendar/[entryId]/queue — "Add to queue" (D24).
- * Finds the next open ideal slot for the entry's stream (after now and after the
- * last already-queued post for that stream), sets that time on the entry, and
- * schedules it to Metricool. Each call appends to the end of the queue. Team-scope.
+ * POST /console/marketing/calendar/[entryId]/queue — "Add to queue" (D24, rebuilt D79).
+ *
+ * Marrs: "somewhere in Metricool there is a queue section. I can, for each of the brands, dictate on
+ * each of the platforms what time and how many posts per day to do on each platform, and then it just
+ * adds to that queue. That's ideally what I'd like, so I can set that once and just go add to queue,
+ * add to queue."
+ *
+ * That is what this does now. Two corrections were needed to get there.
+ *
+ * FIRST, METRICOOL HAS NO QUEUE. Their API creates a post at a concrete `publicationDate` and there
+ * is no "append to this brand's queue" call anywhere in their 528 paths. So the queue is ours,
+ * computed console-side, and "add to queue" means "work out the next free slot and schedule at that
+ * exact time". His mental model is right; the queue just lives here rather than there.
+ *
+ * SECOND, THERE WERE TWO SLOT TABLES AND THIS ROUTE READ THE WRONG ONE. The posting schedule holds
+ * per-STREAM times with no notion of platform; the lane channel schedule holds per-NETWORK times,
+ * modes and slot kinds, and is what the wave uses. So queueing a LinkedIn post consumed a slot from
+ * a stream-wide list while the wave was placing posts from a different list entirely, and the two
+ * could not agree. This route now reads the same table the wave does, so they agree by construction.
+ *
+ * What that buys, beyond agreement: the queue is PER PLATFORM, so LinkedIn's queue no longer fills up
+ * because Instagram was busy, and a slot already occupied on that channel is skipped rather than
+ * doubled up.
+ *
+ * Team-scope only.
  */
 
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/console-auth';
 import { getEntry, listEntries } from '@/lib/marketing/calendar-store';
-import { getPostingSchedule } from '@/lib/marketing/metricool-config-store';
 import { publishEntry } from '@/lib/marketing/publish';
-import {
-  defaultStreamSchedule,
-  wallClockNow,
-  toWall,
-  maxWall,
-  nextSlotAfter,
-} from '@/lib/marketing/posting-schedule';
+import { getChannelSchedule, nextOpenSlots, type Network } from '@/lib/marketing/channel-schedule';
+import { channelLabel } from '@/lib/marketing/channels';
+import { queueDepthNote } from '@/lib/marketing/queue-depth';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -43,35 +59,81 @@ export async function POST(
     return NextResponse.json({ error: 'entry not found' }, { status: 404 });
   }
 
-  const schedule = (await getPostingSchedule())[entry.stream] ?? defaultStreamSchedule();
+  const schedule = await getChannelSchedule(entry.stream);
+  const network = entry.channel as Network;
 
-  // Append after the later of (now, the last slot already queued for this stream).
-  let after = wallClockNow(schedule.timezone, new Date());
+  /**
+   * WHICH SLOTS ARE ALREADY GONE ON THIS CHANNEL. Per stream AND per channel, because a slot is only
+   * taken for the platform that is using it: a LinkedIn post at 08:30 does not occupy Instagram's
+   * 09:00, and treating the calendar as one shared queue is what made the old version fill up faster
+   * than it should.
+   *
+   * A read failure means we cannot see what is taken, so the slot finder is given an empty list and
+   * may pick one already in use. That is a double-booking rather than an outage, and the alternative,
+   * refusing to queue, would block the button he is meant to be able to press repeatedly.
+   */
+  let taken: string[] = [];
   try {
-    const siblings = (await listEntries(owner)).filter(
-      (e) =>
-        e.stream === entry.stream &&
-        e.entry_id !== entry.entry_id &&
-        e.scheduled_at &&
-        e.scheduled_at.length >= 16
-    );
-    for (const sib of siblings) after = maxWall(after, toWall(sib.scheduled_at!));
+    taken = (await listEntries(owner))
+      .filter(
+        (e) =>
+          e.stream === entry.stream &&
+          e.channel === entry.channel &&
+          e.entry_id !== entry.entry_id &&
+          e.scheduled_at &&
+          e.scheduled_at.length >= 16
+      )
+      .map((e) => e.scheduled_at!);
   } catch (err) {
-    console.error('[queue] sibling read failed, appending after now:', err);
+    console.error('[queue] sibling read failed, may reuse an occupied slot:', err);
   }
 
-  entry.scheduled_at = nextSlotAfter(after, schedule.slots);
   /**
-   * The zone that chose it, stamped with it (D61). This route picks from the STREAM's posting
-   * schedule rather than the lane's channel schedule, which is exactly why the zone has to be
-   * recorded here: publishEntry must send the one that produced this time, not the one some other
-   * screen would have used.
+   * ONE slot, from the SAME function the wave uses. It walks forward from now through this network's
+   * own times, skipping anything past and anything taken, so "add to queue" twice in a row lands on
+   * two different slots without either of them needing to know about the other.
    */
-  entry.timezone = schedule.timezone;
+  const [slot] = nextOpenSlots(schedule, network, 1, taken);
+  if (!slot) {
+    /**
+     * nextOpenSlots walks 60 days and returns nothing only when this channel has no times at all,
+     * which is a configuration answer rather than a failure, so it is said as one.
+     */
+    return NextResponse.json(
+      {
+        error: `${channelLabel(entry.channel)} has no posting times set for this stream, so there is no queue to add to. Set them on Connect Metricool.`,
+      },
+      { status: 400 }
+    );
+  }
+
+  entry.scheduled_at = slot.dateTime;
+  /**
+   * The zone that chose it, stamped with it (D61). It now comes from the same schedule that picked
+   * the time rather than from a different store, which is the whole point of the consolidation:
+   * before this, the time came from one table and the zone from another.
+   */
+  entry.timezone = slot.timezone;
 
   const result = await publishEntry(owner, entry);
   if (!result.ok) {
     return NextResponse.json({ error: result.error }, { status: result.status });
   }
-  return NextResponse.json({ ok: true, entry: result.entry, warning: result.warning });
+
+  /**
+   * HOW DEEP THE QUEUE GOT, said out loud when it is deep (D79).
+   *
+   * This is the real answer to overbooking, and it is a sentence rather than a limit. The slots
+   * already cap capacity: two LinkedIn times a day means a third post that day lands tomorrow, so
+   * nothing can be double-booked. What was missing was anyone SAYING so. Press the button eleven
+   * times and the eleventh post is a week and a half out, which is a fine outcome if you meant it
+   * and a nasty surprise if you did not.
+   *
+   * Only when it is worth saying. A post landing today or tomorrow needs no commentary, and a note
+   * on every single add would be noise inside a week.
+   */
+  const depth = queueDepthNote(slot.dateTime, slot.timezone, channelLabel(entry.channel));
+  const warning = [result.warning, depth].filter(Boolean).join(' ') || undefined;
+
+  return NextResponse.json({ ok: true, entry: result.entry, warning });
 }

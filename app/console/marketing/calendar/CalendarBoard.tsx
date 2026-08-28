@@ -50,6 +50,12 @@ export function CalendarBoard({ initial }: { initial: CalendarEntry[] }) {
   const [entries, setEntries] = useState<CalendarEntry[]>(initial);
   const [busy, setBusy] = useState<string | null>(null);
   const [errs, setErrs] = useState<Record<string, string>>({});
+  /**
+   * Notes are NOT errors and must not be painted as them (D79). A queue that reached three weeks out
+   * is worth saying and is not a failure; coral is the colour of something going wrong here, and
+   * telling him a successful add went wrong is how a useful sentence gets learned as noise.
+   */
+  const [notes, setNotes] = useState<Record<string, string>>({});
   const [view, setView] = useState<View>('list');
   const [cursor, setCursor] = useState<Date>(() => new Date());
 
@@ -98,14 +104,20 @@ export function CalendarBoard({ initial }: { initial: CalendarEntry[] }) {
 
   const addToQueue = async (entry: CalendarEntry) => {
     if (
+      /**
+       * SAYS WHAT THE BUTTON DOES, because Marrs asked exactly that: "I want to know what that
+       * feature does." The queue is this console's, not Metricool's (their API has no queue endpoint),
+       * and it is per platform, and the times come from one editable place. Three facts, one line.
+       */
       !window.confirm(
-        `Add this ${channelLabel(entry.channel)} post to the queue? It will be scheduled at the next ideal time and sent to Metricool.`
+        `Add this ${channelLabel(entry.channel)} post to the ${channelLabel(entry.channel)} queue? It takes the next free ${channelLabel(entry.channel)} posting time for this stream, from the times set on Connect Metricool, and sends it to Metricool at that time.`
       )
     ) {
       return;
     }
     setBusy(entry.entry_id);
     setErr(entry.entry_id, null);
+    setNote(entry.entry_id, null);
     try {
       const res = await fetch(entryUrl(entry.entry_id) + '/queue', { method: 'POST' });
       const b = (await res.json().catch(() => null)) as
@@ -116,7 +128,8 @@ export function CalendarBoard({ initial }: { initial: CalendarEntry[] }) {
         return;
       }
       if (b?.entry) setEntries((es) => es.map((x) => (x.entry_id === entry.entry_id ? b.entry! : x)));
-      if (b?.warning) setErr(entry.entry_id, b.warning);
+      // The add succeeded, so anything it has to say is a note. Depth included.
+      if (b?.warning) setNote(entry.entry_id, b.warning);
     } catch {
       setErr(entry.entry_id, 'Network error. Try again.');
     } finally {
@@ -137,6 +150,14 @@ export function CalendarBoard({ initial }: { initial: CalendarEntry[] }) {
       setBusy(null);
     }
   };
+
+  const setNote = (entryId: string, msg: string | null) =>
+    setNotes((e) => {
+      const n = { ...e };
+      if (msg) n[entryId] = msg;
+      else delete n[entryId];
+      return n;
+    });
 
   const setErr = (entryId: string, msg: string | null) =>
     setErrs((e) => {
@@ -298,6 +319,7 @@ export function CalendarBoard({ initial }: { initial: CalendarEntry[] }) {
             </button>
           </div>
           {errs[e.entry_id] ? <p className={s.entryErr}>{errs[e.entry_id]}</p> : null}
+          {notes[e.entry_id] ? <p className={s.entryNote}>{notes[e.entry_id]}</p> : null}
         </div>
       </div>
     );

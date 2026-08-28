@@ -206,3 +206,34 @@
   font-size: 13px;
   color: var(--coral);
 }
+
+/* The times and the mode on one line per network (D79), so a stream reads as four rows rather than
+   eight fields. */
+.netRow {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.netRow .input {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.modeSelect {
+  flex: 0 0 auto;
+  background: var(--surface-2, #23232f);
+  color: var(--text, #f4ece4);
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.12));
+  border-radius: 8px;
+  padding: 8px 9px;
+  font-family: var(--font-jetbrains-mono), monospace;
+  font-size: 11px;
+}
+
+@media (max-width: 560px) {
+  .netRow {
+    flex-wrap: wrap;
+  }
+  .modeSelect {
+    flex: 1 1 100%;
+  }
+}

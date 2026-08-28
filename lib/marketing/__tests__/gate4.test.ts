@@ -43,6 +43,7 @@ import {
   normalizeChannelSchedule,
 } from '../channel-schedule';
 import { IMAGE_MODELS, providerOf, imageModelById, DEFAULT_IMAGE_MODEL } from '../higgsfield-models';
+import { daysBetween, todayIn, queueDepthNote, DEEP_DAYS } from '../queue-depth';
 import { nearestSoulSize, aspectSentence, frameFor } from '../image-generate';
 import { heldByOther, parseHeld, WAVE_LOCK_MS } from '../wave-lock';
 import {
@@ -1203,6 +1204,69 @@ ok('known shows what is connected', networkAvailable(['linkedin', 'instagram'], 
 ok('and hides what is not', !networkAvailable(['linkedin', 'instagram'], 'youtube'));
 /** An empty list is an ANSWER, not an absence: this brand genuinely has nothing wired up. */
 ok('an empty answer hides everything', !networkAvailable([], 'linkedin'));
+
+/* ------------------------------------------------------------------ D79: the queue */
+
+/**
+ * THE QUEUE IS ONE TABLE NOW. It used to be two: this route read per-STREAM slots while the wave
+ * read per-NETWORK ones, so queueing a LinkedIn post consumed a slot from a list the wave never
+ * looked at. These assert the shape the queue now runs on, which is the same one the wave uses.
+ */
+const queueLane = normalizeChannelSchedule(
+  { timezone: 'Australia/Sydney', channels: { linkedin: ['08:30', '12:30'], instagram: ['09:00'] } },
+  'polynize'
+);
+eq('two LinkedIn times means two LinkedIn posts a day', queueLane.channels.linkedin.length, 2);
+eq('and Instagram keeps its own one', queueLane.channels.instagram.length, 1);
+
+/** PER PLATFORM: a busy LinkedIn cannot push an Instagram post into next week. */
+const liTaken = ['2026-09-01T08:30:00', '2026-09-01T12:30:00'];
+/** `from` is a real instant; 07:00 on 1 Sep in Sydney is 21:00 UTC the day before. */
+const queueFrom = new Date('2026-08-31T21:00:00Z');
+const igNext = nextOpenSlots(queueLane, 'instagram', 1, liTaken, queueFrom);
+eq('Instagram is untouched by LinkedIn being full', igNext[0]?.dateTime, '2026-09-01T09:00:00');
+const liNext = nextOpenSlots(queueLane, 'linkedin', 1, liTaken, queueFrom);
+eq('while LinkedIn rolls to the next day', liNext[0]?.dateTime, '2026-09-02T08:30:00');
+
+/**
+ * AN EMPTIED LIST FALLS BACK TO DEFAULTS rather than to no posting at all, which is right for a
+ * broken config file and is why the save route echoes back what was stored: otherwise you clear a
+ * field, save, and find the defaults back in it with nothing having said so.
+ */
+eq(
+  'clearing a network restores its defaults',
+  normalizeChannelSchedule({ timezone: 'Australia/Sydney', channels: { linkedin: [] } }, 'polynize')
+    .channels.linkedin.length,
+  2
+);
+eq(
+  'and a malformed time is dropped, not stored',
+  normalizeChannelSchedule({ timezone: 'Australia/Sydney', channels: { linkedin: ['08:30', '99:99'] } }, 'polynize')
+    .channels.linkedin.join(','),
+  '08:30'
+);
+
+/** MODE SURVIVES the read-merge-write the save route does, because the wave owns `prefers`. */
+ok(
+  'his personal LinkedIn stays hand-posted by default',
+  normalizeChannelSchedule({ timezone: 'Australia/Sydney' }, 'marrs').modes.linkedin === 'manual'
+);
+
+/* the depth note: a sentence, not a limit */
+eq('same day is zero', daysBetween('2026-09-01', '2026-09-01'), 0);
+eq('across a month boundary', daysBetween('2026-08-30', '2026-09-02'), 3);
+eq('junk counts as nothing rather than throwing', daysBetween('', '2026-09-02'), 0);
+eq('a date is read in the channel timezone', todayIn('Australia/Sydney', new Date('2026-08-28T23:00:00Z')), '2026-08-29');
+eq('and an unknown zone degrades to UTC rather than failing', todayIn('Not/AZone', new Date('2026-08-28T23:00:00Z')), '2026-08-28');
+
+const soon = queueDepthNote('2026-08-30T08:30:00', 'Australia/Sydney', 'LinkedIn', new Date('2026-08-28T02:00:00Z'));
+eq('nothing is said about a post two days out', soon, '');
+const deepNote = queueDepthNote('2026-09-15T08:30:00', 'Australia/Sydney', 'LinkedIn', new Date('2026-08-28T02:00:00Z'));
+ok('a queue eighteen days deep says so', /18 days deep/.test(deepNote));
+ok('and names the platform, because the queue is per platform', /LinkedIn/.test(deepNote));
+ok('with no em dash in it', !deepNote.includes('\u2014'));
+const edge = queueDepthNote('2026-09-04T08:30:00', 'Australia/Sydney', 'LinkedIn', new Date('2026-08-28T02:00:00Z'));
+ok(`the threshold is ${DEEP_DAYS} days and it is inclusive`, /7 days deep/.test(edge));
 
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);
