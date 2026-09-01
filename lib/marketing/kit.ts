@@ -194,8 +194,8 @@ export type KitOutput = {
   master: MasterAsset;
   /**
    * Outputs sharing a series render as ONE Gate 3 row and count as one decision, because you
-   * never want hook 2 without hook 1. This is what keeps the screen at eleven rows while the
-   * catalogue holds twenty two outputs.
+   * never want hook 2 without hook 1. This is what keeps the screen at twelve rows while the
+   * catalogue holds twenty outputs.
    */
   series?: string;
   /** The bold Gate 3 line. Identical across a series. */
@@ -1305,10 +1305,10 @@ export type KitRow = {
 };
 
 /**
- * The Gate 3 screen: eleven rows per lane, in network order, defaults on.
+ * The Gate 3 screen: twelve rows per lane, in network order, defaults on.
  *
  * A series collapses to one row because you never want hook 2 without hook 1, so it is one
- * decision. That is the only reason the catalogue can hold twenty two outputs and the screen
+ * decision. That is the only reason the catalogue can hold twenty outputs and the screen
  * still fit on a phone.
  */
 /** One phrase for what an output physically produces, off its own artifact spec. */

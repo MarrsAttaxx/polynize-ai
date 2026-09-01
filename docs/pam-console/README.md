@@ -12,6 +12,9 @@ The PAM Console is becoming Polynize's **marketing engine** — the working envi
 
 ## Read in this order
 
+**The current-state view, for a marketing lead rather than a builder:**
+0. **`marketing-intelligence.md`** *(written 1 September 2026)* — what the console already knows and will make: the five gates, the twenty-post catalogue with what each frame is for, the platform figures with their sources, the writing and image intelligence, how the queue decides when things post, what analytics can and cannot do yet, and the known gaps. Read this before the build docs below, which are older and describe intent rather than what shipped.
+
 **Must read (defines what we're building and the first move):**
 1. **`pam-console-ux-flow-v1.0.md`** *(Marrs's source doc — the functional spec)* — what each screen does, the three layers (Dashboard / Production Spine / Chat), the pipeline (fixed top → swappable middle → fixed tail). The north star.
 2. **`phase-1-vertical-slice.md`** — the first thing we build (the Script screen + chat + one agent round-trip, short-form) and the **six ordered tickets (T1–T6)**. Plus the concrete **test vehicle** ("Strip the AI out first" → its full derivative set).
