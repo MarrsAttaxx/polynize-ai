@@ -28,11 +28,21 @@ import s from './media.module.css';
 export function MediaLibrary({
   stream,
   initial,
+  posted = {},
 }: {
   stream: string;
   initial: MediaAsset[];
+  /**
+   * Assets that already have a post in progress, asset id to piece id (D80).
+   *
+   * Read on the server so the button can say which of the two things it does. Without it the door
+   * looks like it makes a new post every time, which is exactly the thing it must not do.
+   */
+  posted?: Record<string, string>;
 }) {
   const router = useRouter();
+  /** The asset whose door is being opened, so only its own button says so. */
+  const [opening, setOpening] = useState<string | null>(null);
   const [assets, setAssets] = useState<MediaAsset[]>(initial);
   const [url, setUrl] = useState('');
   const [label, setLabel] = useState('');
@@ -96,6 +106,38 @@ export function MediaLibrary({
       setError('Network error. Try again.');
     } finally {
       setBusy(false);
+    }
+  };
+
+  /**
+   * Start, or reopen, the post for this file.
+   *
+   * Path-relative like every other call on this screen, so it works on pam.polynize.ai where the
+   * middleware rewrite prepends /console.
+   */
+  const openPost = async (id: string) => {
+    if (opening) return;
+    setOpening(id);
+    setError(null);
+    try {
+      const url = window.location.pathname.replace(/\/+$/, '') + '/post';
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ media_id: id }),
+      });
+      const b = (await res.json().catch(() => null)) as
+        | { piece_id?: string; error?: string }
+        | null;
+      if (!res.ok || !b?.piece_id) {
+        setError(b?.error ?? 'Could not start the post.');
+        setOpening(null);
+        return;
+      }
+      router.push(`/console/marketing/piece/${b.piece_id}`);
+    } catch {
+      setError('Network error. Try again.');
+      setOpening(null);
     }
   };
 
@@ -409,6 +451,26 @@ export function MediaLibrary({
                 <span className={s.assetLabel} title={m.label}>
                   {m.label}
                 </span>
+                {/* THE DOOR FOR FINISHED WORK (D80). Here rather than on a new screen, because a
+                    video only reaches this console as a pasted Box link, so this is where the
+                    operator already is, and three cuts is three presses. */}
+                <button
+                  type="button"
+                  className={s.assetPost}
+                  onClick={() => openPost(m.media_id)}
+                  disabled={opening === m.media_id}
+                  title={
+                    posted[m.media_id]
+                      ? 'Open the post being written for this file'
+                      : 'Write a caption for this file and put it on the calendar'
+                  }
+                >
+                  {opening === m.media_id
+                    ? 'Opening…'
+                    : posted[m.media_id]
+                      ? 'Open post'
+                      : 'Post this'}
+                </button>
                 <button
                   type="button"
                   className={s.assetDelete}

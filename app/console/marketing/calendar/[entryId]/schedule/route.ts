@@ -1,7 +1,10 @@
 /**
  * POST /console/marketing/calendar/[entryId]/schedule — send one calendar entry
  * to Metricool at its set date/time (D24, publishing Step 2). Thin wrapper over
- * publishEntry (shared with Add-to-queue). Team-scope only.
+ * shipEntry (shared with Add-to-queue). Team-scope only.
+ *
+ * A channel the stream posts BY HAND is emailed as a brief instead of scheduled (D80): the mode is
+ * on the entry and this route used to ignore it.
  *
  * `{ draft: true }` SENDS IT AS A DRAFT (D67), which is the same call with autoPublish off. It is
  * the dry run for the very first real Metricool write: it proves the token, the brand id, the
@@ -16,7 +19,7 @@ import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/console-auth';
 import { getEntry } from '@/lib/marketing/calendar-store';
-import { publishEntry } from '@/lib/marketing/publish';
+import { shipEntry } from '@/lib/marketing/publish';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -45,7 +48,8 @@ export async function POST(
   const body = (await req.json().catch(() => null)) as { draft?: unknown } | null;
   const draft = body?.draft === true;
 
-  const result = await publishEntry(user.email, entry, { draft });
+  // shipEntry, so a hand-post channel is emailed rather than scheduled (D80).
+  const result = await shipEntry(user.email, entry, { draft });
   if (!result.ok) {
     return NextResponse.json({ error: result.error }, { status: result.status });
   }

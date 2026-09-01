@@ -190,6 +190,9 @@ Known constraints to design around, not discovered later:
 
 ## Video: evaluate ChatCut before building more of our own (asked 25 August 2026)
 
+**Posting an edit made elsewhere is no longer blocked (D80).** Whatever tool cuts the video, the finished file goes into a stream's media library as a Box direct link and "Post this" takes it from there. So the ChatCut question is now purely about the EDIT, not about whether the console can publish the result.
+
+
 Marrs: *"for the video editing flow, I've found a possible better option called ChatCut. What I want to do when we get there is feed you a finished video I've created, and the raw video, and to see if our current video editing model or ChatCut can achieve the same thing."*
 
 **A bake-off, not a decision.** He supplies a finished video he cut himself plus the raw footage, and the test is whether either path reproduces it: our own pipeline, or ChatCut.
@@ -218,6 +221,8 @@ What it was, kept because the shape recurs: the wave picked a time from `getChan
 
 **12. A calendar entry has no output identity.** The `texts_list` master serves both the listicle and the explainer, so unticking one and ticking the other leaves `missing` at 0 and the wrong draft stands in. The slot is always right; the copy can be wrong.
 
+**13a. A door for work that is already finished. DONE (D80).** "Post this" on any file in a stream's media library mints a storyless piece on the caption screen, with the file attached and no platform preset. Idempotent per asset. The same fix repaired the rendered podcast clip, which was opening a finished film on the teleprompter. Five things that would have made it post wrongly are in D80: platforms were editable nowhere, `publish_mode` was ignored by both calendar buttons, YouTube posts had no title, the queue 500'd on a channel with no times, and the em-dash strip missed the one path where a human writes.
+
 **13. Two competing routes into the calendar.** The wave, and "Prepare posts for N channels" on the text screen, which creates entries with no `scheduled_at` that the wave then has to repair. Marrs, on the two: "I don't see those two options as competing." He is right, and my framing was wrong: the problem is not that a queue and a specific time compete, it is that one route creates entries with no time at all. D79 made the queue button a real answer for those entries; the remaining work is that the route should not be producing timeless entries in the first place.
 
 **14. The autosave can drop an agreed hook. FIXED (D63).** The loop now snapshots all seven fields, builds the PUT body from that snapshot, and compares it whole by value, so a field cannot be sent without being checked. Reproduced first: the trigger is a mid-flight change followed by a BLUR, because blur clears the debounce and then early-returns, leaving the loop's re-check as the only rescue. Before the fix: one PUT, stale value, "Saved". After: two PUTs, correct value. The Text screen was audited and does not have it.
@@ -230,4 +235,4 @@ What it was, kept because it is the shape of the bug: `pam/config/posting-schedu
 
 **17. Nothing lints. FIXED (D75).** ESLint 9 flat config, narrow and correctness-only, gating the build via `prebuild`. Verified against the actual bug: D74 reintroduced temporarily produces an ESLint error and no TypeScript complaint. 20 pre-existing errors were fixed rather than suppressed. What it was: D74 was a function calling itself instead of reading a map, which TypeScript cannot catch (`string ?? x` is legal) and which left `LANE_VOICE` unused with nothing objecting. A configured `no-unused-vars` plus `no-constant-binary-expression` would have caught both halves at commit time. It cost a week of Gate 2 being dead.
 
-**15. No test runner beyond two suites.** Still true, though the marketing suite has grown a long way: `npm run test:marketing` is 534 assertions now (was 111 when this was written) and `npm run test:blueprint`. Everything else is unverified by anything but a typecheck, and `tsc` cannot see a client component importing server code, which shipped a 500 once already (D47).
+**15. No test runner beyond two suites.** Still true, though the marketing suite has grown a long way: `npm run test:marketing` is 550 assertions now (was 111 when this was written) and `npm run test:blueprint`. Everything else is unverified by anything but a typecheck, and `tsc` cannot see a client component importing server code, which shipped a 500 once already (D47).

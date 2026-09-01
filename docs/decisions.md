@@ -2163,3 +2163,51 @@ So the queue now reports its depth when the slot it took is a week or more out, 
 Also: the confirm dialog now says what the button does, since that is what he asked. Which platform's queue, where the times come from, and that it goes to Metricool at that time.
 
 17 new assertions, 534 total.
+
+## D80: A door for work that is already finished
+
+**Adopted 1 September 2026.** Marrs:
+
+> "I recorded that video. It's edited. I've got three versions of it, and I'm not sure how to post it using the console, which is an issue."
+
+He was right, and the reason is worth stating plainly: **every route into the calendar started from a Story.** The console could make a video and publish one it had made, and had nothing to say to a finished file.
+
+### The door already existed once, for podcast clips, and was one word from working
+
+`podcast/[id]/clip/render/route.ts` mints a piece from finished, already-rendered video with the media attached and the status approved. Its own header says what it is for: the clip becomes an ordinary marketing piece with an ordinary media asset attached, so the calendar and the Metricool tail need no knowledge of podcasts at all. That is exactly the shape needed here. It could not be reused only because it is gated on a Descript project.
+
+**And it carried the bug that made this hard to see.** It set `kind: 'video'`, and `kind` picks the screen: video opens the SCRIPT screen, which edits the words you are about to say, offers a teleprompter and a "ready to record" switch, and has **no caption field and no route to the calendar**. So a clip that was already cut opened on a screen asking the operator to write and then perform it, and the caption it shipped with was machine text that could not be edited anywhere in the console.
+
+A finished file needs the CAPTION module. `kind: 'text'` selects it, and that screen already has the media picker, the platform preview, the approve gate and the button that puts it on the calendar. **The kind describes what has to be done to the piece, not what the file is.** One shared shape now, `lib/marketing/finished-media.ts`, and `finished_media` is a registered format so `kindOf` resolves it instead of defaulting to video.
+
+### The door is one button on the file, not a new screen
+
+A video only reaches this console as a pasted Box direct link, because video upload is refused with that reason (the bucket is private and a video is too large to stream through the console). So the operator is already standing in the media library, and that is where the door goes: **"Post this"** on the asset. Three cuts is three presses rather than one form filled in three times, and it is idempotent per asset, so a second press reopens the same piece. Two pieces carrying the same file would have become two sets of calendar entries and the same video would go out twice.
+
+No platforms are preset. The wave picks platforms from a kit where the choice was made deliberately; here nobody has chosen anything, and only the operator knows whether this is the vertical cut or the wide one.
+
+### Five things that would have made the door produce wrong posts
+
+Found by walking the flow against the code rather than by reasoning about the design.
+
+1. **Platforms were read-only chips, editable nowhere in the console.** `prepare` refuses a piece with no platforms and says "re-plan it with at least one platform", and there was no screen where a platform could be set. A piece made from finished media starts with none, so the door could not have worked at all. They are buttons now, saved through the same snapshot discipline as everything else on that screen (D63).
+
+2. **`publish_mode` was honoured by the wave and by nothing else.** Both of the calendar's own buttons, Schedule and Add to queue, called `publishEntry` directly, so an entry stamped 'manual' went through Metricool anyway. That is not cosmetic: his personal LinkedIn is hand-posted for a measured reason, and finished video is exactly the content most likely to go there. `shipEntry` now dispatches on the mode, and `prepare` stamps it (it never did).
+
+3. **A YouTube post went out with no title.** Read off Metricool's OpenAPI spec today rather than assumed: `ScheduledPost` carries `youtubeData.title`, alongside `tiktokData`, `linkedinData` and `instagramData`. We sent none of them, so `text` became the description and the video published untitled. The kit has promised a Short "its own 100-character title" since D49 and nothing could deliver it. Now sent, capped at YouTube's own 100.
+
+4. **"Add to queue" on a channel with no posting times was a 500.** The calendar offers the button on any channel Metricool can reach, which includes X; the slot finder spread an undefined default and threw, which the board rendered as "Could not add to the queue" with nothing to act on. Now a sentence naming the four channels that have a queue.
+
+5. **The em-dash rule had a hole exactly where a human writes.** The strip was applied to April's output only, so the fallback path, which uses the operator's own copy, was the one path that could ship an em dash. It rarely showed while every draft was model written. A caption typed for a finished video makes it the normal case.
+
+Also: `prepare` makes an LLM call and had no `maxDuration`, unlike every other model route in marketing, so a slow adaptation was killed mid-flight and left the piece with no entries and no explanation. And the preview resolved the selection down to images, so a post whose whole content is one video showed a caption floating in furniture while the picker said "1 attached", which reads as the video having failed to attach. It now names the attached file rather than drawing a player that may not decode a Box link.
+
+### April no longer rewrites what he wrote
+
+`prepare` adapted the copy per platform unconditionally and never read its request body, so there was no way to decline. Adapting is right when the copy came from an article and has to reach four feeds with different registers; it is wrong when he wrote the caption himself for one file. There is a checkbox now, defaulted by where the words came from: a piece with a source adapts as it always has, a piece made of finished media does not.
+
+### One thing learned in passing, worth acting on later
+
+Their `linkedinData` carries **`publishImagesAsPDF`** and `documentTitle`. That is evidence the blocked LinkedIn document carousel is schedulable after all: "whether Metricool can schedule a LinkedIn document post is unverified" was half the reason that row is off. The other half stands, since this console still has no PDF generation. The full table of per-network options we do not send is now in `docs/pam-console/metricool-api.md`, including `videoThumbnailUrl`, which is the API-level way to honour the house rule that the first frame is the cover.
+
+16 new assertions, 550 total.

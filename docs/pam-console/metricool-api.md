@@ -37,6 +37,22 @@
 - **`autoPublish`** = `!draft`. `draft: true` parks it unpublished.
 - **`media`** = array of image/video URLs.
 
+## Per-network options, read off the spec 1 September 2026 (D80)
+
+`POST /v2/scheduler/posts` takes the full `ScheduledPost` schema, 43 properties. We send eight. The ones that matter and are still unused:
+
+| Field | What it carries | Why it matters here |
+|---|---|---|
+| `youtubeData.title` | The video title, plus `privacy`, `tags`, `category`, `playlistId`, `madeForKids` | **Now sent.** Without it a YouTube post published untitled, and the kit has promised a Short its own 100-character title since D49. |
+| `tiktokData.title` | Plus `photoCoverIndex`, `disableComment/Duet/Stitch`, `privacyOption`, `music`, `autoAddMusic` | Not sent. TikTok's caption is `text`, so the absence is not a wrong post. |
+| `linkedinData` | `type`, `documentTitle`, **`publishImagesAsPDF`**, `previewIncluded`, `poll` | **This is evidence the blocked document carousel is possible.** `publishImagesAsPDF` means Metricool will turn images into a document post, which was the unverified half of why that row is off. The other half, that this console has no PDF generation, still stands. |
+| `instagramData` | `type`, `showReelOnFeed`, `collaborators`, `tags`, `audioName`, `isAiGenerated` | Not sent. Worth revisiting for Reels-on-feed and collaborator tags. |
+| `videoThumbnailUrl`, `videoCoverMilliseconds` | The cover for a video post | Not sent. This is the API-level way to honour the house rule that the first frame is the cover. |
+| `mediaAltText` | Alt text per media item | Not sent. |
+| `saveExternalMediaFiles` | Whether Metricool copies the file rather than hot-linking it | Unknown default. Worth knowing, since every file we send is a Box link. |
+
+No enum values are documented for any of the `type` fields.
+
 ## Network mapping (our channel id -> Metricool network)
 Metricool networks: linkedin, facebook, instagram, gbp, twitter, tiktok, youtube, pinterest, threads, bluesky.
 - linkedin -> `linkedin`, instagram -> `instagram`, tiktok -> `tiktok`, youtube -> `youtube`

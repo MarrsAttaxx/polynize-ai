@@ -253,3 +253,32 @@
 .factHidden {
   color: var(--text-3, #6f6a64);
 }
+
+/* THE ATTACHED VIDEO (D80), inside the light card, so it reads as part of the post rather than as
+   console chrome. Full bleed like a picture would be. */
+.videoBlock {
+  margin: 0 -14px;
+  padding: 18px 14px;
+  background: #14141a;
+  color: #efece8;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  text-align: center;
+}
+.videoGlyph {
+  font-size: 22px;
+  line-height: 1;
+  color: var(--mint, #69fccb);
+}
+.videoLabel {
+  font-size: 12.5px;
+  overflow-wrap: anywhere;
+}
+.videoNote {
+  font-family: var(--font-jetbrains-mono), monospace;
+  font-size: 9.5px;
+  line-height: 1.5;
+  color: rgba(239, 236, 232, 0.6);
+}

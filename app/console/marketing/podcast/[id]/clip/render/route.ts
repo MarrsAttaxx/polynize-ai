@@ -43,6 +43,7 @@ import { resolveClipComposition } from '@/lib/marketing/podcast-clips';
 import { putObject, isBucketConfigured } from '@/lib/agents/bucket';
 import { saveMediaAsset } from '@/lib/marketing/media-store';
 import { savePiece, type MarketingPiece } from '@/lib/marketing/piece-store';
+import { FINISHED_MEDIA_FORMAT } from '@/lib/marketing/finished-media';
 import { stripEmDashes } from '@/lib/em-dash';
 
 export const dynamic = 'force-dynamic';
@@ -293,8 +294,22 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     piece_id: pieceId,
     owner: user.email,
     stream: ep.stream,
-    format: 'podcast_clip',
-    kind: 'video',
+    /**
+     * THE CAPTION MODULE, NOT THE SCRIPT MODULE (D80).
+     *
+     * This said `format: 'podcast_clip', kind: 'video'`, and both were wrong in the same way. `kind`
+     * chooses the screen: 'video' opens the SCRIPT screen, which edits the words you are about to
+     * say, offers a teleprompter and a "ready to record" switch, and carries no caption field and no
+     * route to the calendar. So a clip that was already cut and rendered opened on a screen asking
+     * the operator to write and then perform it, and the caption it shipped with was
+     * `clip.theme || clip.why_strong`, machine text that could not be edited anywhere in the console.
+     *
+     * A finished file needs a caption, so it gets the caption screen. Found while building the same
+     * door for an edited video, which is the same job: `finished_media` is now one registered format
+     * with one shape, shared, rather than this route's private string.
+     */
+    format: FINISHED_MEDIA_FORMAT,
+    kind: 'text',
     title: label,
     // The shot list is already cut, so the script carries what is SAID, for reference and for captions.
     script: stripEmDashes([prose.hook, prose.body].filter(Boolean).join('\n\n')),

@@ -11,7 +11,12 @@
 import { saveEntry, type CalendarEntry } from './calendar-store';
 import { resolveMediaUrls } from './media-store';
 import { getBrandMap, getPostingSchedule } from './metricool-config-store';
-import { isMetricoolConfigured, schedulePost, metricoolCalendarUrl } from './metricool-client';
+import {
+  isMetricoolConfigured,
+  schedulePost,
+  metricoolCalendarUrl,
+  youtubeTitleFrom,
+} from './metricool-client';
 import { metricoolNetwork, channelLabel } from './channels';
 import { streamLabel } from './streams';
 import { defaultStreamSchedule, timezoneForEntry } from './posting-schedule';
@@ -102,6 +107,13 @@ export async function publishEntry(
       // The link belongs in the first comment on LinkedIn, never in the body (D42). The client
       // has always accepted this and it was never passed, so the rule was documented and inert.
       firstCommentText: entry.first_comment?.trim() || undefined,
+      /**
+       * YouTube posts were going out with no title at all (D80). The entry already carries one, the
+       * piece title, and it never reached the payload. The caption is the fallback because a title
+       * taken from the first line of the copy is a great deal better than none.
+       */
+      youtubeTitle:
+        network === 'youtube' ? youtubeTitleFrom(entry.title, entry.post_copy) : undefined,
     });
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
@@ -141,4 +153,57 @@ export async function publishEntry(
     return { ok: true, entry, warning: 'Scheduled in Metricool, but the calendar record did not update. Refresh.' };
   }
   return { ok: true, entry };
+}
+
+/**
+ * SHIP ONE ENTRY THE WAY ITS CHANNEL IS SET UP (D41, enforced everywhere D80).
+ *
+ * `publish_mode` existed on the entry from D41 and exactly one caller read it: the wave's ship
+ * branch. Both of the calendar's own buttons, Schedule and Add to queue, called `publishEntry`
+ * directly, so an entry stamped 'manual' went through Metricool anyway.
+ *
+ * That is not a cosmetic gap. Marrs's own LinkedIn is hand-posted for a measured reason: "posting
+ * content via platforms like Metricool severely restricts reach... I'll do that on my own via my
+ * phone, which just supercharges reach in my experience." The setting existed, the console showed
+ * it, and the two buttons he actually presses ignored it. Found while building the door for finished
+ * video, which is exactly the content most likely to go out on his personal LinkedIn.
+ *
+ * A manual entry is PREPARED, EMAILED AND LEFT AS A DRAFT, the same three things the wave does. It
+ * is not scheduled, it gets no external_ref, and it stays on the calendar until he posts it himself.
+ */
+export async function shipEntry(
+  owner: string,
+  entry: CalendarEntry,
+  opts: { draft?: boolean } = {}
+): Promise<PublishResult> {
+  if (entry.publish_mode !== 'manual') return publishEntry(owner, entry, opts);
+
+  if (!entry.scheduled_at) {
+    return { ok: false, status: 400, error: 'Set a date first, so the brief can tell you when.' };
+  }
+
+  const { sendHandPostBrief, handPostFromEntry } = await import('./hand-post');
+  const brief = await sendHandPostBrief(entry.stream, entry.title || 'A post to publish', [
+    handPostFromEntry(entry),
+  ]);
+
+  /**
+   * STAMPED EVEN WHEN THE EMAIL FAILED, deliberately, and the same way the wave does it. The send is
+   * best effort by contract and never throws; recording that the attempt happened is what stops a
+   * second press re-sending the same brief, and the post itself is on the calendar either way.
+   */
+  const stamped: CalendarEntry = { ...entry, handed_at: new Date().toISOString() };
+  try {
+    await saveEntry(owner, stamped);
+  } catch (err) {
+    console.error('[ship] hand-post stamp failed:', err);
+  }
+
+  return {
+    ok: true,
+    entry: stamped,
+    warning: brief.skipped
+      ? `${channelLabel(entry.channel)} on this stream is set to post by hand, so nothing was sent to Metricool. The brief could not be emailed: ${brief.skipped}. The post is on the calendar.`
+      : `${channelLabel(entry.channel)} on this stream is set to post by hand, so it was emailed to you rather than scheduled. Post it, then mark it published.`,
+  };
 }

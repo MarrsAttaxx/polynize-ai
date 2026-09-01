@@ -38,6 +38,7 @@ export function PostPreview({
   network,
   copy,
   imageUrls,
+  videoLabel,
   stream,
   /** Every network this piece serves, so the panel can offer the others. */
   networks,
@@ -46,6 +47,19 @@ export function PostPreview({
   network: string;
   copy: string;
   imageUrls: string[];
+  /**
+   * THE ATTACHED VIDEO, BY NAME (D80).
+   *
+   * The panel resolved the selection down to images, so a post whose entire content is one finished
+   * video rendered as a caption floating in furniture. Two controls then disagreed about the same
+   * fact: the picker said "1 attached" and the preview showed nothing attached, which reads as the
+   * video having failed to attach.
+   *
+   * A frame is not drawn from the file itself on purpose: a Box direct link is not a source a
+   * <video> element can be relied on to decode inside this console, and a black box that fails to
+   * play would be a worse lie than a labelled block that tells the truth.
+   */
+  videoLabel?: string;
   stream: string;
   networks: string[];
   onPickNetwork: (n: string) => void;
@@ -112,6 +126,9 @@ export function PostPreview({
           {network === 'instagram' && imageUrls.length > 0 ? (
             <PreviewImages urls={imageUrls} shape="ig" />
           ) : null}
+          {network === 'instagram' && imageUrls.length === 0 && videoLabel ? (
+            <PreviewVideo label={videoLabel} />
+          ) : null}
 
           {copy.trim() ? (
             /**
@@ -135,6 +152,9 @@ export function PostPreview({
 
           {network !== 'instagram' && imageUrls.length > 0 ? (
             <PreviewImages urls={imageUrls} shape="li" />
+          ) : null}
+          {network !== 'instagram' && imageUrls.length === 0 && videoLabel ? (
+            <PreviewVideo label={videoLabel} />
           ) : null}
 
           {/* The furniture, so the copy is not the only thing on the card and the fold sits in a
@@ -201,6 +221,22 @@ function PreviewImages({ urls, shape }: { urls: string[]; shape: 'ig' | 'li' }) 
         />
       ))}
       {urls.length > 4 ? <span className={s.shotMore}>+{urls.length - 4}</span> : null}
+    </div>
+  );
+}
+
+/**
+ * The attached video, said rather than drawn. See the note on the prop: a labelled block that is
+ * honest beats a player that may not decode a Box link.
+ */
+function PreviewVideo({ label }: { label: string }) {
+  return (
+    <div className={s.videoBlock}>
+      <span className={s.videoGlyph} aria-hidden>
+        ▶
+      </span>
+      <span className={s.videoLabel}>{label}</span>
+      <span className={s.videoNote}>Metricool fetches the video from its link at post time.</span>
     </div>
   );
 }

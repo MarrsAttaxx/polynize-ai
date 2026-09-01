@@ -222,7 +222,9 @@ The middle stages, and what actually exists:
 | Captions | Agent | No |
 | Approve | Human | No |
 
-**This is the biggest hole in the console** and the reason YouTube long form is blocked: the console can plan, script and shoot video, and cannot yet edit it. Video that is already edited elsewhere currently has no clean door into the calendar. That is the next build.
+**This is the biggest hole in the console** and the reason YouTube long form is blocked: the console can plan, script and shoot video, and cannot yet edit it.
+
+**Video edited elsewhere now has a door in.** Put the finished file in a stream's media library as a Box direct link, then press **Post this** on it. That mints a post with the file attached, on the caption screen: write or dictate the caption, tick the platforms, approve, and it goes to the calendar and the queue like anything else. No Story, no gates, no concept. Three cuts is three presses, one per file, so each can go to different platforms.
 
 Two adjacent things that do work: **the Studio** (what to shoot, in the order to shoot it, cross-stream, nothing else on screen) and **podcast clip proposal**, whose editorial method is Marrs's own and was validated on a real 54-minute episode before any of it was built. The principle there is worth carrying: a clip is not a contiguous slice, it is a theme condensed, and it must make full sense to someone who never heard the episode.
 
@@ -264,7 +266,7 @@ All brand type is composited in code rather than generated, which is what keeps 
 
 ## 12. What Metricool does and does not do for us
 
-**Does:** schedule to LinkedIn, Instagram, TikTok, YouTube; take media by URL so the console never handles bytes; accept drafts (which is how the first real post was proved without risking anything public); accept first-comment text; return per-post analytics on the Advanced plan; report which platforms a brand actually has connected, which is what filters the Gate 3 screen.
+**Does:** schedule to LinkedIn, Instagram, TikTok, YouTube; take media by URL so the console never handles bytes; accept drafts (which is how the first real post was proved without risking anything public); accept first-comment text; take a YouTube title, a TikTok title and per-network options through `youtubeData` / `tiktokData` / `linkedinData` / `instagramData`, plus a video thumbnail url (we send the YouTube title; the rest is available and unused); return per-post analytics on the Advanced plan; report which platforms a brand actually has connected, which is what filters the Gate 3 screen.
 
 **Does not:** hold a queue; render a preview (their preview is a feature of their web app, not their API, so the console's preview is ours); publish to Substack or a newsletter; verifiably schedule a LinkedIn document.
 
@@ -293,7 +295,7 @@ All brand type is composited in code rather than generated, which is what keeps 
 
 | Gap | Consequence |
 |---|---|
-| No video edit pipeline | Long form is blocked, and finished video edited elsewhere has no clean door into the calendar. Next build. |
+| No video edit pipeline | Long form is blocked. Posting an edit made elsewhere is solved: media library, then "Post this". |
 | No PDF builder | The best-reach LinkedIn format is unavailable. |
 | Carousels are Instagram only | The same slide narrative cannot yet serve both platforms. |
 | A calendar entry has no output identity | One master serving two frames can put the wrong draft in a slot. The slot is always right; the copy can be wrong. |
@@ -322,6 +324,7 @@ For anyone who needs to change one of these rather than read it.
 | The slide templates | `lib/marketing/slide-templates.ts` |
 | The image models | `lib/marketing/higgsfield-models.ts` |
 | Publishing | `lib/marketing/publish.ts`, `lib/marketing/metricool-client.ts` |
+| Posting finished work | `lib/marketing/finished-media.ts` |
 | Hand-posting | `lib/marketing/hand-post.ts` |
 | Why anything is the way it is | `docs/decisions.md` (D1 to D79) |
 | What is still owed | `docs/pam-console/todo.md` |

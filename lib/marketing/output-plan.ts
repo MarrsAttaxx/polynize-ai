@@ -281,6 +281,30 @@ FRAMING for this format, state it in the DESIGN SYSTEM section: the screen recor
     channels: ['youtube'],
     defaultLength: '3 to 5 minutes spoken (roughly 450 to 750 words).',
   },
+  /**
+   * WORK THAT IS ALREADY FINISHED, and only needs a caption and a slot (D80).
+   *
+   * Marrs: "I recorded that video. It's edited. I've got three versions of it, and I'm not sure how
+   * to post it using the console, which is an issue."
+   *
+   * Every other format here describes something the console MAKES. This one describes something it
+   * only has to PUBLISH: the file exists, the edit is locked, and the console's job is the caption,
+   * the platforms and the time. That is why its kind is 'text' even though the file is usually a
+   * video: `kind` selects the module that renders the piece (piece-store.ts), and what a finished
+   * video needs is the caption module, not the script module. Calling it 'video' is what sends a
+   * cut, edited film to a teleprompter screen offering to draft the words to say.
+   *
+   * The same fix applies to a rendered podcast clip, which had this exact bug.
+   */
+  {
+    id: 'finished_media',
+    label: 'Finished media (caption only)',
+    kind: 'text',
+    module: 'built',
+    channels: ['linkedin', 'instagram', 'tiktok', 'youtube'],
+    defaultLength:
+      'A caption for a file that is already finished. Write to the platform, not to a word count: the video carries the argument and the caption gets someone to press play.',
+  },
   {
     id: 'long_form_text',
     label: 'Long-form text + image',

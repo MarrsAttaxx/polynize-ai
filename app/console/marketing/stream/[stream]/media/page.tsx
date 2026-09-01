@@ -3,6 +3,8 @@ import { redirect } from 'next/navigation';
 import { getCurrentUser } from '@/lib/console-auth';
 import { isStreamId, streamLabel } from '@/lib/marketing/streams';
 import { listMediaForStream, type MediaAsset } from '@/lib/marketing/media-store';
+import { listSavedPieces } from '@/lib/marketing/piece-store';
+import { FINISHED_MEDIA_FORMAT } from '@/lib/marketing/finished-media';
 import { MediaLibrary } from './MediaLibrary';
 import { MediaGenerate } from './MediaGenerate';
 import { MediaEdit } from './MediaEdit';
@@ -50,6 +52,21 @@ export default async function MediaPage({
     console.error('[media] read failed:', err);
   }
 
+  /**
+   * WHICH FILES ALREADY HAVE A POST BEING WRITTEN (D80), so the button on the tile can say whether
+   * it starts one or reopens one. A read failure costs the labels and nothing else: the door still
+   * opens, and the route is idempotent on its own, so it reopens the same piece regardless.
+   */
+  const posted: Record<string, string> = {};
+  try {
+    for (const p of await listSavedPieces(user.email)) {
+      if (p.stream !== stream || p.format !== FINISHED_MEDIA_FORMAT || p.narrative_ref) continue;
+      for (const id of p.media ?? []) posted[id] = p.piece_id;
+    }
+  } catch (err) {
+    console.error('[media] finished-media piece scan failed:', err);
+  }
+
   return (
     <div className={s.root}>
       <header className={s.head}>
@@ -63,7 +80,9 @@ export default async function MediaPage({
         <p className={s.sub}>
           The reusable footage and images this stream&rsquo;s posts are built from.
           Add a Box live link (or any public direct link) and it becomes selectable
-          when you produce a piece, then rides to the actual post.
+          when you produce a piece, then rides to the actual post. For something already
+          finished, press <strong>Post this</strong> on the file: it writes the caption,
+          picks the platforms, and puts it on the calendar with no Story needed.
         </p>
       </header>
       <MediaGenerate
@@ -78,7 +97,7 @@ export default async function MediaPage({
         stream={stream}
         images={initial.filter((m) => m.kind === 'image')}
       />
-      <MediaLibrary stream={stream} initial={initial} />
+      <MediaLibrary stream={stream} initial={initial} posted={posted} />
     </div>
   );
 }

@@ -30,8 +30,13 @@ import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/console-auth';
 import { getEntry, listEntries } from '@/lib/marketing/calendar-store';
-import { publishEntry } from '@/lib/marketing/publish';
-import { getChannelSchedule, nextOpenSlots, type Network } from '@/lib/marketing/channel-schedule';
+import { shipEntry } from '@/lib/marketing/publish';
+import {
+  getChannelSchedule,
+  nextOpenSlots,
+  NETWORKS,
+  type Network,
+} from '@/lib/marketing/channel-schedule';
 import { channelLabel } from '@/lib/marketing/channels';
 import { queueDepthNote } from '@/lib/marketing/queue-depth';
 
@@ -57,6 +62,21 @@ export async function POST(
   }
   if (!entry) {
     return NextResponse.json({ error: 'entry not found' }, { status: 404 });
+  }
+
+  /**
+   * A CHANNEL THE QUEUE CANNOT SERVE, said as a sentence (D80). Four networks have posting times;
+   * the calendar offers this button on any channel Metricool can reach, which includes X. It used to
+   * reach `[...undefined]` inside the slot finder and return a 500 that the board rendered as
+   * "Could not add to the queue", with nothing to act on.
+   */
+  if (!(NETWORKS as readonly string[]).includes(entry.channel)) {
+    return NextResponse.json(
+      {
+        error: `${channelLabel(entry.channel)} has no queue in this console: posting times are set for LinkedIn, Instagram, TikTok and YouTube only. Give this one a date and time instead.`,
+      },
+      { status: 400 }
+    );
   }
 
   const schedule = await getChannelSchedule(entry.stream);
@@ -115,7 +135,12 @@ export async function POST(
    */
   entry.timezone = slot.timezone;
 
-  const result = await publishEntry(owner, entry);
+  /**
+   * shipEntry, NOT publishEntry (D80). A channel this stream posts by hand never touches Metricool:
+   * it is emailed as a brief and left on the calendar. This route used to publish it regardless,
+   * which quietly defeated the one setting he was most specific about.
+   */
+  const result = await shipEntry(owner, entry);
   if (!result.ok) {
     return NextResponse.json({ error: result.error }, { status: result.status });
   }

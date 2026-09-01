@@ -126,6 +126,19 @@
   border: 1px solid var(--tac-edge-dark, rgba(255, 255, 255, 0.12));
   border-radius: 999px;
   padding: 4px 11px;
+  /* A button now, not a label (D80). */
+  background: none;
+  cursor: pointer;
+}
+.platform:hover {
+  color: var(--text-2);
+  border-color: rgba(255, 255, 255, 0.24);
+}
+/* On is MINT, the agent colour, because a ticked platform is what the wave and the queue act on. */
+.platformOn {
+  color: var(--mint);
+  border-color: color-mix(in srgb, var(--mint) 55%, transparent);
+  background: color-mix(in srgb, var(--mint) 8%, transparent);
 }
 
 .toolbar {
@@ -259,4 +272,24 @@
   white-space: pre-wrap;
   max-height: 40vh;
   overflow-y: auto;
+}
+
+/* Whether April rewrites the caption per platform (D80). Beside the button it changes. */
+.adaptToggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--text-3);
+  cursor: pointer;
+}
+.adaptToggle input {
+  accent-color: var(--mint);
+  cursor: pointer;
+}
+.needPlatform {
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--text-3);
 }

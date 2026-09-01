@@ -210,7 +210,17 @@ function normalizeSlots(raw: unknown, network: Network): string[] {
         .filter((s) => HHMM.test(s))
     )
   ).sort();
-  return slots.length ? slots : [...DEFAULT_CHANNEL_SLOTS[network]];
+  /**
+   * A network with no defaults returns NOTHING rather than throwing (D80).
+   *
+   * The record has four keys and callers cast a channel id to Network: the calendar offers
+   * "Add to queue" on any channel Metricool can reach, which includes X, and `[...undefined]` is a
+   * TypeError that reaches the operator as "Could not add to the queue" with nothing to act on.
+   * An empty list is the truthful answer, and the queue route already knows how to say it.
+   */
+  if (slots.length) return slots;
+  const fallback = DEFAULT_CHANNEL_SLOTS[network];
+  return fallback ? [...fallback] : [];
 }
 
 /**

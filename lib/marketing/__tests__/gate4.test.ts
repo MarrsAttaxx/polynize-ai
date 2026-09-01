@@ -44,6 +44,10 @@ import {
 } from '../channel-schedule';
 import { IMAGE_MODELS, providerOf, imageModelById, DEFAULT_IMAGE_MODEL } from '../higgsfield-models';
 import { daysBetween, todayIn, queueDepthNote, DEEP_DAYS } from '../queue-depth';
+import { finishedMediaPieceFor, FINISHED_MEDIA_FORMAT } from '../finished-media';
+import { isValidPiece } from '../piece-store';
+import { youtubeTitleFrom, YOUTUBE_TITLE_MAX } from '../metricool-client';
+import { kindOf, formatById } from '../output-plan';
 import { nearestSoulSize, aspectSentence, frameFor } from '../image-generate';
 import { heldByOther, parseHeld, WAVE_LOCK_MS } from '../wave-lock';
 import {
@@ -1267,6 +1271,62 @@ ok('and names the platform, because the queue is per platform', /LinkedIn/.test(
 ok('with no em dash in it', !deepNote.includes('\u2014'));
 const edge = queueDepthNote('2026-09-04T08:30:00', 'Australia/Sydney', 'LinkedIn', new Date('2026-08-28T02:00:00Z'));
 ok(`the threshold is ${DEEP_DAYS} days and it is inclusive`, /7 days deep/.test(edge));
+
+/* ------------------------------------------------------------------ D80: the finished-media door */
+
+/**
+ * Marrs: "I recorded that video. It's edited. I've got three versions of it, and I'm not sure how to
+ * post it using the console, which is an issue."
+ *
+ * The door is a piece with no Story behind it. These assert the one field that made the difference,
+ * because it reads like a technicality and decides which screen he lands on.
+ */
+const doorPiece = finishedMediaPieceFor({
+  piece_id: 'p1',
+  owner: 'marrs@polynize.io',
+  stream: 'marrs',
+  label: 'Force multiplier cut A',
+  media_id: 'm1',
+});
+ok('it is a valid piece with no concept and no narrative', isValidPiece(doorPiece));
+ok('and it carries neither ref', !doorPiece.concept_ref && !doorPiece.narrative_ref);
+eq('the caption module, not the script module', doorPiece.kind, 'text');
+eq('the file is attached', doorPiece.media?.join(','), 'm1');
+eq('and no platform is chosen on his behalf', doorPiece.platforms?.length, 0);
+eq('the title is the file label, which is what he named it', doorPiece.title, 'Force multiplier cut A');
+eq('the script is an empty string, not absent', typeof doorPiece.script, 'string');
+
+/**
+ * THE FORMAT IS REGISTERED, which is what stops `kindOf` guessing. An unregistered format defaults
+ * to video, and that default is exactly the bug: it opened a finished film on the teleprompter.
+ */
+ok('the format exists in the registry', Boolean(formatById(FINISHED_MEDIA_FORMAT)));
+eq('so kindOf resolves it to text rather than defaulting to video', kindOf(FINISHED_MEDIA_FORMAT), 'text');
+eq('an unregistered format still defaults to video, which is why registering mattered', kindOf('not_a_format'), 'video');
+
+/* the YouTube title, which was never sent at all */
+eq('the entry title is used when it has one', youtubeTitleFrom('Cut A', 'the caption'), 'Cut A');
+eq('and the first line of the caption stands in when it does not', youtubeTitleFrom('', 'Line one\nLine two'), 'Line one');
+eq('and when it is undefined', youtubeTitleFrom(undefined, 'Line one\nLine two'), 'Line one');
+eq(
+  `capped at YouTube's own ${YOUTUBE_TITLE_MAX}, because over it is a rejected post`,
+  youtubeTitleFrom('x'.repeat(140), '').length,
+  YOUTUBE_TITLE_MAX
+);
+eq('nothing to call it yields nothing, so no empty title is sent', youtubeTitleFrom('', ''), '');
+
+/**
+ * A CHANNEL WITH NO QUEUE RETURNS NOTHING RATHER THAN THROWING. The calendar offers "Add to queue"
+ * on any channel Metricool can reach, which includes X, and the slot finder used to spread an
+ * undefined default and 500.
+ */
+const xSchedule = normalizeChannelSchedule({ timezone: 'Australia/Sydney' }, 'polynize');
+eq(
+  'an unknown network yields no slots instead of a TypeError',
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  nextOpenSlots(xSchedule, 'x' as any, 1, []).length,
+  0
+);
 
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

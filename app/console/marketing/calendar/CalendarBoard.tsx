@@ -483,7 +483,8 @@ export function CalendarBoard({ initial }: { initial: CalendarEntry[] }) {
       {entries.length === 0 ? (
         <p className={s.empty}>
           Nothing scheduled yet. Approve a post and hit &ldquo;Prepare posts for channels&rdquo;
-          to add it here.
+          to add it here. Already have a finished video or image? Add it to a stream&rsquo;s media
+          library and press &ldquo;Post this&rdquo;.
         </p>
       ) : (
         <>

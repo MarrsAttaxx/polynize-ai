@@ -21,10 +21,20 @@ import { PostPreview } from './PostPreview';
 import type { MediaAsset } from '@/lib/marketing/media-store';
 import { ChatPanel } from './ChatPanel';
 import type { MarketingPiece } from '@/lib/marketing/piece-store';
+import { FINISHED_MEDIA_FORMAT } from '@/lib/marketing/finished-media';
 import s from './text.module.css';
 import c from './chat.module.css';
 
 type SaveState = 'idle' | 'saving' | 'saved' | 'error';
+
+/**
+ * WHERE A POST CAN ACTUALLY GO, which is not the same list as CHANNELS (D80).
+ *
+ * The channel list carries seven ids including X, Substack and a newsletter. Only these four have
+ * posting times, a queue and a Metricool network, so offering any of the others here would hand the
+ * operator a calendar entry whose only button cannot work.
+ */
+const POSTABLE = ['linkedin', 'instagram', 'tiktok', 'youtube'] as const;
 
 function channelLabel(id: string): string {
   return id.charAt(0).toUpperCase() + id.slice(1);
@@ -52,12 +62,37 @@ export function TextOutputScreen({
   const [error, setError] = useState<string | null>(null);
   const [media, setMedia] = useState<string[]>(initial.media ?? []);
   /**
+   * WHERE IT POSTS, and this is now EDITABLE (D80).
+   *
+   * It was a row of dead chips, set once at creation and changeable nowhere in the console. That is
+   * a dead end you can walk into: `prepare` refuses a piece with no platforms and tells you to
+   * "re-plan it with at least one platform", and there was no screen where a platform could be set.
+   * A piece that arrived here with none, which is every piece made from finished media, could never
+   * reach the calendar at all.
+   */
+  const [platforms, setPlatforms] = useState<string[]>(initial.platforms ?? []);
+  /**
+   * WHETHER APRIL REWRITES IT PER PLATFORM (D80).
+   *
+   * Adapting is right when the copy came from an article and has to reach four feeds with different
+   * registers. It is wrong when the operator wrote the caption himself for one finished file, and
+   * until now there was no way to decline it: the prepare route rewrote every channel, always.
+   *
+   * So the default follows where the words came from. A piece with a source behind it adapts, as it
+   * always has. A piece made of finished media does not, because he typed the caption for that file
+   * and having it rewritten three ways is a surprise rather than a service.
+   */
+  const [adapt, setAdapt] = useState(initial.format !== FINISHED_MEDIA_FORMAT);
+  /**
    * THE PREVIEW (D59). Which platform is being previewed, and the library the selected ids
    * resolve against. The library is handed up by the picker below rather than fetched again.
    */
   const [library, setLibrary] = useState<MediaAsset[]>([]);
-  const previewNets = initial.platforms?.length ? initial.platforms : ['linkedin'];
+  // Follows the live selection, not the saved one, so ticking TikTok previews TikTok at once.
+  const previewNets = platforms.length ? platforms : ['linkedin'];
   const [previewNet, setPreviewNet] = useState<string>(previewNets[0]);
+  // A network that has just been unticked cannot stay the one being previewed.
+  const shownNet = previewNets.includes(previewNet) ? previewNet : previewNets[0];
   /**
    * IN THE ORDER THEY WILL POST. Resolved by walking the selected ids, not by filtering the
    * library, because the library is in its own order and publish.ts resolves ids in array
@@ -71,12 +106,26 @@ export function TextOutputScreen({
       .map((a) => a.url);
   }, [media, library]);
 
-  const channelCount = initial.platforms?.length ?? 0;
+  /**
+   * THE ATTACHED VIDEO'S NAME, for the preview (D80). A video is an exclusive selection in the
+   * picker, so there is at most one, and naming it is what stops the panel and the picker
+   * contradicting each other about whether anything is attached.
+   */
+  const previewVideo = useMemo(() => {
+    const byId = new Map(library.map((a) => [a.media_id, a]));
+    const found = media.map((id) => byId.get(id)).find((a) => a?.kind === 'video');
+    return found?.label;
+  }, [media, library]);
+
+  const channelCount = platforms.length;
 
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const latestBody = useRef(initial.body ?? '');
   const latestStatus = useRef(initial.status ?? 'draft');
   const latestMedia = useRef<string[]>(initial.media ?? []);
+  /** In the snapshot with the rest (D63): a field sent without being re-checked is a field that
+      can be silently dropped when an edit lands mid-flight. */
+  const latestPlatforms = useRef<string[]>(initial.platforms ?? []);
   const inFlight = useRef(false);
 
   const stateUrlRef = useRef('');
@@ -94,6 +143,7 @@ export function TextOutputScreen({
         const contentBody = latestBody.current;
         const contentStatus = latestStatus.current;
         const contentMedia = latestMedia.current;
+        const contentPlatforms = latestPlatforms.current;
         setSaveState('saving');
         let ok = false;
         try {
@@ -106,6 +156,7 @@ export function TextOutputScreen({
               body: contentBody,
               status: contentStatus,
               media: contentMedia,
+              platforms: contentPlatforms,
             }),
           });
           ok = res.ok;
@@ -119,9 +170,10 @@ export function TextOutputScreen({
         if (
           latestBody.current !== contentBody ||
           latestStatus.current !== contentStatus ||
-          latestMedia.current !== contentMedia
+          latestMedia.current !== contentMedia ||
+          latestPlatforms.current !== contentPlatforms
         ) {
-          continue; // a newer edit landed mid-flight (body, status, OR media)
+          continue; // a newer edit landed mid-flight (body, status, media OR platforms)
         }
         setSaveState('saved');
         break;
@@ -130,6 +182,16 @@ export function TextOutputScreen({
       inFlight.current = false;
     }
   }, [initial]);
+
+  /** One tick, saved like everything else on this screen. */
+  const togglePlatform = (cid: string) => {
+    const next = platforms.includes(cid)
+      ? platforms.filter((p) => p !== cid)
+      : [...platforms, cid];
+    setPlatforms(next);
+    latestPlatforms.current = next;
+    scheduleSave();
+  };
 
   const scheduleSave = useCallback(() => {
     setSaveState('saving');
@@ -223,7 +285,11 @@ export function TextOutputScreen({
     setError(null);
     try {
       const url = window.location.pathname.replace(/\/+$/, '') + '/prepare';
-      const res = await fetch(url, { method: 'POST' });
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ adapt }),
+      });
       if (!res.ok) {
         const b = (await res.json().catch(() => null)) as { error?: string } | null;
         setError(b?.error ?? 'Could not prepare the posts.');
@@ -288,15 +354,40 @@ export function TextOutputScreen({
         </div>
       </header>
 
-      {initial.platforms && initial.platforms.length > 0 ? (
-        <div className={s.platforms}>
-          {initial.platforms.map((c) => (
-            <span key={c} className={s.platform}>
-              {channelLabel(c)}
-            </span>
+      {/* WHERE IT POSTS (D80). Buttons, not chips: this was the only piece of the plan with no
+          control anywhere in the console, and a piece with none can never reach the calendar. */}
+      <div className={s.platforms} role="group" aria-label="Where this posts">
+        {POSTABLE.map((cid) => {
+          const on = platforms.includes(cid);
+          return (
+            <button
+              key={cid}
+              type="button"
+              className={`${s.platform} ${on ? s.platformOn : ''}`}
+              aria-pressed={on}
+              onClick={() => togglePlatform(cid)}
+            >
+              {channelLabel(cid)}
+            </button>
+          );
+        })}
+        {/* An id from an older piece that this screen cannot offer, shown so it is not silently
+            dropped: X and Substack pieces exist and their entries are still real. */}
+        {platforms
+          .filter((p) => !(POSTABLE as readonly string[]).includes(p))
+          .map((p) => (
+            <button
+              key={p}
+              type="button"
+              className={`${s.platform} ${s.platformOn}`}
+              aria-pressed
+              onClick={() => togglePlatform(p)}
+              title="Not published through Metricool. Click to remove."
+            >
+              {channelLabel(p)}
+            </button>
           ))}
-        </div>
-      ) : null}
+      </div>
 
       {/* Three columns on this screen only: it is the one with a preview to put in the third. */}
       <div className={`${c.workspace} ${c.workspace3}`}>
@@ -332,17 +423,32 @@ export function TextOutputScreen({
                   Reopen
                 </button>
                 {channelCount > 0 ? (
-                  <button
-                    type="button"
-                    className={s.draftBtn}
-                    onClick={prepare}
-                    disabled={preparing}
-                  >
-                    {preparing
-                      ? 'Preparing…'
-                      : `Prepare posts for ${channelCount} channel${channelCount === 1 ? '' : 's'} →`}
-                  </button>
-                ) : null}
+                  <>
+                    {/* Said out loud, because a rewrite the operator did not ask for is the kind of
+                        surprise that only shows up on the calendar. */}
+                    <label className={s.adaptToggle}>
+                      <input
+                        type="checkbox"
+                        checked={adapt}
+                        onChange={(e) => setAdapt(e.target.checked)}
+                      />
+                      April adapts it per platform
+                    </label>
+                    <button
+                      type="button"
+                      className={s.draftBtn}
+                      onClick={prepare}
+                      disabled={preparing}
+                    >
+                      {preparing
+                        ? 'Preparing…'
+                        : `Prepare posts for ${channelCount} channel${channelCount === 1 ? '' : 's'} →`}
+                    </button>
+                  </>
+                ) : (
+                  /* The dead end that had no exit before platforms became editable. */
+                  <span className={s.needPlatform}>Tick a platform above to prepare it.</span>
+                )}
               </>
             ) : (
               <button
@@ -407,9 +513,10 @@ export function TextOutputScreen({
             the DOM so a phone reads write, then see it, then talk about it; the desktop grid
             puts the chat on the far left and this on the far right. */}
         <PostPreview
-          network={previewNet}
+          network={shownNet}
           copy={body}
           imageUrls={previewImages}
+          videoLabel={previewVideo}
           stream={initial.stream}
           networks={previewNets}
           onPickNetwork={setPreviewNet}

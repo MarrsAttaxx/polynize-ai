@@ -108,7 +108,36 @@ export type SchedulePostInput = {
   /** true = park unpublished; false (default) = autoPublish at dateTime. */
   draft?: boolean;
   firstCommentText?: string;
+  /**
+   * THE TITLE A YOUTUBE POST CANNOT GO OUT WITHOUT (D80).
+   *
+   * YouTube is the one network here whose post has a field the caption cannot stand in for, and this
+   * client sent it nowhere: `text` became the description and the video published untitled. The kit
+   * has promised a Short "its own 100-character title" since D49 and nothing could deliver it.
+   *
+   * Read off their OpenAPI spec on 1 September 2026 rather than assumed: `ScheduledPost` carries
+   * `youtubeData` with `title`, alongside `tiktokData`, `linkedinData` and `instagramData`. Only the
+   * title is sent, because it is the only one of those fields whose absence produces a wrong post
+   * rather than a default one.
+   *
+   * Capped at 100 characters, which is YouTube's own limit: sending more is a rejected post.
+   */
+  youtubeTitle?: string;
 };
+
+/** YouTube's own cap. A title over it is rejected rather than truncated by them. */
+export const YOUTUBE_TITLE_MAX = 100;
+
+/**
+ * A title for a YouTube post, from whatever the entry can offer.
+ *
+ * Pure and exported so the cap is asserted in tests rather than trusted. An empty result means send
+ * no `youtubeData` at all, which is the old behaviour and better than sending an empty title.
+ */
+export function youtubeTitleFrom(title: string | undefined, fallback: string): string {
+  const pick = (title ?? '').trim() || fallback.trim().split(/\r?\n/)[0].trim();
+  return pick.slice(0, YOUTUBE_TITLE_MAX).trim();
+}
 
 /** Schedule (or draft) one post to one brand across the given networks. */
 export async function schedulePost(
@@ -124,6 +153,10 @@ export async function schedulePost(
     media: input.media ?? [],
   };
   if (input.firstCommentText) body.firstCommentText = input.firstCommentText;
+  // Only when it is actually a YouTube post and there is something to call it.
+  if (input.youtubeTitle && input.networks.includes('youtube')) {
+    body.youtubeData = { title: input.youtubeTitle };
+  }
 
   const data = await mcFetch('/v2/scheduler/posts', {
     method: 'POST',

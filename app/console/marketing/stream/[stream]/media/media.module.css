@@ -219,6 +219,29 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+/* THE DOOR FOR FINISHED WORK (D80). Mint, because it starts something, next to the coral that
+   removes something: the two buttons in one footer must not read as the same kind of action. */
+.assetPost {
+  flex: none;
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--mint);
+  background: color-mix(in srgb, var(--mint) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--mint) 45%, transparent);
+  border-radius: 7px;
+  padding: 4px 9px;
+  cursor: pointer;
+  transition: border-color var(--tac-transition), background var(--tac-transition);
+}
+.assetPost:hover:not(:disabled) {
+  border-color: var(--mint);
+  background: color-mix(in srgb, var(--mint) 14%, transparent);
+}
+.assetPost:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
 .assetDelete {
   flex: none;
   font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
