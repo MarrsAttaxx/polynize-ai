@@ -2282,3 +2282,32 @@ Two details worth keeping:
 - **The rules moved to their own pure module** (`lib/marketing/youtube-title.ts`). The caption screen is a client island, and importing the Metricool client to show a title would put the publishing layer in the browser bundle (D47).
 
 2 new assertions, 559 total.
+
+## D83: A date with no time became 09:00, and nobody checked 09:00 had not passed
+
+**Adopted 2 September 2026.** Marrs dated a post today, left the time blank, and pressed Schedule. Metricool refused it:
+
+```
+Invalid value 'DateTimeInfo(dateTime=2026-09-02T09:00:00, timezone=Australia/Sydney)'.
+Given datetime cannot be in the past.
+```
+
+**He never chose 09:00.** A constant inside `toDateTime` did, because a date with no time needed one, and by the time he pressed the button 9am that day was hours gone. Two mistakes in one line: inventing a time at all, and then never asking whether the invented one was reachable.
+
+### The invented time now comes from his own posting times
+
+A date with no time means "post it that day", and the console already knows when this channel posts on this lane: the same per-network slots the queue and the wave read (D79). So the first slot on that date that has not passed is used, which is both a better answer than a constant and consistent with everything else the console does. LinkedIn on a lane with 08:30, 12:30 and 17:00, dated today at 2pm, goes at 17:00.
+
+If every slot on that date has gone, it is **refused rather than moved**. Rolling it to tomorrow would silently override the one thing he did specify, which is the date.
+
+### A past time is refused here, in a sentence
+
+The old path sent it and let Metricool refuse it, which arrives as a 400 carrying a Java object inside XML. That is not something an operator can act on. The refusal now names the time, says it has passed, and gives the two ways out: pick a later time, or use Add to queue.
+
+**And the resolved time is written back onto the entry.** A card still reading as a bare date after the console picked 17:00 cannot be checked against Metricool, and a second press would re-derive against a later "now" and pick a different slot.
+
+The timezone decides what "past" means, and that is asserted: the same instant is still the previous evening in California, so Kristin's whole day is ahead when Marrs's is half gone.
+
+`toDateTime` is deleted. Nothing else called it.
+
+15 new assertions, 574 total.

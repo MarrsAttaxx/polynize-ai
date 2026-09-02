@@ -48,6 +48,7 @@ import { finishedMediaPieceFor, FINISHED_MEDIA_FORMAT } from '../finished-media'
 import { isValidPiece } from '../piece-store';
 import { youtubeTitleFrom, YOUTUBE_TITLE_MAX } from '../metricool-client';
 import { networkSettings } from '../analytics-probe';
+import { resolvePostTime } from '../when-to-post';
 import { kindOf, formatById } from '../output-plan';
 import { nearestSoulSize, aspectSentence, frameFor } from '../image-generate';
 import { heldByOther, parseHeld, WAVE_LOCK_MS } from '../wave-lock';
@@ -1376,6 +1377,107 @@ eq(
   nextOpenSlots(xSchedule, 'x' as any, 1, []).length,
   0
 );
+
+/* ------------------------------------------------------------------ D83: is the time reachable */
+
+/**
+ * Metricool, on a post Marrs dated today and left the time blank:
+ *   "Invalid value 'DateTimeInfo(dateTime=2026-09-02T09:00:00, timezone=Australia/Sydney)'.
+ *    Given datetime cannot be in the past."
+ *
+ * He never chose 09:00. A constant did, and nothing checked it was still ahead.
+ */
+const SYD = 'Australia/Sydney';
+/** 2 September 2026, 14:00 in Sydney, which is 04:00 UTC. His actual situation. */
+const afternoon = new Date('2026-09-02T04:00:00Z');
+const liSlots = ['08:30', '12:30', '17:00'];
+
+const dateOnlyLate = resolvePostTime({
+  scheduledAt: '2026-09-02',
+  timezone: SYD,
+  slots: liSlots,
+  channel: 'LinkedIn',
+  now: afternoon,
+});
+ok('a date with no time resolves rather than refusing', dateOnlyLate.ok);
+eq(
+  'to the first posting time on that date that has not passed, not to 09:00',
+  dateOnlyLate.ok ? dateOnlyLate.dateTime : '',
+  '2026-09-02T17:00:00'
+);
+ok('and it is marked derived, so the entry can be stamped with it', dateOnlyLate.ok && dateOnlyLate.derived);
+
+/** Morning: the earliest slot is still ahead, so it wins. */
+const dateOnlyEarly = resolvePostTime({
+  scheduledAt: '2026-09-02',
+  timezone: SYD,
+  slots: liSlots,
+  channel: 'LinkedIn',
+  now: new Date('2026-09-01T21:00:00Z'), // 07:00 Sydney
+});
+eq('the earliest slot when the day has not started', dateOnlyEarly.ok ? dateOnlyEarly.dateTime : '', '2026-09-02T08:30:00');
+
+/** Every slot gone: refused, and it says how to get out of it rather than moving his date. */
+const allGone = resolvePostTime({
+  scheduledAt: '2026-09-02',
+  timezone: SYD,
+  slots: liSlots,
+  channel: 'LinkedIn',
+  now: new Date('2026-09-02T09:00:00Z'), // 19:00 Sydney
+});
+ok('a day whose slots have all passed is refused', !allGone.ok);
+ok('and the refusal names the times', !allGone.ok && /08:30, 12:30, 17:00/.test(allGone.error));
+ok('and offers the queue as the way out', !allGone.ok && /Add to queue/.test(allGone.error));
+
+/** A time he chose himself is used exactly, and only checked for reachability. */
+const chosen = resolvePostTime({
+  scheduledAt: '2026-09-03T06:15',
+  timezone: SYD,
+  slots: liSlots,
+  channel: 'LinkedIn',
+  now: afternoon,
+});
+eq('a chosen time is used as chosen, slots or no slots', chosen.ok ? chosen.dateTime : '', '2026-09-03T06:15:00');
+ok('and is not marked derived', chosen.ok && !chosen.derived);
+
+const chosenPast = resolvePostTime({
+  scheduledAt: '2026-09-02T09:00',
+  timezone: SYD,
+  slots: liSlots,
+  channel: 'LinkedIn',
+  now: afternoon,
+});
+ok('a chosen time in the past is refused here rather than by Metricool', !chosenPast.ok);
+ok('and the sentence is one he can act on', !chosenPast.ok && /already passed/.test(chosenPast.error));
+
+/** THE TIMEZONE DECIDES WHAT "PAST" MEANS. The same instant is a different day in California. */
+const kristin = resolvePostTime({
+  scheduledAt: '2026-09-02',
+  timezone: 'America/Los_Angeles',
+  slots: liSlots,
+  channel: 'LinkedIn',
+  now: afternoon, // 2 Sep 14:00 Sydney is 1 Sep 21:00 in LA
+});
+eq(
+  'her whole day is still ahead, so the earliest slot stands',
+  kristin.ok ? kristin.dateTime : '',
+  '2026-09-02T08:30:00'
+);
+
+/** A channel with no queue keeps the old constant, then gets checked like anything else. */
+const noSlots = resolvePostTime({
+  scheduledAt: '2026-09-03',
+  timezone: SYD,
+  slots: [],
+  channel: 'X',
+  now: afternoon,
+});
+eq('no slots falls back to 09:00 on a future date', noSlots.ok ? noSlots.dateTime : '', '2026-09-03T09:00:00');
+ok(
+  'and refuses it on a date where 09:00 has gone',
+  !resolvePostTime({ scheduledAt: '2026-09-02', timezone: SYD, slots: [], channel: 'X', now: afternoon }).ok
+);
+ok('no date at all is refused', !resolvePostTime({ scheduledAt: '', timezone: SYD, slots: [], channel: 'X', now: afternoon }).ok);
 
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

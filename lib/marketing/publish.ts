@@ -20,18 +20,20 @@ import {
 import { metricoolNetwork, channelLabel } from './channels';
 import { streamLabel } from './streams';
 import { defaultStreamSchedule, timezoneForEntry } from './posting-schedule';
+import { getChannelSchedule, NETWORKS, type Network } from './channel-schedule';
+import { resolvePostTime } from './when-to-post';
 
 export type PublishResult =
   | { ok: true; entry: CalendarEntry; warning?: string }
   | { ok: false; status: number; error: string };
 
-/** Normalize a stored date/datetime to Metricool's 'YYYY-MM-DDTHH:mm:ss' (no Z). */
-export function toDateTime(scheduledAt: string): string {
-  const raw = scheduledAt.trim();
-  if (raw.length <= 10) return `${raw}T09:00:00`; // date only -> default 9am
-  if (raw.length === 16) return `${raw}:00`; // 'YYYY-MM-DDTHH:mm'
-  return raw.replace(/\.\d+/, '').replace(/Z$/, '').slice(0, 19);
-}
+/**
+ * `toDateTime` used to live here and is gone (D83). It turned a date with no time into 09:00 by way
+ * of a constant, and nothing checked that 09:00 was still ahead: setting today's date in the
+ * afternoon produced a post Metricool refused for being in the past. Its replacement,
+ * `resolvePostTime` in ./when-to-post, takes the time from the channel's own posting times and
+ * refuses a past one with a sentence. Nothing else ever called it.
+ */
 
 export async function publishEntry(
   owner: string,
@@ -85,6 +87,37 @@ export async function publishEntry(
    */
   const timezone = timezoneForEntry(entry, schedule.timezone);
 
+  /**
+   * WHEN, RESOLVED AND CHECKED (D83).
+   *
+   * A date with no time used to become 09:00 by way of a constant inside `toDateTime`, and nothing
+   * asked whether 09:00 was still ahead. Set today's date after 9am and Metricool refused the post
+   * with a 400 carrying a Java object, which is not something an operator can act on.
+   *
+   * The invented time now comes from this channel's own posting times, the same table the queue and
+   * the wave read, and a time in the past is refused here with a sentence naming the two ways out.
+   *
+   * The slot read is best effort: without it the resolver still works, it simply has no times to
+   * choose from and falls back to the old constant, which is exactly the previous behaviour.
+   */
+  let slots: readonly string[] = [];
+  if ((NETWORKS as readonly string[]).includes(entry.channel)) {
+    try {
+      slots = (await getChannelSchedule(entry.stream)).channels[entry.channel as Network] ?? [];
+    } catch (err) {
+      console.error('[publish] slot read failed, falling back to a fixed time:', err);
+    }
+  }
+  const when = resolvePostTime({
+    scheduledAt: entry.scheduled_at,
+    timezone,
+    slots,
+    channel: channelLabel(entry.channel),
+  });
+  if (!when.ok) {
+    return { ok: false, status: 400, error: when.error };
+  }
+
   // Resolve attached media ids to current public URLs (Metricool fetches by URL).
   // Degrade to a text-only post rather than failing if the lookup hiccups.
   /**
@@ -108,7 +141,7 @@ export async function publishEntry(
       blogId,
       text: entry.post_copy,
       networks: [network],
-      dateTime: toDateTime(entry.scheduled_at),
+      dateTime: when.dateTime,
       timezone,
       media,
       draft,
@@ -143,6 +176,12 @@ export async function publishEntry(
    * `postId` (todo item 8).
    */
   entry.status = draft ? 'draft' : 'scheduled';
+  /**
+   * THE TIME IT ACTUALLY WENT OUT AT, written back when we chose it (D83). A card still reading as
+   * a bare date after the console picked 12:30 for it is a card that cannot be checked against
+   * Metricool, and the next press would re-derive against a later "now" and pick a different slot.
+   */
+  if (when.derived) entry.scheduled_at = when.dateTime;
   if (result.id) entry.external_ref = result.id;
   /**
    * THE LINK THAT 404'D (D77). Marrs: "the 'View in Metricool' button sends me to the following
