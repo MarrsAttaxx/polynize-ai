@@ -23,6 +23,7 @@ import { ChatPanel } from './ChatPanel';
 import type { MarketingPiece } from '@/lib/marketing/piece-store';
 import { FINISHED_MEDIA_FORMAT } from '@/lib/marketing/finished-media';
 import { youtubeTitleFrom, YOUTUBE_TITLE_MAX } from '@/lib/marketing/youtube-title';
+import { youtubeTypeLabel, type YoutubeVideoType } from '@/lib/marketing/youtube-type';
 import s from './text.module.css';
 import c from './chat.module.css';
 
@@ -85,6 +86,13 @@ export function TextOutputScreen({
    */
   const [adapt, setAdapt] = useState(initial.format !== FINISHED_MEDIA_FORMAT);
   /**
+   * SHORT OR LANDSCAPE (D84). Nothing in a media asset says which way up a video is, and Metricool
+   * refuses a vertical file published as a landscape video. Only the operator knows, so it is asked
+   * once, here, and it defaults to Short because everything this pipeline makes for YouTube is
+   * vertical.
+   */
+  const [ytType, setYtType] = useState<YoutubeVideoType>(initial.youtube_type ?? 'short');
+  /**
    * THE PREVIEW (D59). Which platform is being previewed, and the library the selected ids
    * resolve against. The library is handed up by the picker below rather than fetched again.
    */
@@ -133,6 +141,7 @@ export function TextOutputScreen({
   /** In the snapshot with the rest (D63): a field sent without being re-checked is a field that
       can be silently dropped when an edit lands mid-flight. */
   const latestPlatforms = useRef<string[]>(initial.platforms ?? []);
+  const latestYtType = useRef<YoutubeVideoType>(initial.youtube_type ?? 'short');
   const inFlight = useRef(false);
 
   const stateUrlRef = useRef('');
@@ -163,6 +172,7 @@ export function TextOutputScreen({
           status: latestStatus.current,
           media: latestMedia.current,
           platforms: latestPlatforms.current,
+          youtube_type: latestYtType.current,
         }),
       });
       return res.ok;
@@ -182,6 +192,7 @@ export function TextOutputScreen({
         const contentStatus = latestStatus.current;
         const contentMedia = latestMedia.current;
         const contentPlatforms = latestPlatforms.current;
+        const contentYtType = latestYtType.current;
         setSaveState('saving');
         let ok = false;
         try {
@@ -195,6 +206,7 @@ export function TextOutputScreen({
               status: contentStatus,
               media: contentMedia,
               platforms: contentPlatforms,
+              youtube_type: contentYtType,
             }),
           });
           ok = res.ok;
@@ -209,7 +221,8 @@ export function TextOutputScreen({
           latestBody.current !== contentBody ||
           latestStatus.current !== contentStatus ||
           latestMedia.current !== contentMedia ||
-          latestPlatforms.current !== contentPlatforms
+          latestPlatforms.current !== contentPlatforms ||
+          latestYtType.current !== contentYtType
         ) {
           continue; // a newer edit landed mid-flight (body, status, media OR platforms)
         }
@@ -222,6 +235,12 @@ export function TextOutputScreen({
   }, [initial]);
 
   /** One tick, saved like everything else on this screen. */
+  const setYoutubeType = (next: YoutubeVideoType) => {
+    setYtType(next);
+    latestYtType.current = next;
+    scheduleSave();
+  };
+
   const togglePlatform = (cid: string) => {
     const next = platforms.includes(cid)
       ? platforms.filter((p) => p !== cid)
@@ -475,14 +494,27 @@ export function TextOutputScreen({
         </p>
       ) : null}
 
-      {/* THE ONE THING THE CONSOLE CANNOT SET YET (D81). Said before he presses anything, because
-          the alternative is finding out from a Metricool rejection after the fact. */}
+      {/* SHORT OR LANDSCAPE (D84). Nothing on the file says which way up it is, so it is asked
+          once here rather than discovered from a Metricool rejection. */}
       {platforms.includes('youtube') && previewVideo ? (
-        <p className={s.caveat}>
-          YouTube: a vertical video has to publish as a Short, and that setting is not in
-          Metricool&rsquo;s API in any form we can send yet. Schedule it, then open the post in
-          Metricool and switch the YouTube type to Short. A landscape video needs nothing.
-        </p>
+        <div className={s.ytType} role="group" aria-label="YouTube video type">
+          <span className={s.ytLabel}>Posting as</span>
+          {(['short', 'landscape'] as const).map((t) => (
+            <button
+              key={t}
+              type="button"
+              className={`${s.ytOpt} ${ytType === t ? s.ytOptOn : ''}`}
+              aria-pressed={ytType === t}
+              onClick={() => setYoutubeType(t)}
+            >
+              {youtubeTypeLabel(t)}
+            </button>
+          ))}
+          <span className={s.ytHint}>
+            A vertical file has to go out as a Short. YouTube rejects it as a landscape video, and
+            nothing on the file itself says which it is.
+          </span>
+        </div>
       ) : null}
 
       {/* Three columns on this screen only: it is the one with a preview to put in the third. */}

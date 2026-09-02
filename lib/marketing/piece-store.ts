@@ -144,6 +144,16 @@ export type MarketingPiece = {
   narrative_ref?: string;
   /** Which master asset a Gates master piece carries: article, texts, shorts, long, carousel, images. */
   master?: string;
+  /**
+   * WHETHER YOUTUBE GETS THIS AS A SHORT (D84).
+   *
+   * A vertical file has to publish as a Short or Metricool refuses it for its orientation, and
+   * nothing in a media asset says which way up it is. Only the operator knows, so it is asked once
+   * on the caption screen and stamped onto the entry at prepare time, the same way publish_mode is.
+   *
+   * Absent means Short, which is right for every post this pipeline can currently make.
+   */
+  youtube_type?: 'short' | 'landscape';
 };
 
 function keyFor(owner: string, pieceId: string): string {

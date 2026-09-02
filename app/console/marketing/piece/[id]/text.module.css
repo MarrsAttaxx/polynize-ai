@@ -334,3 +334,30 @@
   color: var(--text-3);
   flex: 1 1 100%;
 }
+
+/* Short or landscape (D84). Sits with the title readout, since both are YouTube facts. */
+.ytType {
+  margin: -6px 0 16px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+}
+.ytOpt {
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--text-3);
+  background: none;
+  border: 1px solid var(--tac-edge-dark, rgba(255, 255, 255, 0.12));
+  border-radius: 999px;
+  padding: 4px 11px;
+  cursor: pointer;
+}
+.ytOpt:hover {
+  color: var(--text-2);
+}
+.ytOptOn {
+  color: var(--mint);
+  border-color: color-mix(in srgb, var(--mint) 55%, transparent);
+  background: color-mix(in srgb, var(--mint) 8%, transparent);
+}

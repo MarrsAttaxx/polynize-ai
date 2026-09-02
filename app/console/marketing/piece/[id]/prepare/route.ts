@@ -181,6 +181,7 @@ export async function POST(
             media: piece.media ?? [],
             // Re-stamped, because the lane's mode may have changed since it was first prepared.
             publish_mode: modeFor(channel),
+            youtube_type: piece.youtube_type,
             updated_at: now,
           }
         : {
@@ -193,6 +194,8 @@ export async function POST(
             post_copy: variants[channel],
             media: piece.media ?? [],
             publish_mode: modeFor(channel),
+            /** Short or landscape, decided while authoring and carried on the entry (D84). */
+            youtube_type: piece.youtube_type,
             status: 'draft',
             created_at: now,
             updated_at: now,

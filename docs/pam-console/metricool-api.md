@@ -51,7 +51,19 @@
 | `mediaAltText` | Alt text per media item | Not sent. |
 | `saveExternalMediaFiles` | Whether Metricool copies the file rather than hot-linking it | Unknown default. Worth knowing, since every file we send is a Box link. |
 
-No enum values are documented for any of the `type` fields, and this matters most for **`youtubeData.type`**: a vertical video has to publish as a Short ("Invalid video orientation, only horizontal is allowed" otherwise) and the word SHORT appears nowhere in the 1.2MB spec. Do not guess it. `/console/marketing/metricool/probe` now reads `youtubeData` / `instagramData` / `tiktokData` back off real scheduled posts, so setting the dropdown once in their composer reveals the exact token (D81).
+**The `type` tokens, read off real posts through the probe (D84). No enum for any of them is documented, and THE CASE IS NOT CONSISTENT, so copy these rather than assume:**
+
+| Field | Value | Note |
+|---|---|---|
+| `youtubeData.type` | `short` | **lowercase.** Required for a vertical file; without it: "Invalid video orientation, only horizontal is allowed". The landscape token is unknown, and unnecessary: the default accepts horizontal. |
+| `youtubeData.privacy` | `public` | lowercase. Sent explicitly rather than trusting an unseen default. |
+| `youtubeData.category` | `SCIENCE_TECHNOLOGY` | UPPER. Their composer sends it; we do not, and it defaults. |
+| `instagramData.type` | `REEL` | UPPER. Required for a single-video post. |
+| `instagramData.showReelOnFeed` | `true` | Puts the Reel on the profile grid too. |
+| `linkedinData.type` | `POST` | UPPER. Metricool defaults it. |
+| `tiktokData.privacyOption` | `PUBLIC_TO_EVERYONE` | UPPER. Defaulted. |
+
+`/console/marketing/metricool/probe` section 5 reads these back off real scheduled posts, which is how they were obtained. Use it again rather than guessing a new one.
 
 **EVERY DATE PARAMETER IS A FULL ISO DATETIME, whatever it is called.** Learned twice, the hard way, so it is a rule now rather than a per-endpoint discovery:
 

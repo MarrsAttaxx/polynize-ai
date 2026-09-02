@@ -72,6 +72,12 @@ export type CalendarEntry = {
    * how they were already behaving.
    */
   publish_mode?: 'auto' | 'manual';
+  /**
+   * SHORT OR LANDSCAPE, for a YouTube entry (D84). Stamped at prepare time from the piece, for the
+   * same reason publish_mode and timezone are stamped: anything decided while authoring has to
+   * travel on the entry rather than be re-derived at ship time. Absent means Short.
+   */
+  youtube_type?: 'short' | 'landscape';
   /** When the operator was sent a manual post to publish by hand. */
   handed_at?: string;
   /**

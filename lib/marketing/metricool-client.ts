@@ -134,6 +134,12 @@ export type SchedulePostInput = {
    * Capped at 100 characters, which is YouTube's own limit: sending more is a rejected post.
    */
   youtubeTitle?: string;
+  /**
+   * `short` for a vertical file, or absent for a landscape one (D84). See ./youtube-type: the token
+   * was read off his own scheduled posts rather than guessed, and the landscape case deliberately
+   * sends nothing because its token is not in that data and the default already accepts horizontal.
+   */
+  youtubeType?: string;
 };
 
 /**
@@ -164,7 +170,14 @@ export async function schedulePost(
    * images." Sending nothing left the deprecated VIDEO media type in place.
    */
   if (input.hasVideo && input.networks.includes('instagram')) {
-    body.instagramData = { type: 'REEL' };
+    /**
+     * REEL, UPPERCASE, and `showReelOnFeed` alongside it, both copied from his own posts (D84):
+     *   "instagramData": { "autoPublish": true, "type": "REEL", "showReelOnFeed": true }
+     *
+     * The feed flag is what puts the Reel on the profile grid as well as in the Reels tab, which is
+     * what his own composer does and what anyone would expect of a post they just published.
+     */
+    body.instagramData = { type: 'REEL', showReelOnFeed: true };
   }
 
   if (input.networks.includes('youtube')) {
@@ -186,8 +199,20 @@ export async function schedulePost(
      * ignored or rejected, and both look identical from here, so the probe reads it off a real post
      * instead. Until then a vertical YouTube post is set by hand in Metricool.
      */
-    const youtubeData: Record<string, unknown> = { madeForKids: false };
+    /**
+     * EVERY VALUE HERE IS COPIED FROM HIS OWN ACCOUNT (D84), read back through the probe rather than
+     * invented. Their composer sends, on a real Short of his:
+     *   { title, type: "short", privacy: "public", category: "SCIENCE_TECHNOLOGY", madeForKids: false }
+     *
+     * `privacy` is sent explicitly even though nothing complained about it, because YouTube is the
+     * one channel this console had never successfully published to: an unseen default that turned
+     * out to be private would be a post that went out invisible, which is the worst kind of failure
+     * to debug. `category` and `tags` are NOT sent: they are editorial choices with no source here,
+     * and Metricool clearly defaults them.
+     */
+    const youtubeData: Record<string, unknown> = { madeForKids: false, privacy: 'public' };
     if (input.youtubeTitle) youtubeData.title = input.youtubeTitle;
+    if (input.youtubeType) youtubeData.type = input.youtubeType;
     body.youtubeData = youtubeData;
   }
 

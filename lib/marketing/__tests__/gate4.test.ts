@@ -49,6 +49,7 @@ import { isValidPiece } from '../piece-store';
 import { youtubeTitleFrom, YOUTUBE_TITLE_MAX } from '../metricool-client';
 import { networkSettings } from '../analytics-probe';
 import { resolvePostTime } from '../when-to-post';
+import { youtubeTypeToken, youtubeTypeLabel, isYoutubeVideoType } from '../youtube-type';
 import { kindOf, formatById } from '../output-plan';
 import { nearestSoulSize, aspectSentence, frameFor } from '../image-generate';
 import { heldByOther, parseHeld, WAVE_LOCK_MS } from '../wave-lock';
@@ -1478,6 +1479,30 @@ ok(
   !resolvePostTime({ scheduledAt: '2026-09-02', timezone: SYD, slots: [], channel: 'X', now: afternoon }).ok
 );
 ok('no date at all is refused', !resolvePostTime({ scheduledAt: '', timezone: SYD, slots: [], channel: 'X', now: afternoon }).ok);
+
+/* ------------------------------------------------------------------ D84: short or landscape */
+
+/**
+ * THE TOKEN IS LOWERCASE `short`, READ OFF HIS OWN ACCOUNT. Their spec gives youtubeData.type no
+ * values and the word SHORT appears nowhere in 1.2MB of schema, so the probe read it back from two
+ * real scheduled posts:
+ *   "youtubeData": { "title": "Which Type are You?", "type": "short", "privacy": "public" }
+ *
+ * Case is NOT consistent across their API, which is exactly why each one is copied rather than
+ * assumed: YouTube's is lowercase `short`, Instagram's is uppercase `REEL`, LinkedIn's is `POST`.
+ */
+eq('a Short sends the lowercase token from his data', youtubeTypeToken('short'), 'short');
+eq('and the default is Short, because everything this pipeline makes is vertical', youtubeTypeToken(undefined), 'short');
+/**
+ * A LANDSCAPE VIDEO SENDS NOTHING. Its token is not in his data, and the default already accepts
+ * horizontal: the rejection was specific to orientation. Sending nothing is the only option with no
+ * guess in it.
+ */
+eq('landscape sends no type rather than a guessed one', youtubeTypeToken('landscape'), undefined);
+eq('the label says which, so the choice is never invisible', youtubeTypeLabel('short'), 'Short (vertical)');
+eq('and for the other', youtubeTypeLabel('landscape'), 'Landscape video');
+ok('the guard accepts the two values', isYoutubeVideoType('short') && isYoutubeVideoType('landscape'));
+ok('and rejects anything else, including the API token for a plain video', !isYoutubeVideoType('video'));
 
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

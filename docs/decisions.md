@@ -2321,3 +2321,42 @@ Bare dates where they want datetimes. **Second time on this API**, after D78, so
 Worth saying: a 400 that names the field and prints the expected pattern is a good failure. It cost one reload rather than an afternoon.
 
 15 new assertions, 574 total.
+
+## D84: The tokens, read off his own account rather than guessed
+
+**Adopted 2 September 2026.** Marrs set the YouTube type to Short in Metricool's composer and sent the probe output back. It answered the question exactly:
+
+```
+"youtubeData": { "title": "Which Type are You?", "type": "short", "privacy": "public",
+                 "tags": ["AI","Futureofwork","AIEconomy"], "category": "SCIENCE_TECHNOLOGY",
+                 "madeForKids": false }
+"instagramData": { "autoPublish": true, "type": "REEL", "showReelOnFeed": true,
+                   "isAiGenerated": false }
+"linkedinData": { "previewIncluded": true, "type": "POST" }
+"tiktokData": { "privacyOption": "PUBLIC_TO_EVERYONE", "photoCoverIndex": 0 }
+```
+
+**`short`, lowercase.** And the case is not consistent across their API: YouTube's is lowercase, Instagram's `REEL` and LinkedIn's `POST` are upper. That is the whole argument for reading these rather than assuming them, and it is why the probe existed instead of a plausible guess.
+
+### What is now sent
+
+- **`youtubeData.type: 'short'`** when the post carries a video, which is what stops the "Invalid video orientation, only horizontal is allowed" rejection.
+- **`youtubeData.privacy: 'public'`**, explicitly, even though nothing complained about it. YouTube is the one channel this console had never successfully published to, and an unseen default that turned out to be private would be a post that went out invisible. That is the worst class of failure to notice.
+- **`instagramData.showReelOnFeed: true`** alongside the REEL type, because that is what his own composer sends and it puts the Reel on the profile grid rather than only in the Reels tab.
+- **Not sent: `category` and `tags`.** Editorial choices with no source in this console, and Metricool clearly defaults them.
+
+### A landscape video sends no type at all
+
+Its token is not in his data. The default already accepts horizontal video, since the rejection was specific to orientation, so the behaviour we had is the right behaviour for that case. **Sending nothing is the only option here with no guess in it.**
+
+### The one thing the file cannot tell us
+
+Nothing on a media asset says which way up a video is. So the caption screen asks once, next to the YouTube title readout, and it defaults to **Short**, because everything this pipeline can currently produce for YouTube is vertical: the kit's only YouTube video row is Shorts, and long form is blocked for want of an edit pipeline.
+
+Stamped onto the entry at prepare time, exactly like `publish_mode` and `timezone` before it. **The rule keeps earning its place: anything decided while authoring travels on the entry rather than being re-derived at ship time.**
+
+### Also in that probe, for the analytics build
+
+The join is confirmed broken the expected way: ours are Metricool integers (`367684553`), theirs are LinkedIn URNs (`urn:li:ugcPost:7500343632873517056`). Nothing new. **But `GET /v2/scheduler/posts` now works and returns whole posts**, which is the second read the analytics join needs: it carries `providers`, and `ProviderStatus` is where `id` and `publicUrl` live. The fallback join is no longer hypothetical, it is one field extraction away.
+
+7 new assertions, 581 total.

@@ -22,6 +22,7 @@ import { streamLabel } from './streams';
 import { defaultStreamSchedule, timezoneForEntry } from './posting-schedule';
 import { getChannelSchedule, NETWORKS, type Network } from './channel-schedule';
 import { resolvePostTime } from './when-to-post';
+import { youtubeTypeToken } from './youtube-type';
 
 export type PublishResult =
   | { ok: true; entry: CalendarEntry; warning?: string }
@@ -162,6 +163,13 @@ export async function publishEntry(
         network === 'youtube' ? youtubeTitleFrom(entry.post_copy, entry.title) : undefined,
       // Instagram needs to be told it is a Reel, or it refuses the post outright (D81).
       hasVideo,
+      /**
+       * A vertical video is a Short and Metricool refuses it as anything else (D84). Only sent when
+       * the post actually carries a video: a YouTube entry with no video is not a thing today, but
+       * declaring a type for a file that is not there would be a claim about nothing.
+       */
+      youtubeType:
+        network === 'youtube' && hasVideo ? youtubeTypeToken(entry.youtube_type) : undefined,
     });
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
