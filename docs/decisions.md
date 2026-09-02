@@ -2653,3 +2653,42 @@ So `lib/house-voice.ts`, appended to every system prompt in the app, with the te
 **Instructed, not enforced, and that is the difference from the em-dash.** An em-dash has no legitimate use here, so it is stripped and the instruction is belt and braces. "Do not" has two: inside a quotation, and as deliberate emphasis on an imperative. A find-and-replace would rewrite a quote, flatten the emphasis, and have to fix capitalisation to avoid producing "Don't touch" mid-sentence. So this one asks, with examples rather than adjectives, because the hook guidance already learned that a model can copy `don't` and can only approximate "be conversational".
 
 12 new assertions, 653 total.
+
+## D92: The prompt audit, and the one thing it confirmed
+
+**Adopted 2 September 2026.** D91 found a prompt contradicting itself **by accident**, which is the wrong way to find that class of bug. So all six of April's prompt paths were audited for it: each reader followed every fragment its prompt concatenates into the file it lives in, and every claim was then verified by a separate pass told to default to refuting.
+
+**38 candidates, 37 refuted, one confirmed.** That ratio is the point of the verify pass: the common failure of this analysis is reading a hedged DESCRIPTION as an ORDER, and thirty seven of those were exactly that.
+
+### The confirmed one, in the same shape as D91
+
+`screen_record_long`'s own scriptShape:
+
+> the script "carries no visual notes, no screen descriptions, no stage directions and **no shot marks**"
+
+The built-in template for that same format, injected into the same prompt as the STRUCTURE:
+
+> 'Mark **"SHOT: overhead"** on the one or two sections where the physical touch is the point'
+
+One instruction named the exact artifact the other forbids by name. And the prompt's closing hard constraints then told April to delete the marks the recipe had just ordered, so the outcome was either shot marks in a teleprompter script or a recipe beat silently dropped, **with no way for the operator to tell which happened.**
+
+**Nothing was lost in the fix.** Every removed line already existed, correctly placed, in the same format's `screenPromptShape`, which is what the Screen Prompt stage reads: the cumulative build and the overhead shot are both there word for word. The template simply predates D29, which split the two tracks, and its `outputs` line still promised "a two-track script". That is now what the two STAGES produce between them, not what one prompt returns.
+
+### The one the audit missed, and why it is not being fixed yet
+
+`touchscreen-concept-flip` carries the same stale two-track guidance and worse placed: `hook_recipe` has a labelled **"On-screen text hook:"** line, against a format whose shape says the whole script is spoken words only, "hooks and beats alike".
+
+**It cannot simply be deleted.** `split_screen_short` has **no `screenPromptShape`**, and a `ContentTemplate` has no screen-brief field, so those lines are the only copy of that guidance anywhere. Removing them would trade a contradiction for lost editorial direction, which is the worse trade. It needs a decision, not a silent edit:
+
+- add a `screen_recipe` field to templates (correct model: the flip's screen behaviour is template-specific, not format-wide), which touches the store, the editor and the screen-prompt path; or
+- give `split_screen_short` a `screenPromptShape` and accept that the guidance generalises to every split-screen short.
+
+**Its practical cost is smaller than it looks and worth stating precisely:** the script prompt's hard constraints already say to drop screen notes the shape did not ask for, so the likely outcome is the guidance being ignored for the script, which is the right outcome for the script. The real loss is that the prezie stage never sees it.
+
+### The invariant is asserted, not the instance
+
+A recipe is **data** (a stream can write its own) and a format's shape is **code**, so the two can drift again with nothing to notice. The test now holds every active library template on a spoken-only format to the rule, checking for labelled artifacts (`SHOT:`, `ON-SCREEN TEXT`) as orders rather than for the word "screen" in a description.
+
+`touchscreen-concept-flip` is listed as a **named, explained exception** rather than quietly excluded, and there is an assertion that it still carries the stale wording, so removing it from that list fails loudly rather than silently passing.
+
+7 new assertions, 660 total.

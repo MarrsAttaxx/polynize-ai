@@ -98,15 +98,34 @@ export const LIBRARY_TEMPLATES: LibraryTemplate[] = [
     platforms: ['youtube', 'linkedin'],
     inputs: 'A core concept with enough substance to develop over several minutes.',
     outputs:
-      'A two-track script: the full-screen intro, then each screen section with its spoken lines and screen brief.',
+      'The spoken script: the full-screen intro, then each section in order. The screen itself is planned on the Prezie stage, from this script.',
     hook_recipe: [
       'Intro, full screen to camera, no screen visual: open on the problem the viewer is living with, in one or two lines.',
       'Then state plainly what they will be able to do or see by the end. No preamble about yourself, no "in this video".',
     ].join('\n'),
+    /**
+     * THE SCREEN GUIDANCE IS GONE FROM HERE (D92), because it contradicted the format outright.
+     *
+     * `screen_record_long`'s own scriptShape says the script "carries no visual notes, no screen
+     * descriptions, no stage directions and no shot marks", and this recipe used to say: 'Mark
+     * "SHOT: overhead" on the one or two sections where the physical touch is the point', plus 'each
+     * with its own screen visual' and 'Build the visual cumulatively'. **One instruction named the
+     * exact artifact the other forbids by name**, both reached the same assembled prompt, and the
+     * hard constraints at the end then told April to delete the marks the recipe had just ordered.
+     * Either shot marks landed in a teleprompter script, or a recipe beat was silently dropped, and
+     * the operator could not tell which.
+     *
+     * NOTHING WAS LOST. Every line removed already exists, correctly placed, in the same format's
+     * `screenPromptShape` (output-plan.ts), which is what the Screen Prompt stage reads: the
+     * cumulative build and the overhead shot are both there, word for word.
+     *
+     * This template predates D29, which split the two tracks. Its `outputs` line still promises "a
+     * two-track script", which is now what the two STAGES produce between them rather than what this
+     * one prompt returns.
+     */
     recipe: [
-      '3 to 5 sections, each one step of the argument, each with its own screen visual.',
-      'Build the visual cumulatively across sections: the screen should assemble into one picture by the end rather than resetting each time.',
-      'Ground every section in the concept\'s own material. Mark "SHOT: overhead" on the one or two sections where the physical touch is the point.',
+      '3 to 5 sections, each one step of the argument.',
+      'Ground every section in the concept\'s own material.',
       'Say the thing others hedge on: this format earns authority by being specific.',
     ].join('\n'),
     cta_recipe:

@@ -35,6 +35,7 @@ import { stripMarkdownEmphasis } from '../../plain-copy';
 import { parseLine } from '../text-overlay';
 import { cleanArticle } from '../article-draft';
 import { recipeBlock } from '../draft';
+import { LIBRARY_TEMPLATES, getLibraryTemplate } from '../template-library';
 import { CONTRACTIONS_INSTRUCTION, HOUSE_VOICE_RULES } from '../../house-voice';
 import { foldRule, foldCopy, copyLength } from '../post-preview';
 import { timezoneForEntry } from '../posting-schedule';
@@ -1798,6 +1799,67 @@ ok('contractions are instructed with examples, not as an adjective', /don't rath
 ok('and the deliberate-emphasis exception is stated', /emphasis/.test(CONTRACTIONS_INSTRUCTION));
 ok('as is the quotation one, so a quote is never rewritten', /quotation/.test(CONTRACTIONS_INSTRUCTION));
 ok('the house rules carry it', HOUSE_VOICE_RULES.includes(CONTRACTIONS_INSTRUCTION));
+
+/* ------------------------------------------------------------- D92: the class, not the instance */
+
+/**
+ * A TEMPLATE RECIPE MUST NOT ORDER AN ARTIFACT ITS FORMAT FORBIDS BY NAME.
+ *
+ * D91 found one prompt contradicting itself by accident, so all six of April's prompt paths were
+ * audited for the same class: 38 candidates, 37 refuted on verification, one confirmed. The
+ * confirmed one was a built-in template ordering 'Mark "SHOT: overhead"' into a script whose format
+ * says it "carries no visual notes, no screen descriptions, no stage directions and no shot marks".
+ *
+ * This asserts the invariant rather than that one instance, because the instance was never the
+ * point: a recipe is DATA (a stream can write its own) and a format's shape is CODE, so the two can
+ * drift again with nothing to notice. A labelled artifact is the unambiguous case, which is what is
+ * checked: "SHOT:" and "ON-SCREEN" as ORDERS, not the word "screen" in a description.
+ */
+const SPOKEN_ONLY_FORMATS = ['split_screen_short', 'screen_record_long'];
+/** The labelled artifacts those formats refuse by name. */
+const FORBIDDEN_IN_RECIPE = [/SHOT:/i, /ON-SCREEN TEXT/i];
+
+/**
+ * ONE KNOWN EXCEPTION, NAMED RATHER THAN QUIETLY EXCLUDED.
+ *
+ * `touchscreen-concept-flip` carries the same stale two-track guidance ("On-screen text hook:",
+ * "Screen at the hook:"), and it cannot simply be deleted: `split_screen_short` has NO
+ * `screenPromptShape`, and a ContentTemplate has no screen-brief field, so that guidance is the only
+ * copy of it anywhere. Removing it would trade a contradiction for lost direction, which is a worse
+ * trade. It needs a decision (a new template field, or format-level guidance), not a silent edit.
+ *
+ * Listed here so the exception is visible and dated rather than forgotten, and so every OTHER
+ * template is still held to the rule.
+ */
+const PENDING = ['touchscreen-concept-flip'];
+
+for (const t of LIBRARY_TEMPLATES) {
+  if (!SPOKEN_ONLY_FORMATS.includes(t.format) || PENDING.includes(t.template_id)) continue;
+  const brief = [t.hook_recipe, t.recipe, t.cta_recipe].filter(Boolean).join('\n');
+  for (const rx of FORBIDDEN_IN_RECIPE) {
+    ok(
+      `${t.template_id}: its recipe does not order ${rx.source} into a spoken-only script`,
+      !rx.test(brief)
+    );
+  }
+}
+/** The fix held: the overhead shot is gone from the recipe and still present in the screen prompt. */
+const walk = getLibraryTemplate('touchscreen-walkthrough')!;
+ok('the walkthrough recipe no longer marks a shot', !/SHOT:/i.test(walk.recipe ?? ''));
+ok('nor orders a screen visual per section', !/screen visual/i.test(walk.recipe ?? ''));
+ok(
+  'and the guidance still exists where the Screen Prompt stage reads it',
+  /SHOT: overhead/.test(formatById('screen_record_long')?.screenPromptShape ?? '')
+);
+ok(
+  'including the cumulative build',
+  /CUMULATIVELY/.test(formatById('screen_record_long')?.screenPromptShape ?? '')
+);
+/** The exception is real: this asserts the known bug, so removing it from PENDING fails loudly. */
+ok(
+  'the pending template genuinely still carries the stale two-track wording',
+  /On-screen text hook:/i.test(getLibraryTemplate('touchscreen-concept-flip')?.hook_recipe ?? '')
+);
 
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);
