@@ -13,12 +13,20 @@ export const dynamic = 'force-dynamic';
  * every stream. Reads the console's own calendar entries; usable before Metricool
  * is wired. Team-scope only; owner from the session.
  */
-export default async function CalendarPage() {
+export default async function CalendarPage({
+  searchParams,
+}: {
+  /** `?prepared=N` after a piece was prepared, so the board can say how many posts it made (D81). */
+  searchParams: Promise<{ prepared?: string }>;
+}) {
   const user = await getCurrentUser();
   if (!user) return null;
   if (user.scope.type === 'client') {
     redirect(`/console/${user.scope.slug}/blueprint`);
   }
+
+  const { prepared } = await searchParams;
+  const preparedCount = Number.parseInt(prepared ?? '', 10);
 
   let entries: CalendarEntry[] = [];
   try {
@@ -41,7 +49,10 @@ export default async function CalendarPage() {
           </Link>
         </p>
       </header>
-      <CalendarBoard initial={entries} />
+      <CalendarBoard
+        initial={entries}
+        prepared={Number.isFinite(preparedCount) && preparedCount > 0 ? preparedCount : undefined}
+      />
     </div>
   );
 }

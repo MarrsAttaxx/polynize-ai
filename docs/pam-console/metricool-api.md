@@ -43,15 +43,17 @@
 
 | Field | What it carries | Why it matters here |
 |---|---|---|
-| `youtubeData.title` | The video title, plus `privacy`, `tags`, `category`, `playlistId`, `madeForKids` | **Now sent.** Without it a YouTube post published untitled, and the kit has promised a Short its own 100-character title since D49. |
+| `youtubeData.title` | The video title, plus `privacy`, `tags`, `category`, `playlistId`, `madeForKids` | **Sent, with `madeForKids: false` (D81).** Their validator requires both: a title "shorter than 100 characters" with no `<` or `>`, and an audience declaration. `type` is NOT sent: a vertical file must publish as a Short and the token for that is undocumented (see below). |
 | `tiktokData.title` | Plus `photoCoverIndex`, `disableComment/Duet/Stitch`, `privacyOption`, `music`, `autoAddMusic` | Not sent. TikTok's caption is `text`, so the absence is not a wrong post. |
 | `linkedinData` | `type`, `documentTitle`, **`publishImagesAsPDF`**, `previewIncluded`, `poll` | **This is evidence the blocked document carousel is possible.** `publishImagesAsPDF` means Metricool will turn images into a document post, which was the unverified half of why that row is off. The other half, that this console has no PDF generation, still stands. |
-| `instagramData` | `type`, `showReelOnFeed`, `collaborators`, `tags`, `audioName`, `isAiGenerated` | Not sent. Worth revisiting for Reels-on-feed and collaborator tags. |
+| `instagramData` | `type`, `showReelOnFeed`, `collaborators`, `tags`, `audioName`, `isAiGenerated` | **`type: 'REEL'` is sent whenever the post carries a video (D81)**, because Instagram refuses a single-video post otherwise: "Instagram does not allow single-video posts. Change the Instagram post type to REEL." `showReelOnFeed` and collaborator tags are still unsent. |
 | `videoThumbnailUrl`, `videoCoverMilliseconds` | The cover for a video post | Not sent. This is the API-level way to honour the house rule that the first frame is the cover. |
 | `mediaAltText` | Alt text per media item | Not sent. |
 | `saveExternalMediaFiles` | Whether Metricool copies the file rather than hot-linking it | Unknown default. Worth knowing, since every file we send is a Box link. |
 
-No enum values are documented for any of the `type` fields.
+No enum values are documented for any of the `type` fields, and this matters most for **`youtubeData.type`**: a vertical video has to publish as a Short ("Invalid video orientation, only horizontal is allowed" otherwise) and the word SHORT appears nowhere in the 1.2MB spec. Do not guess it. `/console/marketing/metricool/probe` now reads `youtubeData` / `instagramData` / `tiktokData` back off real scheduled posts, so setting the dropdown once in their composer reveals the exact token (D81).
+
+**THEIR COMPOSER IS A BETTER SOURCE THAN THEIR SPEC.** Assemble the post by hand in Metricool's own UI and it lists every validation our payload is failing, in words. That is how all of D81 was found, and it beats reading schema.
 
 ## Network mapping (our channel id -> Metricool network)
 Metricool networks: linkedin, facebook, instagram, gbp, twitter, tiktok, youtube, pinterest, threads, bluesky.

@@ -166,6 +166,25 @@ export async function resolveMediaUrls(
   return urls;
 }
 
+/**
+ * The same resolve, but keeping the ASSETS rather than just their urls (D81).
+ *
+ * Publishing needs to know whether it is sending a video, because Instagram rejects a single-video
+ * post outright unless it is declared a Reel, and the stored `kind` is a better answer than guessing
+ * from the url: a Box direct link does not always end in a file extension.
+ *
+ * Same contract as resolveMediaUrls: an id whose asset is gone is dropped rather than throwing, so a
+ * deleted file cannot take a publish down.
+ */
+export async function resolveMedia(stream: string, ids: string[]): Promise<MediaAsset[]> {
+  const out: MediaAsset[] = [];
+  for (const id of ids) {
+    const asset = await getMediaAsset(stream, id);
+    if (asset) out.push(asset);
+  }
+  return out;
+}
+
 /** Detect image vs video from a URL's file extension; null if unknown. */
 export function kindFromUrl(url: string): MediaKind | null {
   const clean = url.split('?')[0].split('#')[0].toLowerCase();

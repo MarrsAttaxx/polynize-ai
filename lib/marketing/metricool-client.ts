@@ -109,6 +109,17 @@ export type SchedulePostInput = {
   draft?: boolean;
   firstCommentText?: string;
   /**
+   * THE POST CARRIES A VIDEO (D81).
+   *
+   * Instagram REJECTS a single-video post unless it is declared a Reel, and it is Metricool's own
+   * validator that says so in as many words: "Instagram does not allow single-video posts. Change
+   * the Instagram post type to REEL or add more videos or images." Sending no instagramData at all
+   * left it as the deprecated VIDEO media type, and Meta refused it.
+   *
+   * So this is not a preference, it is the only way a video reaches an Instagram feed.
+   */
+  hasVideo?: boolean;
+  /**
    * THE TITLE A YOUTUBE POST CANNOT GO OUT WITHOUT (D80).
    *
    * YouTube is the one network here whose post has a field the caption cannot stand in for, and this
@@ -125,18 +136,27 @@ export type SchedulePostInput = {
   youtubeTitle?: string;
 };
 
-/** YouTube's own cap. A title over it is rejected rather than truncated by them. */
-export const YOUTUBE_TITLE_MAX = 100;
+/**
+ * YouTube's own cap, as Metricool states it: "must be shorter than 100 characters".
+ *
+ * SHORTER THAN, so 99 (D81). The first version capped at 100 on the assumption that the limit was
+ * inclusive, which is the kind of off-by-one that only shows up as a rejected post.
+ */
+export const YOUTUBE_TITLE_MAX = 99;
 
 /**
  * A title for a YouTube post, from whatever the entry can offer.
  *
- * Pure and exported so the cap is asserted in tests rather than trusted. An empty result means send
- * no `youtubeData` at all, which is the old behaviour and better than sending an empty title.
+ * ANGLE BRACKETS ARE STRIPPED (D81), because Metricool's validator refuses them: "The characters
+ * < or > are not allowed." They arrive by accident rather than by intent, out of a pasted heading or
+ * a stray fragment, so removing them is better than failing the post over punctuation nobody meant.
+ *
+ * Pure and exported so the rules are asserted in tests rather than trusted. An empty result means
+ * send no title at all, which is better than sending an empty one.
  */
 export function youtubeTitleFrom(title: string | undefined, fallback: string): string {
   const pick = (title ?? '').trim() || fallback.trim().split(/\r?\n/)[0].trim();
-  return pick.slice(0, YOUTUBE_TITLE_MAX).trim();
+  return pick.replace(/[<>]/g, '').slice(0, YOUTUBE_TITLE_MAX).trim();
 }
 
 /** Schedule (or draft) one post to one brand across the given networks. */
@@ -153,9 +173,38 @@ export async function schedulePost(
     media: input.media ?? [],
   };
   if (input.firstCommentText) body.firstCommentText = input.firstCommentText;
-  // Only when it is actually a YouTube post and there is something to call it.
-  if (input.youtubeTitle && input.networks.includes('youtube')) {
-    body.youtubeData = { title: input.youtubeTitle };
+
+  /**
+   * A VIDEO ON INSTAGRAM IS A REEL, or it is refused (D81). Their validator, verbatim: "Instagram
+   * does not allow single-video posts. Change the Instagram post type to REEL or add more videos or
+   * images." Sending nothing left the deprecated VIDEO media type in place.
+   */
+  if (input.hasVideo && input.networks.includes('instagram')) {
+    body.instagramData = { type: 'REEL' };
+  }
+
+  if (input.networks.includes('youtube')) {
+    /**
+     * TWO REQUIRED FIELDS, both learned from Metricool's own validator (D81).
+     *
+     * `title`, because a YouTube post has one and the caption cannot stand in for it.
+     *
+     * `madeForKids`, because "It is necessary to select the audience of the video" is YouTube's
+     * made-for-kids declaration and it has no default. FALSE is the truthful answer for everything
+     * this console posts: it is business content for adults, and declaring otherwise would strip
+     * comments and personalisation from the video. If a channel ever needs the other answer it
+     * belongs on the stream's settings, not hard-coded here.
+     *
+     * NOT SENT: `type`. A vertical file has to be published as a Short rather than as a video, and
+     * Metricool refuses it otherwise ("Invalid video orientation, only horizontal is allowed"). The
+     * token for that is NOT in their OpenAPI spec: `youtubeData.type` is an undocumented string and
+     * the word SHORT appears nowhere in 1.2MB of schema. Guessing it would either be silently
+     * ignored or rejected, and both look identical from here, so the probe reads it off a real post
+     * instead. Until then a vertical YouTube post is set by hand in Metricool.
+     */
+    const youtubeData: Record<string, unknown> = { madeForKids: false };
+    if (input.youtubeTitle) youtubeData.title = input.youtubeTitle;
+    body.youtubeData = youtubeData;
   }
 
   const data = await mcFetch('/v2/scheduler/posts', {

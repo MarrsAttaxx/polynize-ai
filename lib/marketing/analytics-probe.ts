@@ -172,3 +172,81 @@ export async function runProbe(input: ProbeInput, ourIds: string[]): Promise<Pro
   const theirIds = analyticsCalls.flatMap((c) => harvestIds(c.json));
   return { calls, join: joinReport(ourIds, theirIds), tier };
 }
+
+/**
+ * WHAT METRICOOL'S OWN UI SENDS PER NETWORK, read off his real posts (D81).
+ *
+ * This is not analytics. It is here because it is the same tool for the same reason: a fact about
+ * his account that our code cannot deduce, answered by one read instead of a guess.
+ *
+ * THE QUESTION. A vertical video has to be published to YouTube as a SHORT rather than as a video,
+ * and Metricool refuses it otherwise: "Invalid video orientation, only horizontal is allowed." The
+ * field is `youtubeData.type`, an undocumented string: their OpenAPI spec gives it no enum, and the
+ * word SHORT appears nowhere in 1.2MB of schema. Guessing a token would either be silently ignored
+ * or rejected, and from here those look identical.
+ *
+ * THE ANSWER IS ALREADY IN HIS ACCOUNT. Set the dropdown once in Metricool's own composer, save, and
+ * that post carries the exact token their UI uses. This reads it back. Same for `instagramData.type`
+ * (we now send REEL, confirmed from their validator's wording) and `tiktokData`.
+ *
+ * A GET, and nothing is written.
+ */
+export async function readScheduledPosts(input: ProbeInput): Promise<McProbe> {
+  return mcProbeGet('/v2/scheduler/posts', {
+    blogId: input.blogId,
+    params: {
+      // This endpoint takes start/end, unlike the analytics ones, which take from/to (D78).
+      start: input.start,
+      end: input.end,
+      timezone: input.timezone,
+    },
+  });
+}
+
+/** The per-network settings on one scheduled post, which is the whole point of the read. */
+export type NetworkSettings = {
+  id: string;
+  networks: string[];
+  youtubeData?: unknown;
+  instagramData?: unknown;
+  tiktokData?: unknown;
+  linkedinData?: unknown;
+};
+
+/**
+ * Pull the per-network blocks out of whatever shape the list came back in.
+ *
+ * Shape-agnostic for the same reason harvestIds is: guessing `{ data: [...] }` and finding nothing
+ * would be indistinguishable from the account having no posts.
+ */
+export function networkSettings(value: unknown): NetworkSettings[] {
+  const out: NetworkSettings[] = [];
+  const walk = (v: unknown, depth: number) => {
+    if (depth > 5 || v == null) return;
+    if (Array.isArray(v)) {
+      for (const x of v) walk(x, depth + 1);
+      return;
+    }
+    if (typeof v !== 'object') return;
+    const o = v as Record<string, unknown>;
+    const hasAny =
+      'youtubeData' in o || 'instagramData' in o || 'tiktokData' in o || 'linkedinData' in o;
+    if (hasAny && ('id' in o || 'uuid' in o)) {
+      const provs = Array.isArray(o.providers) ? o.providers : [];
+      out.push({
+        id: String(o.id ?? o.uuid ?? ''),
+        networks: provs
+          .map((x) => (x && typeof x === 'object' ? String((x as Record<string, unknown>).network ?? '') : ''))
+          .filter(Boolean),
+        youtubeData: o.youtubeData ?? undefined,
+        instagramData: o.instagramData ?? undefined,
+        tiktokData: o.tiktokData ?? undefined,
+        linkedinData: o.linkedinData ?? undefined,
+      });
+      return;
+    }
+    for (const x of Object.values(o)) walk(x, depth + 1);
+  };
+  walk(value, 0);
+  return out;
+}

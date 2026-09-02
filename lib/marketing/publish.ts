@@ -9,7 +9,7 @@
  */
 
 import { saveEntry, type CalendarEntry } from './calendar-store';
-import { resolveMediaUrls } from './media-store';
+import { resolveMedia } from './media-store';
 import { getBrandMap, getPostingSchedule } from './metricool-config-store';
 import {
   isMetricoolConfigured,
@@ -87,9 +87,17 @@ export async function publishEntry(
 
   // Resolve attached media ids to current public URLs (Metricool fetches by URL).
   // Degrade to a text-only post rather than failing if the lookup hiccups.
+  /**
+   * THE ASSETS, not just their urls (D81), because whether one of them is a VIDEO changes the
+   * payload: Instagram refuses a single-video post unless it is declared a Reel. The stored kind is
+   * the answer rather than the url's extension, since a Box direct link need not carry one.
+   */
   let media: string[] = [];
+  let hasVideo = false;
   try {
-    media = await resolveMediaUrls(entry.stream, entry.media ?? []);
+    const assets = await resolveMedia(entry.stream, entry.media ?? []);
+    media = assets.map((a) => a.url);
+    hasVideo = assets.some((a) => a.kind === 'video');
   } catch (err) {
     console.error('[publish] media resolve failed, posting without media:', err);
   }
@@ -114,6 +122,8 @@ export async function publishEntry(
        */
       youtubeTitle:
         network === 'youtube' ? youtubeTitleFrom(entry.title, entry.post_copy) : undefined,
+      // Instagram needs to be told it is a Reel, or it refuses the post outright (D81).
+      hasVideo,
     });
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);

@@ -133,6 +133,37 @@ export function TextOutputScreen({
     stateUrlRef.current = window.location.pathname.replace(/\/+$/, '') + '/state';
   }, []);
 
+  /**
+   * ONE PUT, AWAITED, from the current refs (D81).
+   *
+   * Split out of the loop below because `prepare` has to know the screen's state reached the store
+   * before it asks the server to read it. Autosave is debounced by a second and prepare POSTed
+   * immediately, so ticking two more platforms and pressing Prepare inside that second prepared the
+   * piece as it was a moment earlier. That is almost certainly why a post ticked for Instagram,
+   * TikTok and YouTube arrived in Metricool as Instagram alone.
+   */
+  const putOnce = useCallback(async (): Promise<boolean> => {
+    const url =
+      stateUrlRef.current || window.location.pathname.replace(/\/+$/, '') + '/state';
+    try {
+      const res = await fetch(url, {
+        method: 'PUT',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          ...initial,
+          script: '',
+          body: latestBody.current,
+          status: latestStatus.current,
+          media: latestMedia.current,
+          platforms: latestPlatforms.current,
+        }),
+      });
+      return res.ok;
+    } catch {
+      return false;
+    }
+  }, [initial]);
+
   const save = useCallback(async () => {
     if (inFlight.current) return;
     inFlight.current = true;
@@ -284,6 +315,25 @@ export function TextOutputScreen({
     setPreparing(true);
     setError(null);
     try {
+      /**
+       * SAVE FIRST, AND WAIT (D81). The route reads the piece out of the store, so anything still
+       * sitting in the debounce is invisible to it. A failed save stops here rather than preparing
+       * a piece that does not match the screen.
+       */
+      if (timer.current) {
+        clearTimeout(timer.current);
+        timer.current = null;
+      }
+      setSaveState('saving');
+      const stored = await putOnce();
+      if (!stored) {
+        setSaveState('error');
+        setError('Could not save your changes, so nothing was prepared. Try again.');
+        setPreparing(false);
+        return;
+      }
+      setSaveState('saved');
+
       const url = window.location.pathname.replace(/\/+$/, '') + '/prepare';
       const res = await fetch(url, {
         method: 'POST',
@@ -296,7 +346,14 @@ export function TextOutputScreen({
         setPreparing(false);
         return;
       }
-      router.push('/console/marketing/calendar');
+      /**
+       * SAY WHAT WAS CREATED (D81). It used to redirect silently, so "three platforms ticked, one
+       * post in Metricool" was indistinguishable from working. The count comes from the route, which
+       * has always returned it and nobody read it.
+       */
+      const made = (await res.json().catch(() => null)) as { count?: number } | null;
+      const n = made?.count ?? 0;
+      router.push(`/console/marketing/calendar?prepared=${n}`);
     } catch {
       setError('Network error. Try again.');
       setPreparing(false);
@@ -388,6 +445,16 @@ export function TextOutputScreen({
             </button>
           ))}
       </div>
+
+      {/* THE ONE THING THE CONSOLE CANNOT SET YET (D81). Said before he presses anything, because
+          the alternative is finding out from a Metricool rejection after the fact. */}
+      {platforms.includes('youtube') && previewVideo ? (
+        <p className={s.caveat}>
+          YouTube: a vertical video has to publish as a Short, and that setting is not in
+          Metricool&rsquo;s API in any form we can send yet. Schedule it, then open the post in
+          Metricool and switch the YouTube type to Short. A landscape video needs nothing.
+        </p>
+      ) : null}
 
       {/* Three columns on this screen only: it is the one with a preview to put in the third. */}
       <div className={`${c.workspace} ${c.workspace3}`}>

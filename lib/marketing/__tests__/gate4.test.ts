@@ -47,6 +47,7 @@ import { daysBetween, todayIn, queueDepthNote, DEEP_DAYS } from '../queue-depth'
 import { finishedMediaPieceFor, FINISHED_MEDIA_FORMAT } from '../finished-media';
 import { isValidPiece } from '../piece-store';
 import { youtubeTitleFrom, YOUTUBE_TITLE_MAX } from '../metricool-client';
+import { networkSettings } from '../analytics-probe';
 import { kindOf, formatById } from '../output-plan';
 import { nearestSoulSize, aspectSentence, frameFor } from '../image-generate';
 import { heldByOther, parseHeld, WAVE_LOCK_MS } from '../wave-lock';
@@ -1314,6 +1315,34 @@ eq(
   YOUTUBE_TITLE_MAX
 );
 eq('nothing to call it yields nothing, so no empty title is sent', youtubeTitleFrom('', ''), '');
+/** Metricool: "must be SHORTER THAN 100 characters", so 99 (D81). An inclusive read is a rejection. */
+eq('the cap is 99, not 100', YOUTUBE_TITLE_MAX, 99);
+/** Their validator: "The characters < or > are not allowed." They arrive by accident, so they go. */
+eq('angle brackets are stripped rather than failing the post', youtubeTitleFrom('a <b> c', ''), 'a b c');
+
+/* ------------------------------------------------------------------ D81: per-network settings */
+
+/**
+ * Metricool's own composer, on a real post of his: "Instagram does not allow single-video posts.
+ * Change the Instagram post type to REEL or add more videos or images." The read below is how the
+ * remaining unknown (youtubeData.type for a Short) gets answered from his account rather than guessed.
+ */
+const oneScheduled = {
+  data: [
+    {
+      id: 367684553,
+      providers: [{ network: 'instagram' }, { network: 'youtube' }],
+      instagramData: { type: 'REEL' },
+      youtubeData: { title: 'Cut A', madeForKids: false },
+    },
+  ],
+};
+const settingsFound = networkSettings(oneScheduled);
+eq('one post carried settings', settingsFound.length, 1);
+eq('its networks are read off the provider objects', settingsFound[0].networks.join(','), 'instagram,youtube');
+eq('and the id survives as a string, whichever type it arrived as', settingsFound[0].id, '367684553');
+eq('junk yields nothing rather than throwing', networkSettings('nope').length, 0);
+eq('and a post with no per-network block is not reported', networkSettings({ data: [{ id: 1 }] }).length, 0);
 
 /**
  * A CHANNEL WITH NO QUEUE RETURNS NOTHING RATHER THAN THROWING. The calendar offers "Add to queue"

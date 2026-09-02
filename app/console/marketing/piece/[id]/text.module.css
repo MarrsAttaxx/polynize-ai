@@ -293,3 +293,16 @@
   font-size: 11px;
   color: var(--text-3);
 }
+
+/* A platform limit the console cannot work around yet (D81). Amber: worth knowing, not a fault. */
+.caveat {
+  margin: -6px 0 16px;
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 11px;
+  line-height: 1.55;
+  color: var(--amber);
+  background: color-mix(in srgb, var(--amber) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--amber) 32%, transparent);
+  border-radius: 8px;
+  padding: 9px 11px;
+}

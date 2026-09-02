@@ -2211,3 +2211,53 @@ Also: `prepare` makes an LLM call and had no `maxDuration`, unlike every other m
 Their `linkedinData` carries **`publishImagesAsPDF`** and `documentTitle`. That is evidence the blocked LinkedIn document carousel is schedulable after all: "whether Metricool can schedule a LinkedIn document post is unverified" was half the reason that row is off. The other half stands, since this console still has no PDF generation. The full table of per-network options we do not send is now in `docs/pam-console/metricool-api.md`, including `videoThumbnailUrl`, which is the API-level way to honour the house rule that the first frame is the cover.
 
 16 new assertions, 550 total.
+
+## D81: The video posted to one platform and Instagram refused it
+
+**Adopted 2 September 2026.** Marrs walked the new door with a real edited video, on his personal stream:
+
+> "The flow was great. Everything worked, but it didn't actually post... It only looked like it tried to post on Instagram when I selected Instagram, TikTok, and YouTube. It looks like it only tried to post on Instagram but had an error. The link seems to be fine because it's playing in Metricool in the right panel."
+
+Two unrelated failures, and then he found the answer key himself by duplicating the post inside Metricool and letting their own validator list what was wrong:
+
+```
+Instagram does not allow single-video posts. Change the Instagram post type to REEL
+  or add more videos or images.
+Video or short title is required and must be shorter than 100 characters.
+  The characters < or > are not allowed.
+Video -> Invalid video orientation, only horizontal is allowed.
+It is necessary to select the audience of the video.
+```
+
+**That is a better source than their OpenAPI spec**, and worth remembering as a technique: their composer runs the same validations their API does, so a post assembled by hand in their UI reports exactly what our payload is missing. Three of the four are now fixed and the fourth is answered by a read rather than a guess.
+
+### 1. A video on Instagram is a Reel, or it is refused
+
+We sent no `instagramData` at all, which left Meta's deprecated `VIDEO` media type in place. Their message on the first attempt said so directly: use REELS to publish a video to an Instagram feed.
+
+Now `instagramData: { type: 'REEL' }` whenever the post carries a video. **Whether it carries one is read off the stored asset kind, not off the url**, because a Box direct link need not end in a file extension. That needed `resolveMedia`, which keeps the assets rather than reducing them to urls on the way through.
+
+### 2. YouTube needed two fields, one of which is a declaration
+
+- **`title`**, already added in D80, but capped wrong: their validator says "shorter than 100", so the cap is **99**. An inclusive read of that sentence is a rejected post. Angle brackets are stripped too, since they refuse `<` and `>` and those arrive by accident rather than by intent.
+- **`madeForKids: false`**, because "It is necessary to select the audience of the video" is YouTube's made-for-kids declaration and it has no default. False is the truthful answer for everything this console posts, and it is stated in the code rather than left implicit: declaring the other way strips comments and personalisation from the video.
+
+### 3. The one thing that is still a guess, so it is not guessed
+
+A vertical file has to publish as a **Short**, and Metricool refuses it as a video ("only horizontal is allowed"). The field is `youtubeData.type`, and **their spec gives it no values: the word SHORT appears nowhere in 1.2MB of schema.** A wrong token would either be silently ignored or rejected, and from here those two look identical.
+
+So the probe now reads `youtubeData` / `instagramData` / `tiktokData` off his real scheduled posts. Set the dropdown once in Metricool's composer, reload the probe, and the exact token their own UI uses is on screen. Until then the caption screen says plainly, before he presses anything, that a vertical YouTube post has to have its type switched in Metricool.
+
+### 4. Only one platform was prepared, and that was my bug
+
+Nothing to do with Metricool. The platform toggles autosave on a **one second debounce** and the Prepare button POSTed immediately, and the route reads the piece out of the store. Tick two more platforms, press Prepare inside that second, and the server prepares the piece as it was a moment earlier. Three ticked, one prepared, which is exactly what he saw.
+
+Prepare now writes the screen's state and **waits for it** before asking the server to read it, and a failed write stops the prepare instead of preparing something that does not match the screen.
+
+**And the silence was half the bug.** It redirected to the calendar with no report, so one post created out of three ticked looked identical to working. The route has always returned a count and nobody read it; the calendar now says how many posts were prepared, and says to go back and check the ticks if that is fewer than expected.
+
+### What is still unfixed, deliberately
+
+TikTok raised no error in their validator, so it needs nothing. `videoThumbnailUrl` is still unsent, which is the API-level way to honour the house rule that the first frame is the cover.
+
+7 new assertions, 557 total.

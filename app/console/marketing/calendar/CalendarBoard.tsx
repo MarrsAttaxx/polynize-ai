@@ -46,7 +46,19 @@ function mondayIndex(d: Date): number {
   return (d.getDay() + 6) % 7;
 }
 
-export function CalendarBoard({ initial }: { initial: CalendarEntry[] }) {
+export function CalendarBoard({
+  initial,
+  prepared,
+}: {
+  initial: CalendarEntry[];
+  /**
+   * How many posts the piece that sent us here just made (D81).
+   *
+   * Said out loud because the silent redirect made a partial prepare invisible: three platforms
+   * ticked and one post created looked exactly like it had worked.
+   */
+  prepared?: number;
+}) {
   const [entries, setEntries] = useState<CalendarEntry[]>(initial);
   const [busy, setBusy] = useState<string | null>(null);
   const [errs, setErrs] = useState<Record<string, string>>({});
@@ -479,6 +491,13 @@ export function CalendarBoard({ initial }: { initial: CalendarEntry[] }) {
           </div>
         ) : null}
       </div>
+
+      {prepared ? (
+        <p className={s.preparedNote}>
+          {prepared} post{prepared === 1 ? '' : 's'} prepared. If that is fewer than the platforms
+          you ticked, open the piece and check they are all still on.
+        </p>
+      ) : null}
 
       {entries.length === 0 ? (
         <p className={s.empty}>

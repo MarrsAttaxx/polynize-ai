@@ -26,7 +26,7 @@ import {
 } from '@/lib/marketing/metricool-config-store';
 import { listEntries } from '@/lib/marketing/calendar-store';
 import { isStreamId, streamLabel, STREAMS } from '@/lib/marketing/streams';
-import { runProbe } from '@/lib/marketing/analytics-probe';
+import { runProbe, readScheduledPosts, networkSettings } from '@/lib/marketing/analytics-probe';
 import { laneTimezone } from '@/lib/marketing/channel-schedule';
 import s from './probe.module.css';
 
@@ -102,7 +102,16 @@ export default async function ProbePage({
     ourIds = [];
   }
 
-  const run = await runProbe({ blogId, timezone, start, end }, ourIds);
+  const probeInput = { blogId, timezone, start, end };
+  /**
+   * Both at once. The scheduled-post read answers a different question from the analytics five (D81):
+   * what token Metricool's own composer puts in `youtubeData.type` when a video is set to Short.
+   */
+  const [run, scheduled] = await Promise.all([
+    runProbe(probeInput, ourIds),
+    readScheduledPosts(probeInput),
+  ]);
+  const settings = networkSettings(scheduled.json);
 
   return (
     <div className={s.root}>
@@ -181,8 +190,31 @@ export default async function ProbePage({
         </p>
       </section>
 
+      {/* THE PER-NETWORK SETTINGS QUESTION (D81), which is a publishing question rather than an
+          analytics one, and lives here because it is the same kind of unknown: a fact about his
+          account that our code cannot deduce. */}
+      <section className={s.answer}>
+        <h2 className={s.aTitle}>5. What Metricool&rsquo;s own composer sends per network</h2>
+        <p className={s.note}>
+          A vertical video has to publish to YouTube as a Short, and Metricool refuses it otherwise
+          (&ldquo;Invalid video orientation, only horizontal is allowed&rdquo;). The field is{' '}
+          <code>youtubeData.type</code> and their OpenAPI spec gives it no values at all, so rather
+          than guess a token this reads one off a real post. Set the YouTube dropdown to Short in
+          Metricool&rsquo;s composer, save, then reload this page: whatever appears below is the
+          exact value we should send.
+        </p>
+        <p className={s.note}>
+          {scheduled.status === 200
+            ? `${settings.length} scheduled post${settings.length === 1 ? '' : 's'} carried per-network settings in this window.`
+            : `The read returned ${scheduled.error ? 'a network error' : (scheduled.status ?? '?')}.`}
+        </p>
+        {settings.length > 0 ? (
+          <pre className={s.pre}>{JSON.stringify(settings, null, 2).slice(0, 6000)}</pre>
+        ) : null}
+      </section>
+
       <div className={s.calls}>
-        {run.calls.map((c) => (
+        {[...run.calls, scheduled].map((c) => (
             <div key={c.path} className={s.call}>
               <div className={s.callHead}>
                 <code className={s.callPath}>{c.path}</code>
