@@ -2558,3 +2558,33 @@ Final: `#00a77b` mint, `#cf4436` red, `#3987e5` blue, `#c98500` yellow, `#d55181
 The rejected candidates are asserted in the tests, so a future "let us just use coral" is a failing test rather than a shipped mistake.
 
 4 new assertions, 628 total.
+
+## D89: 67 posts were stored and the panel said nothing was published
+
+**Adopted 2 September 2026.** Marrs pressed Pull now, watched it walk all five brands, and sent back a screenshot. The button's own receipt read **"67 posts from 3 streams"**. Two lines below it, the panel said *"Nothing published in this range"*, with Last 90 days selected.
+
+Both were telling the truth. The posts were stored and the panel could not see their dates.
+
+### The reader would not read its own output
+
+The store re-normalises stored posts on the way in, deliberately, and the comment says why: *so a stored post and a fresh one can never disagree about shape*. That instinct is right and I then undid it. `normalizePost` knew Metricool's three date fields (`publicationDate.dateTime` from the brand feed, `created.dateTime` from LinkedIn's, the flat `createTime` from TikTok's) and **not the one it writes itself**, `published_at`.
+
+So every read stripped the date off every post. `postsSince` excludes undated posts, correctly, because a range is a claim about when something happened. Sixty seven real posts with real impressions became "nothing published in this range", and **nothing anywhere looked broken**: no error, no exception, no empty store, and a button that had just reported success honestly.
+
+**The invariant is now asserted: normalizing an already-normalized post returns it unchanged**, field by field rather than by one deep-equal, so a future loss names itself. Any reader that writes its own shape has to be able to read it back, and only a round-trip test proves that.
+
+No re-pull is needed. The stored files always had the dates; only the read discarded them.
+
+### One day apart, for the same reason
+
+The pull counted back 90 days from today and the panel's widest range counted back 89, so a post exactly on the boundary was stored and outside every view of it. `pullWindow` now derives its start from `rangeStart`, the same function the ranges use. One derivation, one answer, asserted.
+
+### And the screen he photographed was shouting
+
+The engine page printed a full sentence per unconnected stream, so *"This stream is not mapped to a Metricool brand yet, so there is nothing to read"* appeared twice at length, once for Kristin and once for Julian, and again in shorter form beside the button. Three copies of one fact, taking more room than the numbers.
+
+Unmapped streams are now named together in one line, *"Kristin and Julian are not connected to a Metricool brand yet"*, which needed a machine-readable `error_kind` on the store rather than matching on the wording of a message. A real failure still gets its own words, because that one is worth reading. And the button's line is now a receipt rather than a report: it counts the streams that had nothing, and the panel below carries the reason.
+
+**The legend also stopped claiming colours nothing uses.** It listed all five streams including the two that are not connected, which reads as "they posted nothing" rather than "they are not wired up". It now lists only the streams that contributed to the bars in front of you.
+
+13 new assertions, 641 total.

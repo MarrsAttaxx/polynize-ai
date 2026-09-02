@@ -83,8 +83,14 @@ export function AnalyticsView({
   }, [slices, from, today, days]);
 
   const { sum, series, stacks, scoped } = view;
-  /** The legend is only earned when there is more than one person in the picture. */
-  const showLegend = scoped.length > 1;
+  /**
+   * ONLY THE STREAMS THAT ACTUALLY CONTRIBUTED (D89). A legend naming a colour that appears in no
+   * bar is a legend making a claim the chart does not support: on the engine page two of five
+   * streams are not connected yet, and listing them with a swatch reads as "they posted nothing"
+   * rather than "they are not wired up".
+   */
+  const contributors = scoped.filter((sl) => sl.posts.length > 0);
+  const showLegend = contributors.length > 1;
   const maxStack = Math.max(...stacks.map((x) => x.impressions ?? 0), 1);
 
   const tiles: { label: string; value?: string; source: string }[] = [
@@ -159,7 +165,7 @@ export function AnalyticsView({
                 /* IDENTITY IS NEVER COLOUR ALONE: the face and the name carry it, and the swatch
                    agrees with them. */
                 <ul className={s.legend}>
-                  {scoped.map((sl) => (
+                  {contributors.map((sl) => (
                     <li key={sl.stream} className={s.legendItem}>
                       <span
                         className={s.legendSwatch}

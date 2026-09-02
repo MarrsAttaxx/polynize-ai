@@ -72,6 +72,7 @@ import {
   stackByNetwork,
   RANGES,
 } from '../analytics-metrics';
+import { pullWindow } from '../analytics-pull';
 import { streamSlot, streamColorVar, SERIES_DARK, SERIES_LIGHT } from '../stream-colors';
 import { joinReport, harvestIds } from '../analytics-probe';
 import { llmErrorText } from '../../llm/error-text';
@@ -1622,6 +1623,48 @@ eq('one network across both', merged.byNetwork.length, 1);
 eq('carrying both posts', merged.byNetwork[0].posts, 2);
 eq('an empty merge claims nothing', mergeSummaries([]).impressions, undefined);
 eq('and reports no posts', mergeSummaries([]).posts, 0);
+
+/* ------------------------------------------------------------------ D89: the round trip */
+
+/**
+ * NORMALIZING AN ALREADY-NORMALIZED POST RETURNS IT UNCHANGED.
+ *
+ * This is the bug that reached him. The store re-normalises stored posts on read, deliberately, so
+ * that a stored post and a fresh one cannot disagree about shape. But the reader did not read its
+ * own output: it knew Metricool's three date fields and not its own `published_at`. So every read
+ * stripped the date, postsSince correctly excluded undated posts, and a pull of 67 real posts
+ * rendered as "nothing published in this range" with nothing visibly broken anywhere.
+ *
+ * A reader that writes its own shape has to be able to read it, and only a round-trip test proves
+ * that. Asserted field by field rather than with one deep-equal so a future loss names itself.
+ */
+const once = normalizePost(brandRow)!;
+const twice = normalizePost(once)!;
+eq('the id survives a round trip', twice.id, once.id);
+eq('the network survives', twice.network, once.network);
+eq('the type survives', twice.type, once.type);
+eq('the text survives', twice.text, once.text);
+eq('the url survives', twice.url, once.url);
+eq('THE DATE SURVIVES, which is the one that was lost', twice.published_at, once.published_at);
+eq('impressions survive', twice.impressions, once.impressions);
+eq('interactions survive', twice.interactions, once.interactions);
+eq('the engagement rate survives', twice.engagement, once.engagement);
+eq('and the whole object is identical', JSON.stringify(twice), JSON.stringify(once));
+/** Through the feed reader too, which is the path the store actually takes. */
+eq(
+  'a stored feed reads back with its dates intact',
+  normalizeFeed({ data: normalizeFeed({ data: [brandRow] }) })[0].published_at,
+  '2026-09-01T10:07'
+);
+/** And the consequence that was visible: a stored post still falls inside its range. */
+eq(
+  'so a stored post is still found by a range that contains it',
+  postsSince(normalizeFeed({ data: normalizeFeed({ data: [brandRow] }) }), '2026-08-01').length,
+  1
+);
+
+/** The pull window and the widest range on screen are the same day, derived from one function. */
+eq('the stored window starts where the widest range does', pullWindow(90, new Date('2026-09-02T04:00:00Z')).from, rangeStart('2026-09-02', 90));
 
 /* ------------------------------------------------------------------ D87: ranges, chart, stacks */
 

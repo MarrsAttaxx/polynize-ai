@@ -18,7 +18,7 @@
 import { mcProbeGet } from './metricool-client';
 import { getBrandMap } from './metricool-config-store';
 import { laneTimezone } from './channel-schedule';
-import { normalizeFeed } from './analytics-metrics';
+import { normalizeFeed, rangeStart } from './analytics-metrics';
 import { saveStreamAnalytics, type StreamAnalytics } from './analytics-store';
 
 /** The default window. Ninety days is long enough to hold a quarter's work and short enough to return. */
@@ -26,8 +26,13 @@ export const PULL_DAYS = 90;
 
 export function pullWindow(days = PULL_DAYS, now = new Date()): { from: string; to: string } {
   const to = now.toISOString().slice(0, 10);
-  const from = new Date(now.getTime() - days * 86_400_000).toISOString().slice(0, 10);
-  return { from, to };
+  /**
+   * THE SAME FUNCTION THE PANEL'S RANGES USE (D89), so the widest range on screen and the window we
+   * actually stored are the same day. They were one day apart: the pull counted back 90 days and the
+   * range counted back 89, which put a post on the boundary in the store and outside every view of
+   * it. One derivation, one answer.
+   */
+  return { from: rangeStart(to, days), to };
 }
 
 export type PullResult = {
@@ -55,8 +60,8 @@ export async function pullStream(stream: string, days = PULL_DAYS): Promise<Pull
     console.error('[analytics.pull] brand map read failed:', err);
   }
   if (!blogId) {
-    const error = 'This stream is not mapped to a Metricool brand yet, so there is nothing to read.';
-    await save({ ...base, error });
+    const error = 'Not mapped to a Metricool brand yet.';
+    await save({ ...base, error, error_kind: 'unmapped' });
     return { stream, ok: false, posts: 0, error };
   }
 
@@ -79,11 +84,11 @@ export async function pullStream(stream: string, days = PULL_DAYS): Promise<Pull
   });
 
   if (call.status !== 200) {
-    const error =
-      call.status === 401 || call.status === 403
-        ? 'Metricool refused the analytics call. API analytics needs an Advanced or Custom plan.'
-        : `Metricool returned ${call.error ? 'a network error' : (call.status ?? 'no status')} for this brand.`;
-    await save({ ...base, blogId, error });
+    const refused = call.status === 401 || call.status === 403;
+    const error = refused
+      ? 'Metricool refused the analytics call. API analytics needs an Advanced or Custom plan.'
+      : `Metricool returned ${call.error ? 'a network error' : (call.status ?? 'no status')} for this brand.`;
+    await save({ ...base, blogId, error, error_kind: refused ? 'refused' : 'failed' });
     return { stream, ok: false, posts: 0, error };
   }
 

@@ -89,12 +89,24 @@ export function normalizePost(raw: unknown, fallbackNetwork?: string): PostMetri
   const both = { ...o, ...metrics };
 
   /**
-   * THREE DATE FIELDS, one per feed, found by testing against his real rows rather than by reading
-   * the spec: the brand feed wraps it in `publicationDate.dateTime`, the LinkedIn feed in
-   * `created.dateTime`, and TikTok hands over a flat `createTime` with an offset on the end.
-   * Missing one costs the post its place in the trend and in the window, silently.
+   * FOUR DATE FIELDS, and the fourth is OUR OWN (D89).
+   *
+   * The three from Metricool were found by testing against his real rows: the brand feed wraps it in
+   * `publicationDate.dateTime`, the LinkedIn feed in `created.dateTime`, and TikTok hands over a
+   * flat `createTime`. The fourth, `published_at`, is what THIS function writes, and not reading it
+   * back was a data-loss bug that reached him.
+   *
+   * WHY THAT MATTERED SO MUCH. The store re-normalises stored posts on read, deliberately, so a
+   * stored post and a fresh one can never disagree about shape. Good instinct, undone by a reader
+   * that would not accept its own output: every read stripped the date, `postsSince` correctly
+   * excludes undated posts, and so a pull of 67 real posts rendered as "nothing published in this
+   * range". The numbers were there the whole time and nothing was visibly broken.
+   *
+   * THE INVARIANT IS NOW ASSERTED: normalizing an already-normalized post returns it unchanged.
+   * Any reader that writes its own shape has to be able to read it, and a round-trip test is the
+   * only thing that proves it.
    */
-  const date = o.publicationDate ?? o.created ?? o.createTime;
+  const date = o.publicationDate ?? o.created ?? o.createTime ?? o.published_at;
   const dateTime =
     date && typeof date === 'object'
       ? str((date as Record<string, unknown>).dateTime)

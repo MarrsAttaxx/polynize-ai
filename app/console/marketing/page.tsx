@@ -65,10 +65,27 @@ export default async function MarketingHome() {
     label: st.label,
     posts: stored[i]?.posts ?? [],
   }));
-  const errors = stored.filter((x) => x?.error).map((x) => `${x!.stream}: ${x!.error}`);
+  /**
+   * ONE LINE, NOT ONE PARAGRAPH PER STREAM (D89). Two of five streams are simply not connected yet,
+   * which is a configuration state rather than a fault, and printing each one's full sentence gave
+   * this screen two long paragraphs saying the same thing. Unmapped streams are named together; a
+   * real failure still gets its own words, because that one is worth reading.
+   */
+  const unmapped = stored
+    .filter((x) => x?.error_kind === 'unmapped')
+    .map((x) => STREAMS.find((st) => st.id === x!.stream)?.label ?? x!.stream);
+  const realErrors = stored
+    .filter((x) => x?.error && x.error_kind !== 'unmapped')
+    .map((x) => `${STREAMS.find((st) => st.id === x!.stream)?.label ?? x!.stream}: ${x!.error}`);
+  const notes = [
+    unmapped.length
+      ? `${listWords(unmapped)} ${unmapped.length === 1 ? 'is' : 'are'} not connected to a Metricool brand yet.`
+      : '',
+    ...realErrors,
+  ].filter(Boolean);
   const engine = {
     pulledAt: stored.find((x) => x?.pulled_at)?.pulled_at,
-    error: errors.length ? errors.join(' · ') : undefined,
+    error: notes.length ? notes.join(' ') : undefined,
   };
 
   const [counts, pieces] = await Promise.all([
@@ -169,4 +186,10 @@ export default async function MarketingHome() {
       </div>
     </>
   );
+}
+
+/** "Kristin and Julian", or "Kristin, Julian and Shourov". A list a person would say out loud. */
+function listWords(items: string[]): string {
+  if (items.length <= 1) return items[0] ?? '';
+  return `${items.slice(0, -1).join(', ')} and ${items[items.length - 1]}`;
 }

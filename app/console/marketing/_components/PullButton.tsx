@@ -121,7 +121,11 @@ export function PullButton({ scope }: { scope: string }) {
           {outcome.posts > 0
             ? `${outcome.posts} post${outcome.posts === 1 ? '' : 's'} from ${outcome.streams} stream${outcome.streams === 1 ? '' : 's'}`
             : 'no posts came back'}
-          {outcome.failures.length ? ` · ${outcome.failures.join(' · ')}` : ''}
+          {/* Short, because the panel below already carries the full reason per stream. This line
+              is the receipt for the press, not the report. */}
+          {outcome.failures.length
+            ? ` · ${outcome.failures.length} stream${outcome.failures.length === 1 ? '' : 's'} had nothing to read`
+            : ''}
         </span>
       ) : null}
       <button type="button" className={s.pullBtn} onClick={pull} disabled={busy !== null}>

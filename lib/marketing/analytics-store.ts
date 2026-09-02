@@ -37,6 +37,15 @@ export type StreamAnalytics = {
   posts: PostMetrics[];
   /** Set when the pull failed, so the panel can say why rather than looking empty. */
   error?: string;
+  /**
+   * WHY IT FAILED, as a value rather than as prose (D89).
+   *
+   * The engine page walks five streams and two of them are simply not connected yet, which is a
+   * configuration state and not a fault. Printing each one's full sentence gave that screen two
+   * long paragraphs saying one thing. A kind lets the page group them into a line, without matching
+   * on the wording of a message.
+   */
+  error_kind?: 'unmapped' | 'refused' | 'failed';
 };
 
 function keyFor(stream: string): string {
@@ -90,5 +99,9 @@ function normalize(raw: unknown, stream: string): StreamAnalytics | null {
     to: s(o.to),
     posts: normalizeFeed(o.posts),
     error: s(o.error) || undefined,
+    error_kind:
+      o.error_kind === 'unmapped' || o.error_kind === 'refused' || o.error_kind === 'failed'
+        ? o.error_kind
+        : undefined,
   };
 }
