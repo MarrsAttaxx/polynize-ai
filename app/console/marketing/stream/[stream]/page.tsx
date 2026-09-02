@@ -6,7 +6,6 @@ import { Ideas } from './Ideas';
 import { isStreamId, streamLabel } from '@/lib/marketing/streams';
 import { AnalyticsPanel } from '@/app/console/marketing/_components/AnalyticsPanel';
 import { getStreamAnalytics } from '@/lib/marketing/analytics-store';
-import { summarise } from '@/lib/marketing/analytics-metrics';
 import { NarrativeDelete } from './NarrativeDelete';
 import { getBrandVoiceForStream } from '@/lib/marketing/brand-voice-store';
 import { listTemplates } from '@/lib/marketing/template-store';
@@ -398,7 +397,8 @@ export default async function StreamPage({
         <AnalyticsPanel
           scope={stream}
           title={`${streamLabel(stream)} · analytics`}
-          data={analytics && analytics.posts.length ? summarise(analytics.posts) : undefined}
+          slices={[{ stream, label: streamLabel(stream), posts: analytics?.posts ?? [] }]}
+          today={new Date().toISOString().slice(0, 10)}
           pulledAt={analytics?.pulled_at}
           error={analytics?.error}
         />

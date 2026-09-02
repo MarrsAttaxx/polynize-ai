@@ -21,32 +21,3 @@ export function compactNumber(n: number): string {
 }
 
 /** A signed delta with its sign always shown, so a flat period reads as flat rather than as blank. */
-
-/**
- * The polyline for a sparkline, plus where its last segment starts.
- *
- * The last segment and the end dot carry the accent while the rest of the line is de-emphasised,
- * which is the stat tile's own contract: the eye should land on where it is NOW.
- *
- * Returned as numbers rather than a path string so the caller decides the stroke, the ring and the
- * marker radius, all of which are fixed specs it should not have to re-derive.
- */
-export function sparklinePoints(
-  values: number[],
-  w: number,
-  h: number,
-  pad = 3
-): { pts: { x: number; y: number }[] } {
-  if (values.length === 0) return { pts: [] };
-  const lo = Math.min(...values);
-  const hi = Math.max(...values);
-  const span = hi - lo || 1;
-  const usableW = w - pad * 2;
-  const usableH = h - pad * 2;
-  const pts = values.map((v, i) => ({
-    x: pad + (values.length === 1 ? usableW / 2 : (i / (values.length - 1)) * usableW),
-    // SVG y grows downward, so the biggest value sits at the smallest y.
-    y: pad + usableH - ((v - lo) / span) * usableH,
-  }));
-  return { pts };
-}

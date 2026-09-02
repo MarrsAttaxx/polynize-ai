@@ -2467,3 +2467,50 @@ The reader was tested against his own rows rather than an imagined payload, whic
 **The frame ladder**, which the todo calls the load-bearing tile: each post type ranked by median reach within one voice. It needs the join, because only we know which frame a post was, and the join needs the second read that D84 proved works (`GET /v2/scheduler/posts` carries `providers[].publicUrl`, which matches the `url` on every analytics row). That is the next commit, and it also turns D85's inferred "Posted" into a confirmed one.
 
 46 new assertions, 596 total.
+
+## D87: A chart over time, three ranges, and a colour per person
+
+**Adopted 2 September 2026.** Three asks from Marrs after the first real pull, all yes.
+
+### The chart over time
+
+> "I like the visual that you had on the test data, which showed a graph over time. I kind of like that. Is it possible for us to do that for the 90 days?"
+
+A proper line chart, full width, replacing the 104px sparkline that was tucked inside a tile. **Buckets follow the range**: by day up to a month, by week beyond it. Ninety daily points across this width is a comb nobody can read, and four weekly points across a fortnight hides the shape entirely.
+
+The tile sparklines are gone with it, and `sparklinePoints` deleted. Four tiles each carrying the same 104px line was the same picture labelled four different ways.
+
+**Every bucket in the range is drawn, including the empty ones**, and that is the opposite of the rule for the totals. A week with no posts really did earn no impressions, so a flat stretch is a fact; an absent metric is still never a zero. The two rules sit side by side in the code with a pair of assertions marking the boundary.
+
+### Three range buttons
+
+> "Is it possible for us to have a button that says the last week, the last month, and the last 90 days?"
+
+**One pull serves all three.** The store holds 90 days, so a range is a filter over what is already here: switching is instant, costs no API call, and cannot fail halfway. That is the reason the pull window is 90 and not 7.
+
+The filters sit in one row above everything and scope every number below them, so the tiles, the chart, the bars and the table can never disagree about which window they describe. `today` is passed from the server rather than read from the browser clock: a client component renders on the server first, and a clock read there disagrees with the browser's, which is a hydration mismatch rather than a cosmetic difference.
+
+This is also why the panel became a client island, reversing D66's note that it should not cost a client bundle. That was right when there was nothing to interact with. The empty and failed states still render server-side with no bundle at all, which is the common case.
+
+### A colour per person, and where it is allowed to live
+
+> "If we had, for instance, a colour for each of us... part of that colour could be mine, part of it could be Shourov's... I'm not too sure if it's really needed on a global level or if it's just useful on the analytics level."
+
+**Analytics only, and that answers his own question.** The brand already spends colour on a meaning: coral is human, amber is hybrid, mint is agent. Handing coral to Marrs and amber to Shourov would quietly remap the one semantic the brand has, on every screen in the console. Confined to the panel that asks "whose reach is this", a series palette answers a question nothing else on that screen answers, and it never leaves.
+
+**So these are not brand colours.** They are the documented categorical series palette from the house chart guidance, in its fixed slot order, which is what keeps them apart for colourblind readers. **Validated with the guidance's own script against this console's real surfaces rather than eyeballed:**
+
+- dark `#1c1c27`: every check PASS. Worst adjacent CVD ΔE 8.4 (target 8), normal-vision 19.3 (floor 15), contrast all ≥ 3:1.
+- light `#f4ece0`: every check PASS except contrast, which WARNs on four of five.
+
+**The light WARN is not dismissable, so it is answered rather than ignored.** The guidance allows a sub-3:1 fill only where the value is readable another way: every bar carries its total as a visible label, the legend names every person in text beside their own avatar, and the table underneath lists the posts. Three relief channels, none of them colour.
+
+**Colour follows the person, never their rank.** The slot is fixed by position in `STREAMS`, so filtering to a shorter range, or one stream out-performing another, never repaints anybody. A chart whose colours move when the data moves is worse than no colour at all. A stream with no slot paints neutral rather than borrowing someone else's identity: showing two people as one is the single failure a colour key must not have.
+
+Segments keep stream order rather than being sorted by size, for the same reason: a person who appears in a different position in every bar is a person the reader has to re-find every time.
+
+### Rendered and looked at
+
+The palette validator checks colour, not layout, so the geometry was rendered standalone with realistic data (a quiet quarter with a spike, some empty weeks, a platform reporting nothing) and inspected for label collisions and overflow before shipping. Both bucket widths read cleanly, the 2px surface gaps between segments are visible at real sizes, and a platform with no reported reach shows "1 post" rather than an empty bar.
+
+31 new assertions, 624 total.

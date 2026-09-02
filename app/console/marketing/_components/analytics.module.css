@@ -169,18 +169,78 @@
 }
 /* Hairline, solid, one step off the surface: furniture, not data. */
 .barTrack {
-  display: block;
+  /* Flex since D87: the bar is now a stack of one segment per person. */
+  display: flex;
+  align-items: stretch;
   height: 14px;
   border-radius: 2px;
   background: color-mix(in srgb, var(--text-3, #6f6a64) 15%, transparent);
-  overflow: hidden;
+  position: relative;
 }
-/* Square at the baseline, 4px rounded at the data end, capped well under 24px thick. */
-.barFill {
+
+/**
+ * ONE SEGMENT PER PERSON (D87), with a 2px gap in the surface colour between them, which is the
+ * house rule for touching marks and is also the secondary encoding that keeps two adjacent hues
+ * legible for a colourblind reader. Square at the baseline, 4px rounded at the data end, and 14px
+ * thick, well under the 24px cap.
+ */
+.barSeg {
   display: block;
+  position: relative;
   height: 100%;
+  min-width: 3px;
+  border-right: 2px solid var(--tac-surface, #1b1b26);
+  cursor: default;
+}
+.barSeg:first-child {
+  border-radius: 2px 0 0 2px;
+}
+.barSeg:last-child {
+  border-right: 0;
   border-radius: 0 4px 4px 0;
-  background: color-mix(in srgb, var(--mint, #69fccb) 62%, transparent);
+}
+.barSeg:only-child {
+  border-radius: 2px 4px 4px 2px;
+}
+/* The hovered mark lifts, so the reader sees it respond. */
+.barSegOn {
+  filter: brightness(1.25);
+  outline: 1px solid var(--text, #f4ece4);
+  outline-offset: -1px;
+}
+.barSeg:focus-visible {
+  outline: 2px solid var(--text, #f4ece4);
+  outline-offset: 1px;
+}
+
+/** The per-segment readout. Value leads, name follows: the reader has the series and wants the number. */
+.segTip {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 8px);
+  transform: translateX(-50%);
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 6px 9px;
+  border-radius: 8px;
+  white-space: nowrap;
+  pointer-events: none;
+  background: var(--tac-surface-2, #22222e);
+  border: 1px solid var(--tac-edge-dark, rgba(255, 255, 255, 0.14));
+  box-shadow: var(--tac-shadow-raised);
+}
+.segTipValue {
+  font-family: var(--font-jetbrains-mono), monospace;
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--text, #f4ece4);
+}
+.segTipWho {
+  font-family: var(--font-jetbrains-mono), monospace;
+  font-size: 10px;
+  color: var(--text-3, #6f6a64);
 }
 .barValue {
   font-family: var(--font-jetbrains-mono), monospace;
@@ -332,4 +392,172 @@
   font-size: 13px;
   color: var(--text-3);
   line-height: 1.4;
+}
+
+/* ------------------------------------------------------------------ the range filter (D87) */
+
+/* One row, above everything it scopes. Presets before any custom range, date range first. */
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 18px;
+}
+.filterBtn {
+  font-family: var(--font-jetbrains-mono), monospace;
+  font-size: 11px;
+  color: var(--text-3, #6f6a64);
+  background: var(--tac-surface-2, #22222e);
+  border: 1px solid var(--tac-edge-dark, rgba(255, 255, 255, 0.12));
+  border-radius: 999px;
+  padding: 6px 13px;
+  cursor: pointer;
+}
+.filterBtn:hover {
+  color: var(--text, #f4ece4);
+}
+.filterOn {
+  color: var(--mint, #69fccb);
+  border-color: color-mix(in srgb, var(--mint, #69fccb) 55%, transparent);
+  background: color-mix(in srgb, var(--mint, #69fccb) 10%, transparent);
+}
+.filterNote {
+  font-family: var(--font-jetbrains-mono), monospace;
+  font-size: 10px;
+  color: var(--text-3, #6f6a64);
+  margin-left: auto;
+}
+
+/* ------------------------------------------------------------------ the time chart (D87) */
+
+.chart {
+  margin: 0 0 22px;
+}
+.chartTitle {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 12px;
+  font-family: var(--font-jetbrains-mono), monospace;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-3, #6f6a64);
+  margin-bottom: 6px;
+}
+/* The crosshair's readout. Value leads; when it reads, the eye is already on the line. */
+.chartRead {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+  text-transform: none;
+  letter-spacing: 0;
+}
+.chartReadValue {
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--text, #f4ece4);
+}
+.chartReadWhen {
+  color: var(--text-3, #6f6a64);
+}
+.chartSvg {
+  display: block;
+  width: 100%;
+  height: auto;
+  touch-action: none;
+}
+/* Recessive: the grid is read against, never with. */
+.gridLine {
+  stroke: color-mix(in srgb, var(--text-3, #6f6a64) 28%, transparent);
+  stroke-width: 1;
+}
+.axisText {
+  font-family: var(--font-jetbrains-mono), monospace;
+  font-size: 9px;
+  fill: var(--text-3, #6f6a64);
+}
+.chartLine {
+  fill: none;
+  stroke: var(--mint, #69fccb);
+  stroke-width: 2;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+/* The area carries magnitude without spending a second colour on it. */
+.chartArea {
+  fill: color-mix(in srgb, var(--mint, #69fccb) 12%, transparent);
+  stroke: none;
+}
+/* A 2px ring in the surface colour, so the marker stays legible sitting on its own line. */
+.chartDot {
+  fill: var(--mint, #69fccb);
+  stroke: var(--tac-surface, #1b1b26);
+  stroke-width: 2;
+}
+.crosshair {
+  stroke: color-mix(in srgb, var(--text, #f4ece4) 35%, transparent);
+  stroke-width: 1;
+  stroke-dasharray: 3 3;
+}
+
+/* ------------------------------------------------------------------ the colour key (D87) */
+
+/**
+ * THE FIVE SERIES SLOTS. Not brand colours: the documented categorical palette from the house chart
+ * guidance, in its fixed order, validated with its own script against this console's real surfaces.
+ * See lib/marketing/stream-colors.ts for the run and for why the brand's coral/amber/mint are
+ * deliberately NOT used here.
+ */
+.wrap {
+  --sc-1: #3987e5;
+  --sc-2: #d95926;
+  --sc-3: #199e70;
+  --sc-4: #c98500;
+  --sc-5: #d55181;
+  /* A stream with no slot paints neutral rather than borrowing someone else's identity. */
+  --sc-none: color-mix(in srgb, var(--text-3, #6f6a64) 45%, transparent);
+}
+/* The light steps of the same five hues, selected for the light surface rather than flipped. */
+:global(body.theme-light) .wrap {
+  --sc-1: #2a78d6;
+  --sc-2: #eb6834;
+  --sc-3: #1baf7a;
+  --sc-4: #eda100;
+  --sc-5: #e87ba4;
+}
+
+.legend {
+  list-style: none;
+  margin: 0 0 12px;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+}
+.legendItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+/* A rect, mirroring the mark it labels (the bars are fills, not lines). */
+.legendSwatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  flex: none;
+}
+.legendFace {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex: none;
+}
+/* Text wears text ink, never the series colour: the swatch beside it carries identity. */
+.legendName {
+  font-family: var(--font-jetbrains-mono), monospace;
+  font-size: 10.5px;
+  color: var(--text-2);
 }

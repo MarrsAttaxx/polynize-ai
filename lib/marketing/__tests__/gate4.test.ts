@@ -59,14 +59,20 @@ import {
   UPLOAD_TYPES,
   MAX_UPLOAD_BYTES,
 } from '../media-upload';
-import { compactNumber, sparklinePoints } from '../analytics-format';
+import { compactNumber } from '../analytics-format';
 import {
   normalizePost,
   normalizeFeed,
   summarise,
   mergeSummaries,
   weekIndex,
+  rangeStart,
+  postsSince,
+  bucketSeries,
+  stackByNetwork,
+  RANGES,
 } from '../analytics-metrics';
+import { streamSlot, streamColorVar, SERIES_DARK, SERIES_LIGHT } from '../stream-colors';
 import { joinReport, harvestIds } from '../analytics-probe';
 import { llmErrorText } from '../../llm/error-text';
 import { laneVoice } from '../article-draft';
@@ -876,13 +882,11 @@ eq('zero is zero', compactNumber(0), '0');
  */
 
 /** The sparkline geometry: inside its box, oldest to newest, biggest value at the smallest y. */
-const sp = sparklinePoints([10, 50, 30], 100, 40, 3);
-eq('one point per value', sp.pts.length, 3);
-ok('all inside the box', sp.pts.every((p) => p.x >= 0 && p.x <= 100 && p.y >= 0 && p.y <= 40));
-ok('x increases left to right', sp.pts.every((p, i, arr) => i === 0 || arr[i - 1].x < p.x));
-ok('the largest value sits highest, which is the smallest y', sp.pts[1].y < sp.pts[0].y && sp.pts[1].y < sp.pts[2].y);
-eq('a flat series does not divide by zero', sparklinePoints([5, 5, 5], 100, 40).pts.length, 3);
-eq('an empty series draws nothing', sparklinePoints([], 100, 40).pts.length, 0);
+/**
+ * `sparklinePoints` went with the tile sparklines (D87). The panel draws one proper chart over time
+ * now, and a 104px line repeating it inside four tiles was the same picture labelled four ways.
+ * Deleted rather than kept warm, like the delta formatter before it.
+ */
 
 /* ------------------------------------------------------------------ D68: where a lane lives */
 
@@ -1618,6 +1622,80 @@ eq('one network across both', merged.byNetwork.length, 1);
 eq('carrying both posts', merged.byNetwork[0].posts, 2);
 eq('an empty merge claims nothing', mergeSummaries([]).impressions, undefined);
 eq('and reports no posts', mergeSummaries([]).posts, 0);
+
+/* ------------------------------------------------------------------ D87: ranges, chart, stacks */
+
+/** ONE PULL SERVES ALL THREE RANGES: the store holds 90 days and a range is a filter over it. */
+eq('three presets', RANGES.length, 3);
+eq('the widest matches the pull window', RANGES[2].days, 90);
+eq('a 7 day range starting today includes today', rangeStart('2026-09-02', 7), '2026-08-27');
+eq('and a 1 day range is today itself', rangeStart('2026-09-02', 1), '2026-09-02');
+eq('across a month boundary', rangeStart('2026-09-02', 30), '2026-08-04');
+
+const ranged = [
+  { id: 'a', network: 'linkedin', text: 'old', published_at: '2026-08-01T09:00', impressions: 10 },
+  { id: 'b', network: 'linkedin', text: 'recent', published_at: '2026-09-01T09:00', impressions: 20 },
+  { id: 'c', network: 'linkedin', text: 'undated', impressions: 999 },
+];
+eq('a range keeps what falls inside it', postsSince(ranged, '2026-08-27').length, 1);
+/**
+ * AN UNDATED POST IS EXCLUDED FROM A RANGE, because a range is a claim about when something happened
+ * and an undated post cannot support it. Its 999 impressions would otherwise appear in every window.
+ */
+eq('and drops the undated one rather than assuming a date', postsSince(ranged, '2026-08-27')[0].id, 'b');
+eq('a wide enough range takes both dated posts', postsSince(ranged, '2026-01-01').length, 2);
+
+/* the chart's buckets */
+const daily = bucketSeries(ranged, '2026-08-31', '2026-09-02', 'day');
+eq('one bucket per day across the range, inclusive', daily.length, 3);
+eq('labelled by date', daily[0].label, '2026-08-31');
+/**
+ * EMPTY BUCKETS ARE PRESENT AND ZERO, which is the opposite of the rule for totals, on purpose: a
+ * day with no posts really did earn no impressions, so a flat stretch is a fact. An absent METRIC is
+ * still never a zero. The two rules live side by side and this pair of assertions is the boundary.
+ */
+eq('a quiet day is a real zero in the line', daily[0].value, 0);
+eq('and the day that had a post carries it', daily[1].value, 20);
+eq('with its post count', daily[1].posts, 1);
+eq('the out-of-range post is not in the line', daily.reduce((t, b) => t + b.value, 0), 20);
+
+const weekly = bucketSeries(ranged, '2026-06-04', '2026-09-02', 'week');
+ok('ninety days is thirteen or fourteen weekly buckets', weekly.length >= 13 && weekly.length <= 14);
+eq('and both dated posts land in it', weekly.reduce((t, b) => t + b.posts, 0), 2);
+eq('a backwards window yields nothing rather than throwing', bucketSeries(ranged, '2026-09-02', '2026-08-01', 'day').length, 0);
+
+/* the stacked platform bars */
+const stacks = stackByNetwork([
+  { stream: 'marrs', label: 'Marrs', posts: [
+    { id: 'm1', network: 'linkedin', text: '', impressions: 100 },
+    { id: 'm2', network: 'tiktok', text: '' },
+  ] },
+  { stream: 'shourov', label: 'Shourov', posts: [
+    { id: 's1', network: 'linkedin', text: '', impressions: 50 },
+  ] },
+]);
+eq('two platforms', stacks.length, 2);
+eq('LinkedIn leads on reach', stacks[0].network, 'linkedin');
+eq('with both people in its bar', stacks[0].segments.length, 2);
+eq('and their reach summed', stacks[0].impressions, 150);
+eq('the first segment is the first stream in STREAMS order, not the biggest', stacks[0].segments[0].stream, 'marrs');
+/** A platform that reported nothing still counts its posts: publishing and reach are different facts. */
+eq('TikTok has a post', stacks[1].posts, 1);
+eq('and no impressions figure rather than a zero', stacks[1].impressions, undefined);
+
+/* the colour key */
+eq('Polynize owns slot 1', streamSlot('polynize'), 1);
+eq('Marrs slot 2', streamSlot('marrs'), 2);
+eq('Julian slot 5', streamSlot('julian'), 5);
+/** A stream we do not know gets no slot rather than borrowing someone else's colour. */
+eq('an unknown stream has no slot', streamSlot('nobody'), 0);
+eq('and paints in the neutral', streamColorVar('nobody'), 'var(--sc-none)');
+eq('a known one names its own variable', streamColorVar('shourov'), 'var(--sc-3)');
+eq('five slots, both modes', SERIES_DARK.length, SERIES_LIGHT.length);
+eq('and one per stream', SERIES_DARK.length, 5);
+/** Validated with the guidance's own script, not by eye. The hexes are the documented ones. */
+eq('the dark slots are the documented steps', SERIES_DARK.join(','), '#3987e5,#d95926,#199e70,#c98500,#d55181');
+eq('and the light ones too', SERIES_LIGHT.join(','), '#2a78d6,#eb6834,#1baf7a,#eda100,#e87ba4');
 
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

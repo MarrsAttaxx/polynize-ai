@@ -277,3 +277,137 @@ export function mergeSummaries(parts: Summary[]): Summary {
     last: dates[dates.length - 1],
   };
 }
+
+/* ------------------------------------------------------------------ ranges and shapes (D87) */
+
+/**
+ * THE RANGE PRESETS. Marrs: "Is it possible for us to have a button that says the last week, the
+ * last month, and the last 90 days, so you can choose between those?"
+ *
+ * ONE PULL SERVES ALL THREE. The store holds 90 days, so a range is a filter over what we already
+ * have rather than another call to Metricool: switching is instant, costs nothing, and cannot fail.
+ * That is the whole reason the pull window is 90 and not 7.
+ */
+export const RANGES = [
+  { id: '7', label: 'Last 7 days', days: 7 },
+  { id: '30', label: 'Last 30 days', days: 30 },
+  { id: '90', label: 'Last 90 days', days: 90 },
+] as const;
+
+export type RangeId = (typeof RANGES)[number]['id'];
+
+/** The first date inside a range ending today, both as 'YYYY-MM-DD'. */
+export function rangeStart(today: string, days: number): string {
+  const [y, m, d] = today.split('-').map(Number);
+  if (!y) return today;
+  const at = new Date(Date.UTC(y, m - 1, d, 12) - (days - 1) * 86_400_000);
+  return at.toISOString().slice(0, 10);
+}
+
+/**
+ * Posts on or after a date. A post with no date is EXCLUDED from a range, because a range is a claim
+ * about when something happened and an undated post cannot support it. It still counts in the
+ * all-time totals, which is why this is a filter rather than a property of the post.
+ */
+export function postsSince(posts: PostMetrics[], from: string): PostMetrics[] {
+  return posts.filter((p) => p.published_at && p.published_at.slice(0, 10) >= from);
+}
+
+export type Bucket = { key: string; label: string; value: number; posts: number };
+
+/**
+ * IMPRESSIONS OVER TIME, bucketed by day or by week.
+ *
+ * BY DAY UP TO A MONTH, BY WEEK BEYOND IT. Ninety daily points on a chart this size is a comb
+ * nobody can read, and five weekly points over a fortnight hides the shape entirely, so the bucket
+ * follows the range rather than being fixed. Thirty-one is the boundary because a calendar month is
+ * the longest range anyone reads day by day.
+ *
+ * EVERY BUCKET IN THE RANGE IS PRESENT, including the empty ones. A week with no posts really did
+ * earn no impressions, so a gap in the line is a fact rather than missing data. This is the exact
+ * opposite of the rule for the totals, where an absent metric must never print as a zero, and the
+ * two live side by side on purpose.
+ */
+export function bucketSeries(
+  posts: PostMetrics[],
+  from: string,
+  today: string,
+  by: 'day' | 'week' = 'day'
+): Bucket[] {
+  const start = weekOrDay(from, by);
+  const end = weekOrDay(today, by);
+  if (start === undefined || end === undefined || end < start) return [];
+
+  const buckets = new Map<number, Bucket>();
+  for (let k = start; k <= end; k += 1) {
+    buckets.set(k, { key: String(k), label: labelFor(k, by), value: 0, posts: 0 });
+  }
+  for (const p of posts) {
+    const k = p.published_at ? weekOrDay(p.published_at, by) : undefined;
+    if (k === undefined) continue;
+    const b = buckets.get(k);
+    if (!b) continue;
+    b.value += p.impressions ?? 0;
+    b.posts += 1;
+  }
+  return [...buckets.values()];
+}
+
+/** Days since the epoch, or ISO-ish weeks since it, so bucketing needs no calendar library. */
+function weekOrDay(date: string, by: 'day' | 'week'): number | undefined {
+  const [y, m, d] = date.slice(0, 10).split('-').map(Number);
+  if (!y || !m || !d) return undefined;
+  const days = Math.floor(Date.UTC(y, m - 1, d, 12) / 86_400_000);
+  return by === 'day' ? days : Math.floor((days + 3) / 7);
+}
+
+/** A bucket back to a readable date. Weeks are labelled by the Monday they start on. */
+function labelFor(k: number, by: 'day' | 'week'): string {
+  const days = by === 'day' ? k : k * 7 - 3;
+  return new Date(days * 86_400_000).toISOString().slice(0, 10);
+}
+
+export type StreamSlice = { stream: string; label: string; posts: PostMetrics[] };
+
+export type Stack = {
+  network: string;
+  /** Absent when not one contributing post reported a figure. */
+  impressions?: number;
+  posts: number;
+  segments: { stream: string; label: string; impressions?: number; posts: number }[];
+};
+
+/**
+ * WHOSE REACH IS IN THIS PLATFORM'S BAR (D87). Marrs: "part of that colour could be mine, part of it
+ * could be Shourov's... you could see, even roughly, what percentage of that line was coming from
+ * who."
+ *
+ * Segments keep their stream's identity rather than being sorted by size, because the colour is
+ * assigned per person and a segment order that follows magnitude would make the same person appear
+ * in a different place in every bar. Order is the STREAMS order, which is the order the palette
+ * slots are assigned in, so the two can never disagree.
+ */
+export function stackByNetwork(slices: StreamSlice[]): Stack[] {
+  const nets = new Map<string, Stack>();
+  for (const slice of slices) {
+    for (const p of slice.posts) {
+      let stack = nets.get(p.network);
+      if (!stack) {
+        stack = { network: p.network, posts: 0, segments: [] };
+        nets.set(p.network, stack);
+      }
+      let seg = stack.segments.find((x) => x.stream === slice.stream);
+      if (!seg) {
+        seg = { stream: slice.stream, label: slice.label, posts: 0 };
+        stack.segments.push(seg);
+      }
+      seg.posts += 1;
+      stack.posts += 1;
+      if (p.impressions !== undefined) {
+        seg.impressions = (seg.impressions ?? 0) + p.impressions;
+        stack.impressions = (stack.impressions ?? 0) + p.impressions;
+      }
+    }
+  }
+  return [...nets.values()].sort((a, b) => (b.impressions ?? 0) - (a.impressions ?? 0));
+}

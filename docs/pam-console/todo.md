@@ -127,6 +127,8 @@ The note below was written before it was built, and its guess about scope was wr
 
 **6. Rename the front page.** Done: "Whose content" is now "Content engine".
 
+**7y. Ranges, a real chart and a colour per person (D87).** Last 7 / 30 / 90 day buttons filtering one stored pull; a full-width line chart bucketed by day up to a month and by week beyond; platform bars stacked by stream with a validated five-slot series palette (analytics only, so the brand's coral/amber/mint keep meaning human/hybrid/agent everywhere else).
+
 **7z. The panel is REAL (D86).** One call per stream to `/v2/analytics/brand-summary/posts`, stored per stream, drawn on the engine page (merged) and each stream page. Four tiles: impressions, interactions, engagement rate, posts. A missing metric prints "no data yet", never 0. Delta tiles are gone: a delta needs a previous window and the store keeps one by design. Pull is a button, not a cron, until it is boring. **Next: the frame ladder**, which needs the join below.
 
 **7. Analytics in two places, always at the bottom. MOCK BUILT (D66), replaced in D86.** At the bottom of the engine page (aggregated) and at the bottom of every stream. Every field maps to something Metricool documents per post, so it is a promise about the real panel rather than decoration, and it is labelled `sample numbers` in amber with the reason underneath. Still a mock: item 8 below is what makes it real.
@@ -245,4 +247,4 @@ What it was, kept because it is the shape of the bug: `pam/config/posting-schedu
 
 **17. Nothing lints. FIXED (D75).** ESLint 9 flat config, narrow and correctness-only, gating the build via `prebuild`. Verified against the actual bug: D74 reintroduced temporarily produces an ESLint error and no TypeScript complaint. 20 pre-existing errors were fixed rather than suppressed. What it was: D74 was a function calling itself instead of reading a map, which TypeScript cannot catch (`string ?? x` is legal) and which left `LANE_VOICE` unused with nothing objecting. A configured `no-unused-vars` plus `no-constant-binary-expression` would have caught both halves at commit time. It cost a week of Gate 2 being dead.
 
-**15. No test runner beyond two suites.** Still true, though the marketing suite has grown a long way: `npm run test:marketing` is 596 assertions now (was 111 when this was written) and `npm run test:blueprint`. Everything else is unverified by anything but a typecheck, and `tsc` cannot see a client component importing server code, which shipped a 500 once already (D47).
+**15. No test runner beyond two suites.** Still true, though the marketing suite has grown a long way: `npm run test:marketing` is 624 assertions now (was 111 when this was written) and `npm run test:blueprint`. Everything else is unverified by anything but a typecheck, and `tsc` cannot see a client component importing server code, which shipped a 500 once already (D47).

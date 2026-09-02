@@ -6,7 +6,7 @@ import { listSavedPieces, type MarketingPiece } from '@/lib/marketing/piece-stor
 import { STREAMS, STREAM_AVATARS } from '@/lib/marketing/streams';
 import { AnalyticsPanel } from './_components/AnalyticsPanel';
 import { getStreamAnalytics } from '@/lib/marketing/analytics-store';
-import { summarise, mergeSummaries } from '@/lib/marketing/analytics-metrics';
+import type { StreamSlice } from '@/lib/marketing/analytics-metrics';
 import s from '../_components/client-card.module.css';
 import l from '../_components/launcher.module.css';
 
@@ -56,12 +56,17 @@ export default async function MarketingHome() {
       }
     })
   );
-  const withPosts = stored.filter((x) => x && x.posts.length > 0);
+  /**
+   * ONE SLICE PER STREAM, kept apart rather than merged (D87). Merging here would throw away the
+   * one thing the engine page is for: whose reach is in each platform's bar. The view sums them.
+   */
+  const slices: StreamSlice[] = STREAMS.map((st, i) => ({
+    stream: st.id,
+    label: st.label,
+    posts: stored[i]?.posts ?? [],
+  }));
   const errors = stored.filter((x) => x?.error).map((x) => `${x!.stream}: ${x!.error}`);
   const engine = {
-    data: withPosts.length
-      ? mergeSummaries(withPosts.map((x) => summarise(x!.posts)))
-      : undefined,
     pulledAt: stored.find((x) => x?.pulled_at)?.pulled_at,
     error: errors.length ? errors.join(' · ') : undefined,
   };
@@ -156,7 +161,8 @@ export default async function MarketingHome() {
         <AnalyticsPanel
           scope="engine"
           title="Across every stream"
-          data={engine.data}
+          slices={slices}
+          today={new Date().toISOString().slice(0, 10)}
           pulledAt={engine.pulledAt}
           error={engine.error}
         />
