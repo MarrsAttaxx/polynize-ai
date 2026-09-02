@@ -13,6 +13,7 @@ import { llmErrorText } from '@/lib/llm/error-text';
 import { getCurrentUser } from '@/lib/console-auth';
 import { getNarrative, saveNarrative } from '@/lib/marketing/narrative-store';
 import { reviseArticle } from '@/lib/marketing/article-draft';
+import { captureFeedback } from '@/lib/marketing/feedback-capture';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -35,6 +36,11 @@ export async function POST(
     return NextResponse.json({ error: 'say what to change' }, { status: 400 });
   }
 
+  /**
+   * FEEDBACK FIRST (D93). On this screen April is writing the article, so an unqualified note lands
+   * on that job. The narrative is read below for its lane, which scopes a note he widens to the
+   * stream, so the capture happens after the read rather than before it.
+   */
   let narrative;
   try {
     narrative = await getNarrative(id);
@@ -43,6 +49,29 @@ export async function POST(
     return NextResponse.json({ error: 'could not read the narrative' }, { status: 502 });
   }
   if (!narrative) return NextResponse.json({ error: 'narrative not found' }, { status: 404 });
+
+  /**
+   * Before the article check, on purpose: a rule about how she writes is worth recording whether or
+   * not there is an article on screen to apply it to yet.
+   */
+  const captured = await captureFeedback(instruction, user.email, {
+    stream: narrative.lane,
+    job: 'article',
+    from: id,
+  });
+  if (captured) {
+    if (!captured.stored) {
+      return NextResponse.json({ error: captured.error }, { status: 500 });
+    }
+    /**
+     * THE ARTICLE COMES BACK UNCHANGED, deliberately. This client only acts when it sees an
+     * `article`, so returning none would leave the chat saying "that did not work" for a note that
+     * was stored perfectly. Sending the current text back is a no-op for the document and lets the
+     * confirmation reach him through `note`.
+     */
+    return NextResponse.json({ article: narrative.article, note: captured.said });
+  }
+
   if (!narrative.article.trim()) {
     return NextResponse.json({ error: 'no article to edit yet' }, { status: 400 });
   }

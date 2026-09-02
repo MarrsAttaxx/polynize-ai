@@ -6,6 +6,7 @@ import { listSavedPieces, type MarketingPiece } from '@/lib/marketing/piece-stor
 import { STREAMS, STREAM_AVATARS } from '@/lib/marketing/streams';
 import { AnalyticsPanel } from './_components/AnalyticsPanel';
 import { getStreamAnalytics } from '@/lib/marketing/analytics-store';
+import { listNotes } from '@/lib/marketing/feedback-store';
 import type { StreamSlice } from '@/lib/marketing/analytics-metrics';
 import s from '../_components/client-card.module.css';
 import l from '../_components/launcher.module.css';
@@ -105,6 +106,18 @@ export default async function MarketingHome() {
   for (const p of pieces) byId.set(p.piece_id, p);
   const queued = [...byId.values()].filter((p) => p.shoot_ready && !p.recorded_at).length;
 
+  /**
+   * HOW MANY RULES ARE IN FORCE (D93), on the chip beside the link. A count is the cheapest possible
+   * reminder that the list exists and is doing something, which is what stops it becoming a pile
+   * nobody revisits. A read failure costs the number and nothing else.
+   */
+  let liveRules = 0;
+  try {
+    liveRules = (await listNotes()).filter((n) => !n.retired_at && n.kind === 'rule').length;
+  } catch (err) {
+    console.error('[marketing] feedback count failed:', err);
+  }
+
   return (
     <>
       <div className={s.bgPattern} aria-hidden />
@@ -123,6 +136,12 @@ export default async function MarketingHome() {
                 rather than one stream. */}
             <Link href="/console/studio" className={s.startConceptCta}>
               Studio{queued > 0 ? ` · ${queued}` : ''}
+            </Link>
+            {/* WHAT APRIL HAS BEEN TOLD (D93). Here for the same reason as the other two: it is
+                about the whole engine rather than one stream, and a feedback list nobody can find
+                is a feedback list that becomes a write-only pile. */}
+            <Link href="/console/marketing/feedback" className={s.startConceptCta}>
+              April&rsquo;s brief{liveRules > 0 ? ` · ${liveRules}` : ''}
             </Link>
           </div>
         </div>

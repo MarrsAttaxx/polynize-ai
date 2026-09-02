@@ -26,6 +26,8 @@ import { stripEmDashes } from '@/lib/em-dash';
 import { stripMarkdownEmphasis, NO_MARKDOWN_INSTRUCTION } from '@/lib/plain-copy';
 import { HOOK_GUIDANCE } from './hook-guidance';
 import { exemplarBlock, pickExemplars } from './exemplars';
+import { applyTo, feedbackBlock, type JobId } from './feedback';
+import { listNotes } from './feedback-store';
 
 /**
  * The model that writes. Falls through to OPENROUTER_MODEL when unset, so this is a
@@ -156,6 +158,17 @@ export function recipePartsFromTemplate(t: {
 
 type PromptOpts = {
   formatLabel: string;
+  /**
+   * HIS OWN CORRECTIONS, already rendered (D93). Empty when there are none, so a prompt with no
+   * feedback is byte for byte the prompt it was before this existed.
+   *
+   * INJECTED HERE AND NOT IN `lib/llm`, deliberately. That layer wraps EVERY model call in the app,
+   * including the ones that extract JSON, plan slides, parse concepts and generate figures, and a
+   * note about how a sentence should sound has no business in a JSON extractor. The prompt audit
+   * (D92) flagged exactly that risk for the global rules that already live there. So corrections
+   * reach the PROSE builders only, which are the four in this file plus the article and the chats.
+   */
+  feedback?: string;
   /** Worked examples of the house standard, already rendered. Empty when none are marked. */
   exemplars?: string;
   icp?: string;
@@ -311,7 +324,7 @@ Three materials go into this piece. Hold all three at once and let none crowd ou
 2. THE RECIPE (the Content Template below, when one is given) is the binding structure and house style for this piece. Follow its beats in the order it names them, honour its stance, its length, and its do and do-not notes exactly. Its structure wins over any default shape here. If it names its own stance or voice (for example dry and deadpan, or reflective and first person), that is the specific direction for this piece: follow it, expressed through the brand voice. If no recipe is given, use the strongest natural shape for a ${opts.formatLabel}.
 3. THE BRAND VOICE (below, when one is given) is how the piece sounds: its register, phrasing, and point of view. Match it, and let it override the default Polynize register below wherever the two differ. If none is given, write in the default Polynize register below.
 
-Precedence when they pull against each other: the concept governs what you may say, the recipe governs how the piece is built, the brand voice governs how it sounds. The hard constraints at the end override all three and are never traded away.${audienceBlock(opts.icp)}${voiceBlock(opts.brandVoice)}${recipeBlock(opts)}${outputSpecBlock(opts.outputSpec, !!opts.length)}
+Precedence when they pull against each other: the concept governs what you may say, the recipe governs how the piece is built, the brand voice governs how it sounds. The hard constraints at the end override all three and are never traded away.${audienceBlock(opts.icp)}${voiceBlock(opts.brandVoice)}${recipeBlock(opts)}${outputSpecBlock(opts.outputSpec, !!opts.length)}${opts.feedback ?? ''}
 
 HOW TO FUSE THEM. A great draft is the recipe's structure carrying THIS concept's specific material in THIS voice, for the reader named above. The recipe alone is a hollow template. The concept alone is an info dump. Fill every beat the recipe names with something concrete from the concept, and make every line sound like the voice. A draft that nails one material by dropping another has failed.
 
@@ -352,7 +365,7 @@ Three materials go into this script. Hold all three at once and let none crowd o
 2. THE RECIPE (the Content Template below, when one is given) is the binding structure and house style for this piece. Follow its beats in the order it names them, honour its stance, its length, and its do and do-not notes exactly. Its structure wins over any default shape here. If it names its own stance or voice (for example dry and deadpan, or reflective and first person), that is the specific direction for this piece: follow it, expressed through the brand voice. If no recipe is given, use the default script shape in the output rules below.
 3. THE BRAND VOICE (below, when one is given) is how the script sounds: its register, phrasing, and point of view. Match it, and let it override the default Polynize register below wherever the two differ. If none is given, write in the default Polynize register below.
 
-Precedence when they pull against each other: the concept governs what you may say, the recipe governs how the script is built, the brand voice governs how it sounds. The hard constraints at the end override all three and are never traded away.${audienceBlock(opts.icp)}${voiceBlock(opts.brandVoice)}${recipeBlock(opts)}${outputSpecBlock(opts.outputSpec, !!opts.length)}
+Precedence when they pull against each other: the concept governs what you may say, the recipe governs how the script is built, the brand voice governs how it sounds. The hard constraints at the end override all three and are never traded away.${audienceBlock(opts.icp)}${voiceBlock(opts.brandVoice)}${recipeBlock(opts)}${outputSpecBlock(opts.outputSpec, !!opts.length)}${opts.feedback ?? ''}
 
 HOW TO FUSE THEM. A great script is the recipe's structure carrying THIS concept's specific material in THIS voice, for the reader named above, written for the mouth and the ear: short sentences, no subclauses that die on camera. The recipe alone is a hollow template. The concept alone is an info dump read aloud. Fill every beat the recipe names with something concrete from the concept. A script that nails one material by dropping another has failed.
 
@@ -422,10 +435,27 @@ type Materials = {
  * every stage was looking at the same concept, template recipe, voice and examples. Two stages
  * reading different materials would make the agreement decorative.
  */
+/**
+ * His corrections for one job on one stream, as a prompt block (D93).
+ *
+ * Tolerant of its own failure by contract: no corrections is a weaker prompt, and a failed lookup
+ * must never cost the draft. Same rule the exemplar load already follows.
+ */
+async function feedbackFor(stream: string, job: JobId): Promise<string> {
+  try {
+    return feedbackBlock(applyTo(await listNotes(), { stream, job }));
+  } catch (err) {
+    console.error('[draft] feedback read failed, drafting without corrections:', err);
+    return '';
+  }
+}
+
 async function gather(
   owner: string,
   piece: MarketingPiece,
-  kind: 'text' | 'video'
+  kind: 'text' | 'video',
+  /** Which job this draft is, so a note scoped to it is picked up. */
+  job: JobId
 ): Promise<Materials> {
   const conceptBody = await conceptBodyForPiece(owner, piece);
   if (!conceptBody.trim()) throw new DraftError('no-concept');
@@ -473,6 +503,7 @@ async function gather(
      * prompt means the model follows whichever it read last.
      */
     length: parts.length || (outputSpec ? undefined : defaultLengthFor(piece.format)) || undefined,
+    feedback: await feedbackFor(piece.stream, job),
   };
 
   return { conceptBody, formatLabel, promptOpts };
@@ -483,7 +514,13 @@ async function generate(
   piece: MarketingPiece,
   kind: 'text' | 'video'
 ): Promise<string> {
-  const { conceptBody, formatLabel, promptOpts } = await gather(owner, piece, kind);
+  /** Copy and script are different jobs, so a note about one does not reach the other (D93). */
+  const { conceptBody, formatLabel, promptOpts } = await gather(
+    owner,
+    piece,
+    kind,
+    kind === 'video' ? 'script' : 'copy'
+  );
 
   // For text, if a script draft already exists, offer it as reference.
   // The ANGLE goes FIRST in the message, because it is the reason this piece exists and is
@@ -620,7 +657,7 @@ Every hook must be ONE SPOKEN LINE, the words said to camera. No on-screen capti
 For each hook also report, honestly:
 - pattern: which hook pattern from the library it uses, named in a few words.
 - material: the specific thing in the concept it stands on, in a few words. If it stands on nothing concrete and is working from the argument alone, say so plainly. Do not dress up a general claim as though it came from evidence.
-${audienceBlock(opts.icp)}${voiceBlock(opts.brandVoice)}${recipeBlock(opts)}${outputSpecBlock(opts.outputSpec, !!opts.length)}
+${audienceBlock(opts.icp)}${voiceBlock(opts.brandVoice)}${recipeBlock(opts)}${outputSpecBlock(opts.outputSpec, !!opts.length)}${opts.feedback ?? ''}
 
 ${HOOK_GUIDANCE}
 
@@ -645,7 +682,7 @@ export async function proposeHooks(
   piece: MarketingPiece,
   steer?: string
 ): Promise<HookProposal> {
-  const { conceptBody, formatLabel, promptOpts } = await gather(owner, piece, 'video');
+  const { conceptBody, formatLabel, promptOpts } = await gather(owner, piece, 'video', 'hooks');
   const steerBlock = steer?.trim()
     ? `WHAT THE OPERATOR ALREADY KNOWS HE WANTS (his own words. Any complete line here is final copy and goes in as written; anything that reads as direction rather than as copy steers the set):\n"""\n${steer.trim()}\n"""\n\n`
     : '';
@@ -724,7 +761,7 @@ This is the step the operator reviews before the script exists, so its job is to
 - what it stands on: the specific material from the concept this beat uses. Point at the concept's own wording. If a beat rests on the argument rather than on hard material, say that plainly instead of implying evidence you do not have.
 
 The hooks are ALREADY AGREED and given in the message. Do not rewrite them, do not propose alternatives, and do not treat them as beat one. They are the entry points; the arc is what every one of them must hand over to cleanly. Beat one therefore has to work for ALL of the agreed hooks, since only one of them survives the edit.
-${audienceBlock(opts.icp)}${recipeBlock(opts)}
+${audienceBlock(opts.icp)}${recipeBlock(opts)}${opts.feedback ?? ''}
 
 Hard constraints:
 - Ground strictly in the concept. Do not invent facts, names, numbers, quotes, clients, or outcomes it does not contain.
@@ -760,7 +797,7 @@ export async function proposeOutline(
   owner: string,
   piece: MarketingPiece
 ): Promise<string> {
-  const { conceptBody, formatLabel, promptOpts } = await gather(owner, piece, 'video');
+  const { conceptBody, formatLabel, promptOpts } = await gather(owner, piece, 'video', 'outline');
   const hooks = (piece.hooks ?? []).map((h) => h.trim()).filter(Boolean);
   if (hooks.length === 0) throw new DraftError('no-hooks');
 

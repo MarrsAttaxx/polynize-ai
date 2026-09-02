@@ -267,13 +267,21 @@ export function NarrativeGates({
         body: JSON.stringify({ instruction }),
       });
       const b = (await res.json().catch(() => null)) as
-        | { article?: string; error?: string }
+        | { article?: string; error?: string; note?: string }
         | null;
       if (res.ok && b?.article) {
         setArticle(b.article);
         latestArticle.current = b.article;
         setNarrative((s) => ({ ...s, article: b.article as string }));
-        setChat((c) => [...c, { who: 'april', text: 'Done. The article is updated.' }]);
+        /**
+         * `note` means it was FEEDBACK, not an edit (D93): the article came back untouched and what
+         * he needs to read is which scope the note landed on. Saying "the article is updated" there
+         * would be a lie about the one thing he was watching.
+         */
+        setChat((c) => [
+          ...c,
+          { who: 'april', text: b.note ?? 'Done. The article is updated.' },
+        ]);
       } else {
         setChat((c) => [
           ...c,

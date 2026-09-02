@@ -2692,3 +2692,47 @@ A recipe is **data** (a stream can write its own) and a format's shape is **code
 `touchscreen-concept-flip` is listed as a **named, explained exception** rather than quietly excluded, and there is an assertion that it still carries the stale wording, so removing it from that list fails loudly rather than silently passing.
 
 7 new assertions, 660 total.
+
+## D93: Telling April something and having it stick
+
+**Adopted 2 September 2026.** Marrs: *"regardless of where I am in the system, if there's a chat window, I can write `feedback..` and then give some feedback that goes directly to adjusting her function."* Then: *"I trust you to build it."*
+
+So: any chat box, his own syntax, and the note outlives the conversation. Plus a screen where he can see what she has been told, because without that the feature is a write-only pile.
+
+### The design is entirely about not making April worse
+
+A prompt has a signal budget, and a growing pile of one-line notes spends it. **This codebase has learned that twice**: D26 compressed the hook library to adjectives and the writing got worse; the fix was to restore the examples and cut wordage elsewhere. So every decision below is biased toward FEW, STRONG, SCOPED notes rather than a complete record of everything ever said.
+
+**Scope is a JOB, not a screen.** A note about hook labelling should apply wherever hooks are proposed, not on the one url he happened to be looking at. A screen is a place; a job is what April was doing, and that is what the note is about. Six jobs, each a real prompt builder: hooks, outline, script, copy, article, edit.
+
+**It fails narrow.** An ambiguous note lands on the job in view, never on the house. A narrow note applied everywhere does damage; a global note stored narrowly needs widening once. Widening is one control on the review screen; un-damaging every piece of copy in the system is not. Saying "everywhere", "always" or "house rule" reaches the house from inside the chat box, and "for kristin" reaches a named stream.
+
+**The scope is said out loud when the note is taken**, naming the job and how to widen it. An invisible scope choice is the same class of mistake as the YouTube title nobody could see (D82): a derived value the operator cannot check is a guess with extra steps.
+
+**A note cannot fix a bug, so "this is a bug" is a control.** Both of his first examples proved the point: "don't instead of do not" was a missing house rule (D91), and the hook labels were a prompt contradicting itself. A note for the second would have papered over a defect and left April told two opposite things, picking one. Defects are recorded, listed separately, and **never injected**.
+
+**The cap refuses rather than rotates.** Eight per scope. Not a newest-first window: silently retiring his oldest and most established preference to make room for today's aside is the worst possible behaviour, because the note he would most want kept is the one that has been true longest. Anything over the cap is named on the review screen. A limit that quietly drops things is a limit nobody can plan around.
+
+**Nothing is ever deleted.** Retiring stamps a date, which removes it from every prompt and leaves it on the screen. Seeing what was said and what happened to it is most of the value.
+
+### Where the notes reach, and where they deliberately do not
+
+Injected by the PROSE builders only: the four in `draft.ts`, the two article paths, and the piece chat. **Not in `lib/llm`**, which wraps every model call in the app including the ones that extract JSON, plan slides, parse concepts and generate figures. A note about how a sentence should sound has no business in a JSON extractor, and the prompt audit (D92) flagged exactly that risk for the global rules that already live there.
+
+Every read is tolerant by contract: no corrections is a weaker prompt, and a failed lookup must never cost the draft. Same rule the exemplar load already follows.
+
+### The near-miss worth recording
+
+The first version of the capture helper returned a ready-made response, `{ ok, feedback, reply }`, for both chat routes to send. **The two clients read different shapes.** The piece chat does:
+
+```
+if (data.content !== null && data.content !== contentRef.current) onApply(data.content)
+```
+
+An absent `content` arrives as `undefined`, `undefined !== null` is **true**, and it would have written `undefined` over his draft. **A confirmation message would have destroyed the piece he was working on.**
+
+So the helper returns TEXT and each route builds its own reply in its own shape. The piece route sends `content: null`, which is the existing way of saying "the draft was not changed" and is exactly true. The narrative route sends the article back unchanged plus the note, because that client only acts when it sees an article and would otherwise have said "that did not work" about a note it had stored perfectly.
+
+Worth keeping: **a shared helper that returns a Response has to know every caller's contract, and it never does.**
+
+38 new assertions, 698 total.

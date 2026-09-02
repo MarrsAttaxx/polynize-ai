@@ -19,6 +19,9 @@ import { complete, type ChatMessage } from '@/lib/llm';
 import { llmErrorText } from '@/lib/llm/error-text';
 import { stripEmDashes } from '@/lib/em-dash';
 import { stripMarkdownEmphasis, NO_MARKDOWN_INSTRUCTION } from '@/lib/plain-copy';
+import { captureFeedback } from '@/lib/marketing/feedback-capture';
+import { applyTo, feedbackBlock } from '@/lib/marketing/feedback';
+import { listNotes } from '@/lib/marketing/feedback-store';
 import { getPiece } from '@/lib/marketing/piece-store';
 import { resolveTemplateRef } from '@/lib/marketing/create-outputs';
 import { recipeBlock, recipePartsFromTemplate } from '@/lib/marketing/draft';
@@ -109,19 +112,6 @@ export async function POST(
     return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
   }
 
-  // Template recipe (D25): resolved server-side from the piece so the pillar's
-  // house style (hook / structure / CTA) shapes the edits too. Degrades to none.
-  let recipeBlockStr = '';
-  try {
-    const piece = await getPiece(user.email, id);
-    if (piece && typeof piece.template_ref === 'string' && piece.template_ref) {
-      const template = await resolveTemplateRef(piece.template_ref);
-      if (template) recipeBlockStr = recipeBlock(recipePartsFromTemplate(template));
-    }
-  } catch {
-    recipeBlockStr = '';
-  }
-
   const rawBody = await req.text();
   if (rawBody.length > MAX_BODY_BYTES) {
     return NextResponse.json({ error: 'payload too large' }, { status: 413 });
@@ -134,6 +124,63 @@ export async function POST(
   }
   const kind = body.kind ?? 'script';
 
+  /**
+   * The piece is read here rather than inside the recipe lookup, because the stream on it is what
+   * scopes a feedback note (D93) as well as what picks the template.
+   */
+  let piece: Awaited<ReturnType<typeof getPiece>> = null;
+  try {
+    piece = await getPiece(user.email, id);
+  } catch {
+    piece = null;
+  }
+
+  /**
+   * FEEDBACK FIRST, BEFORE ANY MODEL CALL (D93). "feedback.. don't say do not" is a rule about how
+   * April writes, not an instruction to edit this draft, so it is stored and the draft is left
+   * alone. The job is `edit` on this screen: whatever he corrects here, he is correcting her
+   * revisions.
+   */
+  const captured = await captureFeedback(body.instruction, user.email, {
+    stream: piece?.stream,
+    job: 'edit',
+    from: id,
+  });
+  if (captured) {
+    if (!captured.stored) {
+      return NextResponse.json({ error: captured.error }, { status: 500 });
+    }
+    /**
+     * `content: null` IS THE POINT, not a formality. This client does
+     * `if (data.content !== null) onApply(data.content)`, so anything other than an explicit null
+     * writes over his draft: an absent field would arrive as `undefined`, pass that check, and
+     * replace the piece he is working on with nothing.
+     */
+    return NextResponse.json({ message: captured.said, content: null });
+  }
+
+  // Template recipe (D25): resolved server-side from the piece so the pillar's
+  // house style (hook / structure / CTA) shapes the edits too. Degrades to none.
+  let recipeBlockStr = '';
+  try {
+    if (piece && typeof piece.template_ref === 'string' && piece.template_ref) {
+      const template = await resolveTemplateRef(piece.template_ref);
+      if (template) recipeBlockStr = recipeBlock(recipePartsFromTemplate(template));
+    }
+  } catch {
+    recipeBlockStr = '';
+  }
+
+  /** His corrections for editing on this stream (D93). Never fatal. */
+  let corrections = '';
+  try {
+    corrections = feedbackBlock(
+      applyTo(await listNotes(), { stream: piece?.stream, job: 'edit' })
+    );
+  } catch (err) {
+    console.error('[piece.chat] feedback read failed, editing without corrections:', err);
+  }
+
   const messages: ChatMessage[] = [
     ...(body.history ?? []),
     {
@@ -145,7 +192,8 @@ export async function POST(
   let raw: string;
   try {
     raw = await complete({
-      system: systemPrompt(kind, body.format, body.title, body.concept, recipeBlockStr),
+      system:
+        systemPrompt(kind, body.format, body.title, body.concept, recipeBlockStr) + corrections,
       messages,
       maxTokens: 6000,
       temperature: 0.6,

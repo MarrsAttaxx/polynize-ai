@@ -20,6 +20,8 @@ import { getBrandVoiceForStream } from './brand-voice-store';
 import { complete } from '@/lib/llm';
 import { stripEmDashes } from '@/lib/em-dash';
 import { stripMarkdownEmphasis, NO_MARKDOWN_INSTRUCTION } from '@/lib/plain-copy';
+import { applyTo, feedbackBlock } from './feedback';
+import { listNotes } from './feedback-store';
 
 /**
  * Same per-task model override as draft.ts (SCRIPT_MODEL). The article is pure writing,
@@ -150,12 +152,26 @@ export function cleanArticle(raw: string): string {
  * is the entire fact budget: nothing else conditions what the article may claim.
  * Throws a plain Error('empty') on blank output so the route can map it.
  */
+/**
+ * His corrections for the article job on this lane (D93). Never fatal: no corrections is a weaker
+ * prompt, and a failed lookup must not cost the article.
+ */
+async function articleFeedback(lane: NarrativeLane): Promise<string> {
+  try {
+    return feedbackBlock(applyTo(await listNotes(), { stream: lane, job: 'article' }));
+  } catch (err) {
+    console.error('[article] feedback read failed, writing without corrections:', err);
+    return '';
+  }
+}
+
 export async function draftArticle(lane: NarrativeLane, idea: string): Promise<string> {
   // Lane ids equal stream ids by design, so the lane fetches its stream's voice doc.
   const brandVoice = await getBrandVoiceForStream(lane);
+  const corrections = await articleFeedback(lane);
 
   const raw = await complete({
-    system: articleSystemPrompt(lane, brandVoice),
+    system: articleSystemPrompt(lane, brandVoice) + corrections,
     messages: [
       {
         role: 'user',
@@ -191,9 +207,10 @@ export async function reviseArticle(
   instruction: string
 ): Promise<string> {
   const brandVoice = await getBrandVoiceForStream(lane);
+  const corrections = await articleFeedback(lane);
 
   const raw = await complete({
-    system: reviseSystemPrompt(lane, brandVoice),
+    system: reviseSystemPrompt(lane, brandVoice) + corrections,
     messages: [
       {
         role: 'user',

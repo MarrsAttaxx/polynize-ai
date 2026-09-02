@@ -36,6 +36,13 @@ import { parseLine } from '../text-overlay';
 import { cleanArticle } from '../article-draft';
 import { recipeBlock } from '../draft';
 import { LIBRARY_TEMPLATES, getLibraryTemplate } from '../template-library';
+import {
+  catchFeedback,
+  applyTo,
+  feedbackBlock,
+  NOTES_PER_SCOPE,
+  type FeedbackNote,
+} from '../feedback';
 import { CONTRACTIONS_INSTRUCTION, HOUSE_VOICE_RULES } from '../../house-voice';
 import { foldRule, foldCopy, copyLength } from '../post-preview';
 import { timezoneForEntry } from '../posting-schedule';
@@ -1860,6 +1867,107 @@ ok(
   'the pending template genuinely still carries the stale two-track wording',
   /On-screen text hook:/i.test(getLibraryTemplate('touchscreen-concept-flip')?.hook_recipe ?? '')
 );
+
+/* ------------------------------------------------------------------ D93: feedback that sticks */
+
+const STREAM_LIST = ['polynize', 'marrs', 'shourov', 'kristin', 'julian'];
+const caught = (msg: string, ctx = {}) => catchFeedback(msg, { streams: STREAM_LIST, ...ctx });
+
+/** HIS SYNTAX, GENEROUSLY READ, because dictation mangles punctuation and a prefix that only works
+ *  when typed perfectly fails the one time it matters. */
+ok('feedback.. is caught', caught('feedback.. say don\'t not do not') !== null);
+ok('feedback: too', caught('feedback: say it shorter') !== null);
+ok('a single dot too', caught('feedback. say it shorter') !== null);
+ok('and a dictated space', caught('feed back .. say it shorter') !== null);
+/** It must START the message: "some feedback on this draft" is an ordinary instruction. */
+eq('the word must lead', caught('some feedback on this draft: cut it'), null);
+eq('an ordinary instruction is untouched', caught('make the hook sharper'), null);
+/** "feedback.." and nothing else would store a blank rule and put an empty line in every prompt. */
+eq('an empty note is not a note', caught('feedback..'), null);
+eq('nor is a two-letter one', caught('feedback.. ok'), null);
+
+/**
+ * IT FAILS NARROW. An ambiguous note lands on the job in view, never on the house: a narrow note
+ * applied everywhere does damage, while a global note stored narrowly needs widening once.
+ */
+const onJob = caught('feedback.. stop labelling the hooks', { job: 'hooks', stream: 'marrs' })!;
+eq('with a job in view it lands on the job', onJob.scope, 'job');
+eq('carrying that job', onJob.job, 'hooks');
+ok('and it says so, so an invisible scope cannot go uncorrected', /proposing hooks/i.test(onJob.said));
+ok('and how to widen it', /everywhere/i.test(onJob.said));
+
+const noJob = caught('feedback.. be blunter', { stream: 'shourov' })!;
+eq('with only a stream in view it lands on the stream', noJob.scope, 'stream');
+eq('that stream', noJob.stream, 'shourov');
+
+const nowhere = caught('feedback.. be blunter')!;
+eq('with nothing in view it has to be the house', nowhere.scope, 'house');
+ok('and it says why', /no piece or stream/i.test(nowhere.said));
+
+/** He can widen without leaving the chat box. */
+const global1 = caught("feedback.. everywhere, say don't instead of do not", { job: 'copy' })!;
+eq('"everywhere" reaches the house even with a job in view', global1.scope, 'house');
+eq('"always" too', caught('feedback.. always end on a short line', { job: 'copy' })!.scope, 'house');
+eq('and "house rule"', caught('feedback.. house rule: no exclamation marks', { job: 'copy' })!.scope, 'house');
+
+const forStream = caught('feedback.. for kristin, keep it warmer', { job: 'copy' })!;
+eq('naming a stream scopes it to that stream', forStream.scope, 'stream');
+eq('the one named, not the one in view', forStream.stream, 'kristin');
+
+/* what reaches a prompt */
+const note = (over: Partial<FeedbackNote>): FeedbackNote => ({
+  id: Math.random().toString(36).slice(2),
+  at: '2026-09-01T00:00:00.000Z',
+  by: 'marrs@polynize.io',
+  text: 'a rule',
+  scope: 'house',
+  kind: 'rule',
+  ...over,
+});
+
+const pool = [
+  note({ text: 'house rule', scope: 'house' }),
+  note({ text: 'marrs rule', scope: 'stream', stream: 'marrs' }),
+  note({ text: 'shourov rule', scope: 'stream', stream: 'shourov' }),
+  note({ text: 'hooks rule', scope: 'job', job: 'hooks' }),
+  note({ text: 'copy rule', scope: 'job', job: 'copy' }),
+  note({ text: 'a bug', scope: 'house', kind: 'defect' }),
+  note({ text: 'old rule', scope: 'house', retired_at: '2026-09-02T00:00:00.000Z' }),
+];
+
+const forHooks = applyTo(pool, { stream: 'marrs', job: 'hooks' });
+eq('the house rule, his stream and that job', forHooks.notes.length, 3);
+ok('nothing from another stream', !forHooks.notes.some((n) => n.text === 'shourov rule'));
+ok('nothing from another job', !forHooks.notes.some((n) => n.text === 'copy rule'));
+/** A note cannot fix a bug: it would leave April told two opposite things and picking one. */
+ok('a defect is never applied', !forHooks.notes.some((n) => n.kind === 'defect'));
+ok('nor is a retired note', !forHooks.notes.some((n) => n.retired_at));
+eq('house order first, so a job note can override it', forHooks.notes[0].text, 'house rule');
+
+eq('with no stream or job, only the house rule applies', applyTo(pool, {}).notes.length, 1);
+
+/**
+ * THE CAP REFUSES RATHER THAN ROTATES. Silently retiring his oldest and most established preference
+ * to make room for today's aside is the worst possible behaviour: the note he would most want kept
+ * is the one that has been true longest.
+ */
+const many = Array.from({ length: NOTES_PER_SCOPE + 2 }, (_, i) =>
+  note({ text: `rule ${i}`, scope: 'house', at: `2026-08-${String(i + 1).padStart(2, '0')}T00:00:00.000Z` })
+);
+const capped = applyTo(many, {});
+eq('only the cap applies', capped.notes.length, NOTES_PER_SCOPE);
+eq('and the rest are reported rather than dropped', capped.overflow.length, 2);
+eq('the oldest is kept, not the newest', capped.notes[0].text, 'rule 0');
+ok('and the newest is what overflows', capped.overflow.some((n) => n.text === `rule ${NOTES_PER_SCOPE + 1}`));
+
+/* the block April reads */
+eq('no notes means no block at all, byte for byte the old prompt', feedbackBlock({ notes: [], overflow: [] }), '');
+const block = feedbackBlock(forHooks);
+ok('it is labelled as his corrections', /CORRECTIONS FROM THE OPERATOR/.test(block));
+ok('and given the last word over the general guidance', /override it wherever the two differ/.test(block));
+ok('each note says where it applies', /\(always\) house rule/.test(block));
+ok('including the stream', /\(on the marrs stream\) marrs rule/.test(block));
+ok('and the job, in words rather than an id', /\(when proposing hooks\) hooks rule/.test(block));
 
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);
