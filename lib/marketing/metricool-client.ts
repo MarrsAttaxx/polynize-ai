@@ -137,27 +137,11 @@ export type SchedulePostInput = {
 };
 
 /**
- * YouTube's own cap, as Metricool states it: "must be shorter than 100 characters".
- *
- * SHORTER THAN, so 99 (D81). The first version capped at 100 on the assumption that the limit was
- * inclusive, which is the kind of off-by-one that only shows up as a rejected post.
+ * The YouTube title rules live in their own pure module (D82) so the caption screen can show the
+ * operator exactly what will be sent without importing this file, which would drag the publishing
+ * layer into the browser bundle. Re-exported so callers here read as they did.
  */
-export const YOUTUBE_TITLE_MAX = 99;
-
-/**
- * A title for a YouTube post, from whatever the entry can offer.
- *
- * ANGLE BRACKETS ARE STRIPPED (D81), because Metricool's validator refuses them: "The characters
- * < or > are not allowed." They arrive by accident rather than by intent, out of a pasted heading or
- * a stray fragment, so removing them is better than failing the post over punctuation nobody meant.
- *
- * Pure and exported so the rules are asserted in tests rather than trusted. An empty result means
- * send no title at all, which is better than sending an empty one.
- */
-export function youtubeTitleFrom(title: string | undefined, fallback: string): string {
-  const pick = (title ?? '').trim() || fallback.trim().split(/\r?\n/)[0].trim();
-  return pick.replace(/[<>]/g, '').slice(0, YOUTUBE_TITLE_MAX).trim();
-}
+export { youtubeTitleFrom, YOUTUBE_TITLE_MAX } from './youtube-title';
 
 /** Schedule (or draft) one post to one brand across the given networks. */
 export async function schedulePost(

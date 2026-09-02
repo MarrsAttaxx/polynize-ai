@@ -2261,3 +2261,24 @@ Prepare now writes the screen's state and **waits for it** before asking the ser
 TikTok raised no error in their validator, so it needs nothing. `videoThumbnailUrl` is still unsent, which is the API-level way to honour the house rule that the first frame is the cover.
 
 7 new assertions, 557 total.
+
+## D82: The YouTube title is the first line of the post, and it is shown
+
+**Adopted 2 September 2026.** Marrs:
+
+> "Is there a way we can take the first line of the post and make that the YouTube title, or how are we making that up? Are you selecting that yourself?"
+
+His suggestion is better than what shipped in D80, and the question is the right one to ask of anything derived and invisible.
+
+**What it was doing.** `youtubeTitleFrom(entry.title, entry.post_copy)`: the piece title first, the first line of the copy only as a fallback. **The piece title is an internal filing name in every case that exists.** A post made from finished media is titled with the media library's label, which is whatever was typed when pasting a Box link. A post from a Story is titled `<the headline>: Numbered rules`. Neither is a thing anyone would put on YouTube, and his video would have gone out titled with a filename.
+
+**What it does now.** The first line of the post, with the label as the fallback for a post that has no copy yet. His own post opens "Is this AI Business Advice BS?", which is a better YouTube title than any heuristic would assemble, because it is the one sentence in the whole piece written to be read.
+
+**And it is printed on the caption screen**, which is the real answer to "are you selecting that yourself". A derived value nobody can see is a guess with extra steps. The screen shows the exact string that will be sent, its length against the 99 cap, and one line saying that changing the first line changes it. Same function as the publish path, so the screen and the payload cannot disagree.
+
+Two details worth keeping:
+
+- **Trimmed at a word boundary**, never mid-word. A long opening line cut at exactly 99 characters lands inside a word and reads as a fault rather than as a title. Same 60% floor as the post preview's fold, and for the same reason: backing up to a space is only an improvement while the result is still most of the line.
+- **The rules moved to their own pure module** (`lib/marketing/youtube-title.ts`). The caption screen is a client island, and importing the Metricool client to show a title would put the publishing layer in the browser bundle (D47).
+
+2 new assertions, 559 total.

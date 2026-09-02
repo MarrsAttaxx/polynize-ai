@@ -116,12 +116,17 @@ export async function publishEntry(
       // has always accepted this and it was never passed, so the rule was documented and inert.
       firstCommentText: entry.first_comment?.trim() || undefined,
       /**
-       * YouTube posts were going out with no title at all (D80). The entry already carries one, the
-       * piece title, and it never reached the payload. The caption is the fallback because a title
-       * taken from the first line of the copy is a great deal better than none.
+       * THE FIRST LINE OF THE POST IS THE TITLE (D82), with the entry's own label as the fallback for
+       * a post with no copy.
+       *
+       * This was the other way round and it was wrong: the entry title is an internal filing name
+       * (the media library's label, or "<headline>: Numbered rules"), while the first line is the one
+       * sentence written to be read. Marrs asked how the title was being chosen, which is the right
+       * question to ask of anything derived and invisible, so it is now derived from the better
+       * source AND printed on the caption screen.
        */
       youtubeTitle:
-        network === 'youtube' ? youtubeTitleFrom(entry.title, entry.post_copy) : undefined,
+        network === 'youtube' ? youtubeTitleFrom(entry.post_copy, entry.title) : undefined,
       // Instagram needs to be told it is a Reel, or it refuses the post outright (D81).
       hasVideo,
     });

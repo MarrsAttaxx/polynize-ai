@@ -22,6 +22,7 @@ import type { MediaAsset } from '@/lib/marketing/media-store';
 import { ChatPanel } from './ChatPanel';
 import type { MarketingPiece } from '@/lib/marketing/piece-store';
 import { FINISHED_MEDIA_FORMAT } from '@/lib/marketing/finished-media';
+import { youtubeTitleFrom, YOUTUBE_TITLE_MAX } from '@/lib/marketing/youtube-title';
 import s from './text.module.css';
 import c from './chat.module.css';
 
@@ -118,6 +119,12 @@ export function TextOutputScreen({
   }, [media, library]);
 
   const channelCount = platforms.length;
+
+  /**
+   * EXACTLY WHAT YOUTUBE WILL BE SENT (D82), from the same function publish uses, so the screen and
+   * the payload cannot disagree. Live off the body, because the title IS the first line.
+   */
+  const ytTitle = youtubeTitleFrom(body, initial.title);
 
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const latestBody = useRef(initial.body ?? '');
@@ -445,6 +452,28 @@ export function TextOutputScreen({
             </button>
           ))}
       </div>
+
+      {/* WHAT YOUTUBE WILL BE CALLED (D82). Marrs: "how are we making that up? Are you selecting
+          that yourself?" A derived title nobody can see is a guess with extra steps, so it is
+          printed. It comes from the first line, which is the only line written to be read. */}
+      {platforms.includes('youtube') ? (
+        <p className={s.ytTitle}>
+          <span className={s.ytLabel}>YouTube title</span>
+          {ytTitle ? (
+            <>
+              <span className={s.ytValue}>{ytTitle}</span>
+              <span className={s.ytHint}>
+                The first line of the post, {ytTitle.length}/{YOUTUBE_TITLE_MAX} characters. Change
+                the first line to change it.
+              </span>
+            </>
+          ) : (
+            <span className={s.ytHint}>
+              Write the post and its first line becomes the title.
+            </span>
+          )}
+        </p>
+      ) : null}
 
       {/* THE ONE THING THE CONSOLE CANNOT SET YET (D81). Said before he presses anything, because
           the alternative is finding out from a Metricool rejection after the fact. */}

@@ -306,3 +306,31 @@
   border-radius: 8px;
   padding: 9px 11px;
 }
+
+/* What YouTube will be called (D82). Printed rather than derived in silence. */
+.ytTitle {
+  margin: -6px 0 14px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 10px;
+}
+.ytLabel {
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+.ytValue {
+  font-size: 13.5px;
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+.ytHint {
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 10.5px;
+  line-height: 1.5;
+  color: var(--text-3);
+  flex: 1 1 100%;
+}

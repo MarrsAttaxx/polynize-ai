@@ -1305,18 +1305,38 @@ ok('the format exists in the registry', Boolean(formatById(FINISHED_MEDIA_FORMAT
 eq('so kindOf resolves it to text rather than defaulting to video', kindOf(FINISHED_MEDIA_FORMAT), 'text');
 eq('an unregistered format still defaults to video, which is why registering mattered', kindOf('not_a_format'), 'video');
 
-/* the YouTube title, which was never sent at all */
-eq('the entry title is used when it has one', youtubeTitleFrom('Cut A', 'the caption'), 'Cut A');
-eq('and the first line of the caption stands in when it does not', youtubeTitleFrom('', 'Line one\nLine two'), 'Line one');
-eq('and when it is undefined', youtubeTitleFrom(undefined, 'Line one\nLine two'), 'Line one');
+/**
+ * THE YOUTUBE TITLE IS THE FIRST LINE OF THE POST (D82).
+ *
+ * Marrs: "Is there a way we can take the first line of the post and make that the YouTube title, or
+ * how are we making that up?" It used to take the piece title first, which is an internal filing
+ * name in every case that exists: a media library label, or "<headline>: Numbered rules".
+ */
 eq(
-  `capped at YouTube's own ${YOUTUBE_TITLE_MAX}, because over it is a rejected post`,
+  'the first line wins, and it is the line he actually wrote',
+  youtubeTitleFrom('Is this AI Business Advice BS?\n\nThe internet is full of creators', 'cut A.mp4'),
+  'Is this AI Business Advice BS?'
+);
+eq('the label is the fallback only when there is no copy', youtubeTitleFrom('', 'Force multiplier cut A'), 'Force multiplier cut A');
+eq('nothing to call it yields nothing, so no empty title is sent', youtubeTitleFrom('', ''), '');
+eq('and a missing label is not a crash', youtubeTitleFrom(''), '');
+/** Metricool: "must be SHORTER THAN 100 characters", so 99 (D81). An inclusive read is a rejection. */
+eq('the cap is 99, not 100', YOUTUBE_TITLE_MAX, 99);
+ok(
+  `a long first line is capped at ${YOUTUBE_TITLE_MAX}`,
+  youtubeTitleFrom('word '.repeat(60), '').length <= YOUTUBE_TITLE_MAX
+);
+/** Cut at a word boundary, never mid-word: a title sliced through a word reads as a fault. */
+ok(
+  'and cut between words rather than through one',
+  !youtubeTitleFrom('word '.repeat(60), '').endsWith('wor')
+);
+/** A single unbroken run has no boundary to back up to, so the hard cap still applies. */
+eq(
+  'an unbroken run still gets cut, because the cap is the platform speaking',
   youtubeTitleFrom('x'.repeat(140), '').length,
   YOUTUBE_TITLE_MAX
 );
-eq('nothing to call it yields nothing, so no empty title is sent', youtubeTitleFrom('', ''), '');
-/** Metricool: "must be SHORTER THAN 100 characters", so 99 (D81). An inclusive read is a rejection. */
-eq('the cap is 99, not 100', YOUTUBE_TITLE_MAX, 99);
 /** Their validator: "The characters < or > are not allowed." They arrive by accident, so they go. */
 eq('angle brackets are stripped rather than failing the post', youtubeTitleFrom('a <b> c', ''), 'a b c');
 
