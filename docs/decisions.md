@@ -2736,3 +2736,25 @@ So the helper returns TEXT and each route builds its own reply in its own shape.
 Worth keeping: **a shared helper that returns a Response has to know every caller's contract, and it never does.**
 
 38 new assertions, 698 total.
+
+## D94: The analytics and scale brief, and a correction to D79
+
+**Adopted 3 September 2026.** Marrs brought a second agent's research on Metricool autolists and asked for an independent view, plus a deep dive on click-through, attribution and scaling brands per use case. The full brief is `docs/pam-console/analytics-and-scale.md`. Three things belong in the decision log.
+
+### D79 was wrong about the premise
+
+D79 said Metricool has no queue: "528 paths, none of them a queue." **False.** Metricool calls it an autolist and there are 25 endpoints under `/lists/*`: create and enable a list, add and reorder posts, create and update the weekly timing rows. I searched for my own vocabulary, "queue" and "autoschedule", rather than theirs. The other agent read the product and found it.
+
+**The console-side queue still stands, and it is now a decision rather than a mistake.** Every entry the console creates knows its frame, its Story, its lane, its slot kind, its hand-post mode and its timezone. An autolist is a FIFO with a timetable and knows none of that, and the frame ladder, the tile the whole learning loop depends on, needs the frame. So fresh content drains through our queue, where attribution lives. **Autolists are for the evergreen tier**: a proven post promoted into a circular `Repeat` list, item id stored on the entry, copy varied per cycle. That is the mechanism for "find what works and double down."
+
+### Click-through is zero today by construction, not by audience
+
+The auto path publishes **no link to polynize.ai at all**. The kit declares `link: 'first_comment'` on every LinkedIn text frame, the entry has a `first_comment` field, the Metricool client sends `firstCommentText`, and **nothing ever writes `first_comment`**. The link rule exists as a lint and as an instruction to April; it was never a writer. And the site discards attribution at the door: no UTM or referrer is captured anywhere in either funnel, the `sessions` insert stores `{ id, phase }`, the `leads` row stores `source: 'blueprint'`. Both halves of the join are missing, which at least means nothing has to be undone.
+
+**Two research claims corrected against Metricool's own words.** Their shortener "doesn't track anything" (their help centre, verbatim), so it gives no click stats and would strip our UTMs; turn it off. And "Metricool does not offer UTM analytics." The only click figure they hold is LinkedIn's own `clicks` on post analytics. **Click measurement has to be ours**, first-party, with `utm_content = entry_id` as the join back to the frame and `utm_campaign = lane` as the segment the nurture brief asked for.
+
+**Vercel Web Analytics has a public API with UTM dimensions, gated by plan:** UTM parameters are collected only on Pro with Web Analytics Plus or Enterprise, custom events need Pro, and the reporting window is one month on Hobby. Which plan the team is on is a question only Marrs can answer, and it decides whether that source exists.
+
+### Lane is the missing axis
+
+The console has streams (who it is for) and frames (what kind of post). It does not have lanes (which use case a post serves), and the strategy is organised around six of them. Adding `lane` to the Story, carried to every entry and written into every link, is what makes "what works for hiring managers" a query, and a lane that earns it gets its own Metricool brand. The build order is in the brief: links with the key, first-party capture, the url join, lane, the frame ladder by conversion, evergreen autolists, then the nightly pull.

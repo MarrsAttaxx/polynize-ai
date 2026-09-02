@@ -125,6 +125,8 @@ The note below was written before it was built, and its guess about scope was wr
 
 ## Analytics (asked 25 August 2026)
 
+**19. THE NEXT PHASE, in order (D94, full brief in `analytics-and-scale.md`).** (1) One function builds every outbound link with `utm_source`, `utm_medium`, `utm_campaign = lane`, `utm_content = entry_id`; `first_comment` populated by prepare and the wave from the kit's placement rule; Metricool shortener off. (2) First-party UTM and referrer capture on polynize.ai, stamped on the session insert, written to the lead (coordinate with the site session, which owns that code). (3) The url join: second read after publication stores `providers[].publicUrl` on the entry. (4) `lane` on the Story, carried down, in the link. (5) The frame ladder by lane, by magnet completions per post, `n` shown, rows under 3 faded. (6) Evergreen autolists via `/lists/*`, item id on the entry. (7) Nightly pull. Open questions for Marrs: Vercel plan (decides whether the WA API source exists), audience geography, which three lanes go hard, the marketing plan document, shortener off.
+
 **6. Rename the front page.** Done: "Whose content" is now "Content engine".
 
 **7y. Ranges, a real chart and a colour per person (D87).** Last 7 / 30 / 90 day buttons filtering one stored pull; a full-width line chart bucketed by day up to a month and by week beyond; platform bars stacked by stream with a validated five-slot series palette (analytics only, so the brand's coral/amber/mint keep meaning human/hybrid/agent everywhere else).
