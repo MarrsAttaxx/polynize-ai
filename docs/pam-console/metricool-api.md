@@ -61,7 +61,8 @@
 | `instagramData.type` | `REEL` | UPPER. Required for a single-video post. |
 | `instagramData.showReelOnFeed` | `true` | Puts the Reel on the profile grid too. |
 | `linkedinData.type` | `POST` | UPPER. Metricool defaults it. |
-| `tiktokData.privacyOption` | `PUBLIC_TO_EVERYONE` | UPPER. Defaulted. |
+| `tiktokData.privacyOption` | `PUBLIC_TO_EVERYONE` | UPPER. **REQUIRED, and their form validator does not say so.** Without it the publisher fails with "does not specified privacy options" and their composer shows the field as `planner.planner.presets.tiktok.privacyStatus.null`. |
+| `instagramData.autoPublish` | `true` | Sent as `!draft`. If their default is false an Instagram post becomes a phone reminder rather than a publish, which looks identical to a post that never went out. |
 
 `/console/marketing/metricool/probe` section 5 reads these back off real scheduled posts, which is how they were obtained. Use it again rather than guessing a new one.
 
@@ -76,6 +77,8 @@
 The NAMES differ per family and the format does not. A bare date returns a 400 that names the field and the expected pattern, which is a good failure, but it costs a round trip: send `T00:00:00` and `T23:59:59` and it never happens. (D78 was the analytics half of this; D83's follow-up was the scheduler half.)
 
 **THEIR COMPOSER IS A BETTER SOURCE THAN THEIR SPEC.** Assemble the post by hand in Metricool's own UI and it lists every validation our payload is failing, in words. That is how all of D81 was found, and it beats reading schema.
+
+**BUT ITS SILENCE IS NOT A GUARANTEE.** TikTok raised no error in that composer and then failed at publish time for a missing privacy option (D84). Their form validates less than their publisher does. Treat a clean composer as "no known problem", not as "this will post".
 
 ## Network mapping (our channel id -> Metricool network)
 Metricool networks: linkedin, facebook, instagram, gbp, twitter, tiktok, youtube, pinterest, threads, bluesky.

@@ -2355,6 +2355,22 @@ Nothing on a media asset says which way up a video is. So the caption screen ask
 
 Stamped onto the entry at prepare time, exactly like `publish_mode` and `timezone` before it. **The rule keeps earning its place: anything decided while authoring travels on the entry rather than being re-derived at ship time.**
 
+### TikTok needed a privacy option, and I had said it needed nothing
+
+Marrs, minutes later: "Also got an error on a TikTok post." Metricool's publisher:
+
+```
+Publish Tiktok video error: does not specified privacy options
+```
+
+Their composer rendered the field as the literal string `planner.planner.presets.tiktok.privacyStatus.null`, which is an untranslated i18n key: their UI's way of showing a null. He fixed it himself in one move: "I basically just had to flick 'Who can view your post?' to public, and it was fine."
+
+**I got this wrong, and the mistake is worth naming.** When their form validator listed four errors on a three-network post, TikTok raised none, and I read that silence as TikTok needing nothing. It needed something their form does not validate and their publisher does. **A validator's silence is not a guarantee.** The same trap is presumably still open on fields nothing has complained about yet.
+
+`tiktokData.privacyOption: 'PUBLIC_TO_EVERYONE'`, copied from his own scheduled post, and it is TikTok's own documented enum rather than a Metricool invention. Comments, duet and stitch are left alone: permissive defaults, matching his composer.
+
+**And one more unseen default closed while here.** His posts all carry `instagramData.autoPublish: true`. If Metricool's default were false, an Instagram post would land as a phone reminder rather than publishing, which would look exactly like a post that silently never went out. It is now sent as `!draft`, so it mirrors the top-level flag instead of trusting a default nobody can see.
+
 ### Also in that probe, for the analytics build
 
 The join is confirmed broken the expected way: ours are Metricool integers (`367684553`), theirs are LinkedIn URNs (`urn:li:ugcPost:7500343632873517056`). Nothing new. **But `GET /v2/scheduler/posts` now works and returns whole posts**, which is the second read the analytics join needs: it carries `providers`, and `ProviderStatus` is where `id` and `publicUrl` live. The fallback join is no longer hypothetical, it is one field extraction away.

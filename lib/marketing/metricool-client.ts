@@ -177,14 +177,34 @@ export async function schedulePost(
      * The feed flag is what puts the Reel on the profile grid as well as in the Reels tab, which is
      * what his own composer does and what anyone would expect of a post they just published.
      */
-    body.instagramData = { type: 'REEL', showReelOnFeed: true };
+    body.instagramData = { type: 'REEL', showReelOnFeed: true, autoPublish: !draft };
+  }
+
+  /**
+   * TIKTOK NEEDS A PRIVACY OPTION OR IT REFUSES TO PUBLISH (D84 addendum).
+   *
+   * "Publish Tiktok video error: does not specified privacy options", and their composer showed the
+   * field as the literal string `planner.planner.presets.tiktok.privacyStatus.null`: an untranslated
+   * i18n key, which is their UI's way of rendering a null.
+   *
+   * I had this wrong. When their validator listed four errors on a three-network post, TikTok raised
+   * none, and I read that as TikTok needing nothing. It needed something their form validation does
+   * not check and their publisher does. **A validator's silence is not a guarantee.**
+   *
+   * PUBLIC_TO_EVERYONE is copied from his own scheduled post, and it is also TikTok's own documented
+   * enum value rather than a Metricool invention. Comments, duet and stitch are left alone: their
+   * defaults are permissive, which matches what his composer shows, and nothing has complained.
+   */
+  if (input.hasVideo && input.networks.includes('tiktok')) {
+    body.tiktokData = { privacyOption: 'PUBLIC_TO_EVERYONE' };
   }
 
   if (input.networks.includes('youtube')) {
     /**
-     * TWO REQUIRED FIELDS, both learned from Metricool's own validator (D81).
+     * THREE FIELDS, none of them guessed (D81, completed D84).
      *
-     * `title`, because a YouTube post has one and the caption cannot stand in for it.
+     * `title`, because a YouTube post has one and the caption cannot stand in for it. Their
+     * validator: "Video or short title is required and must be shorter than 100 characters."
      *
      * `madeForKids`, because "It is necessary to select the audience of the video" is YouTube's
      * made-for-kids declaration and it has no default. FALSE is the truthful answer for everything
@@ -192,12 +212,14 @@ export async function schedulePost(
      * comments and personalisation from the video. If a channel ever needs the other answer it
      * belongs on the stream's settings, not hard-coded here.
      *
-     * NOT SENT: `type`. A vertical file has to be published as a Short rather than as a video, and
-     * Metricool refuses it otherwise ("Invalid video orientation, only horizontal is allowed"). The
-     * token for that is NOT in their OpenAPI spec: `youtubeData.type` is an undocumented string and
-     * the word SHORT appears nowhere in 1.2MB of schema. Guessing it would either be silently
-     * ignored or rejected, and both look identical from here, so the probe reads it off a real post
-     * instead. Until then a vertical YouTube post is set by hand in Metricool.
+     * `type`, for a vertical file, as the lowercase `short` read off his own scheduled posts through
+     * the probe. It is what stops "Invalid video orientation, only horizontal is allowed". A
+     * landscape file sends no type, because that token is not in the data and the default already
+     * accepts horizontal. See ./youtube-type.
+     *
+     * `privacy: 'public'` is sent explicitly, though nothing complained about it, because YouTube is
+     * the one channel this console had never successfully published to and an unseen default that
+     * turned out to be private is a post that went out invisible.
      */
     /**
      * EVERY VALUE HERE IS COPIED FROM HIS OWN ACCOUNT (D84), read back through the probe rather than
