@@ -5,6 +5,8 @@ import { narrativeCountsByLane, GATE_LABELS } from '@/lib/marketing/narrative-st
 import { listSavedPieces, type MarketingPiece } from '@/lib/marketing/piece-store';
 import { STREAMS, STREAM_AVATARS } from '@/lib/marketing/streams';
 import { AnalyticsPanel } from './_components/AnalyticsPanel';
+import { getStreamAnalytics } from '@/lib/marketing/analytics-store';
+import { summarise, mergeSummaries } from '@/lib/marketing/analytics-metrics';
 import s from '../_components/client-card.module.css';
 import l from '../_components/launcher.module.css';
 
@@ -35,6 +37,35 @@ export default async function MarketingHome() {
 
   // Both at once: awaited in turn they stack two full store reads into the time to first byte,
   // which is a visible wait every time you come back here. Each degrades on its own.
+  /**
+   * EVERY STREAM'S STORED NUMBERS, MERGED (D86). Five reads of one small object each, which is why
+   * the store keeps one file per stream rather than one row per post: the engine page is the read
+   * that has to stay cheap.
+   *
+   * A stream with nothing pulled contributes nothing rather than a zero, and an error on one stream
+   * is surfaced without hiding the other four. Same discipline as everywhere else here: absent and
+   * zero are different claims.
+   */
+  const stored = await Promise.all(
+    STREAMS.map(async (st) => {
+      try {
+        return await getStreamAnalytics(st.id);
+      } catch (err) {
+        console.error(`[marketing] analytics read failed for ${st.id}:`, err);
+        return null;
+      }
+    })
+  );
+  const withPosts = stored.filter((x) => x && x.posts.length > 0);
+  const errors = stored.filter((x) => x?.error).map((x) => `${x!.stream}: ${x!.error}`);
+  const engine = {
+    data: withPosts.length
+      ? mergeSummaries(withPosts.map((x) => summarise(x!.posts)))
+      : undefined,
+    pulledAt: stored.find((x) => x?.pulled_at)?.pulled_at,
+    error: errors.length ? errors.join(' · ') : undefined,
+  };
+
   const [counts, pieces] = await Promise.all([
     narrativeCountsByLane().catch((err) => {
       console.error('[marketing] narrative counts failed:', err);
@@ -122,7 +153,13 @@ export default async function MarketingHome() {
         {/* AT THE BOTTOM (D66). Marrs: "it's always going to be the thing at the bottom, because
             you don't want to look at that first." Aggregated here, per stream on a stream board,
             and scaled up because every stream's work sits under this page. */}
-        <AnalyticsPanel scope="engine" title="Across every stream" scale={4} />
+        <AnalyticsPanel
+          scope="engine"
+          title="Across every stream"
+          data={engine.data}
+          pulledAt={engine.pulledAt}
+          error={engine.error}
+        />
       </div>
     </>
   );

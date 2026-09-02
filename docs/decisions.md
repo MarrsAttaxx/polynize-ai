@@ -2416,3 +2416,54 @@ Both, and the browser does the work: a real `<video>` element with `preload="met
 Nothing else could have produced a frame here: the file is a Box link, and pulling a video through a serverless function to run a decoder over it is not something to do for a grid of thumbnails.
 
 **And the title was there all along, squeezed to an ellipsis.** It shared one `white-space: nowrap` line with the Post this and Delete buttons inside a 150px tile. It now has its own row above them, two lines, at a readable size. Worth remembering: *"I can't see the title"* meant the layout had eaten it, not that it was missing.
+
+## D86: The analytics panel draws real numbers
+
+**Adopted 2 September 2026.** Marrs: *"Can we focus on the analytics dashboards now? I'd love to get those up and running."*
+
+Everything the spike settled (D69, D78, D84) pointed at one call, and this is the build on top of it.
+
+### One endpoint, not five
+
+`/v2/analytics/brand-summary/posts` returns every post on a brand across every network in one call, each with its text, url, publication date, type and a normalised metric block. Proven against his account: 31 posts over 90 days on the Marrs brand, **including posts he published by hand**, which is the part that makes it worth having. D41 made his personal LinkedIn manual and this feed enumerates it anyway.
+
+The four per-network endpoints carry more fields (LinkedIn's clicks, Instagram's saves and follows, Reels' watch time and skip rate) in four different shapes. Starting with the cross-network feed means the panel is real today off one proven call, and the richer fields are an addition rather than a rewrite.
+
+### Absent is not zero, and the code is built around that distinction
+
+Every sum in the summariser is optional all the way to the tile. If no post in the window reported impressions, the tile says **"no data yet"** rather than 0, because **0 impressions is a claim** and a different one from the platform not having told us. The engagement average ignores the posts that reported no rate, rather than counting them as 0% and dragging the number down on the strength of a figure nobody gave us.
+
+**The trend is zero-filled, and that is correct, which is the distinction worth keeping straight.** A week with no posts really did earn no impressions, so a gap in the line is a fact. A missing metric is an absence. The two are computed differently on purpose.
+
+### The delta tiles are gone
+
+Every tile used to carry "+12% vs last 12 weeks". The mock could always produce that and the real feed cannot: one pull is one window, and comparing it to a previous one needs history this store does not keep by design. **A delta is the single easiest number to fake convincingly**, so it is absent rather than approximated, and `signedPct` was deleted with it rather than kept warm.
+
+### The mock is deleted, not disabled
+
+A mock generator left beside a live dashboard is one import away from being drawn again, and the whole risk of a mock is that somebody decides on it. The formatting it carried (compacting a count, laying out a sparkline) was never fake and moved to `analytics-format.ts`.
+
+### A button before a cron
+
+The pull has never run against a real account, and **a nightly job that fails at 3am is the worst possible first version of anything**: nobody sees the failure and the dashboard just stays empty. So it is a button, run by a person, whose result is on screen. The cron is the same call on a timer once this is boring.
+
+It never throws. A stream whose brand is unmapped, whose token is refused, or whose call times out records a stored error rather than an exception, because the pull runs over five streams and one bad brand must not cost the other four. Streams run one at a time: five concurrent calls to one account's analytics is the shape of request that gets rate limited, and there is nothing to gain from finishing a background refresh three seconds sooner.
+
+### The store is a cache, not a ledger
+
+One file per stream holding the latest pull. Not live-on-render, for three reasons in order: the panel sits at the bottom of two pages that are opened constantly and would spend the rate limit on scrolling; a Metricool outage would take the dashboard down rather than showing yesterday's numbers; and their feed is a **window**, so a post that falls out of it stops existing and anything we never wrote down is gone.
+
+Not a time series either, yet. Every tile answers "how is this post doing", not "how did it grow". When growth is wanted it should be a second file appended per pull, not a reshape of this one, because the engine page reads five streams and that read has to stay one object each.
+
+### Two bugs the fixtures caught, and both were mine
+
+The reader was tested against his own rows rather than an imagined payload, which is the only reason these were found before he saw them:
+
+1. **TikTok dates its rows with a flat `createTime`.** The brand feed wraps it in `publicationDate.dateTime` and LinkedIn's in `created.dateTime`, and the reader knew the first two. Every TikTok post would have silently lost its place in the trend and in the window.
+2. **Only the brand feed says which network a row is from.** The per-network endpoints omit the field, because the caller asked for one network by name. Without a fallback parameter every per-network row lands as `unknown` and the platform breakdown collapses into one meaningless bar. Nothing calls those endpoints yet, so this was a bug shipped ahead of its trigger.
+
+### What is not built yet, and why it is next
+
+**The frame ladder**, which the todo calls the load-bearing tile: each post type ranked by median reach within one voice. It needs the join, because only we know which frame a post was, and the join needs the second read that D84 proved works (`GET /v2/scheduler/posts` carries `providers[].publicUrl`, which matches the `url` on every analytics row). That is the next commit, and it also turns D85's inferred "Posted" into a confirmed one.
+
+46 new assertions, 596 total.

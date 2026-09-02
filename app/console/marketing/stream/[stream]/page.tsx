@@ -5,6 +5,8 @@ import { listIdeas, type Idea } from '@/lib/marketing/idea-store';
 import { Ideas } from './Ideas';
 import { isStreamId, streamLabel } from '@/lib/marketing/streams';
 import { AnalyticsPanel } from '@/app/console/marketing/_components/AnalyticsPanel';
+import { getStreamAnalytics } from '@/lib/marketing/analytics-store';
+import { summarise } from '@/lib/marketing/analytics-metrics';
 import { NarrativeDelete } from './NarrativeDelete';
 import { getBrandVoiceForStream } from '@/lib/marketing/brand-voice-store';
 import { listTemplates } from '@/lib/marketing/template-store';
@@ -133,6 +135,12 @@ export default async function StreamPage({
       return [];
     }),
   ]);
+
+  /** This stream's stored numbers (D86). One small object; a read failure degrades to no panel. */
+  const analytics = await getStreamAnalytics(stream).catch((err) => {
+    console.error('[marketing.stream] analytics read failed:', err);
+    return null;
+  });
 
   // Both started before the block above so they overlap with it rather than adding round trips.
   const ideas = await ideasPromise;
@@ -387,7 +395,13 @@ export default async function StreamPage({
 
         {/* AT THE BOTTOM (D66), below the ideas, because it is the last thing you look at and
             never the first. This stream's own numbers, where the engine page aggregates. */}
-        <AnalyticsPanel scope={stream} title={`${streamLabel(stream)} · last 12 weeks`} />
+        <AnalyticsPanel
+          scope={stream}
+          title={`${streamLabel(stream)} · analytics`}
+          data={analytics && analytics.posts.length ? summarise(analytics.posts) : undefined}
+          pulledAt={analytics?.pulled_at}
+          error={analytics?.error}
+        />
       </div>
     </>
   );

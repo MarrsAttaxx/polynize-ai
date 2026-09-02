@@ -30,12 +30,9 @@
 
 import { PlatformIcon } from './PlatformIcon';
 import { channelLabel } from '@/lib/marketing/channels';
-import {
-  mockAnalytics,
-  compactNumber,
-  signedPct,
-  sparklinePoints,
-} from '@/lib/marketing/analytics-mock';
+import { compactNumber, sparklinePoints } from '@/lib/marketing/analytics-format';
+import type { Summary } from '@/lib/marketing/analytics-metrics';
+import { PullButton } from './PullButton';
 import s from './analytics.module.css';
 
 /** Fixed mark specs, from the house chart rules, in one place so no mark re-derives them. */
@@ -44,58 +41,106 @@ const SPARK_H = 30;
 const MARKER_R = 4; // >= 8px across
 const LINE_W = 2;
 
+/**
+ * REAL NUMBERS SINCE D86. What changed, beyond the data source:
+ *
+ * THE DELTA TILES ARE GONE. Every tile used to carry "+12% vs last 12 weeks", which the mock could
+ * always produce and the real feed cannot: one pull is one window, and comparing it to a previous
+ * window needs history this store does not keep by design. A delta is the single easiest number to
+ * fake convincingly, so it is absent rather than approximated.
+ *
+ * A MISSING NUMBER SAYS SO. `undefined` reaches the tile and prints as "no data yet". It is never
+ * rendered as 0, because **0 impressions is a claim** and a different one from "the platform did not
+ * tell us". That distinction is the reason `summarise` keeps sums optional all the way through.
+ */
 export function AnalyticsPanel({
   scope,
   title,
-  /** More work sits under the engine page than under one stream, so the samples scale with it. */
-  scale = 1,
+  data,
+  pulledAt,
+  error,
 }: {
   scope: string;
   title: string;
-  scale?: number;
+  /** Absent means nothing has been pulled for this scope yet. */
+  data?: Summary;
+  pulledAt?: string;
+  /** What went wrong on the last pull, said rather than shown as an empty panel. */
+  error?: string;
 }) {
-  const d = mockAnalytics(scope, scale);
-  const maxNet = Math.max(...d.byNetwork.map((n) => n.impressions), 1);
+  const d = data;
+  const maxNet = Math.max(...(d?.byNetwork ?? []).map((n) => n.impressions ?? 0), 1);
 
-  const tiles = [
-    { label: 'Impressions', value: compactNumber(d.impressions), delta: d.impressionsDelta, upIsGood: true, source: 'LinkedIn impressions plus Instagram reach' },
-    { label: 'Engagement rate', value: `${d.engagementPct}%`, delta: d.engagementDelta, upIsGood: true, source: 'Metricool engagement' },
-    { label: 'Clicks', value: compactNumber(d.clicks), delta: d.clicksDelta, upIsGood: true, source: 'LinkedIn clicks' },
-    { label: 'Follows gained', value: compactNumber(d.follows), delta: d.followsDelta, upIsGood: true, source: 'Instagram follows from a post' },
+  const tiles: { label: string; value?: string; source: string }[] = [
+    {
+      label: 'Impressions',
+      value: d?.impressions === undefined ? undefined : compactNumber(d.impressions),
+      source: 'Metricool, per post, summed across the window',
+    },
+    {
+      label: 'Interactions',
+      value: d?.interactions === undefined ? undefined : compactNumber(d.interactions),
+      source: 'Likes, comments and shares as the platform counts them',
+    },
+    {
+      label: 'Engagement rate',
+      value: d?.engagement === undefined ? undefined : `${d.engagement.toFixed(1)}%`,
+      source: "The average of each post's own rate, as the platform computes it",
+    },
+    {
+      label: 'Posts',
+      value: d ? String(d.posts) : undefined,
+      source: 'Everything the brand published in the window, hand-posted included',
+    },
   ];
+
+  /** Nothing pulled, or a pull that failed: say which, and offer the button either way. */
+  if (!d || d.posts === 0) {
+    return (
+      <section className={s.wrap} aria-label={`${title} analytics`}>
+        <div className={s.head}>
+          <h2 className={s.title}>{title}</h2>
+          <PullButton scope={scope} />
+        </div>
+        <p className={s.mockWhy}>
+          {error
+            ? error
+            : pulledAt
+              ? 'The last pull came back with no posts in the window. Either nothing has been published on this brand in the last 90 days, or the platform has not reported it yet.'
+              : 'No numbers pulled yet. Press Pull now and this fills with what Metricool holds for the last 90 days, including posts published by hand.'}
+        </p>
+      </section>
+    );
+  }
 
   return (
     <section className={s.wrap} aria-label={`${title} analytics`}>
       <div className={s.head}>
         <h2 className={s.title}>{title}</h2>
-        <span className={s.mockTag}>sample numbers</span>
+        <span className={s.freshTag}>
+          {d.first && d.last ? `${d.first.slice(0, 10)} to ${d.last.slice(0, 10)}` : 'last 90 days'}
+        </span>
+        <PullButton scope={scope} />
       </div>
-      <p className={s.mockWhy}>
-        Nothing here is measured yet. The shapes and the fields are real: every number below maps to
-        something Metricool actually returns per post, so this is what the panel will show once the
-        connection is proven. One authenticated call settles whether their post ids match the ones we
-        store when we schedule, which is what ties these to our posts.
-      </p>
+      {error ? <p className={s.mockWhy}>{error}</p> : null}
 
-      {/* THE KPI ROW. Four headline numbers, each with where it is heading. */}
+      {/* THE KPI ROW. Four headline numbers, and the sparkline only where it means something. */}
       <div className={s.tiles}>
-        {tiles.map((t) => {
-          const good = t.delta === 0 ? null : t.delta > 0 === t.upIsGood;
-          return (
-            <div key={t.label} className={s.tile}>
-              <span className={s.tileLabel}>{t.label}</span>
-              <span className={s.tileValue}>{t.value}</span>
-              <span
-                className={`${s.tileDelta} ${good === null ? '' : good ? s.up : s.down}`}
-                title={`${signedPct(t.delta)} against the previous 12 weeks`}
-              >
-                {signedPct(t.delta)} <span className={s.tileVs}>vs last 12 weeks</span>
-              </span>
+        {tiles.map((t) => (
+          <div key={t.label} className={s.tile}>
+            <span className={s.tileLabel}>{t.label}</span>
+            <span className={t.value === undefined ? s.tileNone : s.tileValue}>
+              {t.value ?? 'no data yet'}
+            </span>
+            {/* IMPRESSIONS ONLY. The line is a weekly sum of impressions, so drawing it under
+                Interactions or a rate would be the same picture labelled as three different
+                things, which is worse than no picture. */}
+            {t.label === 'Impressions' && d.trend.length ? (
               <Sparkline values={d.trend} label={t.label} />
-              <span className={s.tileSource}>{t.source}</span>
-            </div>
-          );
-        })}
+            ) : null}
+            <span className={s.tileSource}>{t.source}</span>
+          </div>
+        ))}
       </div>
 
       <div className={s.cols}>
@@ -112,12 +157,20 @@ export function AnalyticsPanel({
                 <span className={s.barTrack}>
                   <span
                     className={s.barFill}
-                    style={{ width: `${Math.max(2, (n.impressions / maxNet) * 100)}%` }}
-                    title={`${channelLabel(n.network)}: ${n.impressions.toLocaleString('en-AU')} impressions`}
+                    style={{ width: `${Math.max(2, ((n.impressions ?? 0) / maxNet) * 100)}%` }}
+                    title={`${channelLabel(n.network)}: ${
+                      n.impressions === undefined
+                        ? 'no impressions reported'
+                        : `${n.impressions.toLocaleString('en-AU')} impressions`
+                    }, ${n.posts} post${n.posts === 1 ? '' : 's'}`}
                   />
                 </span>
-                {/* The value at the tip, which is the one label a bar always earns. */}
-                <span className={s.barValue}>{compactNumber(n.impressions)}</span>
+                {/* The value at the tip, which is the one label a bar always earns. A network that
+                    reported nothing still gets its row and its post count: it published, and that
+                    is a different fact from having no reach. */}
+                <span className={s.barValue}>
+                  {n.impressions === undefined ? `${n.posts} posts` : compactNumber(n.impressions)}
+                </span>
               </li>
             ))}
           </ul>
@@ -125,7 +178,7 @@ export function AnalyticsPanel({
 
         {/* Mixed measures across five rows: a table, and the panel's table view. */}
         <div className={s.block}>
-          <h3 className={s.blockTitle}>Best posts</h3>
+          <h3 className={s.blockTitle}>Latest posts</h3>
           {/* Scrolls in its OWN container rather than pushing the page sideways. Three columns of
               numbers set in mono have a minimum width, and dropping the third on a phone would
               drop data instead of just the view of it. */}
@@ -143,16 +196,34 @@ export function AnalyticsPanel({
               </tr>
             </thead>
             <tbody>
-              {d.topPosts.map((p) => (
-                <tr key={p.title}>
+              {d.top.map((p) => (
+                <tr key={p.id}>
                   <td>
                     <span className={s.postWho}>
                       <PlatformIcon channel={p.network} size={12} title={channelLabel(p.network)} />
-                      <span className={s.postTitle}>{p.title}</span>
+                      {p.url ? (
+                        <a
+                          className={s.postTitle}
+                          href={p.url}
+                          target="_blank"
+                          rel="noreferrer"
+                          title={p.text}
+                        >
+                          {firstLine(p.text)}
+                        </a>
+                      ) : (
+                        <span className={s.postTitle} title={p.text}>
+                          {firstLine(p.text)}
+                        </span>
+                      )}
                     </span>
                   </td>
-                  <td className={s.num}>{compactNumber(p.impressions)}</td>
-                  <td className={s.num}>{p.engagementPct}%</td>
+                  <td className={s.num}>
+                    {p.impressions === undefined ? '—' : compactNumber(p.impressions)}
+                  </td>
+                  <td className={s.num}>
+                    {p.engagement === undefined ? '—' : `${p.engagement.toFixed(1)}%`}
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -162,6 +233,16 @@ export function AnalyticsPanel({
       </div>
     </section>
   );
+}
+
+/**
+ * The first line of a post, which is what makes a row recognisable at a glance. Falls back to a
+ * dash rather than an empty cell, because a post with no text is a real thing (a bare image) and an
+ * empty cell reads as a rendering fault.
+ */
+function firstLine(text: string): string {
+  const line = text.split(/\r?\n/).find((l) => l.trim()) ?? '';
+  return line.trim().slice(0, 90) || '(no caption)';
 }
 
 /**

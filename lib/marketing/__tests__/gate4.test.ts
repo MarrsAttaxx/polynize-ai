@@ -59,12 +59,14 @@ import {
   UPLOAD_TYPES,
   MAX_UPLOAD_BYTES,
 } from '../media-upload';
+import { compactNumber, sparklinePoints } from '../analytics-format';
 import {
-  mockAnalytics,
-  compactNumber,
-  signedPct,
-  sparklinePoints,
-} from '../analytics-mock';
+  normalizePost,
+  normalizeFeed,
+  summarise,
+  mergeSummaries,
+  weekIndex,
+} from '../analytics-metrics';
 import { joinReport, harvestIds } from '../analytics-probe';
 import { llmErrorText } from '../../llm/error-text';
 import { laneVoice } from '../article-draft';
@@ -848,46 +850,15 @@ for (const t of Object.keys(UPLOAD_TYPES)) {
   ok(`${t}: offered and accepted`, checkUpload(t, 1000).ok);
 }
 
-/* ------------------------------------------------------------------ D66: the analytics mock */
+/* ------------------------------------------------------------------ D66/D86: the panel's numbers */
 
 /**
- * A MOCK'S ONLY JOB IS TO BE TRUSTED ABOUT SHAPE, so the thing tested is that it adds up. The first
- * version generated the per-network numbers independently of the headline, so a tile said 95.3K
- * beside four bars summing to 63K, and nobody would trust a panel that cannot add up.
+ * THE MOCK IS GONE (D86) and so are the assertions that it added up. The panel draws real numbers
+ * now, and the generator was deleted rather than left beside a live dashboard: a mock one import
+ * away from being drawn again is the whole risk of having one.
+ *
+ * What is asserted below is the formatting that was never fake, plus the real summariser.
  */
-for (const scope of ['engine', 'marrs', 'polynize', 'kristin']) {
-  const a = mockAnalytics(scope);
-  eq(
-    `${scope}: the platform split sums to the headline`,
-    a.byNetwork.reduce((t, n) => t + n.impressions, 0),
-    a.impressions
-  );
-  eq(`${scope}: the trend sums to the headline too`, a.trend.reduce((t, n) => t + n, 0), a.impressions);
-  eq(`${scope}: twelve trend points`, a.trend.length, 12);
-  ok(`${scope}: no negative share`, a.byNetwork.every((n) => n.impressions >= 0));
-  ok(`${scope}: the bars are sorted biggest first`, a.byNetwork.every((n, i, arr) => i === 0 || arr[i - 1].impressions >= n.impressions));
-  ok(
-    `${scope}: no single best post exceeds the period`,
-    a.topPosts.every((p) => p.impressions <= a.impressions)
-  );
-  ok(`${scope}: and they are sorted too`, a.topPosts.every((p, i, arr) => i === 0 || arr[i - 1].impressions >= p.impressions));
-}
-
-/**
- * DETERMINISTIC, and this is not a nicety: the panel renders on the SERVER, so a random number
- * would differ from the one the browser computes, which is a hydration mismatch rather than a
- * cosmetic difference.
- */
-eq(
-  'the same scope gives the same numbers every time',
-  JSON.stringify(mockAnalytics('marrs')),
-  JSON.stringify(mockAnalytics('marrs'))
-);
-ok(
-  'and two scopes do not give identical numbers',
-  JSON.stringify(mockAnalytics('marrs')) !== JSON.stringify(mockAnalytics('kristin'))
-);
-ok('the scale multiplies the numbers up', mockAnalytics('marrs', 4).impressions > mockAnalytics('marrs').impressions);
 
 // The stat tile's auto-compact contract: separated under 10,000, compacted above.
 eq('a small number keeps its separator', compactNumber(1284), '1,284');
@@ -898,10 +869,11 @@ eq('9,999 is still readable in full', compactNumber(9999), '9,999');
 eq('zero is zero', compactNumber(0), '0');
 
 // A flat period has to READ as flat, not as a blank.
-eq('a positive delta carries its sign', signedPct(12.3), '+12.3%');
-eq('a negative one keeps its own', signedPct(-4.6), '-4.6%');
-eq('and flat is said in words', signedPct(0), 'no change');
-eq('a rounding-to-zero delta is flat too', signedPct(0.04), 'no change');
+/**
+ * `signedPct` went with the delta tiles (D86). A delta needs a previous window and the store keeps
+ * one window by design, so the formatter had nothing left to format. It is deleted rather than kept
+ * warm: six lines are cheaper to write again than a dead export is to keep honest.
+ */
 
 /** The sparkline geometry: inside its box, oldest to newest, biggest value at the smallest y. */
 const sp = sparklinePoints([10, 50, 30], 100, 40, 3);
@@ -1503,6 +1475,149 @@ eq('the label says which, so the choice is never invisible', youtubeTypeLabel('s
 eq('and for the other', youtubeTypeLabel('landscape'), 'Landscape video');
 ok('the guard accepts the two values', isYoutubeVideoType('short') && isYoutubeVideoType('landscape'));
 ok('and rejects anything else, including the API token for a plain video', !isYoutubeVideoType('video'));
+
+/* ------------------------------------------------------------------ D86: real analytics */
+
+/**
+ * THE FIXTURES ARE HIS OWN ROWS, copied from the probe output on 2 September 2026, because a reader
+ * tested against an imagined payload is a reader tested against nothing. Three real shapes: the
+ * cross-network brand feed, the per-network LinkedIn feed, and TikTok, which is the one that
+ * arrives with no metrics at all.
+ */
+const brandRow = {
+  id: 'urn:li:ugcPost:7500343632873517056',
+  network: 'linkedin',
+  networkConnection: 'linkedin',
+  text: 'Designing AI enabled organisations without considering the humans first',
+  link: 'https://www.linkedin.com/feed/update/urn:li:ugcPost:7500343632873517056',
+  publicationDate: { dateTime: '2026-09-01T10:07:51.826', timezone: 'Australia/Sydney' },
+  type: 'POST',
+  metrics: { INTERACTIONS: 5.0, ENGAGEMENT: 6.024096385542169, IMPRESSIONS: 83.0 },
+};
+const liRow = {
+  blogId: 6525064,
+  postId: 'urn:li:share:7499952248446308352',
+  created: { dateTime: '2026-08-31T00:12:00', timezone: 'Europe/Madrid' },
+  likes: 8,
+  impressions: 228,
+  uniqueImpressions: 149,
+  engagement: 3.508771929824561,
+  url: 'https://www.linkedin.com/feed/update/urn:li:share:7499952248446308352',
+  comment: 'In 1882, when electricity was switched on in New York',
+  type: 'TEXT',
+};
+const ttRow = {
+  videoId: '7675503877671669012',
+  type: 'VIDEO',
+  createTime: '2026-08-19T00:34:47+0200',
+  shareUrl: 'https://www.tiktok.com/@marrs.attacks/video/7675503877671669012',
+  videoDescription: '3 Types of Humans emerging in the AI Economy, which are you?',
+};
+
+const bp = normalizePost(brandRow)!;
+eq('the platform id is the id', bp.id, 'urn:li:ugcPost:7500343632873517056');
+eq('UPPERCASE metric keys are read', bp.impressions, 83);
+eq('and so are the others', bp.interactions, 5);
+eq('the engagement rate is taken as given, never re-derived', bp.engagement, 6.024096385542169);
+eq('the date is flattened out of its wrapper', bp.published_at, '2026-09-01T10:07');
+eq('and the link is the join key back to a post of ours', bp.url?.endsWith('7500343632873517056'), true);
+
+const lp = normalizePost(liRow, 'linkedin')!;
+eq('the per-network feed uses postId', lp.id, 'urn:li:share:7499952248446308352');
+eq('and puts its numbers at the top level', lp.impressions, 228);
+eq('its text lives under `comment`', lp.text.startsWith('In 1882'), true);
+eq('and its date under `created`', lp.published_at, '2026-08-31T00:12');
+/**
+ * ONLY THE BRAND FEED NAMES THE NETWORK. A per-network row does not carry the field, so without a
+ * fallback every one of them lands as 'unknown' and the platform breakdown collapses to one bar.
+ */
+eq('the caller supplies the network the per-network feed omits', lp.network, 'linkedin');
+eq('and without one it is honestly unknown', normalizePost(liRow)!.network, 'unknown');
+
+const tp = normalizePost(ttRow, 'tiktok')!;
+eq('TikTok is identified by videoId', tp.id, '7675503877671669012');
+eq('its caption is videoDescription', tp.text.startsWith('3 Types of Humans'), true);
+/** TikTok dates its rows with a flat `createTime`, which the first reader dropped on the floor. */
+eq('and its date is read from createTime', tp.published_at, '2026-08-19T00:34');
+/** THE RULE THAT MATTERS MOST: a metric the feed did not carry is ABSENT, never 0. */
+eq('a row with no metrics reports no impressions', tp.impressions, undefined);
+ok('and not zero, which would be a claim', tp.impressions !== 0);
+
+eq('a row with no id at all is dropped', normalizePost({ text: 'orphan' }), null);
+eq('junk is dropped rather than throwing', normalizePost('nope'), null);
+
+/** Both wrappers, and the same post twice collapses to one. */
+eq('a {data:[...]} envelope is read', normalizeFeed({ data: [brandRow, liRow] }).length, 2);
+eq('a bare array is read too', normalizeFeed([brandRow]).length, 1);
+eq('and a duplicate id is counted once', normalizeFeed([brandRow, brandRow]).length, 1);
+eq('nothing usable yields nothing', normalizeFeed({ data: ['x', null] }).length, 0);
+
+/**
+ * The summary is built from BRAND FEED rows, because that is the one call the pull makes and every
+ * row of it names its own network. A TikTok row with no metrics is included on purpose: it is the
+ * case that decides whether the panel prints an honest gap or a confident zero.
+ */
+const ttBrand = {
+  id: '7675503877671669012',
+  network: 'tiktok',
+  type: 'VIDEO',
+  text: '3 Types of Humans emerging in the AI Economy, which are you?',
+  publicationDate: { dateTime: '2026-08-19T00:34:47', timezone: 'Australia/Sydney' },
+};
+const liBrand = {
+  id: 'urn:li:share:7499952248446308352',
+  network: 'linkedin',
+  text: 'In 1882, when electricity was switched on in New York',
+  publicationDate: { dateTime: '2026-08-31T00:12:00', timezone: 'Australia/Sydney' },
+  metrics: { IMPRESSIONS: 228, INTERACTIONS: 8, ENGAGEMENT: 3.508771929824561 },
+};
+const sum = summarise(normalizeFeed({ data: [brandRow, liBrand, ttBrand] }));
+eq('three posts', sum.posts, 3);
+eq('impressions sum over the two that reported', sum.impressions, 83 + 228);
+/**
+ * THE AVERAGE IGNORES THE SILENT ONE. Counting TikTok as 0% would drag the rate down by a third on
+ * the strength of a number nobody reported.
+ */
+eq('the rate averages only the posts that carried one', Number(sum.engagement!.toFixed(4)), Number(((6.024096385542169 + 3.508771929824561) / 2).toFixed(4)));
+eq('the newest is first in the table', sum.top[0].id, 'urn:li:ugcPost:7500343632873517056');
+eq('and the oldest is the window start', sum.first?.slice(0, 10), '2026-08-19');
+eq('with the newest as its end', sum.last?.slice(0, 10), '2026-09-01');
+eq('two networks appear', sum.byNetwork.length, 2);
+eq('sorted by reach, so LinkedIn leads', sum.byNetwork[0].network, 'linkedin');
+eq('carrying both of its posts', sum.byNetwork[0].posts, 2);
+eq('and the network that reported nothing still counts its post', sum.byNetwork[1].posts, 1);
+eq('while reporting no impressions rather than zero', sum.byNetwork[1].impressions, undefined);
+
+/**
+ * A TOTALLY SILENT WINDOW REPORTS NOTHING, not zero. This is the assertion that protects the panel
+ * from printing a confident 0 the day an endpoint changes shape.
+ */
+const silent = summarise([{ id: 'a', network: 'tiktok', text: 'x' }]);
+eq('one post', silent.posts, 1);
+eq('and no impressions figure at all', silent.impressions, undefined);
+eq('nor an engagement rate', silent.engagement, undefined);
+eq('and no trend, because nothing carried a date', silent.trend.length, 0);
+
+/* the trend, which IS zero-filled, and correctly so */
+eq('twelve weekly buckets', sum.trend.length, 12);
+eq('and they sum to the impressions that had dates', sum.trend.reduce((a, b) => a + b, 0), 83 + 228);
+/** A week with no posts really did earn nothing, which is why the trend fills where the totals do not. */
+ok('quiet weeks are zeros in the line', sum.trend.filter((v) => v === 0).length > 0);
+eq('a Monday and the Sunday after it share a week', weekIndex('2026-08-31'), weekIndex('2026-09-06'));
+ok('and the next Monday does not', weekIndex('2026-09-07') !== weekIndex('2026-08-31'));
+eq('an unparseable date has no week', weekIndex('nope'), undefined);
+
+/* merging streams for the engine page */
+const merged = mergeSummaries([
+  summarise([normalizePost(brandRow)!]),
+  summarise([normalizePost(liBrand)!]),
+]);
+eq('the posts add up', merged.posts, 2);
+eq('so do the impressions', merged.impressions, 83 + 228);
+eq('one network across both', merged.byNetwork.length, 1);
+eq('carrying both posts', merged.byNetwork[0].posts, 2);
+eq('an empty merge claims nothing', mergeSummaries([]).impressions, undefined);
+eq('and reports no posts', mergeSummaries([]).posts, 0);
 
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

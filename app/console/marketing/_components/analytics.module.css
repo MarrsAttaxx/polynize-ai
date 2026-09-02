@@ -28,17 +28,8 @@
   color: var(--text, #f4ece4);
 }
 
-/* Said once, plainly, in amber: a mock that does not announce itself is a screen someone decides on. */
-.mockTag {
-  font-family: var(--font-jetbrains-mono), monospace;
-  font-size: 9.5px;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--amber, #f0b86b);
-  border: 1px solid color-mix(in srgb, var(--amber, #f0b86b) 45%, transparent);
-  border-radius: 999px;
-  padding: 3px 8px;
-}
+/* The mock is gone (D86); .mockWhy is now the panel's one-line explanation of an empty or failed
+   pull, which is the same job done honestly. */
 .mockWhy {
   margin: 0 0 18px;
   max-width: 78ch;
@@ -81,20 +72,12 @@
   line-height: 1.05;
   color: var(--text, #f4ece4);
 }
-.tileDelta {
-  font-family: var(--font-jetbrains-mono), monospace;
-  font-size: 10px;
-  color: var(--text-2, #cfc8c1);
-}
 /* Direction, and only where direction has a meaning. Never the only channel: the sign is printed. */
 .up {
   color: var(--mint, #69fccb);
 }
 .down {
   color: var(--coral, #ff7a6b);
-}
-.tileVs {
-  color: var(--text-3, #6f6a64);
 }
 
 .spark {
@@ -298,4 +281,55 @@
   .barName {
     display: none;
   }
+}
+
+/* ------------------------------------------------------------------ real numbers (D86) */
+
+/* The window the numbers cover. Quiet: it is provenance, not a headline. */
+.freshTag {
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  color: var(--text-3);
+}
+
+.pullWrap {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+.pullErr {
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--coral);
+}
+.pullBtn {
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--mint);
+  background: color-mix(in srgb, var(--mint) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--mint) 45%, transparent);
+  border-radius: 8px;
+  padding: 6px 12px;
+  cursor: pointer;
+}
+.pullBtn:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--mint) 14%, transparent);
+}
+.pullBtn:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+/**
+ * A NUMBER WE DO NOT HAVE. Set in the same slot as the value but quiet and small, because "no data
+ * yet" must not read as a headline figure, and it must never be a 0: 0 impressions is a claim, and a
+ * different one from the platform not having told us.
+ */
+.tileNone {
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 13px;
+  color: var(--text-3);
+  line-height: 1.4;
 }
