@@ -110,6 +110,28 @@ export type RecipeParts = {
   length?: string;
   /** How many hook variants to write. 1 or undefined = one hook, as before. */
   hookVariants?: number;
+  /**
+   * WHETHER THIS PROMPT WANTS THE HOOK-VARIANTS BLOCK AT ALL, AND IN WHICH TRACK (D91).
+   *
+   * Marrs: "In a certain part of the system she was writing 'visual hook' and 'written hook' when it
+   * wasn't needed."
+   *
+   * He was reading the output of a prompt that contradicted itself. `hooksSystemPrompt` says, in its
+   * own words: "Every hook must be ONE SPOKEN LINE... No on-screen caption line, no labels, no stage
+   * directions." Three lines later it injected this shared recipe block, which said: "Label them
+   * HOOK 1 to HOOK n, each with its own ON-SCREEN TEXT and SPOKEN lines." **Both instructions, in one
+   * prompt, in direct opposition.** April did as she was told by the second one, and the labels
+   * appeared on a screen whose whole point is one line per hook.
+   *
+   * The same block reached the TEXT prompt, where an on-screen line is meaningless because a
+   * LinkedIn post has no screen.
+   *
+   * So the shape is now the caller's to declare, and it DEFAULTS TO 'none'. A prompt that wants the
+   * block asks for it. That is the direction that fails safe: the old default put an instruction into
+   * prompts that had already said the opposite, and nothing in the type system or the tests could
+   * see the disagreement because both halves were just strings.
+   */
+  hookShape?: 'script' | 'written' | 'none';
 };
 
 /** Map a resolved Content Template to the recipe parts the prompt blocks consume. */
@@ -208,11 +230,15 @@ export function recipeBlock(parts: RecipeParts): string {
   // operator's recipe wording, which cannot change the structure of the output. The point
   // is production: the presenter records every hook against one body in a single session,
   // and the piece is then cut into that many posts and scheduled days apart.
-  if (parts.hookVariants && parts.hookVariants > 1) {
+  const hookShape = parts.hookShape ?? 'none';
+  if (parts.hookVariants && parts.hookVariants > 1 && hookShape !== 'none') {
     const n = parts.hookVariants;
     sections.push(
       `HOOK VARIANTS: write ${n} DIFFERENT hooks for this one piece, not one.\n` +
-        `Label them "HOOK 1:" to "HOOK ${n}:", each with its own ON-SCREEN TEXT and SPOKEN lines, separated by a line of four hyphens, exactly as the output shape shows.\n` +
+        (hookShape === 'script'
+          ? `Label them "HOOK 1:" to "HOOK ${n}:", each with its own ON-SCREEN TEXT and SPOKEN lines, separated by a line of four hyphens, exactly as the output shape shows.\n`
+          : /* A written post has no screen, so a hook is one opening line and nothing else. */
+            `Label them "HOOK 1:" to "HOOK ${n}:", each one opening line, separated by a line of four hyphens. No on-screen caption line and no stage directions: this piece is read, not performed.\n`) +
         `They must be genuinely different ways IN to the same argument (a different belief flipped, a different fact led with, a different audience addressed), never rewordings of each other, and each must hand over cleanly to the SAME body.\n` +
         `Write the body, and the close, ONCE. The body must not refer back to anything specific to one hook, because whichever hook is used it has to follow on.`
     );
@@ -274,6 +300,8 @@ const VOICE_AND_DASH = `Polynize voice:
 - Never use em-dashes. Use commas, periods, or colons instead.`;
 
 function textSystemPrompt(opts: PromptOpts): string {
+  /** Written, never spoken: a post has no screen to put a caption on (D91). */
+  opts = { ...opts, hookShape: 'written' };
   return `You are April, Polynize's copy chief and voice specialist. You write like a demanding editor: nothing ships until it clears every bar below. Write one ${opts.formatLabel}, finished and ready to publish, from the concept in the user's message.
 
 Three materials go into this piece. Hold all three at once and let none crowd out the others:
@@ -313,6 +341,8 @@ This model reasons before it answers, so plan silently: find the sharpest hook m
 }
 
 function scriptSystemPrompt(opts: PromptOpts): string {
+  /** The one prompt the hook-variants block was written for: n hooks recorded against one body. */
+  opts = { ...opts, hookShape: 'script' };
   return `You are April, Polynize's copy chief and voice specialist. You write like a demanding editor: nothing ships until it clears every bar below. Write one complete ${opts.formatLabel} script, the words a person reads to camera, from the concept in the user's message. Write what they say, not stage directions.
 
 Three materials go into this script. Hold all three at once and let none crowd out the others:

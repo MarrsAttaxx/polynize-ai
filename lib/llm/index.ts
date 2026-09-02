@@ -1,4 +1,5 @@
 import { NO_EM_DASH_INSTRUCTION } from '../em-dash';
+import { HOUSE_VOICE_RULES } from '../house-voice';
 import { completeWithKimi } from './kimi';
 import { completeWithOpenAI } from './openai';
 import { completeWithOpenRouter, streamWithOpenRouter, type StreamDelta } from './openrouter';
@@ -57,7 +58,7 @@ export type CompleteArgs = {
  */
 export async function complete(args: CompleteArgs): Promise<string> {
   const provider = process.env.LLM_PROVIDER ?? 'openrouter';
-  const system = `${args.system}\n\n${NO_EM_DASH_INSTRUCTION}`;
+  const system = `${args.system}\n\n${NO_EM_DASH_INSTRUCTION}\n${HOUSE_VOICE_RULES}`;
 
   switch (provider) {
     case 'kimi':
@@ -85,7 +86,7 @@ export async function completeStream(
   onDelta: (d: StreamDelta) => void
 ): Promise<string> {
   const provider = process.env.LLM_PROVIDER ?? 'openrouter';
-  const system = `${args.system}\n\n${NO_EM_DASH_INSTRUCTION}`;
+  const system = `${args.system}\n\n${NO_EM_DASH_INSTRUCTION}\n${HOUSE_VOICE_RULES}`;
   if (provider === 'openrouter' || provider === 'minimax') {
     return streamWithOpenRouter({ ...args, system }, onDelta);
   }

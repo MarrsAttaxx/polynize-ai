@@ -34,6 +34,8 @@ import { HERO_BATCH, HERO_SIZE, HERO_W, HERO_H, HERO_ASPECT } from '../hero';
 import { stripMarkdownEmphasis } from '../../plain-copy';
 import { parseLine } from '../text-overlay';
 import { cleanArticle } from '../article-draft';
+import { recipeBlock } from '../draft';
+import { CONTRACTIONS_INSTRUCTION, HOUSE_VOICE_RULES } from '../../house-voice';
 import { foldRule, foldCopy, copyLength } from '../post-preview';
 import { timezoneForEntry } from '../posting-schedule';
 import {
@@ -1749,6 +1751,53 @@ eq('Polynize carries the brand hue at a legible step, not #69fccb itself', SERIE
 eq('Marrs is a red rather than the old orange', SERIES_DARK[1], '#cf4436');
 ok('and never coral, which collapses against mint for a deuteranope', !SERIES_DARK.includes('#ff7a6b' as never));
 eq('Shourov took the blue', SERIES_DARK[2], '#3987e5');
+
+/* ------------------------------------------------------------------ D91: feedback as code */
+
+/**
+ * THE HOOKS PROMPT CONTRADICTED ITSELF, and that is what Marrs was reading.
+ *
+ * "In a certain part of the system she was writing 'visual hook' and 'written hook' when it wasn't
+ * needed." The hooks prompt says "Every hook must be ONE SPOKEN LINE... No on-screen caption line,
+ * no labels, no stage directions", and three lines later injected a shared block saying "each with
+ * its own ON-SCREEN TEXT and SPOKEN lines". Two instructions, one prompt, opposite directions, and
+ * nothing could see the disagreement because both halves were just strings.
+ *
+ * The block is opt-in now and DEFAULTS TO OFF, which is the direction that fails safe.
+ */
+const variantParts = { hookRecipe: 'open on the belief', hookVariants: 3 };
+const noShape = recipeBlock(variantParts);
+ok('by default the hook-variants block is absent entirely', !/HOOK VARIANTS/.test(noShape));
+/**
+ * The assertion is about the INSTRUCTION, not about the words appearing anywhere. HOOK_CRAFT still
+ * discusses on-screen text, and correctly: it is hedged ("Where the shape ALSO asks for an ON-SCREEN
+ * TEXT line") and it explicitly warns that the examples came from a two-line format and are not
+ * proof every format has one. A description of a thing is not an order to produce it. What must
+ * never appear is the order.
+ */
+ok(
+  'so it cannot contradict a prompt that defines its own hook shape',
+  !/each with its own ON-SCREEN TEXT and SPOKEN lines/.test(noShape)
+);
+
+const scripted = recipeBlock({ ...variantParts, hookShape: 'script' });
+ok('a script asks for three hooks', /write 3 DIFFERENT hooks/.test(scripted));
+ok('and it is the one place the two tracks belong', /ON-SCREEN TEXT and SPOKEN lines/.test(scripted));
+
+const written = recipeBlock({ ...variantParts, hookShape: 'written' });
+ok('a written post asks for three hooks too', /write 3 DIFFERENT hooks/.test(written));
+/** A LinkedIn post has no screen, so an on-screen caption is not a preference but a mistake. */
+ok('but never for an on-screen line', !/ON-SCREEN TEXT and SPOKEN/.test(written));
+ok('and it says why, so the model is not left guessing', /read, not performed/.test(written));
+
+/** One hook needs no variants block whatever the shape. */
+ok('a single hook asks for no variants', !/HOOK VARIANTS/.test(recipeBlock({ hookRecipe: 'x', hookVariants: 1, hookShape: 'script' })));
+
+/* the standing voice rules */
+ok('contractions are instructed with examples, not as an adjective', /don't rather than "do not"|don't, isn't, it's/.test(CONTRACTIONS_INSTRUCTION));
+ok('and the deliberate-emphasis exception is stated', /emphasis/.test(CONTRACTIONS_INSTRUCTION));
+ok('as is the quotation one, so a quote is never rewritten', /quotation/.test(CONTRACTIONS_INSTRUCTION));
+ok('the house rules carry it', HOUSE_VOICE_RULES.includes(CONTRACTIONS_INSTRUCTION));
 
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

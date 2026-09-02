@@ -2618,3 +2618,38 @@ One rule, worth keeping: **a row has to agree with the store before it can act.*
 ### Verified as an interaction, not as code
 
 The behaviour lives in the wiring rather than in a pure function, so it was driven in a browser: the same draft/dirty/gate logic in a harness, typing 07:00 to 01:00 to 12:00. **Zero writes across the whole edit, then exactly one on Set**, with the queue button disabled throughout and the row back in sync after. That is the property that matters and it is not something a typecheck can see.
+
+## D91: Two of April's own instructions were fighting, and one house rule had no home
+
+**Adopted 2 September 2026.** Marrs asked a design question and gave two examples of feedback he wanted to give April. Both examples turned out to be code rather than taste, which is itself the answer to his question.
+
+> "I want her to say 'don't' instead of 'do not' and things like that."
+> "In a certain part of the system she was writing 'visual hook' and 'written hook' when it wasn't needed."
+
+### The second one was a prompt contradicting itself
+
+`hooksSystemPrompt` says, in its own words:
+
+> Every hook must be ONE SPOKEN LINE, the words said to camera. **No on-screen caption line, no labels, no stage directions.**
+
+Three lines later it appended the shared `recipeBlock`, which said:
+
+> Label them "HOOK 1:" to "HOOK n:", **each with its own ON-SCREEN TEXT and SPOKEN lines**, separated by a line of four hyphens.
+
+**Two instructions, one prompt, in direct opposition, and April obeyed the second.** She was not getting it wrong; she was doing as she was told by the other half of her own brief. The same block also reached the TEXT prompt, where an on-screen line is meaningless because a LinkedIn post has no screen.
+
+**Nothing could see the disagreement, because both halves were just strings.** No type, no test and no reviewer reading either file alone would catch it: the conflict only exists once the fragments are concatenated, and nothing in the codebase assembles them outside a live request.
+
+The hook-variants block is now opt-in, with three shapes, and it **defaults to off**. A prompt that wants it asks for it. That direction is the safe one: the old default pushed an instruction into prompts that had already said the opposite. `script` gets the two tracks, `written` gets one opening line and is told why ("this piece is read, not performed"), and everything else gets nothing.
+
+**What was NOT changed, deliberately.** `HOOK_CRAFT` still discusses on-screen headlines in a prompt writing a text post, and that is left alone because its wording is already hedged ("where the shape ALSO asks for an ON-SCREEN TEXT line") and it explicitly warns that its examples came from a two-line format. **A description of a thing is not an order to produce it**, and that distinction is where this kind of analysis usually goes wrong. It is a candidate rather than a fault, and a prompt audit is running over every other path for the same class of bug.
+
+### The first one needed a home before it needed a rule
+
+There were already two standing rules of this kind and no shared place for them: the em-dash ban lives beside its stripper in `lib/em-dash.ts`, the no-markdown rule beside its stripper in `lib/plain-copy.ts`. Both are about a CHARACTER, so living next to the code that removes it is right. A rule about how the writing SOUNDS has no stripper to sit beside.
+
+So `lib/house-voice.ts`, appended to every system prompt in the app, with the test for what belongs in it written at the top: **does this apply to every piece of writing the system produces, regardless of stream, format or screen?** If it applies to one stream it is that stream's brand voice doc. If it applies to one screen it belongs in that screen's prompt. Three scopes, and a rule in the wrong one is either ignored or applied where it does harm.
+
+**Instructed, not enforced, and that is the difference from the em-dash.** An em-dash has no legitimate use here, so it is stripped and the instruction is belt and braces. "Do not" has two: inside a quotation, and as deliberate emphasis on an imperative. A find-and-replace would rewrite a quote, flatten the emphasis, and have to fix capitalisation to avoid producing "Don't touch" mid-sentence. So this one asks, with examples rather than adjectives, because the hook guidance already learned that a model can copy `don't` and can only approximate "be conversational".
+
+12 new assertions, 653 total.
