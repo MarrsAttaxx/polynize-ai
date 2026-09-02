@@ -70,9 +70,21 @@ That is what `Repeat` is for. A proven post goes into a circular list on off-pea
 
 ## 3. Click-through: the honest answer, and the gap that makes it zero today
 
-### The gap first
+### The gap first, and a correction to how I first put it
 
-**The auto path publishes no link to polynize.ai at all.** The kit declares `link: 'first_comment'` on every LinkedIn text frame (a link in the body costs about 18.8% of median reach), the calendar entry has a `first_comment` field for it, and Metricool's client sends `firstCommentText`. **Nothing ever writes `first_comment`.** Not the wave, not prepare. The kit's link rule exists as a lint that refuses a link in the body and as an instruction to April not to write one. So a LinkedIn post ships with no link anywhere. Click-through is zero by construction, not by audience behaviour.
+I wrote that click-through was "zero by construction." **Marrs corrected the framing, and he is right:** the first comment is one of several ways a click happens, not the only one. The others in use are **"comment MAP below"** (the viewer comments a keyword and the link arrives in reply or by DM) and **ManyChat**, which automates that on Instagram and Facebook: a keyword comment on a specific post triggers a DM carrying the link. Those clicks are real and they are the ones the strategy leans on for reach, because a post with no link in it travels further and the link arrives to someone who asked for it.
+
+What IS true, stated precisely: **the posts the console publishes through Metricool carry no link and no first comment**, because nothing ever writes `first_comment`. The kit declares the placement, the entry has the field, the client sends it, and no code fills it. So the console-published half of the funnel is dark, while the ManyChat and manual-reply half is lit but **unattributed**: a DM link with no `utm_content` cannot be tied back to the post that earned it.
+
+**Design consequence:** the link builder in this section has to serve three delivery paths, not one, and `utm_medium` tells them apart:
+
+| Path | `utm_medium` | How `entry_id` gets into the link |
+|---|---|---|
+| First comment, written by the console | `social` | The console writes it at prepare time |
+| ManyChat DM after a keyword comment | `dm` | The ManyChat flow for that post is created with the post's link; per-post triggers exist in ManyChat, so one flow per post carries its own `entry_id` |
+| Manual reply by the owner | `reply` | The console shows the owner the exact link to paste, on the entry, so it is never typed by hand |
+
+The console cannot drive ManyChat, and should not try. What it can do is **hand every post its one correct link**, on the calendar entry and in the hand-post brief, so whichever path delivers it, the click carries the key.
 
 **And the site discards attribution at the door.** The nurture design brief (27 August) found it and asked the posting side to set `utm_campaign` per lane. The site side has not captured UTMs yet: `/map-your-team` reads only `?start=1`, the `sessions` insert stores `{ id, phase }` and nothing about arrival, and the `leads` row has `source: 'blueprint'` and nothing else. **Both halves of the join are missing.** That is good news in one way: nothing has to be undone.
 
@@ -140,6 +152,28 @@ More brands is more surface area, and it is cheap on the console side: a brand i
 
 ---
 
+## 5b. The content strategy v0.2, mapped onto the console
+
+Received 3 September. It is the document the console should be built against, and most of it already has a home. What does not, in order of how much it changes:
+
+| Strategy says | Console today | Gap |
+|---|---|---|
+| **Six lanes**, each a YAML agent spec (section 09): `lane_id`, `stream`, `priority`, `owner`, `narrative`, `doer`, `buyer`, `buyer_kpi`, `angle`, `formats`, `platforms`, `cta`, `magnet`, `landing_page`, `segment`, `proof`, `avoid` | No lane object. Streams are people; frames are post types | **Store the six specs verbatim as data.** A Story picks a lane at Gate 1; the lane's `angle`, `avoid`, `cta`, `magnet` reach April's prompt; `segment` becomes `utm_campaign`; `magnet` plus `landing_page` become the link |
+| **Per-owner output**: Polynize 21 pieces; Marrs 8 to 10; Shourov 5 to 6, **no video**; Julian 5 to 6, **no talking to camera**; Kristin 1 to 2, **LinkedIn only** | The kit defaults on company versus person only, so Shourov's default kit offers three Reels and Kristin's offers TikTok | **Per-stream kit defaults**, from the strategy's exclusions. One table, read by `kitRows` |
+| **Platforms include X** for Shourov and the page | X is in the channel list, has no queue, no frame, no Metricool mapping in the kit | A LinkedIn text frame republished to X (Metricool's `twitter`), 280 characters, is the cheap version. Later |
+| **"No magnet, no post"** | Nothing checks that an entry carries a link | Enforce at prepare: an entry whose lane has a magnet gets the link; a lane with `magnet: TO_BUILD` (cyber, acquisition) is flagged, not blocked |
+| **Measure views, saves, completions. Saves carry about 5x a like** | Impressions, interactions, engagement rate. No saves | `saved` is on Instagram's per-network feed and not on the brand summary; add the per-network pull for it. Completions need section 3 |
+| **Run each frame at least three times before judging** | The frame ladder design already fades rows under `n = 3` | Agreement, not a gap |
+| **Series beat one-offs** | Nothing groups posts into a numbered series | A `series` on the Story, printed into the copy, is small and testable |
+| **Section 08 targets**: completions 10 a week by month 3, 25 by month 6; discovery calls 3 then 8 a month | The panel has no targets | Target lines on the completions and calls tiles once those numbers exist |
+| **Section 05 wants the catalogue as a testing calendar**: which frame, which lane, which week, what result keeps it | The catalogue exists (20 outputs); nothing schedules a test | The frame ladder by lane IS the result column; the calendar column is a Story per lane per fortnight, which is the wave |
+| **Daily podcast clips at 10am, automatic** | Running | Nothing |
+| **Polynize page carries all six lanes; personal profiles carry reach** | Hand-post on Marrs's LinkedIn (D41) already encodes half of this | The `owner` field on the lane makes the other half explicit |
+
+**The one structural change is the lane object.** Everything else in the table hangs off it: the kit defaults read the lane's `formats` and `platforms`, the link reads its `magnet` and `segment`, April reads its `angle` and `avoid`, the ladder groups by it, and a lane that earns it gets a brand.
+
+---
+
 ## 6. The build order
 
 Each step unlocks the next, and each is small enough to ship and check.
@@ -156,14 +190,14 @@ Steps 1 to 3 are a week of work and they turn the analytics panel from "how much
 
 ---
 
-## 7. Questions only Marrs can answer
+## 7. Questions Marrs answered, 3 September 2026
 
-1. **Which Vercel plan is the team on?** Hobby, Pro, or Pro with Web Analytics Plus. It decides whether source 2 exists and whether the site's custom events are being recorded at all right now.
-2. **Where is the audience?** Australia, US, or global. It decides every posting time.
-3. **Which lanes go hard first?** The nurture brief says the strategy marks three "go hard" and two "light". The console should build for those three and not model six equally.
-4. **The marketing plan document.** The new thinking around use cases is referenced but the console only has the nurture brief's summary of the six lanes. The source document would let the lane model match it exactly rather than approximately.
-5. **TikTok business account**, which he has already committed to.
-6. **The Metricool shortener**: confirm it is acceptable to turn off, since it is the only thing that would strip our UTMs.
+1. **Vercel plan: Pro.** So custom events ARE being recorded (the `track()` calls on the site are live). **UTM parameters are not**: they need the Web Analytics Plus add-on, $10 a month per team, toggled under Billing, Add-ons. Turn it on and source 2 exists, with a 24 month window instead of 12. Also needed for the API: a Vercel access token in the console's environment, plus the site project's id. Both are Marrs's to create in the Vercel dashboard; neither is pasted in chat.
+2. **Audience: Australia, US and Asia.** Three regions with no overlapping working day, so a single posting grid cannot serve them. Two workable shapes: a brand per region where the content is region-specific, or slots chosen so each network's two daily times land in different regions' mornings. Decide once the first-party numbers show where the clicks come from, since `utm` plus the referrer country answers it in a fortnight.
+3. **"Lanes" is his own word.** Section 04 of the content strategy v0.2 defines six lanes, each one use case with one owner, one narrative a fortnight and one destination. The console uses the term exactly as the strategy does. What the console lacks is the lane as a stored object; section 5 above.
+4. **The strategy document**: `polynize-content-strategy-v0_2.md`, received. Section 9 of it is already an agent spec per lane, in YAML, which is the schema the console's `lane` object should hold verbatim: `lane_id`, `stream`, `priority`, `owner`, `narrative`, `doer`, `buyer`, `buyer_kpi`, `angle`, `formats`, `platforms`, `cta`, `magnet`, `landing_page`, `segment`, `proof`, `avoid`.
+5. **The shortener, plainly.** When Metricool publishes a post with a link, it can swap our link for a short one of theirs (`t.mtrbio.com/abc`). Their short link then forwards the reader to ours. Two problems: their own help centre says the short link records nothing, so it gives us no numbers; and the forward can drop the tracking tags we put on the end of our link, which are the only way a click gets tied back to the post that earned it. Turning it off means the reader sees our full link and every tag survives. It is one switch in Metricool's settings.
+6. **TikTok business account**: committed, his to do.
 
 ---
 
