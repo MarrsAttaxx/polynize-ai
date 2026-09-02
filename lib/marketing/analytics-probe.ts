@@ -195,9 +195,18 @@ export async function readScheduledPosts(input: ProbeInput): Promise<McProbe> {
   return mcProbeGet('/v2/scheduler/posts', {
     blogId: input.blogId,
     params: {
-      // This endpoint takes start/end, unlike the analytics ones, which take from/to (D78).
-      start: input.start,
-      end: input.end,
+      /**
+       * `start`/`end`, NOT `from`/`to` (that is the analytics pair, D78), and BOTH ARE FULL
+       * DATETIMES.
+       *
+       * The first run returned a 400 naming it: "Invalid value '2026-06-04'. Valid format is:
+       * date-time in format yyyy-MM-dd'T'HH:mm:ss". Second time I have made this exact mistake on
+       * this API, so the general rule is now written down in docs/pam-console/metricool-api.md:
+       * EVERY date parameter Metricool takes is a full ISO datetime, whatever it is called. The
+       * parameter NAMES differ per endpoint family; the format never does.
+       */
+      start: `${input.start}T00:00:00`,
+      end: `${input.end}T23:59:59`,
       timezone: input.timezone,
     },
   });

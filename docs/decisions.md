@@ -2310,4 +2310,14 @@ The timezone decides what "past" means, and that is asserted: the same instant i
 
 `toDateTime` is deleted. Nothing else called it.
 
+### And the probe read that was meant to answer the YouTube question 400'd, for the same reason
+
+```
+{"start":"Invalid value '2026-06-04'. Valid format is: date-time in format yyyy-MM-dd'T'HH:mm:ss"}
+```
+
+Bare dates where they want datetimes. **Second time on this API**, after D78, so it is now a written rule rather than a per-endpoint discovery: every date parameter Metricool takes is a full ISO datetime, whatever it is called. The parameter NAMES differ by endpoint family (`from`/`to` for analytics, `start`/`end` for the scheduler) and the format never does. The table is in `docs/pam-console/metricool-api.md`.
+
+Worth saying: a 400 that names the field and prints the expected pattern is a good failure. It cost one reload rather than an afternoon.
+
 15 new assertions, 574 total.

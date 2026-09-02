@@ -53,6 +53,16 @@
 
 No enum values are documented for any of the `type` fields, and this matters most for **`youtubeData.type`**: a vertical video has to publish as a Short ("Invalid video orientation, only horizontal is allowed" otherwise) and the word SHORT appears nowhere in the 1.2MB spec. Do not guess it. `/console/marketing/metricool/probe` now reads `youtubeData` / `instagramData` / `tiktokData` back off real scheduled posts, so setting the dropdown once in their composer reveals the exact token (D81).
 
+**EVERY DATE PARAMETER IS A FULL ISO DATETIME, whatever it is called.** Learned twice, the hard way, so it is a rule now rather than a per-endpoint discovery:
+
+| Endpoint family | Parameter names | Format |
+|---|---|---|
+| `/v2/analytics/*` | `from`, `to` | `yyyy-MM-dd'T'HH:mm:ss` |
+| `/v2/scheduler/posts` (list) | `start`, `end` | `yyyy-MM-dd'T'HH:mm:ss` |
+| `/v2/scheduler/besttimes/{provider}` | `start`, `end` | dates accepted |
+
+The NAMES differ per family and the format does not. A bare date returns a 400 that names the field and the expected pattern, which is a good failure, but it costs a round trip: send `T00:00:00` and `T23:59:59` and it never happens. (D78 was the analytics half of this; D83's follow-up was the scheduler half.)
+
 **THEIR COMPOSER IS A BETTER SOURCE THAN THEIR SPEC.** Assemble the post by hand in Metricool's own UI and it lists every validation our payload is failing, in words. That is how all of D81 was found, and it beats reading schema.
 
 ## Network mapping (our channel id -> Metricool network)
