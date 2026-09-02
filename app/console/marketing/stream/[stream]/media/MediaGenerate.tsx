@@ -220,7 +220,7 @@ export function MediaGenerate({
   if (options && !options.configured) {
     return (
       <section className={s.genPanel}>
-        <h2 className={s.genTitle}>Generate with AI</h2>
+        <h2 className={s.genTitle}>Generate Images with AI</h2>
         <p className={s.genNote}>
           Image generation is not connected yet. Add the Higgsfield keys in Vercel to
           turn this on.
@@ -233,7 +233,7 @@ export function MediaGenerate({
 
   return (
     <section className={s.genPanel}>
-      <h2 className={s.genTitle}>Generate with AI</h2>
+      <h2 className={s.genTitle}>Generate Images with AI</h2>
       <p className={s.genNote}>
         Describe the image you want in plain words. April rewrites it into a strong
         image prompt, sends it to Higgsfield, and shows you the results; save the ones

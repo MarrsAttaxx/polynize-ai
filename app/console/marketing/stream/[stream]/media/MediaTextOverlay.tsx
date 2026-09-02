@@ -139,7 +139,9 @@ export function MediaTextOverlay({
 
   return (
     <section className={s.genPanel}>
-      <h2 className={s.genTitle}>Add text to an image (brand-standard)</h2>
+      {/* The parenthetical said "(brand-standard)", which Marrs read as meaningless, and he was
+          right: it described the implementation rather than the job. */}
+      <h2 className={s.genTitle}>Add Text to an Image</h2>
       <p className={s.genNote}>
         Renders text onto a library image exactly, in Space Grotesk, every time (this
         is rendered in code, not by an AI model, so the font, colour, size and

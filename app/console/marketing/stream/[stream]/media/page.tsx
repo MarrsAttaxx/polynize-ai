@@ -9,6 +9,7 @@ import { MediaLibrary } from './MediaLibrary';
 import { MediaGenerate } from './MediaGenerate';
 import { MediaEdit } from './MediaEdit';
 import { MediaTextOverlay } from './MediaTextOverlay';
+import { MediaTabs } from './MediaTabs';
 import { BackLink } from '@/app/console/marketing/_components/BackLink';
 import s from './media.module.css';
 
@@ -85,19 +86,18 @@ export default async function MediaPage({
           picks the platforms, and puts it on the calendar with no Story needed.
         </p>
       </header>
-      <MediaGenerate
-        stream={stream}
-        images={initial.filter((m) => m.kind === 'image')}
+      {/* FOUR TABS, NOT A STACK (D85). Built here on the server exactly as before and handed to a
+          client shell that only decides which one is visible. */}
+      <MediaTabs
+        library={<MediaLibrary stream={stream} initial={initial} posted={posted} />}
+        generate={
+          <MediaGenerate stream={stream} images={initial.filter((m) => m.kind === 'image')} />
+        }
+        edit={<MediaEdit stream={stream} images={initial.filter((m) => m.kind === 'image')} />}
+        overlay={
+          <MediaTextOverlay stream={stream} images={initial.filter((m) => m.kind === 'image')} />
+        }
       />
-      <MediaEdit
-        stream={stream}
-        images={initial.filter((m) => m.kind === 'image')}
-      />
-      <MediaTextOverlay
-        stream={stream}
-        images={initial.filter((m) => m.kind === 'image')}
-      />
-      <MediaLibrary stream={stream} initial={initial} posted={posted} />
     </div>
   );
 }

@@ -2376,3 +2376,43 @@ Their composer rendered the field as the literal string `planner.planner.presets
 The join is confirmed broken the expected way: ours are Metricool integers (`367684553`), theirs are LinkedIn URNs (`urn:li:ugcPost:7500343632873517056`). Nothing new. **But `GET /v2/scheduler/posts` now works and returns whole posts**, which is the second read the analytics join needs: it carries `providers`, and `ProviderStatus` is where `id` and `publicUrl` live. The fallback join is no longer hypothetical, it is one field extraction away.
 
 7 new assertions, 581 total.
+
+## D85: The calendar could not tell you what had already gone out, and the media library was a stack
+
+**Adopted 2 September 2026.** Two rounds of feedback from Marrs while he was testing the video posts.
+
+### The calendar had three states and needed four
+
+> "I have a post from Monday, the 31st of August, the Emergent AI one. It says 'scheduled'. It should already say 'posted' in a slightly faded grey and a bit out of the way somewhere, just so it's not the first thing that we focus on. There just needs to be a clear line that says 'today' below this."
+
+An entry read Draft, Planned or Scheduled, and **Scheduled never changed again**, so a post from three days ago sat there looking like something still to come.
+
+- **Posted**, in grey, for a scheduled entry whose time has passed.
+- **A today line** across the board, before the first day that is not behind us, so it appears even when today has nothing on it. Days above it are dimmed to 55%, not hidden: he asked for the past out of the way, not gone, and a calendar that forgets what it published is no use for deciding what to publish next.
+- The scheduling buttons already disappeared once an entry was sent, so history was already inert. It just did not say so.
+
+**"Posted" is inferred from the clock, and that is stated in the code and in the tooltip.** Nothing in this console has ever confirmed a post actually went out: `status` reaches 'scheduled' when Metricool accepts it and there is no callback and no nightly pull. So this means "Metricool said it would publish this, and the moment has passed". The analytics second read is what turns it into a fact, and when it lands it **replaces** this inference rather than sitting beside it.
+
+**The entry's own timezone decides what "passed" means**, not the reader's browser. A Kristin post at 08:30 Los Angeles is still hours away when Sydney has finished the day, and treating the reader's clock as the truth would mark it posted before it happened. Computed after mount only, like the month view's today cell, because the server and the browser do not share a clock and a differing label is a hydration mismatch.
+
+### The media library was four forms in a column
+
+> "The sections look all the same... instead of showing four or five separate sections, we have just one tab that says Media Library across the top... When you click one, it doesn't open a separate tab, instead it moves to the next tab across. This keeps it neat because at the moment everything in a stack is a bit visually confusing."
+
+He is right, and the reason is worth naming: **three of the four sections are tools you apply to an image and one is the library you look at.** Stacked in a single column they all look like the same kind of thing. Four tabs say which is which, with the library first because it is what you came to see.
+
+**Purely layout.** Each panel already owned its own picker and its own state, so the four children are still built on the server exactly as before and handed to a client shell that only decides which is visible.
+
+**Every panel stays mounted and hidden rather than unmounted**, which is the point: a half-typed generation prompt survives a look at the library and back. Losing a prompt to a stray click is the kind of small betrayal that makes a tool feel unreliable.
+
+Panel titles went from 18px to 30px, as asked. And `(brand-standard)` is gone from the text overlay heading: he read it as meaningless, and he was right, because it described the implementation rather than the job.
+
+### The video tiles were black squares
+
+> "Most of the videos have just got a black screen. What would be ideal is that we just make the first frame of the video the thumbnail. If that's not possible, I just need a title."
+
+Both, and the browser does the work: a real `<video>` element with `preload="metadata"` and a `#t=0.1` fragment paints the opening frame. **Not `#t=0`**, because some encoders open on a black or empty frame and a tenth of a second in is past it. It falls back to the old play glyph if the browser cannot decode the link.
+
+Nothing else could have produced a frame here: the file is a Box link, and pulling a video through a serverless function to run a decoder over it is not something to do for a grid of thumbnails.
+
+**And the title was there all along, squeezed to an ellipsis.** It shared one `white-space: nowrap` line with the Post this and Delete buttons inside a 150px tile. It now has its own row above them, two lines, at a readable size. Worth remembering: *"I can't see the title"* meant the layout had eaten it, not that it was missing.

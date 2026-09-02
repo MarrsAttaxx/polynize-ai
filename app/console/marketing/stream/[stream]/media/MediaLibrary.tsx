@@ -293,6 +293,8 @@ export function MediaLibrary({
 
   return (
     <div className={s.wrap}>
+      {/* Its own heading now that it is one tab of four (D85), matching the tab that opens it. */}
+      <h2 className={s.genTitle}>Media Library</h2>
       {/* UPLOAD, above the paste field, because it is now the easier of the two ways in. */}
       <div className={s.uploadRow}>
         <label className={s.uploadBtn}>
@@ -440,6 +442,41 @@ export function MediaLibrary({
                   />
                 ) : m.kind === 'image' ? (
                   <span className={s.brokenTile}>link broken</span>
+                ) : !broken.has(m.media_id) ? (
+                  /**
+                   * THE FIRST FRAME AS THE THUMBNAIL (D85). Marrs: "most of the videos have just got
+                   * a black screen... what would be ideal is that we just make the first frame of
+                   * the video the thumbnail."
+                   *
+                   * Done by the browser rather than by us. `preload="metadata"` plus the `#t=0.1`
+                   * fragment asks it to fetch enough of the file to paint a frame, which is the only
+                   * way to get one here: the file is a Box link, and pulling a video through a
+                   * serverless function to run a decoder over it is not a thing this console should
+                   * do for a grid of thumbnails.
+                   *
+                   * NOT 0. Some encoders open on a black or empty frame, and a tenth of a second in
+                   * is past it while still being the opening image of the video.
+                   *
+                   * Muted and no controls: it is a picture, not a player. Clicking the tile opens
+                   * the file, which is what it always did. And it falls back to the play glyph on
+                   * error, so a link the browser cannot decode looks like the old tile rather than
+                   * an empty box.
+                   */
+                  <video
+                    src={`${m.url}#t=0.1`}
+                    className={s.thumbVideo}
+                    preload="metadata"
+                    muted
+                    playsInline
+                    aria-hidden
+                    onError={() =>
+                      setBroken((prev) => {
+                        const next = new Set(prev);
+                        next.add(m.media_id);
+                        return next;
+                      })
+                    }
+                  />
                 ) : (
                   <span className={s.videoTile} aria-hidden>
                     ▶
@@ -447,10 +484,14 @@ export function MediaLibrary({
                 )}
                 <span className={s.kindBadge}>{m.kind}</span>
               </a>
+              {/* THE NAME, ON ITS OWN LINE (D85). It was squeezed into one nowrap line beside two
+                  buttons in a 150px tile, so every label was an ellipsis. Marrs: "I need each
+                  image, especially the videos, to have a title because I can't see what the title
+                  of the video is just by the squares." */}
+              <span className={s.assetName} title={m.label}>
+                {m.label}
+              </span>
               <div className={s.thumbFoot}>
-                <span className={s.assetLabel} title={m.label}>
-                  {m.label}
-                </span>
                 {/* THE DOOR FOR FINISHED WORK (D80). Here rather than on a new screen, because a
                     video only reaches this console as a pasted Box link, so this is where the
                     operator already is, and three cuts is three presses. */}

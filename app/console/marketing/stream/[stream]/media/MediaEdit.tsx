@@ -89,7 +89,7 @@ export function MediaEdit({
 
   return (
     <section className={s.genPanel}>
-      <h2 className={s.genTitle}>Edit an image (add text, restyle)</h2>
+      <h2 className={s.genTitle}>Edit an Image</h2>
       <p className={s.genNote}>
         Pick an image from this stream&rsquo;s library, then tell the model what to
         change, for example adding words onto it. It uses Nano Banana (Google), which

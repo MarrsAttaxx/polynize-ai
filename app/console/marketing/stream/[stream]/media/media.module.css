@@ -208,16 +208,44 @@
 .thumbFoot {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-end;
   gap: 8px;
   padding: 8px 10px;
 }
+/* Kept for anything still using it; the tile now names the file on its own line below. */
 .assetLabel {
   font-size: 12px;
   color: var(--text-2);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/**
+ * THE FILE'S NAME, READABLE (D85). Two lines, its own row, above the buttons. In a 150px tile a
+ * label sharing one nowrap line with Post this and Delete was always an ellipsis.
+ */
+.assetName {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  padding: 9px 10px 0;
+  font-size: 12.5px;
+  line-height: 1.35;
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+
+/* The first frame, painted by the browser from the real file (D85). */
+.thumbVideo {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  background: #0e0e12;
+  display: block;
 }
 /* THE DOOR FOR FINISHED WORK (D80). Mint, because it starts something, next to the coral that
    removes something: the two buttons in one footer must not read as the same kind of action. */
@@ -268,17 +296,28 @@
   border-radius: 16px;
   box-shadow: var(--tac-shadow-raised);
   padding: 18px 20px;
-  margin-bottom: 26px;
+  /* No bottom margin since D85: one panel shows at a time and the tab shell owns the spacing. */
   display: flex;
   flex-direction: column;
   gap: 12px;
 }
+/**
+ * DOUBLE, as asked (D85). Marrs: "the sections look all the same. Maybe we can start by making the
+ * titles for every section double the size they are now." 18 to 30, which is a panel heading rather
+ * than a label, and with the tabs above it the two together say where you are.
+ */
 .genTitle {
   font-family: var(--font-space-grotesk), 'Space Grotesk', sans-serif;
-  font-size: 18px;
+  font-size: 30px;
   font-weight: 700;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
   margin: 0;
+}
+@media (max-width: 560px) {
+  .genTitle {
+    font-size: 24px;
+  }
 }
 .genNote {
   font-size: 13px;
@@ -696,4 +735,48 @@
   font-size: 10px;
   line-height: 1.55;
   color: var(--text-3, #6f6a64);
+}
+
+/* ------------------------------------------------------------------ the four tabs (D85) */
+
+.tabsWrap {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+/* Big buttons across the top, which is what he asked for: they are the way into each tool. */
+.tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  border-bottom: 1px solid var(--tac-edge-dark, rgba(255, 255, 255, 0.1));
+  padding-bottom: 12px;
+}
+.tab {
+  font-family: var(--font-space-grotesk), 'Space Grotesk', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--text-3);
+  background: var(--tac-surface-2, var(--tac-surface));
+  border: 1px solid var(--tac-edge-dark, rgba(255, 255, 255, 0.1));
+  border-radius: 10px;
+  padding: 11px 16px;
+  cursor: pointer;
+  transition: color var(--tac-transition), border-color var(--tac-transition),
+    background var(--tac-transition);
+}
+.tab:hover {
+  color: var(--text);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+/* Mint on the live one: the same colour the console uses everywhere for the thing in play. */
+.tabOn {
+  color: var(--mint);
+  border-color: color-mix(in srgb, var(--mint) 55%, transparent);
+  background: color-mix(in srgb, var(--mint) 10%, transparent);
+}
+.panel[hidden] {
+  display: none;
 }

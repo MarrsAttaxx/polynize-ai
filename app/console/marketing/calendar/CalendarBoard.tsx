@@ -41,6 +41,46 @@ function prettyDay(dayKey: string): string {
     year: 'numeric',
   });
 }
+/**
+ * HAS THIS POST'S TIME PASSED (D85), judged in the timezone the time was chosen in.
+ *
+ * Marrs: "I have a post from Monday, the 31st of August... It says 'scheduled'. It should already
+ * say 'posted'."
+ *
+ * WE INFER THIS FROM THE CLOCK, and it is worth being precise about what that means: nothing in this
+ * console has ever confirmed a post actually went out. `status` reaches 'scheduled' when Metricool
+ * accepts it and never changes again, because there is no callback and no nightly pull yet. So a
+ * scheduled post whose time has passed is one Metricool said it would publish and almost certainly
+ * did. The analytics second read is what will make this a fact rather than an inference, and when it
+ * lands it replaces this function rather than joining it.
+ *
+ * The entry's own timezone decides, not the browser's: a Kristin post at 08:30 Los Angeles is still
+ * hours away when Sydney has finished the day, and treating the reader's clock as the truth would
+ * mark it posted before it happened.
+ */
+function hasPassed(scheduledAt: string | undefined, timezone: string | undefined, now: Date): boolean {
+  if (!scheduledAt) return false;
+  const when = scheduledAt.length >= 16 ? scheduledAt.slice(0, 16) : `${scheduledAt.slice(0, 10)}T23:59`;
+  let nowKey: string;
+  try {
+    const parts = new Intl.DateTimeFormat('en-CA', {
+      timeZone: timezone || undefined,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      hourCycle: 'h23',
+    }).formatToParts(now);
+    const get = (t: string) => parts.find((x) => x.type === t)?.value ?? '';
+    nowKey = `${get('year')}-${get('month')}-${get('day')}T${get('hour')}:${get('minute')}`;
+  } catch {
+    // An unrecognised zone is a config typo, not a reason to mislabel every post on the board.
+    nowKey = `${fmtKey(now)}T${pad(now.getHours())}:${pad(now.getMinutes())}`;
+  }
+  return when < nowKey;
+}
+
 /** Monday-first column index (0..6) for a date. */
 function mondayIndex(d: Date): number {
   return (d.getDay() + 6) % 7;
@@ -224,15 +264,30 @@ export function CalendarBoard({
   // -------- shared full entry card (List + Day) --------
   const renderEntry = (e: CalendarEntry) => {
     const isScheduled = e.status === 'scheduled' || e.status === 'published';
-    const statusLabel =
-      e.status === 'published'
+    /**
+     * FOUR STATES, and the fourth is the one that was missing (D85). A post whose time has gone said
+     * "Scheduled" forever, which reads as still to come.
+     *
+     * Only computed after mount, like the today marker below: the server has no clock the browser
+     * agrees with, and rendering a different label on each would be a hydration mismatch.
+     */
+    const gone = mounted && isScheduled && hasPassed(e.scheduled_at, e.timezone, new Date());
+    const statusLabel = gone
+      ? 'Posted'
+      : e.status === 'published'
         ? 'Published'
         : e.status === 'scheduled'
           ? 'Scheduled'
           : e.scheduled_at
             ? 'Planned'
             : 'Draft';
-    const statusClass = isScheduled ? s.stScheduled : e.scheduled_at ? s.stPlanned : s.stDraft;
+    const statusClass = gone
+      ? s.stPosted
+      : isScheduled
+        ? s.stScheduled
+        : e.scheduled_at
+          ? s.stPlanned
+          : s.stDraft;
     const metricoolSupported = metricoolNetwork(e.channel) !== null;
     const dateVal = keyOf(e.scheduled_at);
     const timeVal = e.scheduled_at && e.scheduled_at.length >= 16 ? e.scheduled_at.slice(11, 16) : '';
@@ -240,7 +295,11 @@ export function CalendarBoard({
     const onTime = (t: string) => setSchedule(e, dateVal ? dateVal + (t ? `T${t}` : '') : '');
 
     return (
-      <div key={e.entry_id} className={s.entry} data-busy={busy === e.entry_id}>
+      <div
+        key={e.entry_id}
+        className={`${s.entry} ${gone ? s.entryGone : ''}`}
+        data-busy={busy === e.entry_id}
+      >
         <span className={s.entryIcon} title={channelLabel(e.channel)}>
           <PlatformIcon channel={e.channel} size={20} title={channelLabel(e.channel)} />
         </span>
@@ -249,7 +308,16 @@ export function CalendarBoard({
             <span className={s.entryTitle}>{e.title}</span>
             <span className={s.entryStream}>{streamLabel(e.stream)}</span>
             <span className={s.entryChannel}>{channelLabel(e.channel)}</span>
-            <span className={`${s.entryStatus} ${statusClass}`}>{statusLabel}</span>
+            <span
+              className={`${s.entryStatus} ${statusClass}`}
+              title={
+                gone
+                  ? 'Its scheduled time has passed. Metricool accepted it, and nothing here has confirmed the platform published it yet.'
+                  : undefined
+              }
+            >
+              {statusLabel}
+            </span>
           </div>
           <p className={s.entryCopy}>{e.post_copy}</p>
           <div className={s.entryActions}>
@@ -354,14 +422,49 @@ export function CalendarBoard({
       if (!days.has(k)) days.set(k, []);
       days.get(k)!.push(e);
     }
+    /**
+     * THE TODAY LINE (D85). Marrs: "There just needs to be a clear line that says today."
+     *
+     * It goes before the first day that is not already past, which puts it after the history and
+     * before what is coming even when today itself has no posts. Days behind it are dimmed rather
+     * than hidden: he asked for them out of the way, not gone, and a calendar that forgets what it
+     * published is no use for judging what to publish next.
+     *
+     * `todayKey` is empty until mount, so the server renders no divider and no dimming and the
+     * browser adds both. Same discipline as the month view's today cell.
+     */
+    const groups = [...days.entries()];
+    const firstAhead = todayKey ? groups.findIndex(([day]) => day >= todayKey) : -1;
+
     return (
       <div className={s.board}>
-        {[...days.entries()].map(([day, items]) => (
-          <section key={day} className={s.dayGroup}>
-            <h2 className={s.dayHead}>{prettyDay(day)}</h2>
-            <div className={s.entries}>{items.map(renderEntry)}</div>
-          </section>
+        {groups.map(([day, items], ix) => (
+          <div key={day}>
+            {ix === firstAhead ? (
+              <div className={s.todayLine}>
+                <span className={s.todayMark}>today</span>
+                <span className={s.todayDate}>{prettyDay(todayKey)}</span>
+              </div>
+            ) : null}
+            <section className={`${s.dayGroup} ${todayKey && day < todayKey ? s.dayPast : ''}`}>
+              <h2 className={s.dayHead}>
+                {prettyDay(day)}
+                {day === todayKey ? <span className={s.dayToday}>today</span> : null}
+              </h2>
+              <div className={s.entries}>{items.map(renderEntry)}</div>
+            </section>
+          </div>
         ))}
+        {/* Everything on the board is behind us: the line still belongs, at the end, because it is
+            the answer to "what is coming up" as much as it is a divider. */}
+        {firstAhead === -1 && groups.length > 0 ? (
+          <div className={s.todayLine}>
+            <span className={s.todayMark}>today</span>
+            <span className={s.todayDate}>
+              {prettyDay(todayKey)} · nothing scheduled from here on
+            </span>
+          </div>
+        ) : null}
         {undated.length > 0 ? (
           <section className={s.dayGroup}>
             <h2 className={s.dayHead}>Unscheduled</h2>
