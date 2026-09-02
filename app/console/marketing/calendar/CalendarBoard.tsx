@@ -108,6 +108,27 @@ export function CalendarBoard({
    * telling him a successful add went wrong is how a useful sentence gets learned as noise.
    */
   const [notes, setNotes] = useState<Record<string, string>>({});
+  /**
+   * THE DATE AND TIME BEING TYPED, PER ENTRY, BEFORE ANYTHING IS SAVED (D90).
+   *
+   * Marrs: "It is super disorienting because I'm looking at a line, and then I select the date. As
+   * soon as I select the date, it disappears and moves somewhere else because it's sorting by date
+   * and time... If I change the number 7 to 7:00 AM and I need to change that to 12:00, as soon as I
+   * press 1, it goes to 1:00 AM and disappears."
+   *
+   * He has described the bug exactly. Every keystroke was a save: `<input type="time">` fires a
+   * change on each digit, so typing 12:00 saves 01:00 on the way past, the board re-sorts by
+   * scheduled_at, and the row he was editing leaves the screen mid-edit. The same applies to the
+   * date: pick it and the row jumps before the time is even chosen.
+   *
+   * So a draft is held here, keyed by entry, and NOTHING is written until Set. Keyed rather than
+   * held in the row because the row is a render function inside a list that re-sorts: state living
+   * in the row would be thrown away by the very re-sort it caused.
+   *
+   * The draft is deleted once saved, so the inputs go back to following the entry itself and there
+   * is only ever one answer to "what time is this post".
+   */
+  const [drafts, setDrafts] = useState<Record<string, { date: string; time: string }>>({});
   const [view, setView] = useState<View>('list');
   const [cursor, setCursor] = useState<Date>(() => new Date());
 
@@ -132,6 +153,45 @@ export function CalendarBoard({
 
   const entryUrl = (entryId: string) =>
     window.location.pathname.replace(/\/+$/, '') + '/' + entryId;
+
+  /** What the entry itself says, which is what the inputs show until he starts typing. */
+  const savedTime = (e: CalendarEntry) => ({
+    date: keyOf(e.scheduled_at),
+    time: e.scheduled_at && e.scheduled_at.length >= 16 ? e.scheduled_at.slice(11, 16) : '',
+  });
+
+  const draftFor = (e: CalendarEntry) => drafts[e.entry_id] ?? savedTime(e);
+
+  const editDraft = (entry: CalendarEntry, patch: { date?: string; time?: string }) => {
+    const base = draftFor(entry);
+    setDrafts((d) => ({ ...d, [entry.entry_id]: { ...base, ...patch } }));
+    // A previous failure is no longer the story once he starts editing again.
+    if (errs[entry.entry_id]) setErr(entry.entry_id, null);
+  };
+
+  /** Whether this row has an unsaved change worth a Set button. */
+  const dirtyTime = (e: CalendarEntry) => {
+    const d = drafts[e.entry_id];
+    if (!d) return false;
+    const was = savedTime(e);
+    return d.date !== was.date || d.time !== was.time;
+  };
+
+  /**
+   * COMMIT THE DRAFT. A date with no time is allowed and means "that day": publish then takes the
+   * first posting time on it that has not passed (D83). An empty date clears the schedule, which is
+   * how a post goes back to being an unscheduled draft.
+   */
+  const commitTime = async (entry: CalendarEntry) => {
+    const d = draftFor(entry);
+    const at = d.date ? (d.time ? `${d.date}T${d.time}` : d.date) : '';
+    await setSchedule(entry, at);
+    setDrafts((prev) => {
+      const next = { ...prev };
+      delete next[entry.entry_id];
+      return next;
+    });
+  };
 
   const setSchedule = async (entry: CalendarEntry, scheduledAt: string) => {
     setBusy(entry.entry_id);
@@ -289,10 +349,11 @@ export function CalendarBoard({
           ? s.stPlanned
           : s.stDraft;
     const metricoolSupported = metricoolNetwork(e.channel) !== null;
-    const dateVal = keyOf(e.scheduled_at);
-    const timeVal = e.scheduled_at && e.scheduled_at.length >= 16 ? e.scheduled_at.slice(11, 16) : '';
-    const onDate = (d: string) => setSchedule(e, d ? d + (timeVal ? `T${timeVal}` : '') : '');
-    const onTime = (t: string) => setSchedule(e, dateVal ? dateVal + (t ? `T${t}` : '') : '');
+    /** The draft, not the entry: nothing is saved until Set (D90). */
+    const draft = draftFor(e);
+    const dateVal = draft.date;
+    const timeVal = draft.time;
+    const unsaved = dirtyTime(e);
 
     return (
       <div
@@ -327,7 +388,10 @@ export function CalendarBoard({
                 type="date"
                 className={s.dateInput}
                 value={dateVal}
-                onChange={(ev) => onDate(ev.target.value)}
+                onChange={(ev) => editDraft(e, { date: ev.target.value })}
+                onKeyDown={(ev) => {
+                  if (ev.key === 'Enter' && unsaved) void commitTime(e);
+                }}
                 disabled={busy === e.entry_id || isScheduled}
               />
             </label>
@@ -337,10 +401,32 @@ export function CalendarBoard({
                 type="time"
                 className={s.dateInput}
                 value={timeVal}
-                onChange={(ev) => onTime(ev.target.value)}
+                onChange={(ev) => editDraft(e, { time: ev.target.value })}
+                onKeyDown={(ev) => {
+                  if (ev.key === 'Enter' && unsaved) void commitTime(e);
+                }}
                 disabled={busy === e.entry_id || isScheduled || !dateVal}
               />
             </label>
+            {/* SET, and only when there is something to set (D90). Its absence is the signal that
+                the row on screen and the row in the store agree. */}
+            {unsaved ? (
+              <button
+                type="button"
+                className={s.setBtn}
+                onClick={() => void commitTime(e)}
+                disabled={busy === e.entry_id}
+                title={
+                  dateVal
+                    ? timeVal
+                      ? `Set this post to ${dateVal} at ${timeVal}`
+                      : `Set this post to ${dateVal}, at the first free posting time that day`
+                    : 'Clear the date and put this back with the unscheduled drafts'
+                }
+              >
+                {busy === e.entry_id ? 'Setting…' : dateVal ? 'Set' : 'Clear date'}
+              </button>
+            ) : null}
             <Link className={s.entryLink} href={`/console/marketing/piece/${e.piece_id}`}>
               Open piece
             </Link>
@@ -351,12 +437,20 @@ export function CalendarBoard({
             ) : null}
             {!isScheduled && metricoolSupported ? (
               <>
+                {/* EVERY ACTION WAITS FOR SET (D90). "Schedule at set time" means the time in the
+                    store, so offering it while the row shows a different one is offering to publish
+                    at a time he can see and did not choose. Add to queue would silently discard the
+                    draft instead. One rule: the row has to agree with the store before it can act. */}
                 <button
                   type="button"
                   className={s.queueBtn}
                   onClick={() => addToQueue(e)}
-                  disabled={busy === e.entry_id}
-                  title="Schedule at the next ideal time for this brand"
+                  disabled={busy === e.entry_id || unsaved}
+                  title={
+                    unsaved
+                      ? 'Press Set first, or clear the date, so this row and the calendar agree'
+                      : 'Schedule at the next ideal time for this brand'
+                  }
                 >
                   Add to queue
                 </button>
@@ -369,8 +463,12 @@ export function CalendarBoard({
                     type="button"
                     className={s.queueBtn}
                     onClick={() => schedule(e, true)}
-                    disabled={busy === e.entry_id}
-                    title="Send it to the Metricool planner without publishing it"
+                    disabled={busy === e.entry_id || unsaved}
+                    title={
+                      unsaved
+                        ? 'Press Set first: this would send the time already saved, not the one shown'
+                        : 'Send it to the Metricool planner without publishing it'
+                    }
                   >
                     Send as draft
                   </button>
@@ -380,7 +478,12 @@ export function CalendarBoard({
                     type="button"
                     className={s.scheduleBtn}
                     onClick={() => schedule(e)}
-                    disabled={busy === e.entry_id}
+                    disabled={busy === e.entry_id || unsaved}
+                    title={
+                      unsaved
+                        ? 'Press Set first: this would publish at the time already saved, not the one shown'
+                        : undefined
+                    }
                   >
                     Schedule at set time
                   </button>

@@ -2588,3 +2588,33 @@ Unmapped streams are now named together in one line, *"Kristin and Julian are no
 **The legend also stopped claiming colours nothing uses.** It listed all five streams including the two that are not connected, which reads as "they posted nothing" rather than "they are not wired up". It now lists only the streams that contributed to the bars in front of you.
 
 13 new assertions, 641 total.
+
+## D90: Every keystroke was a save, so the row you were editing left the screen
+
+**Adopted 2 September 2026.** Marrs, describing it exactly:
+
+> "It is super disorienting because I'm looking at a line, and then I select the date. As soon as I select the date, it disappears and moves somewhere else because it's sorting by date and time. Also, with time, I can only select one thing at a time. If I change the number 7 to 7:00 AM, for example, and I need to change that to 12:00, as soon as I press in 1, it goes to 1:00 AM and disappears."
+
+Both inputs saved on every `onChange`, and the board sorts by `scheduled_at`. `<input type="time">` fires a change per segment, so typing 12:00 wrote **01:00** on the way past, the list re-sorted, and the row he was editing jumped to a different day. Then the same again when he reached the 2.
+
+**He also proposed the fix, and it is the right one:** *"maybe there's a little Set button. You select the date, you select the time, then you press Set, and then it moves it, as opposed to it recalculating every time I change one little single digit."*
+
+### What changed
+
+A draft per entry, held on the board and keyed by entry id, and **nothing is written until Set**. Keyed rather than kept in the row because the row is a render function inside a list that re-sorts: state living in the row would be destroyed by the very re-sort it caused.
+
+The draft is deleted once saved, so the inputs go back to following the entry and there is only ever one answer to "what time is this post".
+
+**Set only exists while there is something to set.** Its appearance is the signal that the row and the store disagree; its disappearance is the confirmation that they no longer do. With an empty date it reads "Clear date", because clearing is a real thing to want and it is the same gesture.
+
+Enter commits too, since the hands are already on the keyboard.
+
+### The trap that came with it
+
+Once a row can hold an unsaved time, **"Schedule at set time" means the time in the store, not the one on screen.** Offering it mid-edit is offering to publish at a time he can see and did not choose, and "Add to queue" would silently discard the draft instead. So all three actions wait for Set, and their tooltips say why rather than just going grey.
+
+One rule, worth keeping: **a row has to agree with the store before it can act.**
+
+### Verified as an interaction, not as code
+
+The behaviour lives in the wiring rather than in a pure function, so it was driven in a browser: the same draft/dirty/gate logic in a harness, typing 07:00 to 01:00 to 12:00. **Zero writes across the whole edit, then exactly one on Set**, with the queue button disabled throughout and the row back in sync after. That is the property that matters and it is not something a typecheck can see.

@@ -575,3 +575,26 @@
 .entryGone .entryCopy {
   color: var(--text-3);
 }
+
+/**
+ * SET (D90). Mint, because it is the one control on the row that commits something, and it only
+ * exists while there is an unsaved change: appearing IS the signal that the row and the store
+ * disagree, and disappearing is the confirmation that they no longer do.
+ */
+.setBtn {
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--mint);
+  background: color-mix(in srgb, var(--mint) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--mint) 55%, transparent);
+  border-radius: 8px;
+  padding: 5px 12px;
+  cursor: pointer;
+}
+.setBtn:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--mint) 20%, transparent);
+}
+.setBtn:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
