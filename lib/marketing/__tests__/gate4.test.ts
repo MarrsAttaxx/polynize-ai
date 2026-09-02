@@ -1694,8 +1694,18 @@ eq('a known one names its own variable', streamColorVar('shourov'), 'var(--sc-3)
 eq('five slots, both modes', SERIES_DARK.length, SERIES_LIGHT.length);
 eq('and one per stream', SERIES_DARK.length, 5);
 /** Validated with the guidance's own script, not by eye. The hexes are the documented ones. */
-eq('the dark slots are the documented steps', SERIES_DARK.join(','), '#3987e5,#d95926,#199e70,#c98500,#d55181');
-eq('and the light ones too', SERIES_LIGHT.join(','), '#2a78d6,#eb6834,#1baf7a,#eda100,#e87ba4');
+eq('the dark slots are the validated set', SERIES_DARK.join(','), '#00a77b,#cf4436,#3987e5,#c98500,#d55181');
+eq('and the light ones', SERIES_LIGHT.join(','), '#00a77b,#cf4436,#2a78d6,#eda100,#e87ba4');
+/**
+ * MINT AND RED TOUCH IN EVERY BAR, because Polynize and Marrs are adjacent in STREAMS, and that pair
+ * is the classic red/green collapse. The documented red scored CVD dE 6.1 against a stepped mint;
+ * #cf4436 clears the target of 8 at 9.1 in both modes. Coral was dE 1.5, effectively no distinction.
+ * Asserted here so a future "let us just use coral" is a failing test rather than a shipped mistake.
+ */
+eq('Polynize carries the brand hue at a legible step, not #69fccb itself', SERIES_DARK[0], '#00a77b');
+eq('Marrs is a red rather than the old orange', SERIES_DARK[1], '#cf4436');
+ok('and never coral, which collapses against mint for a deuteranope', !SERIES_DARK.includes('#ff7a6b' as never));
+eq('Shourov took the blue', SERIES_DARK[2], '#3987e5');
 
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

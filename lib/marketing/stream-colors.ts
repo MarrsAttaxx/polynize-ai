@@ -11,12 +11,28 @@
  * the panel that asks "whose reach is this", a series palette answers a question nothing else on
  * that screen answers, and it never leaves.
  *
- * SO THESE ARE NOT BRAND COLOURS. They are the documented categorical series palette from the house
- * chart guidance, in its fixed slot order, which is what keeps them apart for colourblind readers.
+ * WHO GETS WHAT IS MARRS'S CALL (D88): "I'd rather the Polynize colour is our brand mint colour
+ * instead of the blue. Just swap Shourov to the blue colour and make me (Marrs) a slightly more red
+ * colour." So Polynize takes the brand hue, Shourov takes blue, and Marrs moves from orange to red.
+ *
+ * THE MINT IS THE BRAND HUE, STEPPED DOWN. `#69fccb` itself cannot be a chart fill: OKLCH L 0.898,
+ * far above the 0.48-0.67 band a mark has to sit in, and the validator says so as a hard FAIL. So it
+ * is the same hue at L 0.65, which reads as the brand's green and is legible as a 14px bar. The
+ * brand token is untouched and still paints the chart's own line, where a single colour is checked
+ * for contrast rather than for series separation.
+ *
+ * AND THE RED CAUGHT A REAL PROBLEM, which is the whole reason the validator is run rather than
+ * reasoned about. Mint beside red is the classic red/green collapse: the documented red `#e66767`
+ * next to a stepped mint scores CVD dE 6.1, under the target of 8, because a deuteranope sees the
+ * pair as nearly one colour. And these two slots TOUCH in every bar, since Polynize and Marrs are
+ * adjacent in STREAMS. Twenty four combinations were measured; `#cf4436` is a red rather than an
+ * orange and clears the target at dE 9.1 in both modes. Coral `#ff7a6b` was the first thing tried
+ * and is the worst possible choice here: dE 1.5, effectively invisible as a distinction.
+ *
  * Validated with the guidance's own script against the console's real surfaces rather than eyeballed:
  *
- *   dark  (#1c1c27): every check PASS. Worst adjacent CVD dE 8.4, normal-vision 19.3, contrast all >= 3:1.
- *   light (#f4ece0): every check PASS except contrast, which WARNs on four of five.
+ *   dark  (#1c1c27): every check PASS. Worst adjacent CVD dE 9.1, normal-vision 19.3, contrast all >= 3:1.
+ *   light (#f4ece0): every check PASS except contrast, which WARNs on three of five.
  *
  * THE LIGHT WARN IS NOT DISMISSABLE and it is answered rather than ignored: the guidance allows a
  * sub-3:1 fill only where the value is readable another way, so every bar carries its total as a
@@ -33,12 +49,14 @@
 import { STREAMS } from './streams';
 
 /**
- * The house categorical slots 1 to 5, both modes. Same five hues stepped for each surface, in the
- * documented order (blue, orange, aqua, yellow, magenta) which is the CVD-safety mechanism and is
- * never re-ordered to taste.
+ * The five slots, both modes, in STREAMS order: Polynize, Marrs, Shourov, Kristin, Julian.
+ *
+ * Mint (the brand hue at a legible step) and red hold the same value in both modes because that one
+ * pair validates against both surfaces; blue, yellow and magenta take the documented per-mode steps,
+ * which is why they differ between the two lines.
  */
-export const SERIES_DARK = ['#3987e5', '#d95926', '#199e70', '#c98500', '#d55181'] as const;
-export const SERIES_LIGHT = ['#2a78d6', '#eb6834', '#1baf7a', '#eda100', '#e87ba4'] as const;
+export const SERIES_DARK = ['#00a77b', '#cf4436', '#3987e5', '#c98500', '#d55181'] as const;
+export const SERIES_LIGHT = ['#00a77b', '#cf4436', '#2a78d6', '#eda100', '#e87ba4'] as const;
 
 /**
  * Which slot a stream owns, 1-based, by its position in STREAMS.

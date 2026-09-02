@@ -2514,3 +2514,47 @@ Segments keep stream order rather than being sorted by size, for the same reason
 The palette validator checks colour, not layout, so the geometry was rendered standalone with realistic data (a quiet quarter with a spike, some empty weeks, a platform reporting nothing) and inspected for label collisions and overflow before shipping. Both bucket widths read cleanly, the 2px surface gaps between segments are visible at real sizes, and a platform with no reported reach shows "1 post" rather than an empty bar.
 
 31 new assertions, 624 total.
+
+## D88: The pull button said nothing, and the colours needed measuring
+
+**Adopted 2 September 2026.** Marrs: *"The pull now button is not working anymore."* And: *"I'd rather the Polynize colour is our brand mint colour instead of the blue. Just swap Shourov to the blue colour and make me (Marrs) a slightly more red colour."*
+
+### The button
+
+A production build was run first, because a client island that throws during hydration renders from the server HTML and then never attaches its handler, which looks exactly like a dead button and is invisible to `tsc`. The build was clean, the route exists in the manifest, the middleware does **not** double-prefix the absolute path (it only rewrites a path that does not already start with `/console`), and `mcProbeGet` handles the params correctly. So nothing was broken in the way it appeared to be.
+
+**What was wrong is that it said nothing, and on the engine page it said nothing for a long time.** One press fired a single request that walked all five brands in sequence, on somebody else's analytics API, inside a 120 second budget. A press that takes most of a minute and then reports neither a number nor an error cannot be told apart from a dead button.
+
+**And a pull could succeed while leaving the panel empty.** The route returns `ok` when it has recorded a per-stream failure, deliberately, because one unmapped brand must not fail the other four. So five refused brands returned 200 and the button showed nothing at all. **That is the shape of bug that makes someone distrust a tool rather than report it**, and it is mine twice over: I wrote the fail-open route and then read its result badly.
+
+It is now one request per stream, driven from the client:
+
+- the label names the brand it is waiting on, so a slow one looks slow rather than broken;
+- each request stands alone, so no single hang can eat the run's budget;
+- a 90 second abort per request, because a hung fetch has no natural end;
+- the outcome is printed and stays printed: how many posts, from how many streams, and every stream that failed with its reason.
+
+The all-streams path stays on the route, because that is what a cron will want.
+
+### The colours, and the one the validator refused
+
+His assignment is his call and it is applied: Polynize takes the brand hue, Shourov takes blue, Marrs moves from orange to red.
+
+**`#69fccb` itself cannot be a chart fill.** OKLCH L 0.898, far above the 0.48-0.67 band a mark has to sit in, and the validator says so as a hard FAIL. So Polynize is the same hue at L 0.65, `#00a77b`, which reads as the brand's green at 14px. The brand token is untouched and still paints the chart's own line, where a lone colour is checked for contrast rather than for series separation.
+
+**Then the red caught a real problem, which is the whole reason the script is run rather than reasoned about.** Mint beside red is the classic red/green collapse, and these two slots **touch in every bar**, because Polynize and Marrs are adjacent in `STREAMS`:
+
+| pair | CVD ΔE | verdict |
+|---|---|---|
+| stepped mint + coral `#ff7a6b` | **1.5** | effectively no distinction at all |
+| stepped mint + documented red `#e66767` | 6.1 | under the target of 8 |
+| stepped mint + `#e34948` | 7.2 | still under |
+| stepped mint + **`#cf4436`** | **9.1** | clears it, both modes |
+
+Twenty four combinations were measured. Coral was the first thing I reached for, being the brand's own red, and it is the worst possible choice here: a deuteranope would see Polynize and Marrs as one colour. **That is a mistake I would have shipped on taste.**
+
+Final: `#00a77b` mint, `#cf4436` red, `#3987e5` blue, `#c98500` yellow, `#d55181` magenta on dark; the same mint and red with the documented light steps for the other three on light. Dark passes every check; light passes all but contrast, which keeps its three relief channels (a visible total per bar, named legend entries with avatars, and the table).
+
+The rejected candidates are asserted in the tests, so a future "let us just use coral" is a failing test rather than a shipped mistake.
+
+4 new assertions, 628 total.

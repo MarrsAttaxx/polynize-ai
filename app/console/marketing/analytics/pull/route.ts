@@ -8,6 +8,11 @@
  * the dashboard just stays empty. A button run by a person, whose result is reported on screen, is
  * how the first pull should happen. The cron is the same call on a timer once this is boring.
  *
+ * THE CLIENT NOW CALLS IT ONCE PER STREAM (D88) rather than asking for all five in one request. The
+ * all-streams path is kept because it is what a cron will want, but a person pressing a button gets
+ * one request per brand so the label can name the brand it is waiting on: five brands walked
+ * silently inside one request was the reason the button read as broken.
+ *
  * IT WRITES ONLY OUR OWN CACHE. Nothing is sent to Metricool, nothing is published, and the worst
  * case of running it twice is two identical files.
  */
@@ -47,5 +52,10 @@ export async function POST(req: NextRequest) {
   }
 
   const pulled = results.filter((r) => r.ok).reduce((n, r) => n + r.posts, 0);
+  /**
+   * `results` is always an array, one entry per stream asked for, whether it worked or not. The
+   * button reads it to say what happened per brand, so a partial failure is legible instead of
+   * being a 200 with an empty dashboard behind it.
+   */
   return NextResponse.json({ ok: true, pulled, results });
 }

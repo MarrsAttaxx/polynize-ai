@@ -1,31 +1,29 @@
 /**
- * THE ANALYTICS PANEL (D66). At the bottom of the engine page and at the bottom of every stream.
+ * THE ANALYTICS PANEL (D66, real since D86, interactive since D87). At the bottom of the engine page
+ * and at the bottom of every stream.
  *
  * Marrs: "on the main engine page, where it shows everyone, so it's an aggregation of all those
  * stats. And when you go into each of the streams, each one of those streams has an analytics
  * section also. I think it's always going to be the thing at the bottom, because you don't want to
- * look at that first... I'd at least like a mock-up there at the moment, and we're talking about as
- * much data as we can and making it as visual as possible."
+ * look at that first."
  *
- * SAMPLE NUMBERS, SAID LOUDLY AND ONCE. A mock that does not announce itself is a screen someone
- * makes a decision on. The banner says it, and then the panel gets on with being the real layout.
+ * THIS FILE IS THE SHELL: the reads its pages hand it, the empty and failed states, and the pull
+ * button. Everything that responds to a pointer lives in AnalyticsView, which owns the range, the
+ * chart and the hover. The split is the point: an empty or failed pull renders entirely on the
+ * server with no client bundle at all, which is the common case on a stream nobody has pulled.
  *
- * THE FORM IS PICKED BEFORE THE COLOUR, which is the part that usually goes backwards:
+ * THE FORM WAS PICKED BEFORE THE COLOUR, which is the part that usually goes backwards:
  *
- * - Four headline numbers are a KPI ROW of stat tiles, each with a 12 point sparkline. Not a
- *   grouped bar chart, which is what four numbers usually get turned into.
- * - Comparing four networks is HORIZONTAL BARS: magnitude against identity.
- * - Five posts with mixed measures is a TABLE. It is also the panel's table view, so nothing here
- *   is gated behind reading a chart.
+ * - Four headline numbers are a KPI ROW of stat tiles. Not a grouped bar chart, which is what four
+ *   numbers usually get turned into.
+ * - Change over time is a LINE, full width, bucketed by day or by week to suit the range.
+ * - Comparing platforms is HORIZONTAL BARS, stacked by stream: magnitude against identity.
+ * - Five posts with mixed measures is a TABLE. It is also the panel's table view, so no number here
+ *   is reachable only by hovering, and it is one of the relief channels the light-mode contrast
+ *   result requires.
  *
- * ONE HUE, AND IDENTITY COMES FROM THE LOGOS. Every mark is mint. The networks are told apart by
- * their own PlatformIcon and their name, never by colour, which is stronger than a colour key and
- * it also protects the brand's actual colour grammar: coral is human, amber is hybrid and mint is
- * agent, so spending those four on LinkedIn, Instagram, TikTok and YouTube would quietly remap the
- * one semantic the brand has.
- *
- * A server component: there is nothing to interact with beyond a native hover title, and the panel
- * should not cost a client bundle at the bottom of two pages.
+ * NETWORKS ARE NEVER TOLD APART BY COLOUR. They carry their own PlatformIcon and their name. Colour
+ * is spent on one axis only, which is WHO earned the reach (D87), and only inside this panel.
  */
 
 import type { StreamSlice } from '@/lib/marketing/analytics-metrics';

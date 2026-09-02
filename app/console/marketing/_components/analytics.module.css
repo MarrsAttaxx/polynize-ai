@@ -358,11 +358,25 @@
   display: inline-flex;
   align-items: center;
   gap: 10px;
+  /* The outcome line can run long, so it wraps under the button rather than pushing the title. */
+  flex-wrap: wrap;
+  justify-content: flex-end;
 }
 .pullErr {
   font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
   font-size: 11px;
+  line-height: 1.5;
   color: var(--coral);
+  max-width: 46ch;
+}
+/* What the pull actually did (D88). It stays on screen: a press that reports nothing is a press
+   nobody can tell from a broken button. */
+.pullSaid {
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--text-3);
+  max-width: 46ch;
 }
 .pullBtn {
   font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
@@ -505,25 +519,32 @@
 /* ------------------------------------------------------------------ the colour key (D87) */
 
 /**
- * THE FIVE SERIES SLOTS. Not brand colours: the documented categorical palette from the house chart
- * guidance, in its fixed order, validated with its own script against this console's real surfaces.
- * See lib/marketing/stream-colors.ts for the run and for why the brand's coral/amber/mint are
- * deliberately NOT used here.
+ * THE FIVE SERIES SLOTS, in STREAMS order: Polynize, Marrs, Shourov, Kristin, Julian (D87, reassigned
+ * D88 on Marrs's call). Polynize carries the BRAND HUE at a legible step, since #69fccb itself sits
+ * far outside the lightness band a mark has to occupy.
+ *
+ * Every value is validated with the house chart script against this console's real surfaces, and
+ * the mint/red pair in particular: it is the classic red/green collapse and it needed measuring
+ * rather than choosing. See lib/marketing/stream-colors.ts for the runs and the rejected candidates.
  */
 .wrap {
-  --sc-1: #3987e5;
-  --sc-2: #d95926;
-  --sc-3: #199e70;
+  --sc-1: #00a77b;
+  --sc-2: #cf4436;
+  --sc-3: #3987e5;
   --sc-4: #c98500;
   --sc-5: #d55181;
   /* A stream with no slot paints neutral rather than borrowing someone else's identity. */
   --sc-none: color-mix(in srgb, var(--text-3, #6f6a64) 45%, transparent);
 }
-/* The light steps of the same five hues, selected for the light surface rather than flipped. */
+/**
+ * The light steps, selected for the light surface rather than flipped. Mint and red hold their
+ * values because that pair validates against both surfaces; the other three take their documented
+ * light steps.
+ */
 :global(body.theme-light) .wrap {
-  --sc-1: #2a78d6;
-  --sc-2: #eb6834;
-  --sc-3: #1baf7a;
+  --sc-1: #00a77b;
+  --sc-2: #cf4436;
+  --sc-3: #2a78d6;
   --sc-4: #eda100;
   --sc-5: #e87ba4;
 }
