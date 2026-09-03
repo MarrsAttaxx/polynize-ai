@@ -2758,3 +2758,40 @@ The auto path publishes **no link to polynize.ai at all**. The kit declares `lin
 ### Lane is the missing axis
 
 The console has streams (who it is for) and frames (what kind of post). It does not have lanes (which use case a post serves), and the strategy is organised around six of them. Adding `lane` to the Story, carried to every entry and written into every link, is what makes "what works for hiring managers" a query, and a lane that earns it gets its own Metricool brand. The build order is in the brief: links with the key, first-party capture, the url join, lane, the frame ladder by conversion, evergreen autolists, then the nightly pull.
+
+
+## D95: The brief revised on Marrs's feedback, and the platforms read at source
+
+**Adopted 3 September 2026.** Marrs read the analytics and scale brief and gave feedback as he went. Six things changed the document; two are corrections to me.
+
+### The click path was already proven, by ManyChat, on day one
+
+He set up ManyChat on TikTok and Instagram: a viewer comments "Map", a flow DMs them the lead magnet. *"I posted the first bit of content today. The lead flow worked perfectly. Someone went and used one of the lead magnets on Polynize.ai, and they booked in a meeting with me straight away."* One post, one completion, one booking. **The funnel works end to end before any of this is built.** What is missing is only that nothing recorded which post did it. So the console's job on the click is narrower and clearer than I had it: hand every post its one tagged link, on the entry and in the hand-post brief, so whichever path delivers it (his ManyChat flow, the console's first comment on LinkedIn, or a manual reply) the click carries `utm_content = entry_id`.
+
+### The word is use case
+
+The strategy doc says *lane*; the team says *use case*. Renamed throughout the brief and the todo. The strategy's YAML `lane_id` is the same thing.
+
+### "Many brands" means use-case brands, and it is Phase 2
+
+Not more channels under Marrs; channels like "Leadership Central" that carry one use case and point to Polynize. And not yet: Phase 1 is one Polynize page with six use cases tagged and a frame ladder per use case. Phase 2 opens a channel for a use case when its ladder shows a frame that converts. **The console should make opening a channel a configuration act**: a new stream mapped to a new brand, inheriting the use case's spec, voice and kit defaults.
+
+### Partner growth changes what the CRM has to carry
+
+The leadership meeting shifted to a partner growth strategy: marketing brings leads, partners take them by specialty (Patricia, HR, CHROs and CEOs). This is the strongest argument for use-case channels, because **the channel becomes the routing key**: a lead from the hiring channel is Patricia's before anyone reads it. And the CRM is **in scope**, his words: the lead has to carry its use case, its partner and the stage it reached, so the frame ladder can eventually rank by revenue and not only by completions. The discovery call is booked on his Google booking page, not Calendly.
+
+### The platforms, read at source, and what that actually shows
+
+He challenged the Sprout and Hootsuite figures: *"all the major social media platforms have changed to pretty much AI-native algorithms... straight from the horse's mouth."* So each platform's own most recent statement was read and separated from the trade press:
+
+- **LinkedIn** is the only one that has said so in 2026: the March engineering post describes an LLM-powered ranker fed the member's ordered activity and the post's own text and format, naming "long dwells, likes, comments, shares" as positive engagement, with **no weighting disclosed and nothing on links or AI content**.
+- **Instagram's** current page is from May 2023; it does say it makes "less visible reels that have already been posted on Instagram", which matters for the same-video-two-brands idea. Mosseri's 2025 to 2026 signal ordering (watch time, likes per reach, sends per reach) was reached only through trade summaries.
+- **TikTok's** is from June 2020 and is explicit that completion "would receive greater weight" and that follower count is not a factor; the "followers first then a test audience" claim is not in anything TikTok has published.
+- **YouTube's** is from 2021 (clicks, watchtime, survey satisfaction, shares, likes) plus a July 2026 guide on the Shorts-to-long-form link; the "formally separated algorithms" claim is not in either.
+- **X's** ranker is open source and current (August 2026): a weighted sum of predicted actions including **link click** as a positive, with an out-of-network discount and a new-author boost, and no Grok in the ranking code.
+
+**What it means:** every platform's direction is the same and it favours one-use-case channels, since rankers that read what a post is about reward accounts that are consistently about one thing. Completion, saves, shares and dwell are the currency. Instagram enforces originality, so the same file on two accounts is the one scaling move to avoid; one recording, different cuts is the safe version. **Nothing official says how often to post**, which makes cadence an output of production capacity, exactly as the strategy's section 06 has it. Four of the five official sources predate the "past month", so the honest position is: measure with the frame ladder rather than believe the headlines.
+
+### The shortener, decided
+
+*"Do what you think is best for the system."* Off, and the console builds every link itself. If a short spoken link is ever wanted, it is ours: a redirect on polynize.ai that expands to the tagged link, counted first-party.
