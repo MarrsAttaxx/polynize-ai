@@ -206,7 +206,7 @@ The console has **streams** (who the content is for) and Metricool has **brands*
 
 ### Brands as a scaling unit
 
-More brands is more surface area, and it is cheap on the console side: a brand is a stream mapping and a schedule. The constraint is content per surface: the platforms reward accounts that post consistently at a sustainable rate, and each brand needs its own voice doc or the use case's. The kit already produces 16 posts per Story; the question becomes how many Stories per lane per week the team can approve, not how many posts the system can make. **Approval is the bottleneck, so the analytics should point approval at the frames and lanes that convert.**
+More brands is more surface area, and it is cheap on the console side: a brand is a stream mapping and a schedule. The constraint is content per surface: the platforms reward accounts that post consistently at a sustainable rate, and each brand needs its own voice doc or the use case's. The kit already produces 16 posts per Story; the question becomes how many Stories per use case per week the team can approve, not how many posts the system can make. **Approval is the bottleneck, so the analytics should point approval at the frames and lanes that convert.**
 
 **Fair use** is 600 posts per brand per month. At 16 posts per Story that is 37 Stories a month on one brand before Metricool looks. Not a constraint at any realistic approval rate.
 
@@ -226,9 +226,9 @@ Received 3 September. It is the document the console should be built against, an
 | **Run each frame at least three times before judging** | The frame ladder design already fades rows under `n = 3` | Agreement, not a gap |
 | **Series beat one-offs** | Nothing groups posts into a numbered series | A `series` on the Story, printed into the copy, is small and testable |
 | **Section 08 targets**: completions 10 a week by month 3, 25 by month 6; discovery calls 3 then 8 a month | The panel has no targets | Target lines on the completions and calls tiles once those numbers exist |
-| **Section 05 wants the catalogue as a testing calendar**: which frame, which use case, which week, what result keeps it | The catalogue exists (20 outputs); nothing schedules a test | The frame ladder by use case IS the result column; the calendar column is a Story per lane per fortnight, which is the wave |
+| **Section 05 wants the catalogue as a testing calendar**: which frame, which use case, which week, what result keeps it | The catalogue exists (20 outputs); nothing schedules a test | The frame ladder by use case IS the result column; the calendar column is a Story per use case per fortnight, which is the wave |
 | **Daily podcast clips at 10am, automatic** | Running | Nothing |
-| **Polynize page carries all six lanes; personal profiles carry reach** | Hand-post on Marrs's LinkedIn (D41) already encodes half of this | The `owner` field on the use case makes the other half explicit |
+| **Polynize page carries all six use cases (its word: lanes); personal profiles carry reach** | Hand-post on Marrs's LinkedIn (D41) already encodes half of this | The `owner` field on the use case makes the other half explicit |
 
 **The one structural change is the use-case object.** Everything else in the table hangs off it: the kit defaults read its `formats` and `platforms`, the link reads its `magnet` and `segment`, April reads its `angle` and `avoid`, the ladder groups by it, the CRM routes by it, and a use case that earns it gets a brand.
 
