@@ -8,6 +8,57 @@ Two inputs: a research note from another agent on Metricool autolists, and Marrs
 
 ---
 
+## The plan in plain English, for the project manager
+
+Marrs, 5 September: *"You have to report back to me as if I'm a non-technical project manager... what does it look like, how does it work on the platform, and is it hitting our desired target?"* This section is that. Everything below it is the engineering version of the same plan and can be skipped.
+
+### The problem in one line
+
+On day one a viewer commented "Map", ManyChat sent them a lead magnet, they completed it and booked a meeting. **Nothing recorded which post started it.** The whole plan is about fixing that one gap, then using the answer to decide what to post more of.
+
+### The seven steps, what you see, what it answers
+
+| # | In plain English | What you see in the console | The question it answers |
+|---|---|---|---|
+| 1 | **Every post gets its own tracking label.** Each post the console prepares comes with a link that quietly says "I came from this post, on this person's channel, about this use case." The viewer sees a normal polynize.ai link. Only we read the label. | The link on the post and in the hand-post brief. You paste it into the ManyChat flow for that post. | Which post did that? |
+| 2 | **polynize.ai remembers the label.** Today the site drops it at the door. After this, when someone arrives on a labelled link and completes a lead magnet, the label is written onto their lead record. | Nothing new to look at. The lead record just knows where it came from. | Which post produced this lead? |
+| 3 | **The console reads the numbers back.** Nightly, and when you press Pull now, it asks Metricool for reach and saves and asks Vercel for clicks and completions, and puts them on each post. **This is the step that uses the three keys you just added.** Nothing reads them yet. | On each post: how many saw it, how many clicked, how many completed a lead magnet. | Is this post working? |
+| 4 | **Every Story is filed under a use case.** When April proposes a Story it is tagged with one of the six (hiring, sales, learning and development, security, AI capability, deal-side). She picks a default; you can change it at Gate 1. The tag rides on every post and every link. | A use case dropdown at Gate 1. A use case column on the calendar. | What are we posting about, and for whom? |
+| 5 | **The leaderboard.** For each use case, the post types ranked by lead-magnet completions per post, with how many posts stand behind each row. Rows with fewer than three are greyed out because two posts prove nothing. | A table on the analytics panel. | What do we make more of next? |
+| 6 | **The lead knows its use case and its partner.** The lead record in the console's CRM gains three things: which use case, which partner it went to (Patricia for HR), and what stage it reached: magnet, booked, trial, proposal, paid. | Three new columns on the lead. A stage that moves. | Is this turning into revenue, and for whom? |
+| 7 | **Winners repeat themselves.** A button on a proven post that sends it to Metricool's repeating list so it keeps going out on quiet slots, with a fresh line of copy each cycle. | A "make this evergreen" button on posts that earned it. | How do we double down without more production? |
+
+### What changes for you, day to day
+
+- **Steps 1 and 2 are invisible plumbing.** Nothing new to do except paste the console's link into each ManyChat flow instead of the plain one.
+- **Step 3 is when the dashboard starts telling the truth.** Reach today; clicks and completions per post from then on.
+- **Step 4 adds one dropdown at Gate 1.** April fills it; you correct it if she is wrong.
+- **Step 5 is the decision screen.** It is the only screen you need to read to decide what gets approved next week.
+- **Step 6 is the CRM you asked for.** The lead carries its own story from first click to paid.
+
+### Is it hitting the target
+
+The strategy's targets are 10 to 25 lead-magnet completions a week, and 3 to 8 discovery calls a month. After step 3 the panel shows completions per post and per week against the first number. After step 6 it shows bookings against the second, and the partner they went to. Until step 3 lands, the honest answer to "is it working" is what you already know: one post, one completion, one booking, and no record of which post.
+
+### Security, in one paragraph
+
+The label on the link is the standard convention every marketing team uses; it carries a post number and a use case, never a person's name or email. The three keys sit in Vercel's environment, marked sensitive, so they cannot be read back even by us, only replaced. The console talks to Metricool and Vercel from the server; nothing runs in a visitor's browser. No customer data leaves our systems.
+
+### The words, translated
+
+- **Tagged link, UTM.** A normal link with a label on the end that the site reads and the viewer ignores. UTM is the industry's name for the label format.
+- **First-party capture.** The website itself writes the label onto the lead record, rather than a third party guessing later.
+- **URL join.** After a post goes live, the console stores the post's public web address so the numbers Metricool reports can be matched back to our record of the post.
+- **Use case on the Story, stored as data.** The six use cases from your strategy become a list the console holds, so April and the calendar read them instead of a developer typing them in.
+- **Frame ladder.** The leaderboard in step 5. A frame is a post type; the ladder is those types ranked.
+- **Autolist.** Metricool's name for a repeating list of posts.
+
+### The decision you need to make
+
+Only one: **go**. The six use cases are taken from your strategy as written; if you want different names, say so at step 4.
+
+---
+
 ## 0. First, where I was wrong
 
 **D79 said Metricool has no queue: "528 paths, none of them a queue."** That is false. Metricool calls it an **autolist**, and there are 25 endpoints under `/lists/*` in their spec: create and enable a list, add and reorder posts, and create and update the weekly timing rows. I searched for my vocabulary ("queue", "autoschedule") rather than theirs ("lists"). The other agent found it because they read the product, not the spec.
