@@ -93,6 +93,20 @@ export type CalendarEntry = {
    * is deliberately empty rather than filled with a guessed url.
    */
   first_comment?: string;
+  /**
+   * THE USE CASE THIS POST SERVES (D96), copied from the piece (which copied it from the Story)
+   * when the entry is made. Stamped, like publish_mode and timezone, so relabelling a Story later
+   * does not silently rewrite what an already-published post was counted under.
+   */
+  use_case?: string;
+  /**
+   * THIS POST'S OWN LINK (D96): polynize.ai plus four labels (network, delivery, use case, and
+   * this entry's id) built by lib/marketing/tracking-link.ts. Where it goes depends on the network:
+   * on LinkedIn it is also the first comment; on Instagram and TikTok the operator pastes it into
+   * the ManyChat flow; on YouTube it belongs in the description. The console never puts it into
+   * post_copy, because the copy is the operator's words and the kit says where links live.
+   */
+  link?: string;
   created_at: string;
   updated_at?: string;
 };

@@ -119,6 +119,18 @@
   gap: 8px;
   margin-bottom: 16px;
 }
+/* The use case (D96), in the same row as the platforms. */
+.useCaseSelect {
+  margin-left: auto;
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 11px;
+  padding: 5px 8px;
+  border-radius: 8px;
+  border: 1px solid var(--tac-edge-dark, rgba(255, 255, 255, 0.12));
+  background: transparent;
+  color: var(--text-2);
+  max-width: 220px;
+}
 .platform {
   font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
   font-size: 11px;

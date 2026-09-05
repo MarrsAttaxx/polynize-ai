@@ -24,6 +24,7 @@ import type { MarketingPiece } from '@/lib/marketing/piece-store';
 import { FINISHED_MEDIA_FORMAT } from '@/lib/marketing/finished-media';
 import { youtubeTitleFrom, YOUTUBE_TITLE_MAX } from '@/lib/marketing/youtube-title';
 import { youtubeTypeLabel, type YoutubeVideoType } from '@/lib/marketing/youtube-type';
+import { USE_CASES } from '@/lib/marketing/use-case';
 import s from './text.module.css';
 import c from './chat.module.css';
 
@@ -93,6 +94,11 @@ export function TextOutputScreen({
    */
   const [ytType, setYtType] = useState<YoutubeVideoType>(initial.youtube_type ?? 'short');
   /**
+   * THE USE CASE (D96). A piece minted from a Story arrives with it; a finished video posted through
+   * the media-library door has none until it is picked here. It goes into every link prepare builds.
+   */
+  const [useCase, setUseCase] = useState<string>(initial.use_case ?? '');
+  /**
    * THE PREVIEW (D59). Which platform is being previewed, and the library the selected ids
    * resolve against. The library is handed up by the picker below rather than fetched again.
    */
@@ -142,6 +148,7 @@ export function TextOutputScreen({
       can be silently dropped when an edit lands mid-flight. */
   const latestPlatforms = useRef<string[]>(initial.platforms ?? []);
   const latestYtType = useRef<YoutubeVideoType>(initial.youtube_type ?? 'short');
+  const latestUseCase = useRef<string>(initial.use_case ?? '');
   const inFlight = useRef(false);
 
   const stateUrlRef = useRef('');
@@ -173,6 +180,7 @@ export function TextOutputScreen({
           media: latestMedia.current,
           platforms: latestPlatforms.current,
           youtube_type: latestYtType.current,
+          use_case: latestUseCase.current || undefined,
         }),
       });
       return res.ok;
@@ -193,6 +201,7 @@ export function TextOutputScreen({
         const contentMedia = latestMedia.current;
         const contentPlatforms = latestPlatforms.current;
         const contentYtType = latestYtType.current;
+        const contentUseCase = latestUseCase.current;
         setSaveState('saving');
         let ok = false;
         try {
@@ -207,6 +216,7 @@ export function TextOutputScreen({
               media: contentMedia,
               platforms: contentPlatforms,
               youtube_type: contentYtType,
+              use_case: contentUseCase || undefined,
             }),
           });
           ok = res.ok;
@@ -222,7 +232,8 @@ export function TextOutputScreen({
           latestStatus.current !== contentStatus ||
           latestMedia.current !== contentMedia ||
           latestPlatforms.current !== contentPlatforms ||
-          latestYtType.current !== contentYtType
+          latestYtType.current !== contentYtType ||
+          latestUseCase.current !== contentUseCase
         ) {
           continue; // a newer edit landed mid-flight (body, status, media OR platforms)
         }
@@ -238,6 +249,12 @@ export function TextOutputScreen({
   const setYoutubeType = (next: YoutubeVideoType) => {
     setYtType(next);
     latestYtType.current = next;
+    scheduleSave();
+  };
+
+  const setUseCaseNow = (next: string) => {
+    setUseCase(next);
+    latestUseCase.current = next;
     scheduleSave();
   };
 
@@ -454,6 +471,22 @@ export function TextOutputScreen({
             </button>
           );
         })}
+        {/* WHO IT IS FOR (D96). Sits with the platforms because together they are the label every
+            link from this piece will carry: which network, which use case, which post. */}
+        <select
+          className={s.useCaseSelect}
+          aria-label="Use case"
+          value={useCase}
+          onChange={(e) => setUseCaseNow(e.target.value)}
+          title="What this post is about and for whom. Goes into the link on every prepared post."
+        >
+          <option value="">No use case</option>
+          {USE_CASES.map((u) => (
+            <option key={u.id} value={u.id}>
+              {u.label}
+            </option>
+          ))}
+        </select>
         {/* An id from an older piece that this screen cannot offer, shown so it is not silently
             dropped: X and Substack pieces exist and their entries are still real. */}
         {platforms

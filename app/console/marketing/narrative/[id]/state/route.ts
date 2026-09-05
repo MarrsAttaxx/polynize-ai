@@ -9,6 +9,7 @@ import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/console-auth';
 import { getNarrative, saveNarrative, type NarrativeGate } from '@/lib/marketing/narrative-store';
+import { isUseCaseId } from '@/lib/marketing/use-case';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -32,6 +33,7 @@ export async function PUT(
     hero_url?: unknown;
     hero_media_id?: unknown;
     hero_prompt?: unknown;
+    use_case?: unknown;
   } | null;
   if (!body) return NextResponse.json({ error: 'invalid json' }, { status: 400 });
 
@@ -68,6 +70,13 @@ export async function PUT(
   } else if (body.hero_url === null) {
     delete narrative.hero_url;
     delete narrative.hero_media_id;
+  }
+
+  /** The use case (D96): one of the six ids, or null to clear. Anything else is refused out loud. */
+  if (body.use_case !== undefined) {
+    if (body.use_case === null) delete narrative.use_case;
+    else if (isUseCaseId(body.use_case)) narrative.use_case = body.use_case;
+    else return NextResponse.json({ error: 'unknown use case' }, { status: 400 });
   }
 
   try {

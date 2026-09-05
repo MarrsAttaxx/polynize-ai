@@ -35,6 +35,7 @@ import { HERO_BATCH } from '@/lib/marketing/hero';
 import { networkAvailable } from '@/lib/marketing/connected-networks';
 import { IMAGE_MODELS, DEFAULT_IMAGE_MODEL } from '@/lib/marketing/higgsfield-models';
 import g from '../gates.module.css';
+import { USE_CASES } from '@/lib/marketing/use-case';
 
 type PieceRow = {
   id: string;
@@ -589,6 +590,26 @@ export function NarrativeGates({
           </button>
         ) : null}
         <span className={g.where}>{names[String(gate)]}</span>
+        {/* THE USE CASE (D96), changeable at every gate because a Story's audience can turn out to
+            be someone else once the article is written. Saved at once; every piece and entry made
+            after this reads it. */}
+        <select
+          className={g.useCaseSelect}
+          aria-label="Use case"
+          value={narrative.use_case ?? ''}
+          onChange={(ev) => {
+            const v = ev.target.value || null;
+            setNarrative((n) => (v ? { ...n, use_case: v } : (({ use_case: _drop, ...rest }) => rest)(n)));
+            void put({ use_case: v }).catch(() => setErr('Could not save the use case.'));
+          }}
+        >
+          <option value="">No use case</option>
+          {USE_CASES.map((u) => (
+            <option key={u.id} value={u.id}>
+              {u.label}
+            </option>
+          ))}
+        </select>
         <span className={g.dots}>
           {[1, ...gates].map((x, i) => (
             <span

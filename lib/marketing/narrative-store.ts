@@ -7,6 +7,7 @@ import {
   putObjectText,
   deleteObject,
 } from '@/lib/agents/bucket';
+import { isUseCaseId } from './use-case';
 
 /**
  * STORIES: the unit that moves through the Gates.
@@ -45,6 +46,13 @@ export type Narrative = {
    * translation.
    */
   lane: NarrativeLane;
+  /**
+   * WHAT THIS STORY IS ABOUT AND FOR WHOM (D96): one of the six use-case ids in use-case.ts, or
+   * absent when nobody has said. Chosen at Gate 1 (April suggests from the idea, the operator
+   * confirms), carried onto every piece and every calendar entry, and written into every link as
+   * utm_campaign. Never called `lane`: that word already means the stream here.
+   */
+  use_case?: string;
   /** The caught idea, verbatim. Never rewritten by the pipeline. */
   idea: string;
   /** Id in idea-store when the narrative came from the inbox, so the note shows as spent. */
@@ -169,6 +177,7 @@ export function normalizeNarrative(x: unknown): Narrative | null {
   return {
     id,
     lane: r.lane,
+    ...(isUseCaseId(r.use_case) ? { use_case: r.use_case } : {}),
     idea: typeof r.idea === 'string' ? r.idea.slice(0, MAX_IDEA_CHARS) : '',
     idea_ref: typeof r.idea_ref === 'string' ? r.idea_ref : undefined,
     article: typeof r.article === 'string' ? r.article.slice(0, MAX_ARTICLE_CHARS) : '',
@@ -333,12 +342,14 @@ async function removeIndexRow(id: string): Promise<void> {
 export async function createNarrative(
   lane: NarrativeLane,
   idea: string,
-  idea_ref?: string
+  idea_ref?: string,
+  use_case?: string
 ): Promise<Narrative> {
   const now = new Date().toISOString();
   const narrative: Narrative = {
     id: randomUUID(),
     lane,
+    ...(isUseCaseId(use_case) ? { use_case } : {}),
     idea: idea.slice(0, MAX_IDEA_CHARS),
     ...(idea_ref !== undefined ? { idea_ref } : {}),
     article: '',

@@ -10,7 +10,7 @@
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "test:marketing": "npx --yes tsx lib/marketing/__tests__/gate4.test.ts",
+    "test:marketing": "npx --yes tsx lib/marketing/__tests__/gate4.test.ts && npx --yes tsx lib/marketing/__tests__/attribution.test.ts",
     "proof:slides": "npx --yes tsx --tsconfig tsconfig.proof.json scripts/slide-proof.tsx",
     "test:blueprint": "npx --yes tsx lib/blueprint/__tests__/schema-v2.fixture.ts && npx --yes tsx lib/blueprint/__tests__/derive-and-export.test.ts",
     "lint:fix": "eslint . --fix",

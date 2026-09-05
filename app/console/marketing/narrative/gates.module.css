@@ -143,6 +143,51 @@
   box-shadow: 0 0 0 1px var(--mint, #69fccb) inset;
 }
 
+/* The use case (D96): a row of six small choices under the idea, and a select in the Story header. */
+.useCaseHead {
+  margin: 18px 0 8px;
+  font-family: var(--font-jetbrains-mono), monospace;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+.useCases {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.useCase {
+  font-family: var(--font-jetbrains-mono), monospace;
+  font-size: 12px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--line, rgba(255, 255, 255, 0.14));
+  background: transparent;
+  color: var(--text-2);
+  cursor: pointer;
+}
+.useCase:hover {
+  color: var(--text-1);
+}
+.useCaseOn {
+  border-color: var(--mint, #69fccb);
+  color: var(--text-1);
+  box-shadow: 0 0 0 1px var(--mint, #69fccb) inset;
+}
+.useCaseSelect {
+  margin-left: auto;
+  margin-right: 12px;
+  font-family: var(--font-jetbrains-mono), monospace;
+  font-size: 11px;
+  padding: 4px 8px;
+  border-radius: 8px;
+  border: 1px solid var(--line, rgba(255, 255, 255, 0.14));
+  background: transparent;
+  color: var(--text-2);
+  max-width: 200px;
+}
+
 /* Gate 2 */
 .duo {
   display: grid;

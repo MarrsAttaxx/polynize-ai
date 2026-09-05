@@ -25,6 +25,8 @@ import {
 import { complete } from '@/lib/llm';
 import { stripEmDashes } from '@/lib/em-dash';
 import { getChannelSchedule, NETWORKS, type Network } from '@/lib/marketing/channel-schedule';
+import { buildTrackingLink, siteOrigin } from '@/lib/marketing/tracking-link';
+import { landingFor } from '@/lib/marketing/use-case';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -173,6 +175,27 @@ export async function POST(
     const entries: CalendarEntry[] = [];
     for (const channel of channels) {
       const prior = existing.find((e) => e.channel === channel);
+      const entryId = prior?.entry_id ?? crypto.randomUUID();
+      /**
+       * THE LABEL (D96): one link per post carrying network, delivery, use case and this entry's id.
+       * Rebuilt on re-prepare too, because the use case may have been set since, and the id is
+       * stable so the link stays the same post. On LinkedIn the kit puts links in the first
+       * comment (every LinkedIn text output declares it), so it is written there as well and never
+       * into the copy, which is the operator's words.
+       */
+      const link = buildTrackingLink({
+        origin: siteOrigin(),
+        path: landingFor(piece.use_case),
+        network: channel,
+        medium: 'social',
+        useCase: piece.use_case,
+        entryId,
+      });
+      const labelled = {
+        ...(piece.use_case ? { use_case: piece.use_case } : {}),
+        link,
+        ...(channel === 'linkedin' ? { first_comment: link } : {}),
+      };
       const entry: CalendarEntry = prior
         ? {
             ...prior,
@@ -182,10 +205,11 @@ export async function POST(
             // Re-stamped, because the lane's mode may have changed since it was first prepared.
             publish_mode: modeFor(channel),
             youtube_type: piece.youtube_type,
+            ...labelled,
             updated_at: now,
           }
         : {
-            entry_id: crypto.randomUUID(),
+            entry_id: entryId,
             owner,
             stream: piece.stream,
             piece_id: id,
@@ -196,6 +220,7 @@ export async function POST(
             publish_mode: modeFor(channel),
             /** Short or landscape, decided while authoring and carried on the entry (D84). */
             youtube_type: piece.youtube_type,
+            ...labelled,
             status: 'draft',
             created_at: now,
             updated_at: now,

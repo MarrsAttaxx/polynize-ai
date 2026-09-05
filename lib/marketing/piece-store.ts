@@ -154,6 +154,12 @@ export type MarketingPiece = {
    * Absent means Short, which is right for every post this pipeline can currently make.
    */
   youtube_type?: 'short' | 'landscape';
+  /**
+   * THE USE CASE (D96): one of the six ids in use-case.ts. Copied from the Story when the piece is
+   * minted; set by hand on the caption screen for a piece with no Story (a finished video posted
+   * through the media-library door). Carried onto every calendar entry and into every link.
+   */
+  use_case?: string;
 };
 
 function keyFor(owner: string, pieceId: string): string {

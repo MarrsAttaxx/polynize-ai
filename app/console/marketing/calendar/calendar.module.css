@@ -404,6 +404,42 @@
 .entryLink:hover {
   text-decoration: underline;
 }
+/* The post's own link (D96): its use case, and one copy button per delivery. */
+.entryTrack {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  margin: 6px 0 2px;
+}
+.entryTrackLabel {
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--text-3);
+}
+.entryTrackBtns {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.copyBtn {
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 11px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  border: 1px solid var(--line, rgba(255, 255, 255, 0.14));
+  background: transparent;
+  color: var(--text-2);
+  cursor: pointer;
+}
+.copyBtn:hover {
+  color: var(--text-1);
+  border-color: var(--mint);
+}
+.copyBtnDone {
+  color: var(--mint);
+  border-color: var(--mint);
+}
 .entryLinkMuted {
   font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
   font-size: 11px;

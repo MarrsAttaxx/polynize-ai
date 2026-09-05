@@ -13,6 +13,7 @@ import { NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/console-auth';
 import { createNarrative, saveNarrative, isNarrativeLane } from '@/lib/marketing/narrative-store';
 import { updateIdea } from '@/lib/marketing/idea-store';
+import { guessUseCase, isUseCaseId } from '@/lib/marketing/use-case';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -27,6 +28,7 @@ export async function POST(req: NextRequest) {
     lane?: unknown;
     idea?: unknown;
     idea_ref?: unknown;
+    use_case?: unknown;
   } | null;
   const lane = body?.lane;
   const idea = typeof body?.idea === 'string' ? body.idea.trim().slice(0, 4000) : '';
@@ -38,9 +40,16 @@ export async function POST(req: NextRequest) {
   if (!idea) {
     return NextResponse.json({ error: 'pick or type an idea' }, { status: 400 });
   }
+  /**
+   * THE USE CASE (D96). The screen sends what the operator confirmed; an unknown value is treated as
+   * none rather than refused, and none falls back to a guess from the idea, so a Story is never
+   * created unlabelled when its own words say what it is about. The guess is visible on the Story
+   * screen and one click to change.
+   */
+  const useCase = isUseCaseId(body?.use_case) ? body.use_case : guessUseCase(idea);
 
   try {
-    const narrative = await createNarrative(lane, idea, ideaRef);
+    const narrative = await createNarrative(lane, idea, ideaRef, useCase);
     // Straight to gate 2: gate 1's decision is made the moment this route runs.
     narrative.gate = 2;
     await saveNarrative(narrative);

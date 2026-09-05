@@ -16,6 +16,8 @@ import { channelLabel, metricoolNetwork } from '@/lib/marketing/channels';
 import { streamLabel } from '@/lib/marketing/streams';
 import type { CalendarEntry } from '@/lib/marketing/calendar-store';
 import s from './calendar.module.css';
+import { LINK_MEDIA, withMedium } from '@/lib/marketing/tracking-link';
+import { labelForUseCase } from '@/lib/marketing/use-case';
 
 type View = 'list' | 'month' | 'day';
 
@@ -101,6 +103,17 @@ export function CalendarBoard({
 }) {
   const [entries, setEntries] = useState<CalendarEntry[]>(initial);
   const [busy, setBusy] = useState<string | null>(null);
+  /** Which link was just copied, as `entryId:medium`, so the button can say so for a moment. */
+  const [copied, setCopied] = useState<string | null>(null);
+  const copyLink = (entryId: string, medium: string, link: string) => {
+    void navigator.clipboard
+      ?.writeText(link)
+      .then(() => {
+        setCopied(`${entryId}:${medium}`);
+        setTimeout(() => setCopied(null), 1600);
+      })
+      .catch(() => window.prompt('Copy this link', link));
+  };
   const [errs, setErrs] = useState<Record<string, string>>({});
   /**
    * Notes are NOT errors and must not be painted as them (D79). A queue that reached three weeks out
@@ -381,6 +394,30 @@ export function CalendarBoard({
             </span>
           </div>
           <p className={s.entryCopy}>{e.post_copy}</p>
+          {/* THE POST'S OWN LINK (D96), with the delivery variants. Copy, never click: the point of
+              the link is to be pasted where the viewer will find it (the ManyChat flow, a reply, a
+              description), and every copy carries this entry's id so the click comes back to it. */}
+          {e.link ? (
+            <div className={s.entryTrack}>
+              <span className={s.entryTrackLabel}>
+                {labelForUseCase(e.use_case)}
+                {e.first_comment === e.link ? ' · link goes in the first comment' : ''}
+              </span>
+              <span className={s.entryTrackBtns}>
+                {LINK_MEDIA.map((m) => (
+                  <button
+                    key={m.id}
+                    type="button"
+                    className={`${s.copyBtn} ${copied === `${e.entry_id}:${m.id}` ? s.copyBtnDone : ''}`}
+                    title={`${m.hint} Copies the link labelled "${m.id}".`}
+                    onClick={() => copyLink(e.entry_id, m.id, withMedium(e.link ?? '', m.id))}
+                  >
+                    {copied === `${e.entry_id}:${m.id}` ? 'Copied' : `Copy · ${m.label}`}
+                  </button>
+                ))}
+              </span>
+            </div>
+          ) : null}
           <div className={s.entryActions}>
             <label className={s.dateLabel}>
               Date

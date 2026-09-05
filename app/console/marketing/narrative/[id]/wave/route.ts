@@ -44,6 +44,8 @@ import {
 import { publishEntry } from '@/lib/marketing/publish';
 import { sendHandPostBrief, handPostFromEntry } from '@/lib/marketing/hand-post';
 import { narrativeHeadline } from '@/lib/marketing/narrative-store';
+import { buildTrackingLink, siteOrigin } from '@/lib/marketing/tracking-link';
+import { landingFor } from '@/lib/marketing/use-case';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -415,10 +417,30 @@ export async function POST(
           // Per OUTPUT, not per master: one master now serves four networks with different caps,
           // so trimming by master would cut every LinkedIn caption to Instagram's 2,200.
           const cap = capForOutput(output);
+          /**
+           * THE LABEL (D96). The id is minted first because the link carries it: one link per post,
+           * on polynize.ai, saying which network, which delivery, which use case and which entry.
+           * On LinkedIn the kit says the link lives in the first comment, so it is written there
+           * too and publishEntry sends it as firstCommentText. Never into post_copy.
+           */
+          const entryId = randomUUID();
+          const link = buildTrackingLink({
+            origin: siteOrigin(),
+            path: landingFor(narrative.use_case),
+            network,
+            medium: 'social',
+            useCase: narrative.use_case,
+            entryId,
+          });
+          const linkInFirstComment =
+            output.wrapper.link === 'first_comment' || output.wrapper.link === 'caption_and_first_comment';
           const entry: CalendarEntry = {
-            entry_id: randomUUID(),
+            entry_id: entryId,
             owner,
             stream: narrative.lane,
+            ...(narrative.use_case ? { use_case: narrative.use_case } : {}),
+            link,
+            ...(linkInFirstComment ? { first_comment: link } : {}),
             piece_id: piece.piece_id,
             title: piece.title,
             channel: network,

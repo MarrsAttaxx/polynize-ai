@@ -16,6 +16,18 @@ Marrs, 5 September: *"You have to report back to me as if I'm a non-technical pr
 
 On day one a viewer commented "Map", ManyChat sent them a lead magnet, they completed it and booked a meeting. **Nothing recorded which post started it.** The whole plan is about fixing that one gap, then using the answer to decide what to post more of.
 
+### Where the build is
+
+| Step | Status |
+|---|---|
+| 1. Every post gets its own tracking label | **Built and live, 5 September (D96).** Copy buttons on every calendar entry; the link in the hand-post brief; the first comment on LinkedIn. |
+| 2. polynize.ai remembers the label | Next. |
+| 3. The console reads the numbers back | After 2. |
+| 4. Every Story is filed under a use case | **Built and live, 5 September (D96).** Six chips at Gate 1 with April's suggestion; a select on the Story screen and the caption screen. |
+| 5. The leaderboard | After 3. |
+| 6. The lead carries its use case and stage | With 2. Use case only; no partner field (Marrs, 5 September: partner routing is an internal decision and stays open). |
+| 7. Winners repeat themselves | Last. |
+
 ### The seven steps, what you see, what it answers
 
 | # | In plain English | What you see in the console | The question it answers |
@@ -25,7 +37,7 @@ On day one a viewer commented "Map", ManyChat sent them a lead magnet, they comp
 | 3 | **The console reads the numbers back.** Nightly, and when you press Pull now, it asks Metricool for reach and saves and asks Vercel for clicks and completions, and puts them on each post. **This is the step that uses the three keys you just added.** Nothing reads them yet. | On each post: how many saw it, how many clicked, how many completed a lead magnet. | Is this post working? |
 | 4 | **Every Story is filed under a use case.** When April proposes a Story it is tagged with one of the six (hiring, sales, learning and development, security, AI capability, deal-side). She picks a default; you can change it at Gate 1. The tag rides on every post and every link. | A use case dropdown at Gate 1. A use case column on the calendar. | What are we posting about, and for whom? |
 | 5 | **The leaderboard.** For each use case, the post types ranked by lead-magnet completions per post, with how many posts stand behind each row. Rows with fewer than three are greyed out because two posts prove nothing. | A table on the analytics panel. | What do we make more of next? |
-| 6 | **The lead knows its use case and its partner.** The lead record in the console's CRM gains three things: which use case, which partner it went to (Patricia for HR), and what stage it reached: magnet, booked, trial, proposal, paid. | Three new columns on the lead. A stage that moves. | Is this turning into revenue, and for whom? |
+| 6 | **The lead knows its use case.** The lead record in the console's CRM gains which use case it came from and how sure we are (from the link, or guessed), and the existing stage keeps moving: new, contacted, meeting, proposal, won. Who it goes to is decided by the team, by hand, for now: partners do not use the CRM, and Marrs wants that left open. | A use case on the lead. A stage that moves. | Is this turning into revenue, and from which use case? |
 | 7 | **Winners repeat themselves.** A button on a proven post that sends it to Metricool's repeating list so it keeps going out on quiet slots, with a fresh line of copy each cycle. | A "make this evergreen" button on posts that earned it. | How do we double down without more production? |
 
 ### What changes for you, day to day
@@ -34,7 +46,7 @@ On day one a viewer commented "Map", ManyChat sent them a lead magnet, they comp
 - **Step 3 is when the dashboard starts telling the truth.** Reach today; clicks and completions per post from then on.
 - **Step 4 adds one dropdown at Gate 1.** April fills it; you correct it if she is wrong.
 - **Step 5 is the decision screen.** It is the only screen you need to read to decide what gets approved next week.
-- **Step 6 is the CRM you asked for.** The lead carries its own story from first click to paid.
+- **Step 6 is the CRM you asked for.** The lead carries which use case it came from; the team decides who takes it.
 
 ### Is it hitting the target
 

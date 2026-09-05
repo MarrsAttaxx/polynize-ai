@@ -17,6 +17,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { streamLabel } from '@/lib/marketing/streams';
+import { USE_CASES, guessUseCase } from '@/lib/marketing/use-case';
 import g from '../gates.module.css';
 
 export type IdeaRow = { id: string; lane: string; text: string; when: string };
@@ -43,6 +44,15 @@ export function NewNarrative({
   const chosenText = typed.trim() || ideas.find((i) => i.id === picked)?.text || '';
   const ready = chosenText !== '' && lane !== null;
 
+  /**
+   * THE USE CASE (D96): what this Story is about and for whom. April's suggestion comes from the
+   * idea's own words and is shown pre-selected; a click changes it. Nothing is stored until Develop,
+   * and the Story screen can change it again, so this is a default and not a commitment.
+   */
+  const [pickedUseCase, setPickedUseCase] = useState<string | null>(null);
+  const suggested = chosenText ? guessUseCase(chosenText) : undefined;
+  const useCase = pickedUseCase ?? suggested ?? null;
+
   const develop = async () => {
     if (!ready || busy) return;
     setBusy(true);
@@ -55,6 +65,7 @@ export function NewNarrative({
           lane,
           idea: chosenText,
           idea_ref: typed.trim() ? undefined : (picked ?? undefined),
+          use_case: useCase ?? undefined,
         }),
       });
       const b = (await res.json().catch(() => null)) as { id?: string; error?: string } | null;
@@ -121,6 +132,25 @@ export function NewNarrative({
           ))}
         </div>
       )}
+
+      <p className={g.useCaseHead}>
+        Who is this for?
+        {suggested && !pickedUseCase ? <span className={g.meta}> suggested from the idea</span> : null}
+      </p>
+      <div className={g.useCases}>
+        {USE_CASES.map((u) => (
+          <button
+            key={u.id}
+            type="button"
+            className={`${g.useCase} ${useCase === u.id ? g.useCaseOn : ''}`}
+            onClick={() => setPickedUseCase(u.id)}
+            disabled={busy}
+            title={u.hint}
+          >
+            {u.label}
+          </button>
+        ))}
+      </div>
 
       {err ? <p className={g.err}>{err}</p> : null}
 

@@ -138,6 +138,8 @@ export async function POST(
         kind: plan.kind,
         status: 'draft',
         narrative_ref: narrative.id,
+        // The Story's use case rides onto the piece (D96), so every entry and link made from it is labelled.
+        ...(narrative.use_case ? { use_case: narrative.use_case } : {}),
         master: plan.master,
         platforms: plan.placements.map((p) => p.network),
         provenance: 'ai_generated',

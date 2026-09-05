@@ -2795,3 +2795,32 @@ He challenged the Sprout and Hootsuite figures: *"all the major social media pla
 ### The shortener, decided
 
 *"Do what you think is best for the system."* Off, and the console builds every link itself. If a short spoken link is ever wanted, it is ours: a redirect on polynize.ai that expands to the tagged link, counted first-party.
+
+
+## D96: Every post carries its own label, and every Story knows its use case
+
+**Adopted 5 September 2026.** Steps 1 and 4 of the plan in `docs/pam-console/analytics-and-scale.md`, built together because the label needs the use case to be worth reading.
+
+### What was built
+
+**The six use cases as data** (`lib/marketing/use-case.ts`): id, label, hint, landing path, magnet, and the cue words April uses to suggest one. The ids are the Kit segment ids from the strategy and the nurture design, so a lead tagged from a link needs no translation. Named `use_case` everywhere and never `lane`, because `lane` already means the stream in this codebase.
+
+**The link builder** (`lib/marketing/tracking-link.ts`): one function, deterministic, four labels: `utm_source` the network, `utm_medium` the delivery (`social` on the post, `dm` a ManyChat flow, `reply` pasted by hand), `utm_campaign` the use case or `none`, `utm_content` the entry id. The same file reads labels back on the site with an allowlist: lowercase tokens only, referrer hostname only, landing path only, and no label at all means null rather than an empty object. Nothing about a person can ride in on a label.
+
+**Where it goes.** The wave and the prepare route both mint the entry id first and build the link from it; the entry stores `use_case` and `link`. On LinkedIn the kit says links live in the first comment (`wrapper.link`), so the link is also written to `first_comment`, which `publishEntry` has sent as `firstCommentText` since D42 and nothing ever filled. Never into `post_copy`: the copy is the operator's words.
+
+**Where he sees it.** On every calendar entry: the use case, whether the link is going in the first comment, and three copy buttons (On the post, ManyChat, Your reply), each copying the link with its medium. In the hand-post brief, a "Link, for ManyChat or your reply" line on any post whose link is not already the first comment. Re-prepare rebuilds the link with the same entry id, so a use case set later reaches an existing draft.
+
+**Where the use case is chosen.** Gate 1 shows six chips under the idea, pre-selected from the idea's words ("suggested from the idea") and one click to change; the Story header carries a select at every gate; the caption screen carries the same select next to the platforms for a storyless piece. The build route copies the Story's use case onto every piece it mints; prepare copies the piece's onto every entry.
+
+### Decisions inside it
+
+- **A guess is shown, never silently stored.** `guessUseCase` matches whole cue words only and returns undefined on no hit. The create route falls back to the guess when the screen sent nothing, but the Story screen shows the result and one click changes it. A wrong default confirmed by a tired click is a mislabelled fortnight, so recall is deliberately low.
+- **No magnet, still a link.** The strategy's rule is "no magnet, no post". Two use cases have no magnet yet; their links land on the home page with the label intact. Refusing to prepare them would hide the gap; measuring it shows it.
+- **Stamped, not re-derived.** Like `publish_mode` and `timezone`, the use case is copied onto the entry when it is made, so relabelling a Story does not rewrite what a published post was counted under.
+- **The path is data, the origin is code.** A use case holds a path; `siteOrigin()` decides the host once, the same fallback `blueprintUrl` uses, so a staging build cannot bake a host into a stored link and the console on pam.polynize.ai cannot build a link to itself.
+- **Renamed for the linter.** `useCaseLabel` and `useCaseFor` read as React hooks to `rules-of-hooks`; they are `labelForUseCase` and `findUseCase`.
+
+### Not in this step
+
+The site does not yet read the label (step 2), so a click today still lands unrecorded. The console does not yet read the numbers back (step 3). Tests: `lib/marketing/__tests__/attribution.test.ts`, 38 assertions, chained into `npm run test:marketing`.

@@ -28,6 +28,12 @@ export type HandPost = {
   copy: string;
   /** The link, which belongs in the first comment rather than the post body. */
   firstComment?: string;
+  /**
+   * THE POST'S TRACKED LINK (D96), printed when it is NOT already the first comment. On Instagram
+   * and TikTok a caption link is not clickable, so this is the one he pastes into that post's
+   * ManyChat flow or into his own reply; on YouTube it goes in the description.
+   */
+  link?: string;
   media: string[];
   /** Local wall-clock the wave planned it for, purely as a suggestion to him. */
   when?: string;
@@ -97,6 +103,9 @@ export async function sendHandPostBrief(
         p.copy,
       ];
       if (p.firstComment) lines.push('', `FIRST COMMENT: ${p.firstComment}`);
+      if (p.link && p.link !== p.firstComment) {
+        lines.push('', `LINK (for ManyChat or your reply, never the caption): ${p.link}`);
+      }
       if (p.media.length) lines.push('', `MEDIA: ${p.media.join('  ')}`);
       return lines.join('\n');
     });
@@ -120,6 +129,11 @@ ${posts
 ${
   p.firstComment
     ? `<p style="margin:12px 0 0"><span style="font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:#6f7a72">First comment</span><br><span style="white-space:pre-wrap">${escapeHtml(p.firstComment)}</span></p>`
+    : ''
+}
+${
+  p.link && p.link !== p.firstComment
+    ? `<p style="margin:12px 0 0"><span style="font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:#6f7a72">Link, for ManyChat or your reply</span><br><a href="${escapeHtml(p.link)}" style="color:#0f7d61;word-break:break-all">${escapeHtml(p.link)}</a></p>`
     : ''
 }
 ${
@@ -166,6 +180,7 @@ export function handPostFromEntry(entry: CalendarEntry): HandPost {
     // Kept separate from the body on purpose: the link goes in the first comment, which is the
     // whole reason this field is separate from the copy he long-presses to select.
     firstComment: entry.first_comment?.trim() || undefined,
+    link: entry.link?.trim() || undefined,
     media: entry.media ?? [],
     // 'YYYY-MM-DDTHH:mm:ss' to something readable, without pulling in a date library.
     when: entry.scheduled_at
