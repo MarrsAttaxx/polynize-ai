@@ -193,6 +193,8 @@ export async function POST(
       });
       const labelled = {
         ...(piece.use_case ? { use_case: piece.use_case } : {}),
+        // The post type, for the leaderboard (D99): a storyless piece's frame is its format.
+        frame: piece.format,
         link,
         ...(channel === 'linkedin' ? { first_comment: link } : {}),
       };

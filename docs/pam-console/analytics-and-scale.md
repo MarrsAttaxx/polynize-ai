@@ -24,9 +24,9 @@ On day one a viewer commented "Map", ManyChat sent them a lead magnet, they comp
 | 2. polynize.ai remembers the label | **Built and live, 5 September (D97).** Works today for every labelled arrival. **One thing only Marrs can do:** paste `supabase/migrations/0014_lead_attribution.sql` into the Supabase SQL editor (Supabase dashboard → SQL Editor → New query → paste → Run). Until then leads still land, without their label, and the server log says so. |
 | 3. The console reads the numbers back | **Built, 5 September (D98).** Clicks, Leads and Bookings tiles; a By use case table with posts per lead; clicks and leads per post; the url join; Pull now runs it as a sixth step and a nightly job runs it at 3:10am Sydney. **First proof is the first Pull now on the live console:** a number, or a sentence saying which key is wrong. |
 | 4. Every Story is filed under a use case | **Built and live, 5 September (D96).** Six chips at Gate 1 with April's suggestion; a select on the Story screen and the caption screen. |
-| 5. The leaderboard | Next. |
+| 5. The leaderboard | **Built, 5 September (D99).** "What to make more of" on the analytics panel: post types ranked by leads per post within a use case, posts behind each row printed, under three faded. Ranks by median reach until the first lead is recorded, and says so. |
 | 6. The lead carries its use case | **Built and live, 5 September (D97).** Use case only; no partner field (Marrs, 5 September: partner routing is an internal decision and stays open). A chip on each CRM row. Needs the same SQL as step 2. |
-| 7. Winners repeat themselves | Last. |
+| 7. Winners repeat themselves | Next. |
 
 ### The seven steps, what you see, what it answers
 

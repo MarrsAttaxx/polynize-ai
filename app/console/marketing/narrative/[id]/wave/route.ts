@@ -439,6 +439,8 @@ export async function POST(
             owner,
             stream: narrative.lane,
             ...(narrative.use_case ? { use_case: narrative.use_case } : {}),
+            // The post type, for the leaderboard (D99): the kit output this entry is.
+            frame: output.id,
             link,
             ...(linkInFirstComment ? { first_comment: link } : {}),
             piece_id: piece.piece_id,

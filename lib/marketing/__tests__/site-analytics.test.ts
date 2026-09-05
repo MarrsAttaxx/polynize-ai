@@ -14,6 +14,7 @@ import {
   type SiteWindow,
 } from '../site-analytics';
 import { publicUrlFor } from '../url-join';
+import { frameLadder, median } from '../frame-ladder';
 
 let n = 0;
 const ok = (c: unknown, msg: string) => {
@@ -151,5 +152,62 @@ eq(Object.keys(stored?.windows ?? {}), ['30'], 'a malformed window is dropped, t
 eq(stored?.windows['30'].use_cases.hiring_manager, { visits: 120, completions: 6, bookings: 2 }, 'numbers survive the round trip');
 eq(stored?.error_kind, undefined, 'an unknown error kind is dropped');
 eq(normalizeSiteAnalytics({ windows: {} }), null, 'no pulled_at means nothing was pulled');
+
+/* ------------------------------------------------------------------ the leaderboard */
+
+eq(median([]), undefined, 'no values, no median');
+eq(median([5]), 5, 'one value');
+eq(median([1, 100, 3]), 3, 'odd count: the middle, unmoved by the runaway');
+eq(median([1, 3, 5, 100]), 4, 'even count: the mean of the two middles');
+
+const lentries = [
+  { entry_id: 'a1', frame: 'li_contrarian', use_case: 'hiring_manager', scheduled_at: '2026-08-20T09:00:00', status: 'published' as const },
+  { entry_id: 'a2', frame: 'li_contrarian', use_case: 'hiring_manager', scheduled_at: '2026-08-22T09:00:00', status: 'published' as const },
+  { entry_id: 'a3', frame: 'li_contrarian', use_case: 'hiring_manager', scheduled_at: '2026-08-24T09:00:00', status: 'scheduled' as const },
+  { entry_id: 'b1', frame: 'ig_reel', use_case: 'hiring_manager', scheduled_at: '2026-08-21T09:00:00', status: 'published' as const },
+  { entry_id: 'b2', frame: 'ig_reel', use_case: 'hiring_manager', scheduled_at: '2026-08-23T09:00:00', status: 'published' as const },
+  { entry_id: 'c1', frame: undefined, use_case: 'hiring_manager', scheduled_at: '2026-08-25T09:00:00', status: 'published' as const },
+  { entry_id: 'd1', frame: 'li_contrarian', use_case: 'sales_lead', scheduled_at: '2026-08-25T09:00:00', status: 'published' as const },
+  { entry_id: 'x1', frame: 'li_contrarian', use_case: 'hiring_manager', scheduled_at: '2026-08-25T09:00:00', status: 'draft' as const },
+  { entry_id: 'x2', frame: 'li_contrarian', use_case: 'hiring_manager', scheduled_at: '2026-06-01T09:00:00', status: 'published' as const },
+];
+const label = (f: string) => ({ li_contrarian: 'Contrarian post', ig_reel: 'Reel', unlabelled: 'Unlabelled' })[f] ?? f;
+const lwin: SiteWindow = {
+  since: '2026-08-07',
+  until: '2026-09-05',
+  entries: { a1: { completions: 1 }, a2: { completions: 2 }, b1: { completions: 4 } },
+  use_cases: {},
+};
+const lposts = new Map([
+  ['a1', { id: 'p1', network: 'linkedin', text: '', impressions: 100 }],
+  ['a2', { id: 'p2', network: 'linkedin', text: '', impressions: 5000 }],
+  ['a3', { id: 'p3', network: 'linkedin', text: '', impressions: 120 }],
+  ['b1', { id: 'p4', network: 'instagram', text: '', impressions: 900 }],
+]);
+
+const L = frameLadder(lentries, { useCase: 'hiring_manager', from: '2026-08-07', to: '2026-09-05', win: lwin, postsByEntry: lposts, label });
+eq(L.ranked_by, 'completions', 'with leads recorded, the ladder ranks by leads per post');
+eq(L.rows.map((r) => r.frame), ['ig_reel', 'li_contrarian', 'unlabelled'], 'reel (2 leads a post) above contrarian (1 a post) above unlabelled');
+const contrarian = L.rows[1];
+eq(contrarian.n, 3, 'drafts and out-of-window posts are not on the rung');
+eq(contrarian.completions, 3, 'leads summed over the rung');
+eq(contrarian.completions_per_post, 1, 'one lead a post');
+eq(contrarian.median_impressions, 120, 'median reach ignores the 5000 runaway');
+ok(!contrarian.thin, 'three posts is not thin');
+ok(L.rows[0].thin, 'two posts is thin, and still shown');
+eq(L.rows[0].label, 'Reel', 'labels come from the caller');
+eq(L.rows[2].completions, undefined, 'a rung with nothing reported has absent leads, not zero');
+
+const noLeads = frameLadder(lentries, { useCase: 'hiring_manager', from: '2026-08-07', to: '2026-09-05', postsByEntry: lposts, label });
+eq(noLeads.ranked_by, 'impressions', 'with no leads recorded, median reach ranks');
+eq(noLeads.rows[0].frame, 'ig_reel', 'reel 900 median beats contrarian 120');
+
+const nothing = frameLadder(lentries, { useCase: 'hiring_manager', from: '2026-08-07', to: '2026-09-05', label });
+eq(nothing.ranked_by, 'posts', 'with nothing reported, the count of posts ranks');
+eq(nothing.rows[0].frame, 'li_contrarian', 'three contrarian posts outrank two reels when nothing else is known');
+
+const all = frameLadder(lentries, { from: '2026-08-07', to: '2026-09-05', win: lwin, postsByEntry: lposts, label });
+eq(all.rows.find((r) => r.frame === 'li_contrarian')?.n, 4, 'no use case filter counts every use case together');
+eq(frameLadder([], { from: '2026-08-07', to: '2026-09-05', label }).rows, [], 'nothing in, nothing out');
 
 console.log(`site-analytics: ${n} assertions passed`);

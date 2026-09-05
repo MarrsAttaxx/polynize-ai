@@ -51,7 +51,16 @@ import {
   type SiteAnalytics,
 } from '@/lib/marketing/site-analytics';
 import { labelForUseCase } from '@/lib/marketing/use-case';
+import { frameLadder } from '@/lib/marketing/frame-ladder';
+import { outputById } from '@/lib/marketing/kit';
+import { formatById } from '@/lib/marketing/output-plan';
 import s from './analytics.module.css';
+
+/** A frame's name for the ladder: the kit's post label, else the format's label, else the id. */
+function frameLabel(frame: string): string {
+  if (frame === 'unlabelled') return 'Unlabelled (older posts)';
+  return outputById(frame)?.postLabel ?? formatById(frame)?.label ?? frame;
+}
 
 /** The slice of a calendar entry the panel needs: enough to count posts and join numbers to them. */
 export type EntryLite = {
@@ -59,6 +68,7 @@ export type EntryLite = {
   channel: string;
   title: string;
   use_case?: string;
+  frame?: string;
   scheduled_at?: string;
   status: 'draft' | 'scheduled' | 'published';
   public_url?: string;
@@ -87,6 +97,8 @@ export function AnalyticsView({
   const [range, setRange] = useState<RangeId>('90');
   const [hoverBucket, setHoverBucket] = useState<number | null>(null);
   const [hoverSeg, setHoverSeg] = useState<string | null>(null);
+  /** Which use case the leaderboard shows. '' means every post together. */
+  const [ladderUseCase, setLadderUseCase] = useState<string>('');
 
   const days = RANGES.find((r) => r.id === range)!.days;
   const from = rangeStart(today, days);
@@ -122,12 +134,43 @@ export function AnalyticsView({
    * clicks and leads the site recorded for that exact post. A post with no joined entry has no
    * site numbers to show and says so with a blank, not a zero.
    */
+  const postsByEntry = useMemo(
+    () => joinPostsToEntries(slices.flatMap((sl) => sl.posts), entries),
+    [slices, entries]
+  );
   const entryByPostId = useMemo(() => {
-    const joined = joinPostsToEntries(slices.flatMap((sl) => sl.posts), entries);
     const out = new Map<string, string>();
-    for (const [entryId, post] of joined) out.set(post.id, entryId);
+    for (const [entryId, post] of postsByEntry) out.set(post.id, entryId);
     return out;
-  }, [slices, entries]);
+  }, [postsByEntry]);
+
+  /**
+   * THE LEADERBOARD (D99): post types ranked, within the chosen use case, by leads per post when
+   * the site has recorded any, by median reach until then. Only use cases that have posts in the
+   * range are offered, so the buttons never lead to an empty table.
+   */
+  const ladderChoices = useMemo(() => {
+    const seen = new Set<string>();
+    for (const e of entries) {
+      if (e.status === 'draft' || !e.scheduled_at) continue;
+      const day = e.scheduled_at.slice(0, 10);
+      if (day < from || day > today) continue;
+      seen.add(e.use_case ?? 'none');
+    }
+    return [...seen].sort();
+  }, [entries, from, today]);
+  const ladder = useMemo(
+    () =>
+      frameLadder(entries, {
+        useCase: ladderUseCase || undefined,
+        from,
+        to: today,
+        win: siteWin,
+        postsByEntry,
+        label: frameLabel,
+      }),
+    [entries, ladderUseCase, from, today, siteWin, postsByEntry]
+  );
   /**
    * ONLY THE STREAMS THAT ACTUALLY CONTRIBUTED (D89). A legend naming a colour that appears in no
    * bar is a legend making a claim the chart does not support: on the engine page two of five
@@ -258,6 +301,76 @@ export function AnalyticsView({
               <p className={s.tableNote}>
                 Posts are counted from the calendar. Clicks, leads and bookings are what polynize.ai
                 recorded from those posts&apos; links. A blank means the site has not reported it, not zero.
+              </p>
+            </div>
+          ) : null}
+
+          {ladder.rows.length > 0 ? (
+            <div className={s.block}>
+              <h3 className={s.blockTitle}>What to make more of</h3>
+              <div className={s.filters} role="group" aria-label="Leaderboard use case">
+                <button
+                  type="button"
+                  className={`${s.filterBtn} ${ladderUseCase === '' ? s.filterOn : ''}`}
+                  aria-pressed={ladderUseCase === ''}
+                  onClick={() => setLadderUseCase('')}
+                >
+                  Every use case
+                </button>
+                {ladderChoices.map((u) => (
+                  <button
+                    key={u}
+                    type="button"
+                    className={`${s.filterBtn} ${ladderUseCase === u ? s.filterOn : ''}`}
+                    aria-pressed={ladderUseCase === u}
+                    onClick={() => setLadderUseCase(u)}
+                  >
+                    {u === 'none' ? 'No use case' : labelForUseCase(u)}
+                  </button>
+                ))}
+                <span className={s.filterNote}>
+                  {ladder.ranked_by === 'completions'
+                    ? 'ranked by leads per post'
+                    : ladder.ranked_by === 'impressions'
+                      ? 'ranked by median reach, until a lead is recorded'
+                      : 'ranked by how many were posted; no numbers reported yet'}
+                </span>
+              </div>
+              <div className={s.tableScroll}>
+                <table className={s.table}>
+                  <thead>
+                    <tr>
+                      <th scope="col">Post type</th>
+                      <th scope="col" className={s.num}>Posts</th>
+                      <th scope="col" className={s.num}>Leads</th>
+                      <th scope="col" className={s.num} title="Lead magnets completed, divided by posts of this type">
+                        Leads per post
+                      </th>
+                      <th scope="col" className={s.num} title="The middle post's impressions, so one runaway post cannot flatter the type">
+                        Median reach
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {ladder.rows.map((r) => (
+                      <tr
+                        key={r.frame}
+                        className={r.thin ? s.rowMuted : undefined}
+                        title={r.thin ? 'Fewer than three posts: a rumour, not a result yet.' : undefined}
+                      >
+                        <td>{r.label}</td>
+                        <td className={s.num}>{r.n}</td>
+                        <td className={s.num}>{r.completions === undefined ? '' : r.completions}</td>
+                        <td className={s.num}>{r.completions_per_post === undefined ? '' : r.completions_per_post}</td>
+                        <td className={s.num}>{r.median_impressions === undefined ? '' : compactNumber(r.median_impressions)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <p className={s.tableNote}>
+                Faded rows have fewer than three posts behind them. The top row is the post type to
+                make more of for this use case; a blank means nothing was reported, not zero.
               </p>
             </div>
           ) : null}

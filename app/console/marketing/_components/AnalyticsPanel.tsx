@@ -89,6 +89,7 @@ export async function AnalyticsPanel({
         channel: e.channel,
         title: e.title,
         use_case: e.use_case,
+        frame: e.frame,
         scheduled_at: e.scheduled_at,
         status: e.status,
         public_url: e.public_url,

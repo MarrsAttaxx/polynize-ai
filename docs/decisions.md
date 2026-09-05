@@ -2872,3 +2872,28 @@ The site does not yet read the label (step 2), so a click today still lands unre
 - **Unverified until the first real pull.** The Vercel row shapes were read from their documentation on 5 September, not from a live response, and `rowsToMap` reads the dimension by exclusion (any key that is not a metric) for that reason. The first Pull now on production is the test; the panel prints the failure kind if it is wrong.
 
 Tests: `site-analytics.test.ts`, 29 assertions, chained into `npm run test:marketing`.
+
+
+## D99: The leaderboard
+
+**Adopted 5 September 2026.** Step 5 of the plan in `docs/pam-console/analytics-and-scale.md`: the decision screen. Marrs: *"The complexity that we're creating is driving a simple decision, which is more content, more of what content, equals more leads."*
+
+### What was built
+
+**Every entry knows its post type.** `frame` on the calendar entry: the kit output id the wave made it from (contrarian post, reel two of three), or the piece's format for a piece with no Story. Stamped at creation like `use_case`, `publish_mode` and `timezone`. Older entries have none and show as "Unlabelled (older posts)" rather than vanishing.
+
+**The ladder** (`lib/marketing/frame-ladder.ts`, pure). Within one use case, or every use case together, the post types ranked with `n` printed on every rung. **Leads per post is the ranking when the site has recorded a lead in the window; median reach per post until then; the count of posts when nothing has been reported at all**, and the table says which of the three it is using. A frame that earns reach and no leads is entertainment, but a ladder with no completions anywhere would rank every frame equal, so the fallback exists and is named.
+
+**Median, not mean**, for reach: one post that travelled makes a mean lie about the type.
+
+**Under three posts is faded, not hidden.** A frame with two posts behind it is a rumour, not a result. Hiding it would hide what has not been tried yet, which is the other half of the decision.
+
+**On the panel**, above the platform bars: "What to make more of", with one button per use case that has posts in the range plus "Every use case", and the table: Post type, Posts, Leads, Leads per post, Median reach. The top row is the answer.
+
+### Decisions inside it
+
+- **Labels come from the caller.** The pure module knows nothing about the kit or the formats; the view resolves a frame id to the kit's `postLabel`, else the format's `label`, else the id. So the ladder is testable with three fake frames and the kit can rename a post without touching it.
+- **Only use cases with posts in the range are offered**, so no button leads to an empty table.
+- **Same window as everything else on the panel.** The range buttons scope the ladder too, and the site's numbers come from the stored window for that range; nothing here calls out.
+
+Tests in `site-analytics.test.ts` (now 51 assertions): ranking by each of the three metrics, the median against a runaway post, drafts and out-of-window posts off the rung, thin rows shown and marked, labels from the caller.

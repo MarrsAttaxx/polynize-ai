@@ -115,6 +115,13 @@ export type CalendarEntry = {
    * D85's inferred "Posted" into a confirmed one.
    */
   public_url?: string;
+  /**
+   * WHICH POST TYPE THIS IS (D99): the kit output id the wave made it from (contrarian post, reel
+   * two of three), or the piece's format for a piece with no Story. The leaderboard groups by it.
+   * Stamped at creation like everything else decided while authoring. Absent on older entries,
+   * which the ladder shows as "unlabelled" rather than dropping.
+   */
+  frame?: string;
   created_at: string;
   updated_at?: string;
 };
