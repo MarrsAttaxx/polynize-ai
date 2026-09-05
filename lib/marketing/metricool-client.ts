@@ -306,6 +306,48 @@ export type McProbe = {
   error?: string;
 };
 
+/**
+ * A POST that reports its status instead of throwing (D100), for the autolist calls whose request
+ * shapes their spec does not document: the status and body ARE the answer, and the operator needs
+ * to read them. Query params are supported because their `/lists/*` family takes most inputs that
+ * way, even on POST.
+ */
+export async function mcProbePost(
+  path: string,
+  opts: { blogId?: string; params?: Record<string, string>; body?: unknown } = {}
+): Promise<McProbe> {
+  const c = creds();
+  const shown = `${BASE_URL}${path}`;
+  if (!c) {
+    return { path, url: shown, status: null, contentType: null, bodyHead: '', error: 'Metricool is not configured.' };
+  }
+  const url = new URL(shown);
+  url.searchParams.set('userId', c.userId);
+  if (opts.blogId) url.searchParams.set('blogId', opts.blogId);
+  for (const [k, v] of Object.entries(opts.params ?? {})) url.searchParams.set(k, v);
+  const safeUrl = url.toString();
+  try {
+    const res = await fetch(safeUrl, {
+      method: 'POST',
+      headers: { 'X-Mc-Auth': c.token, Accept: 'application/json', 'Content-Type': 'application/json' },
+      body: opts.body !== undefined ? JSON.stringify(opts.body) : undefined,
+    });
+    const contentType = res.headers.get('content-type');
+    const text = await res.text().catch(() => '');
+    let json: unknown;
+    if (contentType?.includes('json')) {
+      try {
+        json = JSON.parse(text);
+      } catch {
+        json = undefined;
+      }
+    }
+    return { path, url: safeUrl, status: res.status, contentType, json, bodyHead: text.slice(0, 600) };
+  } catch (e) {
+    return { path, url: safeUrl, status: null, contentType: null, bodyHead: '', error: e instanceof Error ? e.message : String(e) };
+  }
+}
+
 export async function mcProbeGet(
   path: string,
   opts: { blogId?: string; params?: Record<string, string> } = {}

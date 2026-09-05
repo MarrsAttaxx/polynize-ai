@@ -227,6 +227,45 @@ export function CalendarBoard({
     }
   };
 
+  /**
+   * MAKE EVERGREEN (D100): put a published post on the repeating Metricool list for its stream and
+   * network. The route answers with every step it took as sentences, printed under the entry,
+   * because the autolist API is the least documented thing this console calls and the first press
+   * on a real post is the proof.
+   */
+  const makeEvergreen = async (entry: CalendarEntry) => {
+    if (
+      !window.confirm(
+        `Make this ${channelLabel(entry.channel)} post evergreen? It goes on a repeating Metricool list for ${streamLabel(entry.stream)} on ${channelLabel(entry.channel)}, posting once a day at a quiet time with two rewrites by April so the cycles differ. You can edit or switch the list off in Metricool at any time.`
+      )
+    ) {
+      return;
+    }
+    setBusy(entry.entry_id);
+    setErr(entry.entry_id, null);
+    setNote(entry.entry_id, null);
+    try {
+      const res = await fetch(entryUrl(entry.entry_id) + '/evergreen', { method: 'POST' });
+      const b = (await res.json().catch(() => null)) as
+        | { ok?: boolean; steps?: string[]; error?: string; list_id?: string; item_ids?: string[] }
+        | null;
+      const said = (b?.steps ?? []).join(' ');
+      if (!res.ok || !b?.ok) {
+        setErr(entry.entry_id, `${b?.error ?? 'Could not make it evergreen.'}${said ? ` (${said})` : ''}`);
+        return;
+      }
+      if (b.list_id) {
+        const evergreen = { list_id: b.list_id, item_ids: b.item_ids ?? [], added_at: new Date().toISOString() };
+        setEntries((es) => es.map((x) => (x.entry_id === entry.entry_id ? { ...x, evergreen } : x)));
+      }
+      setNote(entry.entry_id, said || 'Evergreen.');
+    } catch {
+      setErr(entry.entry_id, 'Network error. Try again.');
+    } finally {
+      setBusy(null);
+    }
+  };
+
   const addToQueue = async (entry: CalendarEntry) => {
     if (
       /**
@@ -471,6 +510,25 @@ export function CalendarBoard({
               <a className={s.entryLink} href={e.metricool_url} target="_blank" rel="noreferrer">
                 View in Metricool
               </a>
+            ) : null}
+            {/* EVERGREEN (D100), offered once the platform has the post (a public url, or it is
+                marked published) and it went through Metricool. A second press is a no-op. */}
+            {(e.public_url || e.status === 'published') && metricoolSupported && e.publish_mode !== 'manual' ? (
+              e.evergreen ? (
+                <span className={s.entryLinkMuted} title={`On Metricool autolist ${e.evergreen.list_id}, ${e.evergreen.item_ids.length} item${e.evergreen.item_ids.length === 1 ? '' : 's'}.`}>
+                  Evergreen ✓
+                </span>
+              ) : (
+                <button
+                  type="button"
+                  className={s.queueBtn}
+                  onClick={() => makeEvergreen(e)}
+                  disabled={busy === e.entry_id}
+                  title="Put this post on a repeating Metricool list for this stream and network."
+                >
+                  {busy === e.entry_id ? 'Working…' : 'Make evergreen'}
+                </button>
+              )
             ) : null}
             {!isScheduled && metricoolSupported ? (
               <>

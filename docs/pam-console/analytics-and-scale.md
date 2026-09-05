@@ -26,7 +26,7 @@ On day one a viewer commented "Map", ManyChat sent them a lead magnet, they comp
 | 4. Every Story is filed under a use case | **Built and live, 5 September (D96).** Six chips at Gate 1 with April's suggestion; a select on the Story screen and the caption screen. |
 | 5. The leaderboard | **Built, 5 September (D99).** "What to make more of" on the analytics panel: post types ranked by leads per post within a use case, posts behind each row printed, under three faded. Ranks by median reach until the first lead is recorded, and says so. |
 | 6. The lead carries its use case | **Built and live, 5 September (D97).** Use case only; no partner field (Marrs, 5 September: partner routing is an internal decision and stays open). A chip on each CRM row. Needs the same SQL as step 2. |
-| 7. Winners repeat themselves | Next. |
+| 7. Winners repeat themselves | **Built, 5 September (D100).** "Make evergreen" on a published calendar entry puts it on a repeating Metricool autolist for that stream and network, with two rewrites by April so the cycles differ. Every step is printed under the entry. **First real press is the test**, as with every Metricool feature here. |
 
 ### The seven steps, what you see, what it answers
 

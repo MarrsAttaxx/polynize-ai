@@ -211,3 +211,30 @@ eq(all.rows.find((r) => r.frame === 'li_contrarian')?.n, 4, 'no use case filter 
 eq(frameLadder([], { from: '2026-08-07', to: '2026-09-05', label }).rows, [], 'nothing in, nothing out');
 
 console.log(`site-analytics: ${n} assertions passed`);
+
+/* ------------------------------------------------------------------ evergreen (D100) */
+
+import { evergreenSlotTime, newestListId, itemIds, parseVariants } from '../evergreen';
+
+eq(evergreenSlotTime(['07:30', '12:00']), '13:30', 'six hours after the first slot');
+eq(evergreenSlotTime(['20:00']), '02:00', 'wraps past midnight');
+eq(evergreenSlotTime([]), '15:00', 'no slots: six hours after the 09:00 default');
+eq(evergreenSlotTime(['bad', '10:15']), '16:15', 'malformed times are ignored');
+
+eq(newestListId([{ id: 3 }, { id: 9 }, { id: 5, deleted: true }], new Set(['3'])), '9', 'the highest id we did not already know, skipping deleted');
+eq(newestListId({ id: '12' }, new Set()), '12', 'a single object is accepted, and string ids too');
+eq(newestListId([{ id: 3 }], new Set(['3'])), undefined, 'nothing new is undefined');
+eq(newestListId(null, new Set()), undefined, 'no body is undefined');
+
+const items = [{ id: 1, text: 'hello there' }, { id: 2, text: 'other' }, { id: 3 }];
+eq(itemIds(items), ['1', '2', '3'], 'every item id as a string');
+eq(itemIds(items, ['hello there']), ['1'], 'filtered to our texts, trimmed');
+eq(itemIds('nope'), [], 'a non-array is no items');
+
+eq(parseVariants('["A second way", "A third way"]', 'The post'), ['The post', 'A second way', 'A third way'], 'original first, then the rewrites');
+eq(parseVariants('Sure! Here: ["A second way"] hope that helps', 'The post'), ['The post', 'A second way'], 'chatter around the array is tolerated');
+eq(parseVariants('not json at all', 'The post'), ['The post'], 'garbage degrades to the original alone');
+eq(parseVariants('["The post", "", "New"]', 'The post'), ['The post', 'New'], 'duplicates of the original and blanks are dropped');
+eq(parseVariants('["a","b","c","d"]', 'o', 3), ['o', 'a', 'b'], 'capped');
+
+console.log(`evergreen: ${n} assertions total`);

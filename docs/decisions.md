@@ -2896,4 +2896,26 @@ Tests: `site-analytics.test.ts`, 29 assertions, chained into `npm run test:marke
 - **Only use cases with posts in the range are offered**, so no button leads to an empty table.
 - **Same window as everything else on the panel.** The range buttons scope the ladder too, and the site's numbers come from the stored window for that range; nothing here calls out.
 
-Tests in `site-analytics.test.ts` (now 51 assertions): ranking by each of the three metrics, the median against a runaway post, drafts and out-of-window posts off the rung, thin rows shown and marked, labels from the caller.
+Tests in `site-analytics.test.ts` (now 49 assertions): ranking by each of the three metrics, the median against a runaway post, drafts and out-of-window posts off the rung, thin rows shown and marked, labels from the caller.
+
+
+## D100: Winners repeat themselves
+
+**Adopted 5 September 2026.** Step 7 of the plan in `docs/pam-console/analytics-and-scale.md`, the last one. Marrs: *"If we find one type of content that's working, we create a channel specifically for that content and double down."* The leaderboard (D99) says what is working; this is the double down.
+
+### What was built
+
+**"Make evergreen" on a published calendar entry.** One press puts the post on a Metricool autolist that repeats: one list per stream per network, made the first time and remembered in `pam/config/autolists.json`, named "Evergreen · Marrs · LinkedIn", that network only, repeat on, shortener off, with the same per-network tokens the scheduler needed (Reel, TikTok privacy, YouTube privacy and type) set at list level where their API keeps them. One posting time, every day, six hours after the network's first configured slot, so the fresh queue's times are never contested. The entry records `evergreen: { list_id, item_ids, added_at }` so the recycled post still joins back to its frame and use case.
+
+**Three variants, not one.** Metricool's fair use policy names "repetitive publication of identical content" as the thing they act on, and a repeating list of one text is exactly that. April writes two rewrites in the stream's voice; the list cycles through three. If she fails, the original goes on alone and the run says so.
+
+**Every step is a sentence, and the last step reads the list back.** Their `/lists/*` family is the old planner API: mutations are GETs with query parameters, the spec documents no request bodies, and every summary is blank. So the promotion is a sequence of probe calls (`mcProbePost` added alongside `mcProbeGet`), each reporting its status, and it finishes by reading `/lists/posts` to confirm the text landed rather than trusting a 200. The operator sees the steps under the entry. **The first press on a real post is the test**, exactly as with every other Metricool feature here; if a shape is wrong, the sentence says which call and what came back.
+
+### Decisions inside it
+
+- **No link in the text.** A list item is text and media only, with no first comment, and the kit puts LinkedIn links in the first comment for a measured reason. So evergreen items carry the caption's own call to action ("comment MAP") and no url. Their reach shows in the brand feed; their clicks arrive through ManyChat like everyone else's; their attribution is the use case on the entry, not a label on a link. Said here so nobody later wonders why evergreen clicks are missing from the per-post table.
+- **The console never rewrites a list's timing after making it.** The time is a starting point; if Marrs moves it in Metricool's UI, that stands.
+- **A deleted list is recognised and remade.** `getlist` is read before reuse; a 404 or `deleted: true` makes a new one rather than adding posts into the void.
+- **A second press is a no-op** that says "Already evergreen."
+
+Tests: the pure half (`evergreen.ts`: the quiet slot, reading list and item ids, parsing April's variants) in `site-analytics.test.ts`, now 65 assertions.

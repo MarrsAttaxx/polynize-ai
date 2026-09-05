@@ -122,6 +122,17 @@ export type CalendarEntry = {
    * which the ladder shows as "unlabelled" rather than dropping.
    */
   frame?: string;
+  /**
+   * PROMOTED TO EVERGREEN (D100): this post now also lives in a Metricool autolist that repeats on
+   * its network's quiet slots. The list and item ids are kept so the recycled post still joins back
+   * to this entry's frame and use case, and so it can be taken out again.
+   */
+  evergreen?: {
+    list_id: string;
+    /** One item per copy variant April wrote, so the cycles are not identical text. */
+    item_ids: string[];
+    added_at: string;
+  };
   created_at: string;
   updated_at?: string;
 };
