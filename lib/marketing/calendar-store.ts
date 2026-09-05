@@ -107,6 +107,14 @@ export type CalendarEntry = {
    * post_copy, because the copy is the operator's words and the kit says where links live.
    */
   link?: string;
+  /**
+   * WHERE THE POST ACTUALLY IS (D98): the platform's public url, read back from Metricool after
+   * publication (`GET /v2/scheduler/posts`, `providers[].publicUrl`). Two things hang off it: the
+   * analytics feed's rows carry the same url, so this is the exact join from a Metricool number to
+   * our entry; and its presence is the platform confirming the post exists, which is what turns
+   * D85's inferred "Posted" into a confirmed one.
+   */
+  public_url?: string;
   created_at: string;
   updated_at?: string;
 };
@@ -149,6 +157,19 @@ export async function listEntries(owner: string): Promise<CalendarEntry[]> {
     })
     .map((r) => (r as { state: unknown }).state)
     .filter(isValidEntry);
+}
+
+/**
+ * EVERY ENTRY, EVERY OWNER. For the nightly jobs (the url join, the site numbers) which run with
+ * no signed-in user and have to see the whole calendar. Malformed rows are dropped as everywhere.
+ */
+export async function listAllEntries(): Promise<CalendarEntry[]> {
+  const { data, error } = await supabaseService()
+    .from('content_shoot_sheets')
+    .select('episode_id, state')
+    .like('episode_id', 'calendar/%');
+  if (error) throw new Error(`calendar list-all failed: ${error.message}`);
+  return (data ?? []).map((r) => (r as { state: unknown }).state).filter(isValidEntry);
 }
 
 /** All calendar entries for one piece (used to make prepare idempotent per channel). */

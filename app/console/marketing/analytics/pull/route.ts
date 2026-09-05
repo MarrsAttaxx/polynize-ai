@@ -22,6 +22,8 @@ import { NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/console-auth';
 import { isStreamId, STREAMS } from '@/lib/marketing/streams';
 import { pullStream, type PullResult } from '@/lib/marketing/analytics-pull';
+import { pullSite } from '@/lib/marketing/site-analytics-pull';
+import { joinPublishedUrls } from '@/lib/marketing/url-join';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -36,6 +38,22 @@ export async function POST(req: NextRequest) {
 
   const body = (await req.json().catch(() => null)) as { stream?: unknown } | null;
   const one = typeof body?.stream === 'string' ? body.stream : '';
+  /**
+   * THE SITE (D98). `{ stream: 'site' }` is the sixth step of a pull: the url join (which post is
+   * where), then Vercel's numbers per post and per use case. Reported in the same shape as a brand
+   * so the button can print it on the same line.
+   */
+  if (one === 'site') {
+    const join = await joinPublishedUrls();
+    const site = await pullSite();
+    const result: PullResult = {
+      stream: 'site',
+      ok: site.ok,
+      posts: join.joined,
+      error: site.error ?? (join.errors.length ? join.errors.join('; ') : undefined),
+    };
+    return NextResponse.json({ ok: true, pulled: join.joined, results: [result], join });
+  }
   if (one && !isStreamId(one)) {
     return NextResponse.json({ error: 'unknown stream' }, { status: 400 });
   }

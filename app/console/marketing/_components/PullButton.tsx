@@ -43,8 +43,11 @@ export function PullButton({ scope }: { scope: string }) {
   const [error, setError] = useState<string | null>(null);
 
   /** 'engine' means every stream, one request each. A stream page pulls only itself. */
-  const targets =
-    scope === 'engine' ? STREAMS.map((x) => ({ id: x.id, label: x.label })) : [{ id: scope, label: scope }];
+  /** Plus the site (D98): the url join and Vercel's numbers, last, because it reads what the brands wrote. */
+  const targets = [
+    ...(scope === 'engine' ? STREAMS.map((x) => ({ id: x.id, label: x.label })) : [{ id: scope, label: scope }]),
+    { id: 'site', label: 'polynize.ai' },
+  ];
 
   const pull = async () => {
     if (busy) return;
@@ -88,8 +91,11 @@ export function PullButton({ scope }: { scope: string }) {
           failures.push(`${t.label}: ${r?.error ?? 'nothing came back'}`);
           continue;
         }
-        posts += r.posts;
-        if (r.posts > 0) streams += 1;
+        // The site row reports urls joined, not posts pulled; it counts as a stream only if it did work.
+        if (t.id !== 'site') {
+          posts += r.posts;
+          if (r.posts > 0) streams += 1;
+        }
       } catch (e) {
         failures.push(
           `${t.label}: ${

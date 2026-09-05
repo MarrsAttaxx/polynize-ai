@@ -44,7 +44,25 @@ import {
   type StreamSlice,
 } from '@/lib/marketing/analytics-metrics';
 import { streamColorVar } from '@/lib/marketing/stream-colors';
+import {
+  joinPostsToEntries,
+  rowsByUseCase,
+  windowTotals,
+  type SiteAnalytics,
+} from '@/lib/marketing/site-analytics';
+import { labelForUseCase } from '@/lib/marketing/use-case';
 import s from './analytics.module.css';
+
+/** The slice of a calendar entry the panel needs: enough to count posts and join numbers to them. */
+export type EntryLite = {
+  entry_id: string;
+  channel: string;
+  title: string;
+  use_case?: string;
+  scheduled_at?: string;
+  status: 'draft' | 'scheduled' | 'published';
+  public_url?: string;
+};
 
 /** Chart geometry, fixed so no mark re-derives it. */
 const W = 760;
@@ -54,11 +72,17 @@ const PAD = { top: 14, right: 10, bottom: 26, left: 46 };
 export function AnalyticsView({
   slices,
   today,
+  site = null,
+  entries = [],
 }: {
   /** One entry per stream in scope. One on a stream page, five on the engine page. */
   slices: StreamSlice[];
   /** 'YYYY-MM-DD', from the server. See the note at the top about the clock. */
   today: string;
+  /** What the labelled links earned on polynize.ai (D98), or null when never pulled. */
+  site?: SiteAnalytics | null;
+  /** Our calendar entries in scope, for posts-per-use-case and the join to Metricool's rows. */
+  entries?: EntryLite[];
 }) {
   const [range, setRange] = useState<RangeId>('90');
   const [hoverBucket, setHoverBucket] = useState<number | null>(null);
@@ -83,6 +107,27 @@ export function AnalyticsView({
   }, [slices, from, today, days]);
 
   const { sum, series, stacks, scoped } = view;
+
+  /**
+   * THE SITE'S SIDE OF THE RANGE (D98). The pull stored one window per range, so this is a lookup,
+   * never a call. `siteWin` is undefined when the range was not pulled, and every number below
+   * then prints as absent rather than zero: the site not having told us is not the site saying
+   * nothing happened.
+   */
+  const siteWin = site?.windows[range];
+  const siteTotals = windowTotals(siteWin);
+  const rows = rowsByUseCase(entries, siteWin, from, today);
+  /**
+   * WHICH ENTRY EACH METRICOOL ROW IS, by public url, so the latest-posts table can show the
+   * clicks and leads the site recorded for that exact post. A post with no joined entry has no
+   * site numbers to show and says so with a blank, not a zero.
+   */
+  const entryByPostId = useMemo(() => {
+    const joined = joinPostsToEntries(slices.flatMap((sl) => sl.posts), entries);
+    const out = new Map<string, string>();
+    for (const [entryId, post] of joined) out.set(post.id, entryId);
+    return out;
+  }, [slices, entries]);
   /**
    * ONLY THE STREAMS THAT ACTUALLY CONTRIBUTED (D89). A legend naming a colour that appears in no
    * bar is a legend making a claim the chart does not support: on the engine page two of five
@@ -110,6 +155,23 @@ export function AnalyticsView({
       source: "The average of each post's own rate",
     },
     { label: 'Posts', value: String(sum.posts), source: 'Hand-posted content included' },
+    /* THE SITE'S THREE (D98). Clicks are page views from labelled links; leads are lead magnets
+       completed; bookings are discovery-call links pressed. All from polynize.ai, all by post. */
+    {
+      label: 'Clicks',
+      value: siteTotals.visits === undefined ? undefined : compactNumber(siteTotals.visits),
+      source: 'Visits to polynize.ai from labelled links',
+    },
+    {
+      label: 'Leads',
+      value: siteTotals.completions === undefined ? undefined : String(siteTotals.completions),
+      source: 'Lead magnets completed by those visitors',
+    },
+    {
+      label: 'Bookings',
+      value: siteTotals.bookings === undefined ? undefined : String(siteTotals.bookings),
+      source: 'Discovery-call links pressed by those visitors',
+    },
   ];
 
   return (
@@ -133,7 +195,7 @@ export function AnalyticsView({
         </span>
       </div>
 
-      {sum.posts === 0 ? (
+      {sum.posts === 0 && rows.length === 0 ? (
         <p className={s.mockWhy}>
           Nothing published in this range. The last 90 days is the widest the stored pull covers.
         </p>
@@ -157,6 +219,48 @@ export function AnalyticsView({
             hover={hoverBucket}
             onHover={setHoverBucket}
           />
+
+          {/* THE SENTENCE (D98). Marrs: "X amount of posts a week gets us X amount of discovery
+              calls for this particular use case." One row per use case: our posts in the range,
+              the site's clicks, leads and bookings for it, and posts per lead, which is the number
+              that turns into "double the posts". */}
+          {rows.length > 0 ? (
+            <div className={s.block}>
+              <h3 className={s.blockTitle}>By use case</h3>
+              <div className={s.tableScroll}>
+                <table className={s.table}>
+                  <thead>
+                    <tr>
+                      <th scope="col">Use case</th>
+                      <th scope="col" className={s.num}>Posts</th>
+                      <th scope="col" className={s.num}>Clicks</th>
+                      <th scope="col" className={s.num}>Leads</th>
+                      <th scope="col" className={s.num}>Bookings</th>
+                      <th scope="col" className={s.num} title="How many posts it took for one lead magnet completion">
+                        Posts per lead
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {rows.map((r) => (
+                      <tr key={r.use_case} className={r.posts === 0 ? s.rowMuted : undefined}>
+                        <td>{r.use_case === 'none' ? 'No use case' : labelForUseCase(r.use_case)}</td>
+                        <td className={s.num}>{r.posts}</td>
+                        <td className={s.num}>{r.visits === undefined ? '' : compactNumber(r.visits)}</td>
+                        <td className={s.num}>{r.completions === undefined ? '' : r.completions}</td>
+                        <td className={s.num}>{r.bookings === undefined ? '' : r.bookings}</td>
+                        <td className={s.num}>{r.posts_per_completion === undefined ? '' : r.posts_per_completion}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <p className={s.tableNote}>
+                Posts are counted from the calendar. Clicks, leads and bookings are what polynize.ai
+                recorded from those posts&apos; links. A blank means the site has not reported it, not zero.
+              </p>
+            </div>
+          ) : null}
 
           <div className={s.cols}>
             <div className={s.block}>
@@ -254,6 +358,12 @@ export function AnalyticsView({
                       <th scope="col" className={s.num}>
                         Engaged
                       </th>
+                      <th scope="col" className={s.num}>
+                        Clicks
+                      </th>
+                      <th scope="col" className={s.num}>
+                        Leads
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
@@ -288,6 +398,22 @@ export function AnalyticsView({
                         </td>
                         <td className={s.num}>
                           {p.engagement === undefined ? '—' : `${p.engagement.toFixed(1)}%`}
+                        </td>
+                        {/* From the site, by the entry this row joined to; blank when not joined or
+                            not reported, because a blank is honest and a zero is a claim. */}
+                        <td className={s.num}>
+                          {(() => {
+                            const eid = entryByPostId.get(p.id);
+                            const v = eid ? siteWin?.entries[eid]?.visits : undefined;
+                            return v === undefined ? '' : compactNumber(v);
+                          })()}
+                        </td>
+                        <td className={s.num}>
+                          {(() => {
+                            const eid = entryByPostId.get(p.id);
+                            const v = eid ? siteWin?.entries[eid]?.completions : undefined;
+                            return v === undefined ? '' : v;
+                          })()}
                         </td>
                       </tr>
                     ))}

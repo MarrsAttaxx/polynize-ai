@@ -27,8 +27,10 @@
  */
 
 import type { StreamSlice } from '@/lib/marketing/analytics-metrics';
+import { getSiteAnalytics } from '@/lib/marketing/site-analytics-store';
+import { listAllEntries } from '@/lib/marketing/calendar-store';
 import { PullButton } from './PullButton';
-import { AnalyticsView } from './AnalyticsView';
+import { AnalyticsView, type EntryLite } from './AnalyticsView';
 import s from './analytics.module.css';
 
 /**
@@ -51,7 +53,7 @@ import s from './analytics.module.css';
  * THE SPLIT IS THE POINT. An empty or failed pull is rendered by the server with no client bundle at
  * all, which is the common case on a stream nobody has pulled yet.
  */
-export function AnalyticsPanel({
+export async function AnalyticsPanel({
   scope,
   title,
   slices,
@@ -71,7 +73,32 @@ export function AnalyticsPanel({
 }) {
   const anyPosts = slices.some((sl) => sl.posts.length > 0);
 
-  if (!anyPosts) {
+  /**
+   * THE SITE'S SIDE (D98): what the labelled links earned, and our own entries so the numbers can
+   * be put against posts and use cases. Read here, once, because this is the server half; the view
+   * only filters. Both reads are tolerant: a failure is an absent block, never a broken panel.
+   */
+  const site = await getSiteAnalytics();
+  let entries: EntryLite[] = [];
+  try {
+    const all = await listAllEntries();
+    entries = all
+      .filter((e) => scope === 'engine' || e.stream === scope)
+      .map((e) => ({
+        entry_id: e.entry_id,
+        channel: e.channel,
+        title: e.title,
+        use_case: e.use_case,
+        scheduled_at: e.scheduled_at,
+        status: e.status,
+        public_url: e.public_url,
+      }));
+  } catch (err) {
+    console.error('[analytics.panel] entries read failed:', err);
+  }
+  const siteHasNumbers = Boolean(site && Object.keys(site.windows).length > 0);
+
+  if (!anyPosts && !siteHasNumbers) {
     return (
       <section className={s.wrap} aria-label={`${title} analytics`}>
         <div className={s.head}>
@@ -85,6 +112,7 @@ export function AnalyticsPanel({
               ? 'The last pull came back with no posts in the window. Either nothing has been published on this brand in the last 90 days, or the platform has not reported it yet.'
               : 'No numbers pulled yet. Press Pull now and this fills with what Metricool holds for the last 90 days, including posts published by hand.'}
         </p>
+        {site?.error ? <p className={s.mockWhy}>polynize.ai: {site.error}</p> : null}
       </section>
     );
   }
@@ -99,7 +127,9 @@ export function AnalyticsPanel({
         <PullButton scope={scope} />
       </div>
       {error ? <p className={s.mockWhy}>{error}</p> : null}
-      <AnalyticsView slices={slices} today={today} />
+      {/* Said, not hidden: the site's half can fail on its own (keys, token) while Metricool's half works. */}
+      {site?.error ? <p className={s.mockWhy}>polynize.ai: {site.error}</p> : null}
+      <AnalyticsView slices={slices} today={today} site={site} entries={entries} />
     </section>
   );
 }

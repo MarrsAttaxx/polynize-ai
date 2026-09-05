@@ -254,6 +254,16 @@
 
 /* The one piece with a real minimum width: three columns, two of them mono numerals that cannot
    wrap. It scrolls itself rather than pushing the page sideways. */
+/* The use-case table (D98): a row with no posts in the range is present but quiet. */
+.rowMuted {
+  opacity: 0.55;
+}
+.tableNote {
+  margin: 8px 0 0;
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--text-3);
+}
 .tableScroll {
   overflow-x: auto;
   /* Room for a scrollbar without it sitting on the last row. */

@@ -4,6 +4,10 @@
     {
       "path": "/api/cron/fireflies-digest",
       "schedule": "50 21 * * *"
+    },
+    {
+      "path": "/api/cron/analytics-pull",
+      "schedule": "10 17 * * *"
     }
   ]
 }

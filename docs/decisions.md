@@ -2848,3 +2848,27 @@ The site does not yet read the label (step 2), so a click today still lands unre
 - **Not middleware.** The site's middleware already rewrites hosts for the console; adding a marketing concern there is how one rewrite breaks another.
 - **No partner column.** Routing is a team decision made by hand for now, and partners do not use the CRM. Adding the column later is one line in a migration; adding it now would be deciding something Marrs has said is open.
 - **The one thing only Marrs can do:** paste `supabase/migrations/0014_lead_attribution.sql` into the Supabase SQL editor. Everything works without it; the label lands only with it.
+
+
+## D98: The console reads the numbers back
+
+**Adopted 5 September 2026.** Step 3 of the plan in `docs/pam-console/analytics-and-scale.md`, plus the url join and the nightly pull that were steps 3 and 7 of the engineering order. This is the step that uses the three keys Marrs put into Vercel.
+
+### What was built
+
+**The url join** (`lib/marketing/url-join.ts`). After a post has gone out, `GET /v2/scheduler/posts` for its brand over the last 90 days (full ISO datetimes, `start`/`end`, as metricool-api.md says) returns each post with `providers[].publicUrl`. For every entry with an `external_ref` and no `public_url`, the post is found by Metricool's integer id and the url for the entry's own network is stored (X is still `twitter` there). A stored url is also the platform confirming the post exists, so a `scheduled` entry whose time has passed becomes `published`: D85's inferred "Posted" is now confirmed when the join has run. Manual entries are skipped; they never went through Metricool.
+
+**The site pull** (`lib/marketing/vercel-analytics.ts`, `site-analytics-pull.ts`). Six questions per range, asked together, three ranges: visits by post (`by=utmContent`) and by use case (`by=utmCampaign`), `email_captured` events by `eventData/entry` and `eventData/use_case`, `booking_click` events the same way. Stored in `pam/analytics/site.json` as one window per range, so switching range on the panel is a lookup and never a call. Three failure kinds the panel can say: `unconfigured` (keys missing), `refused` (401/403), `failed`.
+
+**Where it shows.** Three new tiles: Clicks (visits from labelled links), Leads (lead magnets completed), Bookings (discovery-call links pressed). A new block, **By use case**: our posts in the range against the site's clicks, leads and bookings, and **posts per lead**, which is Marrs's sentence made a column: *"X amount of posts a week gets us X amount of discovery calls for this particular use case."* The latest-posts table gains Clicks and Leads per row, joined through the public url. A blank is "not reported"; nothing prints as zero unless the site said zero.
+
+**Pull now** gains a sixth step, polynize.ai, which runs the join and the site pull after the five brands. **A nightly cron** (`/api/cron/analytics-pull`, 17:10 UTC, 3:10am Sydney) does the same, authenticated exactly as the Fireflies digest.
+
+### Decisions inside it
+
+- **Posts are counted from our calendar, numbers from the site.** The site cannot know how many posts we made; we cannot know how many clicks they earned. Each side reports what it owns and the table puts them next to each other.
+- **One window per range in the store.** Six calls a window is cheap nightly and expensive on every render; storing three windows costs three small maps and makes the range buttons instant.
+- **Parallel within a window, sequential across windows.** The worst case (every call timing out) has to fit inside the route: 3 rounds of 20 seconds does; 18 in a row does not.
+- **Unverified until the first real pull.** The Vercel row shapes were read from their documentation on 5 September, not from a live response, and `rowsToMap` reads the dimension by exclusion (any key that is not a metric) for that reason. The first Pull now on production is the test; the panel prints the failure kind if it is wrong.
+
+Tests: `site-analytics.test.ts`, 29 assertions, chained into `npm run test:marketing`.

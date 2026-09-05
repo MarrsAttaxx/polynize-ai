@@ -17,6 +17,7 @@
 | Update post | `PUT /v2/scheduler/posts/{id}` | Same body shape (partial). |
 | Delete post | `DELETE /v2/scheduler/posts/{id}` | |
 | Calendar events | `GET /v2/scheduler/calendar/events` | (read) |
+| List scheduled posts | `GET /v2/scheduler/posts` (needs `blogId`, `start`, `end` as full datetimes, `timezone`) | **The url join (D98):** each post carries `id` (Metricool's integer, our `external_ref`) and `providers[]` with `network` and `publicUrl` once published. `lib/marketing/url-join.ts` reads it nightly. |
 
 ## Create-post body (the exact shape — note `providers` are OBJECTS)
 ```json
