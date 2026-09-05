@@ -63,6 +63,13 @@ export type CrmContact = {
   blueprint_id?: string;
   fireflies_transcript_id?: string;
   fireflies_url?: string;
+  /**
+   * WHICH USE CASE SENT THEM (D97): one of the six ids, or absent. `use_case_confidence` says how
+   * we know: 'utm' off the link, 'inferred' when Leo guessed later. The CRM labels the use case
+   * only; who takes the lead is the team's decision and is not a column (Marrs, 5 September).
+   */
+  use_case?: string;
+  use_case_confidence?: string;
   /** When this was pushed to kit.com. Owned by the sync, not by the CRM. */
   synced_at?: string;
   created_at: string;

@@ -11,6 +11,7 @@ import {
 } from '@/lib/agents/job-blueprint-prompt';
 import { validateJobBlueprint } from '@/lib/agents/job-blueprint-schema';
 import { sendJobBlueprintEmail } from '@/lib/agents/job-blueprint-email';
+import { readAttributionCookie } from '@/lib/attribution-cookie';
 
 export const runtime = 'nodejs';
 export const maxDuration = 300;
@@ -98,6 +99,8 @@ export async function POST(req: Request) {
     email: body.email,
     name: body.name,
     source: 'job_map',
+    // Which post sent them (D97): the labels kept since arrival, or null.
+    attribution: await readAttributionCookie(),
   });
   if (!leadLanded) console.error(`[job-map.start] ${id} lead capture failed for ${body.email}`);
 

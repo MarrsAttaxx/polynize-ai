@@ -17,10 +17,39 @@ export * from './model';
  */
 
 /** The columns the CRM reads. Explicit, so adding a column cannot silently change reads. */
-const COLS =
+const BASE_COLS =
   'id, owner, email, name, business, role_title, phone, stage, notes, next_action, ' +
   'next_action_at, last_contacted_at, source, blueprint_id, fireflies_transcript_id, ' +
   'fireflies_url, synced_at, created_at, updated_at';
+/** The label columns from migration 0014 (D97). Read when the table has them; see cols(). */
+const LABEL_COLS = ', use_case, use_case_confidence';
+
+/**
+ * WHICH COLUMNS TO ASK FOR. Migration 0014 adds the label columns, and until it is applied a
+ * select naming them fails for every row, which would take the whole CRM down over a feature it
+ * did not have yesterday. So the first read asks for them; if Postgres says the column does not
+ * exist, this process remembers and asks for the base set from then on. One failed read per
+ * cold start, never a broken CRM.
+ */
+let labelColumnsMissing = false;
+function cols(): string {
+  return labelColumnsMissing ? BASE_COLS : BASE_COLS + LABEL_COLS;
+}
+function isUnknownColumn(error: { code?: string; message?: string }): boolean {
+  return error.code === '42703' || error.code === 'PGRST204' || /column .* does not exist/i.test(error.message ?? '');
+}
+/** Run a read once, and once more with the base columns if the label columns are not there yet. */
+async function withCols<T>(
+  run: (c: string) => PromiseLike<{ data: T; error: { code?: string; message?: string } | null }>
+): Promise<{ data: T; error: { code?: string; message?: string } | null }> {
+  let res = await run(cols());
+  if (res.error && !labelColumnsMissing && isUnknownColumn(res.error)) {
+    labelColumnsMissing = true;
+    console.error('[crm] leads table has no use_case columns yet (migration 0014 not applied); reading without them');
+    res = await run(cols());
+  }
+  return res;
+}
 
 function rowToContact(r: Record<string, unknown>): CrmContact {
   const stage = r.stage;
@@ -43,6 +72,8 @@ function rowToContact(r: Record<string, unknown>): CrmContact {
     blueprint_id: (r.blueprint_id as string) ?? undefined,
     fireflies_transcript_id: (r.fireflies_transcript_id as string) ?? undefined,
     fireflies_url: (r.fireflies_url as string) ?? undefined,
+    use_case: (r.use_case as string) ?? undefined,
+    use_case_confidence: (r.use_case_confidence as string) ?? undefined,
     synced_at: (r.synced_at as string) ?? undefined,
     created_at: String(r.created_at ?? ''),
     updated_at: String(r.updated_at ?? ''),
@@ -57,31 +88,26 @@ function rowToContact(r: Record<string, unknown>): CrmContact {
  * they have forty is worse than showing them an error.
  */
 export async function listContacts(owner: string): Promise<CrmContact[]> {
-  const { data, error } = await supabaseService()
-    .from('leads')
-    .select(COLS)
-    .eq('owner', owner)
-    .order('created_at', { ascending: false });
+  const { data, error } = await withCols((c) =>
+    supabaseService().from('leads').select(c).eq('owner', owner).order('created_at', { ascending: false })
+  );
   if (error) throw new Error(`[crm.list] ${error.code ?? ''} ${error.message}`);
   return (data ?? []).map((r) => rowToContact(r as unknown as Record<string, unknown>));
 }
 
 /** Every contact across every CRM. For the dashboard counts. */
 export async function listAllContacts(): Promise<CrmContact[]> {
-  const { data, error } = await supabaseService()
-    .from('leads')
-    .select(COLS)
-    .order('created_at', { ascending: false });
+  const { data, error } = await withCols((c) =>
+    supabaseService().from('leads').select(c).order('created_at', { ascending: false })
+  );
   if (error) throw new Error(`[crm.listAll] ${error.code ?? ''} ${error.message}`);
   return (data ?? []).map((r) => rowToContact(r as unknown as Record<string, unknown>));
 }
 
 export async function getContact(id: string): Promise<CrmContact | null> {
-  const { data, error } = await supabaseService()
-    .from('leads')
-    .select(COLS)
-    .eq('id', id)
-    .maybeSingle();
+  const { data, error } = await withCols((c) =>
+    supabaseService().from('leads').select(c).eq('id', id).maybeSingle()
+  );
   if (error) throw new Error(`[crm.get] ${error.code ?? ''} ${error.message}`);
   return data ? rowToContact(data as unknown as Record<string, unknown>) : null;
 }
@@ -138,11 +164,10 @@ export async function upsertContact(input: NewContact): Promise<CrmContact> {
   row.stage = input.stage && isCrmStage(input.stage) ? input.stage : 'new';
   row.source = input.source ?? 'manual';
 
-  const { data, error } = await supabaseService()
-    .from('leads')
-    .upsert(row, { onConflict: 'owner,email' })
-    .select(COLS)
-    .single();
+  // The upsert is idempotent, so the one retry withCols may do is safe.
+  const { data, error } = await withCols((c) =>
+    supabaseService().from('leads').upsert(row, { onConflict: 'owner,email' }).select(c).single()
+  );
   if (error) throw new Error(`[crm.upsert] ${error.code ?? ''} ${error.message}`);
   return rowToContact(data as unknown as Record<string, unknown>);
 }
@@ -158,12 +183,9 @@ export async function patchContact(
     // means "not mentioned" and must not reach the update.
     if (v !== undefined) row[k] = v === '' ? null : v;
   }
-  const { data, error } = await supabaseService()
-    .from('leads')
-    .update(row)
-    .eq('id', id)
-    .select(COLS)
-    .single();
+  const { data, error } = await withCols((c) =>
+    supabaseService().from('leads').update(row).eq('id', id).select(c).single()
+  );
   if (error) throw new Error(`[crm.patch] ${error.code ?? ''} ${error.message}`);
   return rowToContact(data as unknown as Record<string, unknown>);
 }

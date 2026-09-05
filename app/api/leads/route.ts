@@ -45,6 +45,8 @@ function verifyBearer(req: Request): boolean {
 }
 
 const LEAD_COLUMNS = 'id, email, name, business, blueprint_id, source, synced_at, created_at, updated_at';
+/** The label columns from migration 0014 (D97); Leo's segmentation reads use_case first. */
+const LABEL_COLUMNS = ', use_case, use_case_confidence, utm';
 
 export async function GET(req: Request) {
   if (!verifyBearer(req)) {
@@ -61,17 +63,22 @@ export async function GET(req: Request) {
   const limit = Math.min(Math.max(Number(url.searchParams.get('limit')) || 100, 1), 500);
 
   try {
-    let query = supabaseService()
-      .from('leads')
-      .select(LEAD_COLUMNS)
-      .order('created_at', { ascending: false })
-      .limit(limit);
-
-    if (unsynced) query = query.is('synced_at', null);
-    if (since) query = query.gte('created_at', since);
-    if (email) query = query.eq('email', email.trim().toLowerCase());
-
-    const { data, error } = await query;
+    const run = async (columns: string) => {
+      let query = supabaseService()
+        .from('leads')
+        .select(columns)
+        .order('created_at', { ascending: false })
+        .limit(limit);
+      if (unsynced) query = query.is('synced_at', null);
+      if (since) query = query.gte('created_at', since);
+      if (email) query = query.eq('email', email.trim().toLowerCase());
+      return query;
+    };
+    // With the label columns first; without them if migration 0014 is not applied yet (D97).
+    let { data, error } = await run(LEAD_COLUMNS + LABEL_COLUMNS);
+    if (error && (error.code === '42703' || error.code === 'PGRST204')) {
+      ({ data, error } = await run(LEAD_COLUMNS));
+    }
     if (error) throw error;
     return NextResponse.json({ ok: true, count: data?.length ?? 0, leads: data ?? [] });
   } catch (e) {

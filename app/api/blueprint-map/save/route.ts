@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { supabaseService } from '@/lib/supabase';
 import { validateSalesBlueprint } from '@/lib/agents/sales-blueprint-schema';
 import { captureLead } from '@/lib/leads';
+import { readAttributionCookie } from '@/lib/attribution-cookie';
 
 export const runtime = 'nodejs';
 
@@ -77,6 +78,8 @@ export async function POST(req: Request) {
         name: body.name,
         business: body.business,
         blueprintId: data.id,
+        // Which post sent them (D97): the labels kept since arrival, or null.
+        attribution: await readAttributionCookie(),
       });
     }
 

@@ -14,6 +14,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 // this is a client component.
 import { blueprintUrl, CRM_STAGES, type CrmContact, type CrmStage } from '@/lib/crm/model';
 import c from './crm.module.css';
+import { labelForUseCase } from '@/lib/marketing/use-case';
 
 type SaveState = 'idle' | 'saving' | 'saved' | 'failed';
 
@@ -242,6 +243,21 @@ export function ContactRow({ contact }: { contact: CrmContact }) {
         <span className={`${c.source} ${inbound ? c.sourceInbound : ''}`}>
           {inbound ? 'from the website' : contact.source}
         </span>
+        {/* WHICH USE CASE SENT THEM (D97), read off the post's link. The team decides who takes
+            it; that is not a column. */}
+        {contact.use_case ? (
+          <span
+            className={c.source}
+            title={
+              contact.use_case_confidence === 'utm'
+                ? 'From the link on the post that sent them.'
+                : 'Inferred, not read off a link.'
+            }
+          >
+            {labelForUseCase(contact.use_case)}
+            {contact.use_case_confidence && contact.use_case_confidence !== 'utm' ? ' (guessed)' : ''}
+          </span>
+        ) : null}
         {/* The blueprint they built on the website. The single most useful thing to open
             before replying to an inbound lead, so it sits with their identity. */}
         {contact.blueprint_id ? (

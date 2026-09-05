@@ -1,5 +1,7 @@
 import { supabaseService } from './supabase';
 import { pingNewLead } from './crm/notify';
+import { isUseCaseId } from './marketing/use-case';
+import type { Attribution } from './marketing/tracking-link';
 
 /**
  * Lead capture for the polynize.ai capability blueprint funnel.
@@ -28,7 +30,18 @@ export type LeadInput = {
    * a job map in the CRM.
    */
   source?: string;
+  /**
+   * WHICH POST SENT THEM (D97): the labels off the arrival url, read back from the httpOnly cookie
+   * by the caller (lib/attribution-cookie.ts). Written to `utm`, and when the campaign label is one
+   * of the six use-case ids, to `use_case` with confidence 'utm'. Null or absent writes nothing.
+   */
+  attribution?: Attribution | null;
 };
+
+/** Postgres "column does not exist", and PostgREST's schema-cache equivalent. */
+function isUnknownColumn(error: { code?: string; message?: string }): boolean {
+  return error.code === '42703' || error.code === 'PGRST204' || /column .* does not exist/i.test(error.message ?? '');
+}
 
 /**
  * Upsert a lead by email. Idempotent: a returning visitor updates their row
@@ -61,6 +74,22 @@ export async function captureLead(input: LeadInput): Promise<boolean> {
   row.updated_at = new Date().toISOString();
 
   /**
+   * THE LABEL, ONLY WHEN THERE IS ONE, and only the first time. A returning visitor who came back
+   * unlabelled must not blank the label that brought them; one who came back from a different post
+   * keeps the first (the cookie is first-touch, so this only matters when the cookie has expired).
+   * The three fields are split out so a database that has not had migration 0014 applied can be
+   * retried without them below, rather than losing the lead.
+   */
+  const labelled: Record<string, unknown> = {};
+  if (input.attribution) {
+    labelled.utm = input.attribution;
+    if (isUseCaseId(input.attribution.campaign)) {
+      labelled.use_case = input.attribution.campaign;
+      labelled.use_case_confidence = 'utm';
+    }
+  }
+
+  /**
    * IS THIS PERSON NEW? Asked BEFORE the upsert, because an upsert cannot tell you
    * afterwards whether it inserted or updated, and the ping must only fire for someone
    * genuinely new. Otherwise a returning visitor re-running the blueprint form would
@@ -84,9 +113,20 @@ export async function captureLead(input: LeadInput): Promise<boolean> {
   }
 
   try {
-    const { error } = await supabaseService()
+    let { error } = await supabaseService()
       .from('leads')
-      .upsert(row, { onConflict: 'owner,email' });
+      .upsert({ ...row, ...labelled }, { onConflict: 'owner,email' });
+    if (error && Object.keys(labelled).length > 0 && isUnknownColumn(error)) {
+      /**
+       * MIGRATION 0014 NOT APPLIED YET. The lead must land anyway: a label is worth less than the
+       * lead it labels. Said loudly in the log, because this is the one signal that the SQL still
+       * needs pasting into Supabase, and a silent fallback would hide it for months.
+       */
+      console.error(
+        '[leads.capture] the leads table has no use_case/utm columns yet (migration 0014 not applied); storing the lead without its label'
+      );
+      ({ error } = await supabaseService().from('leads').upsert(row, { onConflict: 'owner,email' }));
+    }
     if (error) {
       // A missing table (migration not applied yet) or any other write error is
       // logged and swallowed. The blueprint still saved; the lead just did not.

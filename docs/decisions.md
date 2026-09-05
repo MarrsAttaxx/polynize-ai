@@ -2824,3 +2824,27 @@ He challenged the Sprout and Hootsuite figures: *"all the major social media pla
 ### Not in this step
 
 The site does not yet read the label (step 2), so a click today still lands unrecorded. The console does not yet read the numbers back (step 3). Tests: `lib/marketing/__tests__/attribution.test.ts`, 38 assertions, chained into `npm run test:marketing`.
+
+
+## D97: polynize.ai remembers the label, and the lead carries its use case
+
+**Adopted 5 September 2026.** Steps 2 and 6 of the plan in `docs/pam-console/analytics-and-scale.md`. Step 6 is built as Marrs corrected it the same morning: *"The CRM just needs to label the use case for now. It's up to us internally which partner we decide to give it to."* So: use case on the lead, no partner column.
+
+### What was built
+
+**On arrival.** A client component in the site's root layout (`AttributionCapture`) looks at the url once. If it carries utm labels, it asks the server to remember them and keeps a readable copy in localStorage. It renders nothing, costs one request on labelled arrivals and nothing on the rest, and does not run on console routes.
+
+**The server keeps them in a cookie** (`lib/attribution-cookie.ts`, `POST /api/attribution`): httpOnly, thirty days, first touch wins. The route runs the reported url through the same allowlist the console's link builder uses, so a crafted url cannot put a sentence or an address into the cookie. First touch, because the question is "which post started it", and that is the first one.
+
+**At the lead.** `captureLead` takes the cookie's contents from its two callers (the team-map save and the job-map start) and writes `utm`, and when the campaign label is one of the six use-case ids, `use_case` with confidence `utm`. Migration `0014_lead_attribution.sql` adds the three columns, nullable, plus an index on `use_case`.
+
+**If the migration has not been applied yet, nothing breaks.** The lead write retries without the label fields and says so in the log, once, loudly: a label is worth less than the lead it labels. The CRM's reads ask for the label columns first and, if Postgres says they do not exist, remember that for the life of the process and ask for the base set. Leo's `GET /api/leads` does the same. So the site, the CRM and the sync all work before and after the SQL is pasted; only the label is missing before.
+
+**Where he sees it.** On each CRM row, a chip with the use case, with a tooltip saying whether it came off the link or was guessed. Analytics events (`booking_click`, `blueprint_created`, `email_captured` and the rest) now carry `use_case`, `entry` and `from_network` when the visitor arrived labelled, so Vercel can answer "bookings by use case" and "completions by post" through `eventData/use_case` and `eventData/entry`. A post number and a use case, never a person.
+
+### Decisions inside it
+
+- **Two copies, two readers, on purpose.** The httpOnly cookie feeds the lead record and no script can read or forge it. The localStorage copy feeds analytics events only and never reaches the lead. Mixing them would let the page write the lead's source.
+- **Not middleware.** The site's middleware already rewrites hosts for the console; adding a marketing concern there is how one rewrite breaks another.
+- **No partner column.** Routing is a team decision made by hand for now, and partners do not use the CRM. Adding the column later is one line in a migration; adding it now would be deciding something Marrs has said is open.
+- **The one thing only Marrs can do:** paste `supabase/migrations/0014_lead_attribution.sql` into the Supabase SQL editor. Everything works without it; the label lands only with it.

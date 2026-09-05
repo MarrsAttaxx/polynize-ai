@@ -20,6 +20,7 @@
  */
 
 import { track as vercelTrack } from '@vercel/analytics';
+import { readAttribution, normalizeAttribution, type Attribution } from '@/lib/marketing/tracking-link';
 
 export type AnalyticsEvent =
   /** Generic CTA click. props: { surface, label, href? } */
@@ -81,10 +82,56 @@ export function setProvider(provider: AnalyticsProvider): void {
 
 export function track(event: AnalyticsEvent, props?: EventProps): void {
   try {
-    currentProvider.track(event, sanitize(props));
+    currentProvider.track(event, sanitize(withAttribution(props)));
   } catch {
     /* analytics must never throw into the app */
   }
+}
+
+/* ------------------------------------------------------------------ which post sent them (D97) */
+
+const ATTR_KEY = 'polynize_attr';
+
+/**
+ * Keep the labels off the arrival url in localStorage, first touch wins, so every event this
+ * visitor fires can say which use case and which post it belongs to. A post number and a use
+ * case, never a person: the same allowlist the server applies, so nothing else can be stored.
+ * The lead record does NOT read this; it reads the httpOnly cookie the server set.
+ */
+export function rememberAttribution(search: string): void {
+  try {
+    if (typeof window === 'undefined') return;
+    if (window.localStorage.getItem(ATTR_KEY)) return;
+    const attr = readAttribution(search);
+    if (attr) window.localStorage.setItem(ATTR_KEY, JSON.stringify(attr));
+  } catch {
+    /* storage can be unavailable; attribution is a convenience here */
+  }
+}
+
+export function storedAttribution(): Attribution | null {
+  try {
+    if (typeof window === 'undefined') return null;
+    const raw = window.localStorage.getItem(ATTR_KEY);
+    return raw ? normalizeAttribution(JSON.parse(raw)) : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Add `use_case` and `entry` to an event's props when this visitor arrived from a labelled post,
+ * so Vercel can answer "bookings by use case" and "completions by post" (eventData/use_case,
+ * eventData/entry). Explicit props win over stored ones.
+ */
+function withAttribution(props?: EventProps): EventProps | undefined {
+  const attr = storedAttribution();
+  if (!attr) return props;
+  const extra: EventProps = {};
+  if (attr.campaign) extra.use_case = attr.campaign;
+  if (attr.content) extra.entry = attr.content;
+  if (attr.source) extra.from_network = attr.source;
+  return { ...extra, ...(props ?? {}) };
 }
 
 export function identify(userId: string, traits?: EventProps): void {

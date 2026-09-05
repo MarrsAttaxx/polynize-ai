@@ -3,6 +3,7 @@ import { Space_Grotesk, Inter, JetBrains_Mono } from 'next/font/google';
 import './globals.css';
 import './tactile.css';
 import { Analytics } from '@vercel/analytics/next';
+import { AttributionCapture } from './_components/AttributionCapture';
 
 const spaceGrotesk = Space_Grotesk({
   subsets: ['latin'],
@@ -86,6 +87,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         {/* Pageviews. Custom events go through lib/analytics, which forwards to the same
             SDK; without this component mounted those calls are no-ops. */}
         <Analytics />
+        {/* Which post sent this visitor (D97). Reads utm labels off the arrival url once; renders nothing. */}
+        <AttributionCapture />
       </body>
     </html>
   );
